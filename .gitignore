@@ -1,0 +1,23 @@
+# Cached python interpreter path written by the bash wrapper
+.a2a_python
+
+# Per-project databases live under ~/.a2a, never in the repo
+.a2a/
+*.db
+*.db-wal
+*.db-shm
+
+# Smoke-test logs
+*.log
+/tmp/a2a-*
+
+# Editor / OS noise
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+*.pyo

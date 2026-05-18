@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# a2a — peer-to-peer agent messaging over SQLite
+# Wrapper that locates a python interpreter with the sqlite3 module.
+set -e
+
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+DIR="$(dirname "$SELF")"
+SCRIPT="$DIR/a2a.py"
+
+# Cache the chosen interpreter alongside the script
+CACHE="$DIR/.a2a_python"
+
+pick_python() {
+    for candidate in \
+        "$A2A_PYTHON" \
+        /usr/bin/python3 \
+        /usr/bin/python3.12 \
+        /usr/bin/python3.11 \
+        /usr/bin/python3.10 \
+        /usr/bin/python3.9 \
+        /usr/local/bin/python3 \
+        python3 \
+        /usr/bin/python ; do
+        [ -z "$candidate" ] && continue
+        if command -v "$candidate" >/dev/null 2>&1; then
+            if "$candidate" -c "import sqlite3" 2>/dev/null; then
+                echo "$candidate"
+                return 0
+            fi
+        fi
+    done
+    return 1
+}
+
+if [ -f "$CACHE" ] && "$(cat "$CACHE")" -c "import sqlite3" 2>/dev/null; then
+    PYTHON="$(cat "$CACHE")"
+else
+    PYTHON="$(pick_python)" || {
+        echo "a2a: no python3 with sqlite3 module found" >&2
+        exit 1
+    }
+    echo "$PYTHON" > "$CACHE"
+fi
+
+exec "$PYTHON" "$SCRIPT" "$@"

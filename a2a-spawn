@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# a2a-spawn — CLI-agnostic launcher for an a2a peer agent.
+#
+# Knows how to invoke claude, opencode, or pi non-interactively with a kit
+# prompt. Hides the per-CLI flag differences:
+#
+#   - claude   : --append-system-prompt "$KIT"     -p "Begin."
+#   - opencode : (kit embedded in message body)    run "$KIT\n\nBegin."
+#   - pi       : --append-system-prompt "$KIT"     -p "Begin."
+#
+# Usage:
+#   a2a-spawn --cli claude   --id alice  [--model haiku]   [--log FILE]   --kit-file FILE
+#   a2a-spawn --cli opencode --id bob    [--model anthropic/claude-haiku-4-5] --kit-file FILE
+#   a2a-spawn --cli pi       --id carol  [--provider google] [--model …]   --kit-file FILE
+#
+# Writes the spawned PID to stdout. Send SIGTERM to that PID to stop the agent.
+# Reads the kit prompt from --kit-file (recommended; avoids shell-escape bugs).
+set -u
+
+CLI=""
+ID=""
+MODEL=""
+PROVIDER=""
+LOG=""
+KIT_FILE=""
+EXTRA_ARGS=()
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --cli)        CLI="$2";        shift 2;;
+        --id)         ID="$2";         shift 2;;
+        --model)      MODEL="$2";      shift 2;;
+        --provider)   PROVIDER="$2";   shift 2;;
+        --log)        LOG="$2";        shift 2;;
+        --kit-file)   KIT_FILE="$2";   shift 2;;
+        --)           shift; EXTRA_ARGS+=("$@"); break;;
+        *)            echo "a2a-spawn: unknown arg $1" >&2; exit 2;;
+    esac
+done
+
+[ -z "$CLI" ]      && { echo "a2a-spawn: --cli required (claude|opencode|pi)" >&2; exit 2; }
+[ -z "$ID" ]       && { echo "a2a-spawn: --id required" >&2; exit 2; }
+[ -z "$KIT_FILE" ] && { echo "a2a-spawn: --kit-file required" >&2; exit 2; }
+[ -r "$KIT_FILE" ] || { echo "a2a-spawn: cannot read kit file $KIT_FILE" >&2; exit 2; }
+
+if [ -z "$LOG" ]; then
+    LOG="/tmp/a2a-$ID.log"
+fi
+KIT="$(cat "$KIT_FILE")"
+
+# Resolve opencode (the user's `opencode` alias goes through tmux which needs
+# a real terminal). Fall back to the real binary if present.
+resolve_opencode() {
+    if [ -x "$HOME/.opencode/bin/opencode" ]; then
+        echo "$HOME/.opencode/bin/opencode"
+    elif command -v opencode-bin >/dev/null 2>&1; then
+        command -v opencode-bin
+    else
+        # last resort: use whatever `opencode` resolves to
+        command -v opencode 2>/dev/null || echo "opencode"
+    fi
+}
+
+case "$CLI" in
+    claude)
+        FLAGS=(-p --dangerously-skip-permissions --max-turns 16)
+        [ -n "$MODEL" ] && FLAGS+=(--model "$MODEL")
+        claude "${FLAGS[@]}" \
+            --append-system-prompt "$KIT" \
+            "Begin." > "$LOG" 2>&1 &
+        echo $!
+        ;;
+    opencode)
+        OPENCODE="$(resolve_opencode)"
+        FLAGS=(run --dangerously-skip-permissions)
+        [ -n "$MODEL" ] && FLAGS+=(-m "$MODEL")
+        # opencode has no --append-system-prompt; embed kit in the message.
+        # We pass everything as one positional argument so shell quoting is safe.
+        MSG="$KIT
+
+---
+Begin."
+        "$OPENCODE" "${FLAGS[@]}" "$MSG" > "$LOG" 2>&1 &
+        echo $!
+        ;;
+    pi)
+        FLAGS=(-p)
+        [ -n "$MODEL" ]    && FLAGS+=(--model "$MODEL")
+        [ -n "$PROVIDER" ] && FLAGS+=(--provider "$PROVIDER")
+        pi "${FLAGS[@]}" \
+            --append-system-prompt "$KIT" \
+            "Begin." > "$LOG" 2>&1 &
+        echo $!
+        ;;
+    *)
+        echo "a2a-spawn: unknown CLI '$CLI' (expected claude|opencode|pi)" >&2
+        exit 2
+        ;;
+esac
