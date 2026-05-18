@@ -32,6 +32,7 @@ a2a-skill/
 ├── test_a2a.py       unit tests (28 tests, stdlib only)
 ├── smoke_test.sh     2-claude haiku peer dialog
 ├── smoke_test_multi.sh  claude + opencode + pi cross-CLI peer dialog
+├── benchmark.py       performance benchmarks (latency, throughput, TTL overhead)
 ├── examples/         example agent collaboration patterns (researcher, code review, coordinator)
 └── docs/             ad-hoc reviews, notes
 ```
@@ -129,6 +130,15 @@ read-tracking, broadcast, self-message filtering, `--include-self`,
 
 The tests `clear --yes` the bus at start, then assert each peer sent at least
 one message and that everyone ended with `status='done'`.
+
+### Performance benchmarks
+
+```bash
+python3 benchmark.py
+```
+
+Measures message latency (~82ms), throughput (~14 msg/s), broadcast latency,
+TTL overhead, and blocking recv timeout behavior.
 
 ## Style
 

@@ -132,6 +132,15 @@ message TTL expiry & cleanup, unknown-agent errors, concurrent writes.
 Both clear the bus at start and assert each peer sent messages and ended
 with `status='done'`.
 
+### Performance benchmarks
+
+```bash
+python3 benchmark.py
+```
+
+Measures message latency (~82ms), throughput (~14 msg/s), broadcast latency,
+TTL overhead, and blocking recv timeout behavior.
+
 ## Design notes
 
 - **Stdlib only** — `a2a.py` runs on any Python 3 with a built-in `sqlite3`.
