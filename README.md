@@ -17,19 +17,45 @@ work as peers. The transport is a SQLite database at
 a2a-skill/
 ├── a2a                  # bash wrapper that finds a python with sqlite3
 ├── a2a.py               # core CLI (stdlib only: argparse, sqlite3, json)
+├── a2a.client.py        # Python client library (no subprocess overhead)
 ├── a2a-spawn            # CLI-agnostic peer launcher (claude, opencode, pi, ...)
-├── SKILL.md             # /a2a skill spec — 7-step spawn protocol + kit prompt
-├── README.md            # this file
-├── AGENTS.md            # guide for AI agents working on this repo
 ├── install.sh           # one-command installer (symlinks CLI + skill)
-├── test_a2a.py          # unit tests (28 tests, stdlib only)
-├── test_integration.py  # integration tests (full CLI workflows)
-├── benchmark.py         # performance benchmarks (latency, throughput)
+
+📚 Documentation
+├── README.md            # overview (this file)
+├── INSTALLATION.md      # setup & troubleshooting guide
+├── QUICKSTART.md        # 5-minute intro
+├── SKILL.md             # /a2a skill spec — 7-step spawn protocol
+├── AGENTS.md            # guide for AI agents working on this repo
+├── CLIENT_API.md        # Python client library reference
+├── ADVANCED_PATTERNS.md # optimization & patterns guide
+├── CONTRIBUTING.md      # developer guidelines
+├── PROJECT_STATUS.md    # release notes & roadmap
+
+🧪 Tests & Benchmarks
+├── test_a2a.py          # unit tests (30 core tests)
+├── test_a2a_client.py   # client library tests (17 tests)
+├── test_integration.py  # integration tests (18 tests)
+├── stress_test.sh       # 10-agent concurrent stress test
+├── high_volume_stress_test.sh  # 20-agent, 1000+ message test
+├── edge_case_test.sh    # edge-case hardening validation
+├── perf_comparison_test.py  # CLI vs Python client benchmark
+├── benchmark.py         # latency, throughput, TTL benchmarks
 ├── dashboard.py         # real-time bus visualization
+├── verify_all.sh        # comprehensive test suite runner
+
+🔨 Tools & Examples
+├── examples/            # 5 agent collaboration patterns
+│   ├── researcher_agent.py
+│   ├── code_reviewer_agent.py
+│   ├── task_coordinator_agent.py
+│   ├── critic_agent.py
+│   └── debugger_agent.py
 ├── smoke_test.sh        # 2-claude haiku peer dialog
 ├── smoke_test_multi.sh  # cross-CLI peer dialog (claude + opencode + pi)
 ├── smoke_test_examples.sh # example agent smoke test
-├── examples/            # agent collaboration pattern examples
+
+📋 Project
 ├── LICENSE              # MIT (attribution required)
 ├── .gitignore
 └── docs/                # ad-hoc reviews, notes
@@ -59,6 +85,19 @@ Restart your CLI session so it picks up the new skill.
 
 > **Prerequisite:** a Python 3 with `sqlite3` built-in. The `a2a` wrapper auto-detects
 > one by probing common paths (python3.10, python3.12, etc.).
+
+## Documentation
+
+Comprehensive guides for different use cases:
+
+- **[QUICKSTART.md](QUICKSTART.md)** — 5-minute introduction with examples
+- **[INSTALLATION.md](INSTALLATION.md)** — Setup, prerequisites, platform-specific notes
+- **[CLIENT_API.md](CLIENT_API.md)** — Python client library reference
+- **[ADVANCED_PATTERNS.md](ADVANCED_PATTERNS.md)** — Performance optimization, monitoring, error recovery
+- **[SKILL.md](SKILL.md)** — `/a2a` skill architecture and spawn protocol
+- **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Developer guidelines
+- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** — Release notes and roadmap
 
 ## CLI cheatsheet
 
