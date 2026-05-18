@@ -390,16 +390,64 @@ def cmd_clear(args):
     print(f"cleared {path}")
 
 
+def _init_fts(conn: sqlite3.Connection) -> bool:
+    """Initialize FTS5 virtual table and sync existing messages.
+
+    Returns True if FTS5 is available and initialized.
+    """
+    try:
+        conn.execute(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5("
+            "id, sender, recipient, body, thread_id, created_at,"
+            "content=messages, content_rowid=id)"
+        )
+        conn.execute(
+            "CREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages BEGIN"
+            "  INSERT INTO messages_fts(rowid, id, sender, recipient, body, thread_id, created_at)"
+            "  VALUES (new.rowid, new.id, new.sender, new.recipient, new.body, new.thread_id, new.created_at);"
+            " END"
+        )
+        conn.execute(
+            "CREATE TRIGGER IF NOT EXISTS messages_fts_delete AFTER DELETE ON messages BEGIN"
+            "  DELETE FROM messages_fts WHERE rowid = old.id;"
+            " END"
+        )
+        conn.execute(
+            "CREATE TRIGGER IF NOT EXISTS messages_fts_update AFTER UPDATE ON messages BEGIN"
+            "  DELETE FROM messages_fts WHERE rowid = old.id;"
+            "  INSERT INTO messages_fts(rowid, id, sender, recipient, body, thread_id, created_at)"
+            "  VALUES (new.rowid, new.id, new.sender, new.recipient, new.body, new.thread_id, new.created_at);"
+            " END"
+        )
+        conn.execute("INSERT INTO messages_fts(messages_fts) VALUES('rebuild')")
+        conn.commit()
+        return True
+    except sqlite3.OperationalError:
+        return False
+
+
 def cmd_search(args):
     """Search messages by content."""
     name = project_name(args.project)
     conn = connect(name)
     query = args.query.lower()
-    rows = conn.execute(
-        "SELECT id, sender, recipient, body, thread_id, created_at FROM messages "
-        "WHERE body LIKE ? ORDER BY created_at DESC LIMIT ?",
-        (f"%{query}%", args.limit or 50),
-    ).fetchall()
+    use_fts = args.fts or _init_fts(conn)
+    if use_fts:
+        try:
+            rows = conn.execute(
+                "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at "
+                "FROM messages_fts JOIN messages m ON messages_fts.rowid = m.rowid "
+                "WHERE messages_fts MATCH ? ORDER BY rank LIMIT ?",
+                (query, args.limit or 50),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            use_fts = False
+    if not use_fts:
+        rows = conn.execute(
+            "SELECT id, sender, recipient, body, thread_id, created_at FROM messages "
+            "WHERE body LIKE ? ORDER BY created_at DESC LIMIT ?",
+            (f"%{query}%", args.limit or 50),
+        ).fetchall()
     conn.close()
     if args.json:
         print(json.dumps([dict(r) for r in rows], indent=2))
@@ -501,7 +549,7 @@ def build_parser():
               a2a send bob "hi"     --from alice
               a2a recv --as bob --wait 10
               a2a thread <id>                    # thread view (v1.1)
-              a2a search <query>    --json      # search bus (v1.1)
+              a2a search <query>    --json      # search bus (FTS5 + LIKE fallback)
               a2a stats            --json       # bus statistics (v1.1)
         """),
     )
@@ -573,9 +621,10 @@ def build_parser():
     s.set_defaults(func=cmd_thread)
 
     s = sub.add_parser("search", help="search messages by content")
-    s.add_argument("query", help="search query (case-insensitive substring)")
+    s.add_argument("query", help="search query (FTS5 syntax or substring)")
     s.add_argument("--limit", type=int, default=50, help="max results (default: 50)")
     s.add_argument("--json", action="store_true", help="output as JSON")
+    s.add_argument("--fts", action="store_true", help="force FTS5 full-text search")
     s.set_defaults(func=cmd_search)
 
     s = sub.add_parser("stats", help="show bus statistics")

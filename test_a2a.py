@@ -636,7 +636,7 @@ class TestEdgeCases(unittest.TestCase):
         conn.close()
 
         # Search should find messages containing "hello"
-        args = a2a.argparse.Namespace(project=self.project, query="hello", limit=50, json=False)
+        args = a2a.argparse.Namespace(project=self.project, query="hello", limit=50, json=False, fts=False)
         # Manually call cmd_search and check it doesn't crash
         import io, sys
         old_stdout = sys.stdout
