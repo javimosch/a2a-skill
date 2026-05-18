@@ -38,10 +38,21 @@ a2a-skill/
 ├── GO_CLIENT_API.md     # Go client library reference
 ├── RUST_CLIENT_API.md   # Rust client library reference
 ├── REST_API.md          # HTTP REST interface reference
+├── GIT_AWARE.md         # work-collision detection & prevention
 ├── INTEGRATION_GUIDE.md # multi-interface coordination guide
 ├── ADVANCED_PATTERNS.md # optimization & patterns guide
+│
+📦 v1.3 Features
+├── ENCRYPTION.md        # end-to-end encryption (symmetric & asymmetric)
+├── FTS_SEARCH.md        # full-text search with relevance ranking
+├── AUDIT.md             # message lifecycle audit logging
+├── PRIORITY.md          # 4-level priority queue ordering
+├── ROUTING.md           # rule-based message distribution
+│
+📖 Developer Guides
 ├── CONTRIBUTING.md      # developer guidelines
 ├── PROJECT_STATUS.md    # release notes & roadmap
+├── DEPLOYMENT.md        # Docker, Kubernetes, systemd deployment
 
 🧪 Tests & Benchmarks
 ├── test_a2a.py          # unit tests (30 core tests)
