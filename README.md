@@ -17,7 +17,8 @@ work as peers. The transport is a SQLite database at
 a2a-skill/
 ├── a2a                  # bash wrapper that finds a python with sqlite3
 ├── a2a.py               # core CLI (stdlib only: argparse, sqlite3, json)
-├── a2a_client.py        # Python client library (async, no subprocess overhead)
+├── a2a_client.py        # Python client library (sync, no subprocess overhead)
+├── a2a_client_async.py  # Python async client (asyncio-based, high concurrency)
 ├── a2a_client.go        # Go client library (direct DB access)
 ├── a2a_client.js        # Node.js client library (async/Promise)
 ├── src/lib.rs           # Rust client library (async, idiomatic)
