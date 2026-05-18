@@ -17,7 +17,11 @@ work as peers. The transport is a SQLite database at
 a2a-skill/
 ├── a2a                  # bash wrapper that finds a python with sqlite3
 ├── a2a.py               # core CLI (stdlib only: argparse, sqlite3, json)
-├── a2a.client.py        # Python client library (no subprocess overhead)
+├── a2a_client.py        # Python client library (async, no subprocess overhead)
+├── a2a_client.go        # Go client library (direct DB access)
+├── a2a_client.js        # Node.js client library (async/Promise)
+├── src/lib.rs           # Rust client library (async, idiomatic)
+├── a2a_server.py        # REST API server (HTTP interface)
 ├── a2a-spawn            # CLI-agnostic peer launcher (claude, opencode, pi, ...)
 ├── install.sh           # one-command installer (symlinks CLI + skill)
 
@@ -28,34 +32,42 @@ a2a-skill/
 ├── SKILL.md             # /a2a skill spec — 7-step spawn protocol
 ├── AGENTS.md            # guide for AI agents working on this repo
 ├── CLIENT_API.md        # Python client library reference
+├── NODE_CLIENT_API.md   # Node.js client library reference
+├── GO_CLIENT_API.md     # Go client library reference
+├── RUST_CLIENT_API.md   # Rust client library reference
+├── REST_API.md          # HTTP REST interface reference
+├── INTEGRATION_GUIDE.md # multi-interface coordination guide
 ├── ADVANCED_PATTERNS.md # optimization & patterns guide
 ├── CONTRIBUTING.md      # developer guidelines
 ├── PROJECT_STATUS.md    # release notes & roadmap
 
 🧪 Tests & Benchmarks
 ├── test_a2a.py          # unit tests (30 core tests)
-├── test_a2a_client.py   # client library tests (17 tests)
+├── test_a2a_client.py   # Python client tests (17 tests)
 ├── test_integration.py  # integration tests (18 tests)
+├── test_a2a_client.js   # Node.js client tests (8 tests)
 ├── stress_test.sh       # 10-agent concurrent stress test
 ├── high_volume_stress_test.sh  # 20-agent, 1000+ message test
 ├── edge_case_test.sh    # edge-case hardening validation
-├── perf_comparison_test.py  # CLI vs Python client benchmark
+├── perf_comparison_test.py  # CLI vs SDK benchmark
 ├── benchmark.py         # latency, throughput, TTL benchmarks
 ├── dashboard.py         # real-time bus visualization
 ├── verify_all.sh        # comprehensive test suite runner
 
 🔨 Tools & Examples
-├── examples/            # 5 agent collaboration patterns
+├── examples/
 │   ├── researcher_agent.py
 │   ├── code_reviewer_agent.py
 │   ├── task_coordinator_agent.py
 │   ├── critic_agent.py
-│   └── debugger_agent.py
+│   ├── debugger_agent.py
+│   └── task_worker.rs   # Rust agent example
 ├── smoke_test.sh        # 2-claude haiku peer dialog
 ├── smoke_test_multi.sh  # cross-CLI peer dialog (claude + opencode + pi)
 ├── smoke_test_examples.sh # example agent smoke test
 
 📋 Project
+├── Cargo.toml           # Rust library configuration
 ├── LICENSE              # MIT (attribution required)
 ├── .gitignore
 └── docs/                # ad-hoc reviews, notes
@@ -92,7 +104,16 @@ Comprehensive guides for different use cases:
 
 - **[QUICKSTART.md](QUICKSTART.md)** — 5-minute introduction with examples
 - **[INSTALLATION.md](INSTALLATION.md)** — Setup, prerequisites, platform-specific notes
+
+**Client Libraries:**
 - **[CLIENT_API.md](CLIENT_API.md)** — Python client library reference
+- **[NODE_CLIENT_API.md](NODE_CLIENT_API.md)** — Node.js client library reference
+- **[GO_CLIENT_API.md](GO_CLIENT_API.md)** — Go client library reference
+- **[RUST_CLIENT_API.md](RUST_CLIENT_API.md)** — Rust client library reference
+- **[REST_API.md](REST_API.md)** — HTTP REST interface for microservices
+- **[INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)** — Multi-interface coordination examples
+
+**Advanced Topics:**
 - **[ADVANCED_PATTERNS.md](ADVANCED_PATTERNS.md)** — Performance optimization, monitoring, error recovery
 - **[SKILL.md](SKILL.md)** — `/a2a` skill architecture and spawn protocol
 - **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development

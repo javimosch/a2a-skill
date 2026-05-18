@@ -17,6 +17,10 @@
 .idea/
 *.swp
 
+# Rust build artifacts
+/target/
+Cargo.lock
+
 # Python
 __pycache__/
 *.pyc
