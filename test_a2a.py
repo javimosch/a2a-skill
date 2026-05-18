@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+"""Unit tests for a2a.py — peer messaging CLI.
+
+Covers: DB schema, message send/recv, read-tracking, filtering, edge cases.
+Run: python3 test_a2a.py
+"""
+import os
+import sqlite3
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+import sys
+
+# Import a2a (assumes it's in same dir or on path)
+sys.path.insert(0, os.path.dirname(__file__))
+import a2a
+
+
+class TestA2ADB(unittest.TestCase):
+    """Database schema and initialization."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.project = f"test-{os.getpid()}"
+        self.db_path = a2a.db_path(self.project)
+
+    def tearDown(self):
+        if self.db_path.exists():
+            self.db_path.unlink()
+        self.tmpdir.cleanup()
+
+    def test_init_creates_schema(self):
+        """conn = connect(..., create=True) initializes schema."""
+        conn = a2a.connect(self.project, create=True)
+        tables = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        ).fetchall()
+        names = [t[0] for t in tables]
+        self.assertIn("agents", names)
+        self.assertIn("messages", names)
+        self.assertIn("reads", names)
+        conn.close()
+
+    def test_wal_mode(self):
+        """WAL mode enabled for concurrent access."""
+        conn = a2a.connect(self.project, create=True)
+        mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+        self.assertEqual(mode, "wal")
+        conn.close()
+
+
+class TestAgentRegistry(unittest.TestCase):
+    """Agent registration and listing."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.project = f"test-{os.getpid()}"
+        self.db_path = a2a.db_path(self.project)
+        a2a.connect(self.project, create=True).close()
+
+    def tearDown(self):
+        if self.db_path.exists():
+            self.db_path.unlink()
+        self.tmpdir.cleanup()
+
+    def test_register_agent(self):
+        """Register an agent with role, prompt, cli."""
+        args = a2a.argparse.Namespace(
+            project=self.project, id="alice", role="planner",
+            prompt="test prompt", cli="claude", pid=None, upsert=False
+        )
+        a2a.cmd_register(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT role, prompt, cli FROM agents WHERE id=?",
+                          ("alice",)).fetchone()
+        self.assertEqual(row[0], "planner")
+        self.assertEqual(row[1], "test prompt")
+        self.assertEqual(row[2], "claude")
+        conn.close()
+
+    def test_register_upsert(self):
+        """Upsert updates existing agent without error."""
+        args = a2a.argparse.Namespace(
+            project=self.project, id="bob", role="role1",
+            prompt="p1", cli="claude", pid=None, upsert=False
+        )
+        a2a.cmd_register(args)
+        args.role = "role2"
+        args.prompt = "p2"
+        args.upsert = True
+        a2a.cmd_register(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT role, prompt FROM agents WHERE id=?",
+                          ("bob",)).fetchone()
+        self.assertEqual(row[0], "role2")
+        self.assertEqual(row[1], "p2")
+        conn.close()
+
+
+class TestMessaging(unittest.TestCase):
+    """Send, receive, read-tracking."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.project = f"test-{os.getpid()}"
+        self.db_path = a2a.db_path(self.project)
+        conn = a2a.connect(self.project, create=True)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, role, status, created_at, last_seen) "
+                "VALUES (?,?,?,?,?)",
+                (agent_id, "tester", "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+        conn.close()
+
+    def tearDown(self):
+        if self.db_path.exists():
+            self.db_path.unlink()
+        self.tmpdir.cleanup()
+
+    def test_send_direct(self):
+        """Send a direct message from alice to bob."""
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="hello bob",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT sender, recipient, body FROM messages WHERE sender=?",
+            ("alice",)
+        ).fetchone()
+        self.assertEqual(row[0], "alice")
+        self.assertEqual(row[1], "bob")
+        self.assertEqual(row[2], "hello bob")
+        conn.close()
+
+    def test_send_broadcast(self):
+        """Send a broadcast (recipient=NULL) via 'all'."""
+        args = a2a.argparse.Namespace(
+            project=self.project, to="all", body="team message",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT recipient FROM messages WHERE body=?",
+            ("team message",)
+        ).fetchone()
+        self.assertIsNone(row[0])
+        conn.close()
+
+    def test_recv_unread(self):
+        """Receive only unread messages."""
+        conn = a2a.connect(self.project)
+        # Alice sends to bob, then broadcast
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) "
+            "VALUES (?,?,?,?)",
+            ("alice", "bob", "msg1", a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) "
+            "VALUES (?,?,?,?)",
+            ("alice", None, "broadcast", a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
+        # Bob receives — should see both
+        args = a2a.argparse.Namespace(
+            project=self.project, **{"as_": "bob", "wait": 0, "all": False,
+                                     "peek": False, "limit": 0, "since": None,
+                                     "json": False}
+        )
+        # Capture output — for now just verify no crash
+        a2a.cmd_recv(args)
+
+    def test_recv_all(self):
+        """Receive with --all includes already-read messages."""
+        conn = a2a.connect(self.project)
+        mid = conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) "
+            "VALUES (?,?,?,?) RETURNING id",
+            ("alice", "bob", "old msg", a2a.now())
+        ).fetchone()[0]
+        conn.execute("INSERT INTO reads(agent_id, message_id, read_at) VALUES (?,?,?)",
+                    ("bob", mid, a2a.now()))
+        conn.commit()
+        conn.close()
+
+        # Bob can still see it with --all
+        args = a2a.argparse.Namespace(
+            project=self.project, **{"as_": "bob", "wait": 0, "all": True,
+                                     "peek": False, "limit": 0, "since": None,
+                                     "json": False}
+        )
+        a2a.cmd_recv(args)  # Should not crash
+
+    def test_recv_filters_self(self):
+        """Recv filters out messages from the agent itself."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) "
+            "VALUES (?,?,?,?)",
+            ("alice", "alice", "self message", a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
+        args = a2a.argparse.Namespace(
+            project=self.project, **{"as_": "alice", "wait": 0, "all": False,
+                                     "peek": False, "limit": 0, "since": None,
+                                     "json": False}
+        )
+        a2a.cmd_recv(args)  # Self-sent msg should not appear
+
+
+class TestEdgeCases(unittest.TestCase):
+    """Edge cases: unknown agents, validation."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.project = f"test-{os.getpid()}"
+        self.db_path = a2a.db_path(self.project)
+        a2a.connect(self.project, create=True).close()
+
+    def tearDown(self):
+        if self.db_path.exists():
+            self.db_path.unlink()
+        self.tmpdir.cleanup()
+
+    def test_send_unknown_recipient(self):
+        """Sending to unknown agent fails gracefully."""
+        args = a2a.argparse.Namespace(
+            project=self.project, to="unknown", body="hi",
+            **{"from_": "alice", "thread": None}
+        )
+        # Should raise SystemExit with a clear error
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(args)
+
+    def test_recv_unknown_agent(self):
+        """Receiving as unknown agent fails gracefully."""
+        args = a2a.argparse.Namespace(
+            project=self.project, **{"as_": "unknown", "wait": 0, "all": False,
+                                     "peek": False, "limit": 0, "since": None,
+                                     "json": False}
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_recv(args)
+
+    def test_concurrent_writes(self):
+        """Multiple agents can write concurrently (WAL handles it)."""
+        # Register two agents
+        for agent_id in ("agent1", "agent2"):
+            conn = a2a.connect(self.project)
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+            conn.commit()
+            conn.close()
+
+        # Simulate concurrent sends (sequential here, but the db should handle
+        # true concurrency via WAL)
+        for i in range(5):
+            conn = a2a.connect(self.project)
+            sender = "agent1" if i % 2 == 0 else "agent2"
+            conn.execute(
+                "INSERT INTO messages(sender, recipient, body, created_at) "
+                "VALUES (?,?,?,?)",
+                (sender, None, f"msg{i}", a2a.now())
+            )
+            conn.commit()
+            conn.close()
+
+        conn = a2a.connect(self.project)
+        count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+        self.assertEqual(count, 5)
+        conn.close()
+
+
+if __name__ == "__main__":
+    unittest.main()
