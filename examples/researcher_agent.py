@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Researcher Agent — Example a2a peer demonstrating collaborative investigation.
 

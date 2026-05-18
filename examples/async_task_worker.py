@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 High-performance async task worker demonstrating concurrent message handling.
 

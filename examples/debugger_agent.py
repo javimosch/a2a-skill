@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Debugger Agent — Example a2a peer demonstrating diagnostic assistance pattern.
 
