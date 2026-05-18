@@ -222,15 +222,17 @@ def cmd_send(args):
     print(f"#{mid} {sender} -> {target}")
 
 
-def _fetch_messages(conn, agent_id, unread_only, since, limit, mark_read):
-    # messages addressed to agent OR broadcast (recipient IS NULL) OR from "any to any" if --all
+def _fetch_messages(conn, agent_id, unread_only, since, limit, mark_read, include_self=False):
+    # messages addressed to agent OR broadcast (recipient IS NULL)
     base = (
         "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at "
         "FROM messages m "
         "WHERE (m.recipient = ? OR m.recipient IS NULL) "
-        "AND m.sender != ? "
     )
-    params = [agent_id, agent_id]
+    params = [agent_id]
+    if not include_self:
+        base += "AND m.sender != ? "
+        params.append(agent_id)
     if unread_only:
         base += (
             "AND NOT EXISTS (SELECT 1 FROM reads r "
@@ -290,6 +292,7 @@ def cmd_recv(args):
             since=args.since,
             limit=args.limit,
             mark_read=not args.peek,
+            include_self=args.include_self,
         )
         if rows or not args.wait:
             _touch(conn, agent)
@@ -420,6 +423,8 @@ def build_parser():
     s.add_argument("--since", type=float)
     s.add_argument("--all", action="store_true",
                    help="include already-read messages")
+    s.add_argument("--include-self", action="store_true",
+                   help="include messages sent by this agent")
     s.add_argument("--peek", action="store_true",
                    help="do not mark as read")
     s.add_argument("--json", action="store_true")
