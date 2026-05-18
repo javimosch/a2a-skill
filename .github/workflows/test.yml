@@ -1,0 +1,77 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Run unit tests
+        run: |
+          python3 test_a2a.py -v
+
+      - name: Run integration tests
+        run: |
+          python3 test_integration.py -v
+
+      - name: Run smoke tests
+        run: |
+          chmod +x smoke_test.sh smoke_test_multi.sh smoke_test_examples.sh
+          ./smoke_test.sh
+          # smoke_test_multi.sh requires external CLIs, skip in CI
+          # ./smoke_test_examples.sh
+
+      - name: Run benchmarks
+        run: |
+          python3 benchmark.py
+
+      - name: Check code style
+        run: |
+          python3 -m py_compile a2a.py
+          python3 -m py_compile test_a2a.py
+          python3 -m py_compile test_integration.py
+          python3 -m py_compile benchmark.py
+          python3 -m py_compile dashboard.py
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell scripts
+        run: |
+          # Basic syntax check for shell scripts
+          bash -n a2a
+          bash -n a2a-spawn
+          bash -n install.sh
+          bash -n smoke_test.sh
+          bash -n smoke_test_multi.sh
+          bash -n smoke_test_examples.sh
+
+      - name: Check README
+        run: |
+          if [ ! -f README.md ]; then echo "README.md missing"; exit 1; fi
+          grep -q "a2a" README.md || echo "Warning: README.md doesn't mention a2a"
+
+      - name: Check LICENSE
+        run: |
+          if [ ! -f LICENSE ]; then echo "LICENSE missing"; exit 1; fi

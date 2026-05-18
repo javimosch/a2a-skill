@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Check Python has sqlite3
+        run: python -c 'import sqlite3; print("sqlite3 version:", sqlite3.sqlite_version)'
+
+      - name: Make a2a executable
+        run: chmod +x a2a a2a.py
+
+      - name: Unit tests
+        run: python test_a2a.py
+
+      - name: Integration tests
+        run: python test_integration.py
+
+      - name: Verify a2a CLI works
+        run: |
+          ./a2a init --project ci-test
+          ./a2a register alice --role ci --project ci-test
+          ./a2a register bob --role ci --project ci-test
+          ./a2a send bob "hello" --from alice --project ci-test
+          ./a2a recv --as bob --project ci-test
+          ./a2a clear --yes --project ci-test
