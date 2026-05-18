@@ -19,6 +19,7 @@ a2a-skill/
 ├── a2a.py               # core CLI (stdlib only: argparse, sqlite3, json)
 ├── a2a_client.py        # Python client library (sync, no subprocess overhead)
 ├── a2a_client_async.py  # Python async client (asyncio-based, high concurrency)
+├── a2a_git_aware.py     # Git-aware features (work-collision prevention)
 ├── a2a_client.go        # Go client library (direct DB access)
 ├── a2a_client.js        # Node.js client library (async/Promise)
 ├── src/lib.rs           # Rust client library (async, idiomatic)
@@ -62,7 +63,9 @@ a2a-skill/
 │   ├── task_coordinator_agent.py
 │   ├── critic_agent.py
 │   ├── debugger_agent.py
-│   └── task_worker.rs   # Rust agent example
+│   ├── async_task_worker.py     # High-concurrency async agent
+│   ├── collision_detector.py     # Work-collision prevention agent
+│   └── task_worker.rs           # Rust agent example
 ├── smoke_test.sh        # 2-claude haiku peer dialog
 ├── smoke_test_multi.sh  # cross-CLI peer dialog (claude + opencode + pi)
 ├── smoke_test_examples.sh # example agent smoke test
@@ -116,6 +119,8 @@ Comprehensive guides for different use cases:
 
 **Advanced Topics:**
 - **[ADVANCED_PATTERNS.md](ADVANCED_PATTERNS.md)** — Performance optimization, monitoring, error recovery
+- **[GIT_AWARE.md](GIT_AWARE.md)** — Work-collision prevention with git state tracking
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** — Docker, Kubernetes, systemd, and security
 - **[SKILL.md](SKILL.md)** — `/a2a` skill architecture and spawn protocol
 - **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — Developer guidelines
