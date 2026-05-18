@@ -612,6 +612,41 @@ class TestEdgeCases(unittest.TestCase):
         conn.close()
         self.assertGreaterEqual(n, 1, "expired message should be deleted")
 
+    def test_search(self):
+        """Search finds messages by substring."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "hello world", a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "goodbye world", a2a.now() + 1)
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "hello again", a2a.now() + 2)
+        )
+        conn.commit()
+        conn.close()
+
+        # Search should find messages containing "hello"
+        args = a2a.argparse.Namespace(project=self.project, query="hello", limit=50, json=False)
+        # Manually call cmd_search and check it doesn't crash
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_search(args)
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        self.assertIn("hello world", output)
+        self.assertIn("hello again", output)
+        self.assertNotIn("goodbye", output)
+
 
 if __name__ == "__main__":
     unittest.main()
