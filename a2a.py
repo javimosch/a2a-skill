@@ -492,6 +492,9 @@ def build_parser():
               a2a register bob   --role critic
               a2a send bob "hi"     --from alice
               a2a recv --as bob --wait 10
+              a2a thread <id>                    # thread view (v1.1)
+              a2a search <query>    --json      # search bus (v1.1)
+              a2a stats            --json       # bus statistics (v1.1)
         """),
     )
     p.add_argument("--project", help="project name (overrides $A2A_PROJECT and cwd)")
