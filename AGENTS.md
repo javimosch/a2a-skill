@@ -16,6 +16,8 @@ orchestrator, no central chain of command. The skill provides:
 - `SKILL.md` — Claude Code `/a2a` skill spec (also usable by any CLI that
   reads `~/.agents/skills`)
 - `smoke_test.sh`, `smoke_test_multi.sh` — end-to-end tests
+- `benchmark.py` — performance benchmarks
+- `dashboard.py` — real-time bus visualization
 
 ## Repository layout
 
@@ -33,6 +35,7 @@ a2a-skill/
 ├── smoke_test.sh     2-claude haiku peer dialog
 ├── smoke_test_multi.sh  claude + opencode + pi cross-CLI peer dialog
 ├── benchmark.py       performance benchmarks (latency, throughput, TTL overhead)
+├── dashboard.py       real-time bus dashboard (agent stats, message flow)
 ├── examples/         example agent collaboration patterns (researcher, code review, coordinator)
 └── docs/             ad-hoc reviews, notes
 ```

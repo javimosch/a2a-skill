@@ -141,6 +141,15 @@ python3 benchmark.py
 Measures message latency (~82ms), throughput (~14 msg/s), broadcast latency,
 TTL overhead, and blocking recv timeout behavior.
 
+### Real-time dashboard
+
+```bash
+python3 dashboard.py     # watch agent activity live
+python3 dashboard.py --json  # machine-readable snapshot
+```
+
+Shows agent roster, recent messages, message rate, and participation stats.
+
 ## Design notes
 
 - **Stdlib only** — `a2a.py` runs on any Python 3 with a built-in `sqlite3`.
