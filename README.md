@@ -28,31 +28,48 @@ a2a-skill/
 ├── install.sh           # one-command installer (symlinks CLI + skill)
 
 📚 Documentation
-├── README.md            # overview (this file)
-├── AGENTS.md            # guide for AI agents working on this repo
-├── docs/INSTALLATION.md      # setup & troubleshooting guide
-├── docs/QUICKSTART.md        # 5-minute intro
+├── README.md                 # overview (this file)
+├── AGENTS.md                 # guide for AI agents working on this repo
+│
+🚀 Getting Started
+├── docs/QUICKSTART.md        # 5-minute quick start
+├── docs/INSTALLATION.md      # setup & troubleshooting
 ├── docs/SKILL.md             # /a2a skill spec — 7-step spawn protocol
+│
+📖 Core Guides
 ├── docs/CLIENT_API.md        # Python client library reference
 ├── docs/NODE_CLIENT_API.md   # Node.js client library reference
 ├── docs/GO_CLIENT_API.md     # Go client library reference
 ├── docs/RUST_CLIENT_API.md   # Rust client library reference
 ├── docs/REST_API.md          # HTTP REST interface reference
-├── docs/GIT_AWARE.md         # work-collision detection & prevention
-├── docs/INTEGRATION_GUIDE.md # multi-interface coordination guide
 ├── docs/ADVANCED_PATTERNS.md # optimization & patterns guide
+├── docs/INTEGRATION_GUIDE.md # multi-interface coordination guide
+├── docs/GIT_AWARE.md         # work-collision detection & prevention
 │
-📦 v1.3 Features
+🔐 v1.3 Features & Security
 ├── docs/ENCRYPTION.md        # end-to-end encryption (symmetric & asymmetric)
-├── docs/FTS_SEARCH.md        # full-text search with relevance ranking
-├── docs/AUDIT.md             # message lifecycle audit logging
 ├── docs/PRIORITY.md          # 4-level priority queue ordering
 ├── docs/ROUTING.md           # rule-based message distribution
+├── docs/AUDIT.md             # message lifecycle audit logging
+├── docs/FTS_SEARCH.md        # full-text search with relevance ranking
+├── docs/SECURITY_HARDENING.md # production security setup
+├── docs/TROUBLESHOOTING.md   # common issues & solutions
 │
-📖 Developer Guides
-├── docs/CONTRIBUTING.md      # developer guidelines
-├── docs/PROJECT_STATUS.md    # release notes & roadmap
+🔧 Operations & Deployment
 ├── docs/DEPLOYMENT.md        # Docker, Kubernetes, systemd deployment
+├── docs/OPERATIONS_GUIDE.md  # production monitoring & backup
+├── docs/MIGRATION_V12_TO_V13.md # upgrade guide from v1.2
+│
+🏗️ v1.3+ Planning
+├── docs/RELEASE_HIGHLIGHTS_V13.md # v1.3.0 feature summary
+├── docs/RELEASE_v1.3.0.md    # release notes & changelog
+├── docs/V13_QUICKREF.md      # v1.3 quick reference
+├── docs/V14_ARCHITECTURE.md  # v1.4 roadmap & architecture
+│
+📋 Developer Guides
+├── docs/CONTRIBUTING.md      # contribution guidelines
+├── docs/PROJECT_STATUS.md    # release status & history
+├── docs/TESTING_V13.md       # comprehensive testing guide
 
 🧪 Tests & Benchmarks
 ├── test_a2a.py          # unit tests (30 core tests)
