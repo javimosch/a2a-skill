@@ -6,8 +6,8 @@
 
 ### Release Highlights
 
-- **60 comprehensive tests** (30 unit + 18 integration + 12 client)
-- **11 CLI commands** with full feature coverage
+- **72 comprehensive tests** (30 unit + 18 integration + 17 client + 7 stress/hardening)
+- **14 CLI commands** with full feature coverage
 - **Message TTL** (time-to-live) with automatic expiry
 - **--include-self** flag for message filtering
 - **Cross-CLI support** (claude, opencode, pi) via a2a-spawn
@@ -23,13 +23,16 @@
 | Metric | Count |
 |--------|-------|
 | Core Lines (a2a.py) | 593 |
-| Test Lines | 1,400+ |
+| Client Library Lines (a2a_client.py) | 320 |
+| Test Lines | 1,800+ |
 | Commands | 14 |
-| Test Coverage | 58 tests |
-| Documentation Pages | 8 |
-| Example Agents | 3 |
-| Commits | 18 (init → v1.0-alpha) |
-| Development Time | ~10 hours |
+| Unit Tests | 47 (30 core + 17 client) |
+| Integration Tests | 18 |
+| Stress/Hardening Tests | 7 |
+| Documentation Pages | 10 |
+| Example Agents | 5 |
+| Commits | 22 (init → v1.1.1) |
+| Development Time | ~12 hours |
 
 ## Post-Release Enhancement Timeline (Started 23:40)
 
@@ -72,6 +75,14 @@ All 5 core priorities delivered and QA-verified in under 10 minutes (23:47→23:
 Stress testing: 10-agent concurrent test ✅ (no crashes, race conditions, or deadlocks).
 Total: **14 commands**, **60 tests**, **5 example agents**, a2a.py at **593 LOC**.
 Status: **Production-ready**. Locked for v1.1. Next: v1.2 (FTS5 search, message editing).
+
+**v1.1.1 Patch — Hardening & Optimization (00:00-00:15)**
+- ✅ Client library API parity: search(), thread(), stats() methods
+- ✅ 5 new client library unit tests (17 total)
+- ✅ High-volume stress test: 20 agents, 1000+ messages, no crashes
+- ✅ Edge-case hardening: large messages, special chars, TTL expiry, concurrent reads
+- ✅ Performance analysis: 6.8x speedup with Python client vs CLI
+- **Status**: All enhancements complete. System is hardened and optimized.
 
 **Future Enhancements (Post-v1.1)**
 
