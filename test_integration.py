@@ -1,0 +1,358 @@
+#!/usr/bin/env python3
+"""
+Integration tests for a2a CLI — full end-to-end workflows.
+
+Shells out to the `a2a` binary and verifies output, database state,
+and behavior across multi-step scenarios.
+
+Run: python3 test_integration.py
+"""
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+
+import sqlite3
+
+# Path to the a2a CLI (same directory as this test)
+HERE = os.path.dirname(os.path.abspath(__file__))
+A2A = os.path.join(HERE, "a2a")
+A2A_PY = os.path.join(HERE, "a2a.py")
+
+
+def a2a(*args, project: str, expect_fail: bool = False) -> subprocess.CompletedProcess:
+    """Run a2a CLI and return result."""
+    env = os.environ.copy()
+    env["A2A_PROJECT"] = project
+    env["A2A_PYTHON"] = "python3"  # fallback, overridden below
+    try:
+        result = subprocess.run(
+            [A2A] + list(args),
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=30,
+        )
+    except FileNotFoundError:
+        # fallback to direct python
+        result = subprocess.run(
+            ["python3", A2A_PY] + list(args),
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=30,
+        )
+    if not expect_fail:
+        if result.returncode != 0:
+            print(f"  STDOUT: {result.stdout}", file=sys.stderr)
+            print(f"  STDERR: {result.stderr}", file=sys.stderr)
+        assert result.returncode == 0, (
+            f"a2a {' '.join(args)} failed (rc={result.returncode}):\n"
+            f"  stderr: {result.stderr}"
+        )
+    return result
+
+
+def db_path(project: str) -> str:
+    """Get the database path for a project."""
+    home = os.path.expanduser("~")
+    return os.path.join(home, ".a2a", project, "database.db")
+
+
+def count_messages(project: str) -> int:
+    """Count messages in the project database."""
+    path = db_path(project)
+    if not os.path.exists(path):
+        return 0
+    conn = sqlite3.connect(path)
+    count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+    conn.close()
+    return count
+
+
+def count_agents(project: str) -> int:
+    """Count registered agents in the project database."""
+    path = db_path(project)
+    if not os.path.exists(path):
+        return 0
+    conn = sqlite3.connect(path)
+    count = conn.execute("SELECT COUNT(*) FROM agents").fetchone()[0]
+    conn.close()
+    return count
+
+
+class TestIntegration(unittest.TestCase):
+    """End-to-end CLI integration tests."""
+
+    project_prefix = "a2a-int-test-"
+
+    @classmethod
+    def setUpClass(cls):
+        # Verify a2a is available
+        try:
+            result = subprocess.run(
+                [A2A, "--help"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.returncode != 0:
+                raise FileNotFoundError("a2a --help failed")
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            # Try with python3 directly
+            result = subprocess.run(
+                ["python3", A2A_PY, "--help"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.returncode != 0:
+                raise unittest.SkipTest("a2a CLI not available for integration tests")
+
+    def setUp(self):
+        self.project = f"{self.project_prefix}{os.getpid()}-{id(self)}"
+        a2a("init", project=self.project)
+
+    def tearDown(self):
+        a2a("clear", "--yes", project=self.project, expect_fail=True)
+
+    # ---- Registration & Lifecycle ----
+
+    def test_register_and_list(self):
+        """Register agents and list them."""
+        a2a("register", "agent-a", "--role", "dev", project=self.project)
+        a2a("register", "agent-b", "--role", "critic", project=self.project)
+        result = a2a("list", "--json", project=self.project)
+        agents = json.loads(result.stdout)
+        self.assertEqual(len(agents), 2)
+        ids = {a["id"] for a in agents}
+        self.assertIn("agent-a", ids)
+        self.assertIn("agent-b", ids)
+
+    def test_register_with_prompt_and_cli(self):
+        """Register with optional fields."""
+        a2a("register", "worker", "--role", "builder",
+            "--prompt", "Build things", "--cli", "pi", project=self.project)
+        result = a2a("list", "--json", project=self.project)
+        agents = json.loads(result.stdout)
+        self.assertEqual(len(agents), 1)
+        a = agents[0]
+        self.assertEqual(a["id"], "worker")
+        self.assertEqual(a["role"], "builder")
+        self.assertEqual(a["cli"], "pi")
+
+    # ---- Sending & Receiving ----
+
+    def test_send_and_recv_direct(self):
+        """Send a direct message and receive it."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "Hello Bob!", "--from", "alice", project=self.project)
+        result = a2a("recv", "--as", "bob", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(msgs[0]["sender"], "alice")
+        self.assertEqual(msgs[0]["recipient"], "bob")
+        self.assertEqual(msgs[0]["body"], "Hello Bob!")
+
+    def test_send_broadcast(self):
+        """Broadcast reaches all agents."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("register", "carol", project=self.project)
+        a2a("send", "all", "Team standup!", "--from", "alice", project=self.project)
+
+        # Both bob and carol should receive it
+        for agent in ("bob", "carol"):
+            result = a2a("recv", "--as", agent, "--json", project=self.project)
+            msgs = json.loads(result.stdout)
+            self.assertGreaterEqual(len(msgs), 1)
+            self.assertEqual(msgs[0]["body"], "Team standup!")
+            self.assertIsNone(msgs[0]["recipient"])  # broadcast
+
+    def test_send_with_thread(self):
+        """Send with --thread sets thread_id."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "Threaded msg", "--from", "alice",
+            "--thread", "topic-42", project=self.project)
+        result = a2a("recv", "--as", "bob", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(msgs[0]["thread_id"], "topic-42")
+
+    # ---- TTL ----
+
+    def test_ttl_default_no_expiry(self):
+        """Messages without --ttl persist."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "Persist me", "--from", "alice", project=self.project)
+        # Should still be there
+        self.assertEqual(count_messages(self.project), 1)
+
+    def test_ttl_expiry(self):
+        """Messages with --ttl get cleaned up after expiry."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        # Send with 1s TTL, then wait for it to expire
+        a2a("send", "bob", "Expiring msg", "--from", "alice",
+            "--ttl", "1", project=self.project)
+        self.assertEqual(count_messages(self.project), 1)
+        time.sleep(1.5)
+        # Peek triggers cleanup
+        a2a("peek", project=self.project)
+        self.assertEqual(count_messages(self.project), 0)
+
+    def test_ttl_mixed(self):
+        """Expired messages cleaned up, non-TTL messages remain."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "Keep me", "--from", "alice", project=self.project)
+        a2a("send", "bob", "Delete me", "--from", "alice",
+            "--ttl", "1", project=self.project)
+        time.sleep(1.5)
+        a2a("peek", project=self.project)
+        result = a2a("peek", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        bodies = [m["body"] for m in msgs]
+        self.assertIn("Keep me", bodies)
+        self.assertNotIn("Delete me", bodies)
+
+    # ---- Status ----
+
+    def test_status_transitions(self):
+        """Agent status transitions work end-to-end."""
+        a2a("register", "worker", project=self.project)
+        for state in ("idle", "active", "blocked", "done"):
+            a2a("status", state, "--as", "worker", project=self.project)
+        result = a2a("list", "--json", project=self.project)
+        agents = json.loads(result.stdout)
+        self.assertEqual(agents[0]["status"], "done")
+
+    # ---- Unregister ----
+
+    def test_unregister(self):
+        """Unregister removes an agent."""
+        a2a("register", "ghost", project=self.project)
+        self.assertEqual(count_agents(self.project), 1)
+        a2a("unregister", "ghost", project=self.project)
+        self.assertEqual(count_agents(self.project), 0)
+
+    # ---- Error Handling ----
+
+    def test_send_unknown_recipient_fails(self):
+        """Sending to unknown agent should fail."""
+        a2a("register", "alice", project=self.project)
+        result = a2a(
+            "send", "phantom", "hi", "--from", "alice",
+            project=self.project, expect_fail=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unknown recipient", result.stderr.lower())
+
+    def test_recv_unknown_agent_fails(self):
+        """Receiving as unknown agent should fail."""
+        result = a2a(
+            "recv", "--as", "nobody", project=self.project, expect_fail=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unknown agent", result.stderr.lower())
+
+    def test_send_unregistered_sender_fails(self):
+        """Sending from unregistered agent should fail."""
+        result = a2a(
+            "send", "bob", "hi", "--from", "unauthorized",
+            project=self.project, expect_fail=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unknown sender", result.stderr.lower())
+
+    # ---- Read Tracking ----
+
+    def test_read_tracking(self):
+        """Messages are marked read after recv, not shown again."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "Read me", "--from", "alice", project=self.project)
+        # First recv — should see the message
+        result1 = a2a("recv", "--as", "bob", "--json", project=self.project)
+        self.assertEqual(len(json.loads(result1.stdout)), 1)
+        # Second recv without --all — should be empty (already read)
+        result2 = a2a("recv", "--as", "bob", "--json", project=self.project)
+        self.assertEqual(len(json.loads(result2.stdout)), 0)
+        # With --all — should show again
+        result3 = a2a("recv", "--as", "bob", "--all", "--json", project=self.project)
+        self.assertGreaterEqual(len(json.loads(result3.stdout)), 1)
+
+    # ---- JSON Output ----
+
+    def test_peek_json_valid(self):
+        """Peek --json produces valid JSON structures."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "data", "--from", "alice", project=self.project)
+        result = a2a("peek", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertIsInstance(msgs, list)
+        self.assertGreaterEqual(len(msgs), 1)
+        msg = msgs[0]
+        self.assertIn("id", msg)
+        self.assertIn("sender", msg)
+        self.assertIn("recipient", msg)
+        self.assertIn("body", msg)
+        self.assertIn("created_at", msg)
+
+    # ---- include-self ----
+
+    def test_include_self(self):
+        """--include-self allows an agent to see its own messages."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "alice", "Self note", "--from", "alice", project=self.project)
+        # Without --include-self, alice shouldn't see it
+        result_no = a2a("recv", "--as", "alice", "--json", project=self.project)
+        self.assertEqual(len(json.loads(result_no.stdout)), 0)
+        # With --include-self, alice should see it
+        result_yes = a2a("recv", "--as", "alice", "--include-self", "--json", project=self.project)
+        self.assertGreaterEqual(len(json.loads(result_yes.stdout)), 1)
+
+    # ---- Project isolation ----
+
+    def test_project_isolation(self):
+        """Messages in one project don't bleed to another."""
+        proj_a = self.project + "-a"
+        proj_b = self.project + "-b"
+        try:
+            a2a("init", project=proj_a)
+            a2a("init", project=proj_b)
+            a2a("register", "agent", project=proj_a)
+            a2a("register", "agent", project=proj_b)
+            a2a("send", "agent", "secret", "--from", "agent", project=proj_a)
+            self.assertEqual(count_messages(proj_a), 1)
+            self.assertEqual(count_messages(proj_b), 0)
+        finally:
+            a2a("clear", "--yes", project=proj_a, expect_fail=True)
+            a2a("clear", "--yes", project=proj_b, expect_fail=True)
+
+    # ---- Concurrent agents ----
+
+    def test_concurrent_messaging(self):
+        """Multiple agents can send and receive independently."""
+        agents = [f"agent-{i}" for i in range(5)]
+        for a in agents:
+            a2a("register", a, project=self.project)
+        # All agents broadcast
+        for a in agents:
+            a2a("send", "all", f"Hello from {a}", "--from", a,
+                project=self.project)
+        # Each agent should have received 5 messages (from all including self)
+        for a in agents:
+            result = a2a("recv", "--as", a, "--include-self", "--json",
+                         project=self.project)
+            msgs = json.loads(result.stdout)
+            bodies = {m["body"] for m in msgs}
+            for other in agents:
+                self.assertIn(f"Hello from {other}", bodies)
+
+
+if __name__ == "__main__":
+    unittest.main()
