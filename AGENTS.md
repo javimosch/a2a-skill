@@ -15,7 +15,10 @@ orchestrator, no central chain of command. The skill provides:
 - `a2a-spawn` — launcher that hides per-CLI flag differences
 - `SKILL.md` — Claude Code `/a2a` skill spec (also usable by any CLI that
   reads `~/.agents/skills`)
+- `test_a2a.py` — unit tests (28)
+- `test_integration.py` — integration tests (CLI workflows)
 - `smoke_test.sh`, `smoke_test_multi.sh` — end-to-end tests
+- `smoke_test_examples.sh` — example agent smoke test
 - `benchmark.py` — performance benchmarks
 - `dashboard.py` — real-time bus visualization
 
@@ -118,6 +121,15 @@ Covers: DB schema, WAL mode, agent registration & upsert, send/recv,
 read-tracking, broadcast, self-message filtering, `--include-self`,
 `--ttl` expiry & cleanup, thread IDs, status transitions, project info.
 
+### Integration tests
+
+```bash
+python3 test_integration.py -v
+```
+
+Shells out to the `a2a` binary and verifies full workflows: register→send→recv,
+TTL expiry, broadcast, cross-project isolation, concurrent agents.
+
 ### Smoke tests
 
 ```bash
@@ -126,6 +138,9 @@ read-tracking, broadcast, self-message filtering, `--include-self`,
 
 # 3 peers across claude + opencode + pi
 ./smoke_test_multi.sh
+
+# Example agent patterns
+./smoke_test_examples.sh
 
 # Custom project name
 ./smoke_test_multi.sh my-test
