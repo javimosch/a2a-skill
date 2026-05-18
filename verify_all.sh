@@ -62,7 +62,8 @@ echo ""
 # 2. Run unit tests
 echo "🧪 Test Suite 1: Unit Tests"
 echo ""
-run_test "a2a unit tests" "$PYTHON3 test_a2a.py -v"
+run_test "a2a core unit tests" "$PYTHON3 test_a2a.py -v"
+run_test "a2a client library tests" "$PYTHON3 test_a2a_client.py -v"
 
 # 3. Run integration tests
 echo "🧪 Test Suite 2: Integration Tests"
@@ -75,28 +76,38 @@ echo ""
 run_test "single-CLI smoke test (2 haiku)" "./smoke_test.sh"
 run_test "example agents smoke test" "./smoke_test_examples.sh"
 
-# 5. Run benchmarks
-echo "📊 Test Suite 4: Performance Benchmarks"
+# 5. Run stress tests
+echo "🧪 Test Suite 4: Stress Tests"
+echo ""
+run_test "10-agent concurrent stress test" "./stress_test.sh"
+run_test "20-agent high-volume stress test (1000+ msg)" "./high_volume_stress_test.sh"
+run_test "edge-case hardening tests" "./edge_case_test.sh"
+
+# 6. Run benchmarks
+echo "📊 Test Suite 5: Performance Benchmarks"
 echo ""
 run_test "a2a benchmarks" "$PYTHON3 benchmark.py"
 
-# 6. Code validation
-echo "✔️  Test Suite 5: Code Validation"
+# 7. Code validation
+echo "✔️  Test Suite 6: Code Validation"
 echo ""
 
 echo "  Checking Python syntax..."
-$PYTHON3 -m py_compile a2a.py test_a2a.py test_integration.py benchmark.py dashboard.py
+$PYTHON3 -m py_compile a2a.py test_a2a.py test_integration.py test_a2a_client.py benchmark.py dashboard.py a2a_client.py
 echo "  ✓ All Python files compile"
 
 echo "  Checking shell scripts..."
 bash -n a2a 2>/dev/null && echo "  ✓ a2a" || echo "  ⚠ a2a has syntax warnings"
 bash -n a2a-spawn 2>/dev/null && echo "  ✓ a2a-spawn" || echo "  ⚠ a2a-spawn has warnings"
 bash -n install.sh 2>/dev/null && echo "  ✓ install.sh" || echo "  ⚠ install.sh has warnings"
+bash -n stress_test.sh 2>/dev/null && echo "  ✓ stress_test.sh" || echo "  ⚠ stress_test.sh has syntax warnings"
+bash -n high_volume_stress_test.sh 2>/dev/null && echo "  ✓ high_volume_stress_test.sh" || echo "  ⚠ high_volume_stress_test.sh has syntax warnings"
+bash -n edge_case_test.sh 2>/dev/null && echo "  ✓ edge_case_test.sh" || echo "  ⚠ edge_case_test.sh has syntax warnings"
 
 echo ""
 
-# 7. Documentation validation
-echo "📚 Test Suite 6: Documentation"
+# 8. Documentation validation
+echo "📚 Test Suite 7: Documentation"
 echo ""
 
 test -f README.md && echo "  ✓ README.md" || echo "  ❌ README.md missing"
@@ -109,7 +120,7 @@ test -f examples/README.md && echo "  ✓ examples/README.md" || echo "  ❌ exa
 
 echo ""
 
-# 8. Summary
+# 9. Summary
 echo "========================================="
 echo "📊 Test Summary"
 echo "========================================="
