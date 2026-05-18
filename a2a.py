@@ -560,17 +560,17 @@ def build_parser():
 
     s = sub.add_parser("thread", help="show all messages in a thread")
     s.add_argument("id", help="thread id")
-    s.add_argument("--json", action="store_true")
+    s.add_argument("--json", action="store_true", help="output as JSON")
     s.set_defaults(func=cmd_thread)
 
     s = sub.add_parser("search", help="search messages by content")
     s.add_argument("query", help="search query (case-insensitive substring)")
     s.add_argument("--limit", type=int, default=50, help="max results (default: 50)")
-    s.add_argument("--json", action="store_true")
+    s.add_argument("--json", action="store_true", help="output as JSON")
     s.set_defaults(func=cmd_search)
 
     s = sub.add_parser("stats", help="show bus statistics")
-    s.add_argument("--json", action="store_true")
+    s.add_argument("--json", action="store_true", help="output as JSON")
     s.set_defaults(func=cmd_stats)
 
     s = sub.add_parser("wait", help="block until N unread messages or timeout")
