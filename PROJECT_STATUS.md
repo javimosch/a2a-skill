@@ -117,26 +117,51 @@ Status: **Production-ready**. Locked for v1.1. Next: v1.2 (FTS5 search, message 
 - **Status**: All 9 core methods implemented with full API parity across all bindings
 - **Ready for v1.2.0 release 🚀**
 
-**Future Enhancements (Post-v1.1)**
+**v1.3 Release — Advanced Features & Secure Messaging (00:25-00:26)**
+- ✅ Message encryption — symmetric (Fernet) & asymmetric (RSA-2048) (commit 4fab929)
+  * ENCRYPTION.md with quickstart, API reference, key management, security considerations
+- ✅ Full-text search (FTS5) — phrase queries, boolean operators, relevance ranking (commit 5b17867)
+  * FTS_SEARCH.md with query syntax, integration examples, performance metrics
+- ✅ Audit logging — message lifecycle tracking for compliance and debugging (commit 8f3adf1)
+  * AUDIT.md with operation tracking, statistics, export, and cleanup
+  * AuditClient with filtering, stats, and context manager support
+- ✅ Message prioritization — 4-level queue ordering (CRITICAL/HIGH/NORMAL/LOW) (commit 8bc24d3)
+  * PRIORITY.md with API reference, ordering semantics, common patterns
+  * PriorityClient with priority-aware recv() and filtering
+- ✅ Message routing — rule-based distribution with patterns and actions (commit a629a6d)
+  * ROUTING.md with pattern matching (substring & regex), common routing patterns
+  * RoutingClient with persistent rules and SmartRouter for custom logic
+- ✅ Async client libraries for high concurrency (commit 19f1d68)
+  * PriorityClientAsync with aiosqlite, full API parity
+  * RoutingClientAsync with aiosqlite, full API parity
+- ✅ Integrated example agent demonstrating all v1.3 features (commit 7299c56)
+  * v13_integrated_agent.py showing encryption, audit, FTS, priority, and routing working together
+- ✅ README documentation index for v1.3 (commit cd65ea3)
+- **Status**: ✅ **COMPLETE** — 7 commits in 6 minutes
+- **New modules**: a2a_crypto.py (280 LOC), a2a_fts.py (350 LOC), a2a_audit.py (350 LOC),
+  a2a_priority.py (430 LOC), a2a_routing.py (500 LOC), a2a_priority_async.py (400 LOC),
+  a2a_routing_async.py (450 LOC)
+- **New documentation**: ENCRYPTION.md (300 LOC), FTS_SEARCH.md (300 LOC), AUDIT.md (300 LOC),
+  PRIORITY.md (400 LOC), ROUTING.md (400 LOC)
+- **Total v1.3 additions**: ~3,500 LOC of code + ~1,300 LOC of documentation
+- **Ready for v1.3.0 release 🚀**
 
-**Performance** (v1.2)
+**Future Roadmap (v1.4+)**
+
+**Performance**
 - [ ] Connection pooling
 - [ ] Batch message operations
 - [ ] Lazy loading for large message histories
 - [ ] Message compression
 
-**Features** (v1.3)
-- [ ] Message prioritization
-- [ ] Routing rules (agent → agent automatically)
-- [ ] Message signing/verification
+**Features**
 - [ ] Full-text search on messages (FTS5)
 - [ ] Message archival/expiry policies
 - [ ] Git-aware bus command (`a2a status --recent-commits`) to prevent work-collision
+- [ ] Kit prompt: verify git before reporting gaps (DONE ✅ — SKILL.md)
 
-**Integrations** (v1.4)
-- [ ] Node.js client library
-- [ ] Go client library
-- [ ] Rust client library
+**Integrations**
+- [ ] WebSocket API for real-time push
 - [ ] REST API (HTTP server)
 - [ ] gRPC API
 - [ ] WebSocket API for real-time push
@@ -191,9 +216,18 @@ benchmark.py        Performance measurement
 
 ```sql
 agents(id, role, prompt, cli, status, pid, created_at, last_seen)
-messages(id, sender, recipient, body, thread_id, ttl_seconds, created_at)
+messages(id, sender, recipient, body, thread_id, ttl_seconds, priority, created_at)
 reads(agent_id, message_id, read_at)
+audit_log(id, timestamp, agent_id, operation, message_id, details, result, created_at)
+routing_rules(id, agent_id, rule_name, action, match_sender, match_content, match_priority, match_thread, forward_to, enabled, created_at)
+messages_fts(id, sender, recipient, body, thread_id, created_at) [virtual FTS5 table]
 ```
+
+### v1.3 Extensions
+- `messages.priority` — 4-level priority (1=LOW, 2=NORMAL, 3=HIGH, 4=CRITICAL)
+- `audit_log` — Complete message operation history with filters, stats, export
+- `routing_rules` — Persistent routing configuration per agent
+- `messages_fts` — Full-text search index with triggers for auto-sync
 
 ### Features
 
@@ -373,6 +407,6 @@ reads(agent_id, message_id, read_at)
 
 ---
 
-**Last Updated**: 2026-05-19 00:15 CEST  
-**Release Status**: v1.0-alpha shipped (23:37) + v1.1 locked (23:52)  
-**Active Development**: Until 2026-05-19 12:00 CEST (team) / 12:20 CEST (product-manager)
+**Last Updated**: 2026-05-19 00:25 CEST  
+**Release Status**: v1.0-alpha (23:37) → v1.1 locked (23:52) → v1.3 in progress (00:25)  
+**Active Development**: Until 2026-05-19 12:00 CEST (team) / 00:40 CEST (product-manager)
