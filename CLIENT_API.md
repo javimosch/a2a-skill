@@ -230,6 +230,83 @@ else:
     print("Timeout: only got", len(client.recv()), "responses")
 ```
 
+### search()
+
+```python
+messages = client.search(
+    query: str,
+    limit: int = 50
+) -> List[Dict[str, Any]]
+```
+
+Search all messages by content substring (case-insensitive).
+
+**Parameters:**
+- `query`: Search substring (case-insensitive)
+- `limit`: Max messages to return
+
+**Returns:** List of matching message dicts (sorted by creation time, newest first)
+
+**Example:**
+```python
+# Find all messages about a bug
+bugs = client.search("bug", limit=100)
+for msg in bugs:
+    print(f"{msg['sender']}: {msg['body']}")
+
+# Search for task assignments
+tasks = client.search("assign", limit=50)
+```
+
+### thread()
+
+```python
+messages = client.thread(thread_id: int) -> List[Dict[str, Any]]
+```
+
+Get all messages in a specific thread.
+
+**Parameters:**
+- `thread_id`: Thread ID (must match a message's `thread_id` field)
+
+**Returns:** List of message dicts in thread, ordered chronologically
+
+**Example:**
+```python
+# Get all messages in thread 42
+thread_messages = client.thread(42)
+print(f"Thread has {len(thread_messages)} messages:")
+for msg in thread_messages:
+    print(f"  {msg['sender']}: {msg['body']}")
+```
+
+### stats()
+
+```python
+stats = client.stats() -> Dict[str, Any]
+```
+
+Get aggregated bus statistics.
+
+**Returns:** Dict with keys:
+- `messages`: Total message count
+- `direct_messages`: Direct (non-broadcast) message count
+- `broadcasts`: Broadcast message count
+- `threads`: Number of distinct threads
+- `agents_active`: Count of agents with status='active'
+- `agents_done`: Count of agents with status='done'
+- `top_senders`: List of top 5 senders (dicts with `agent` and `count`)
+
+**Example:**
+```python
+stats = client.stats()
+print(f"Bus stats:")
+print(f"  Messages: {stats['messages']} ({stats['direct_messages']} direct, {stats['broadcasts']} broadcast)")
+print(f"  Threads: {stats['threads']}")
+print(f"  Agents: {stats['agents_active']} active, {stats['agents_done']} done")
+print(f"  Top senders: {stats['top_senders']}")
+```
+
 ## Complete Example: Researcher Agent
 
 ```python

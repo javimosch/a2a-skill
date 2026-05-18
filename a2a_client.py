@@ -213,6 +213,90 @@ class A2AClient:
             time.sleep(0.5)
         return False
 
+    def search(self, query: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Search messages by content.
+
+        Args:
+            query: Search substring (case-insensitive)
+            limit: Max messages to return
+
+        Returns:
+            List of matching message dicts
+        """
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT id, sender, recipient, body, thread_id, created_at "
+                "FROM messages WHERE body LIKE ? ORDER BY created_at DESC LIMIT ?",
+                (f"%{query.lower()}%", limit),
+            ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def thread(self, thread_id: int) -> List[Dict[str, Any]]:
+        """Get all messages in a thread.
+
+        Args:
+            thread_id: Thread ID
+
+        Returns:
+            List of message dicts in thread, ordered by creation time
+        """
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT id, sender, recipient, body, thread_id, created_at "
+                "FROM messages WHERE thread_id = ? ORDER BY created_at ASC",
+                (thread_id,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def stats(self) -> Dict[str, Any]:
+        """Get bus statistics.
+
+        Returns:
+            Dict with message counts, agent counts, top senders, etc.
+        """
+        conn = self._connect()
+        try:
+            msg_count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+            thread_count = conn.execute(
+                "SELECT COUNT(DISTINCT thread_id) FROM messages WHERE thread_id IS NOT NULL"
+            ).fetchone()[0]
+            broadcast_count = conn.execute(
+                "SELECT COUNT(*) FROM messages WHERE recipient IS NULL"
+            ).fetchone()[0]
+            direct_count = msg_count - broadcast_count
+
+            agents = conn.execute(
+                "SELECT status, COUNT(*) FROM agents GROUP BY status"
+            ).fetchall()
+            agent_status = {row[0]: row[1] for row in agents}
+            active_count = agent_status.get("active", 0)
+            done_count = agent_status.get("done", 0)
+
+            top_senders = conn.execute(
+                "SELECT sender, COUNT(*) as count FROM messages "
+                "GROUP BY sender ORDER BY count DESC LIMIT 5"
+            ).fetchall()
+
+            return {
+                "messages": msg_count,
+                "direct_messages": direct_count,
+                "broadcasts": broadcast_count,
+                "threads": thread_count,
+                "agents_active": active_count,
+                "agents_done": done_count,
+                "top_senders": [
+                    {"agent": row[0], "count": row[1]} for row in top_senders
+                ],
+            }
+        finally:
+            conn.close()
+
 
 # Example usage
 if __name__ == "__main__":
@@ -246,3 +330,6 @@ if __name__ == "__main__":
     print("  client.set_status(status)")
     print("  client.get_status(agent_id=None)")
     print("  client.wait_for_messages(count=1, timeout=60)")
+    print("  client.search(query, limit=50)")
+    print("  client.thread(thread_id)")
+    print("  client.stats()")

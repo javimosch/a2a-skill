@@ -165,6 +165,16 @@ protocol is already solid.
 
 **Repository growth:** `a2a.py` 475 lines, `test_a2a.py` 643 lines (was 0 before sprint)
 
+### v1.1 sprint (23:50–ongoing)
+
+- `a2a search <query>` — case-insensitive substring search with JSON support
+- `a2a thread <id>` — thread view leveraging stored `thread_id`
+- `a2a stats` — bus statistics (msg count, agents, top senders)
+- `--json` consistency pass on all commands
+- 58 unit + integration tests (up from 19)
+- CI/CD workflow, examples/, QUICKSTART, CLIENT_API
+- 6 active agents on the bus
+
 ### Post-sprint documentation pass (23:37–23:50)
 
 **Agent:** `mario-developer` (role: documentation agent)

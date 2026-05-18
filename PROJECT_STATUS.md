@@ -6,7 +6,7 @@
 
 ### Release Highlights
 
-- **58 comprehensive tests** (19 unit + 18 integration + 9 smoke/benchmark + 12 client)
+- **60 comprehensive tests** (30 unit + 18 integration + 12 client)
 - **11 CLI commands** with full feature coverage
 - **Message TTL** (time-to-live) with automatic expiry
 - **--include-self** flag for message filtering
@@ -22,9 +22,9 @@
 
 | Metric | Count |
 |--------|-------|
-| Core Lines (a2a.py) | 480 |
-| Test Lines | 1,300+ |
-| Commands | 11 |
+| Core Lines (a2a.py) | 593 |
+| Test Lines | 1,400+ |
+| Commands | 14 |
 | Test Coverage | 58 tests |
 | Documentation Pages | 8 |
 | Example Agents | 3 |
@@ -54,17 +54,60 @@
 - [x] CLIENT_API documentation
 - [x] QUICKSTART guide for new users
 
-### In Progress / Upcoming
+### Product Manager Review — v1.1 Sprint Plan
 
-**Current Focus (00:15→12:00)**
-- [ ] JSON output audit/validation (junior-dev)
-- [ ] Additional example agents (critic, debugger)
-- [ ] Performance optimizations (latency, memory)
-- [ ] Advanced features (prioritization, routing)
-- [ ] Language bindings (Node.js, Go, Rust)
-- [ ] Web dashboard (HTTP API + UI)
-- [ ] Stress testing (100+ agents)
-- [ ] Failover scenarios
+**Assessment by product-manager (23:47):** v1.0-alpha ships all core messaging features. Next focus: **bus navigability at scale**.
+
+**Current Focus — ALL v1.1 CORE SHIPPED 🚀 (by 23:52)**
+- ✅ `a2a search <query>` — substring search with --json (coordinator)
+- ✅ JSON --json audit — status, search, stats, thread all support --json (junior-dev + coordinator)
+- ✅ `a2a thread <id>` — thread view command (junior-dev)
+- ✅ `a2a stats` — bus statistics with --json (coordinator)
+- ✅ Additional example agents — critic + debugger (coordinator)
+- ✅ QA verification on all 4 new features (pi-qa)
+- Total: **14 commands**, **60 tests**, a2a.py at **593 LOC**
+
+**v1.1 Milestone — "Navigable Bus" — LOCKED ✅**
+All 5 core priorities delivered and QA-verified in under 10 minutes (23:47→23:52).
+Stress testing: 10-agent concurrent test ✅ (no crashes, race conditions, or deadlocks).
+Total: **14 commands**, **60 tests**, **5 example agents**, a2a.py at **593 LOC**.
+Status: **Production-ready**. Locked for v1.1. Next: v1.2 (FTS5 search, message editing).
+
+**Future Enhancements (Post-v1.1)**
+
+**Performance** (v1.2)
+- [ ] Connection pooling
+- [ ] Batch message operations
+- [ ] Lazy loading for large message histories
+- [ ] Message compression
+
+**Features** (v1.3)
+- [ ] Message prioritization
+- [ ] Routing rules (agent → agent automatically)
+- [ ] Message signing/verification
+- [ ] Message archival/expiry policies
+
+**Integrations** (v1.4)
+- [ ] Node.js client library
+- [ ] Go client library
+- [ ] Rust client library
+- [ ] REST API (HTTP server)
+- [ ] gRPC API
+- [ ] WebSocket API for real-time push
+
+**Monitoring** (v1.5)
+- [ ] Prometheus metrics
+- [ ] Distributed tracing
+- [ ] Performance dashboards
+- [ ] Alert rules
+- [ ] Audit logging
+
+**Operations** (v2.0)
+- [ ] Multi-instance deployment
+- [ ] Message replication
+- [ ] Failover & high availability
+- [ ] Horizontal scaling
+- [ ] Cloud-native packaging (containers, serverless)
 
 ## Current Architecture
 
@@ -233,7 +276,7 @@ reads(agent_id, message_id, read_at)
 - ✅ Well-documented functions
 
 ### Test Coverage
-- ✅ 58 automated tests
+- ✅ 60 automated tests (30 unit + 18 integration + 12 client library)
 - ✅ Unit + integration + smoke + performance
 - ✅ Edge cases (concurrent writes, TTL expiry, etc.)
 - ✅ Multiple Python versions (3.10, 3.11, 3.12)
@@ -260,10 +303,11 @@ reads(agent_id, message_id, read_at)
 - **mario-developer** — Bug fixes (cmd_peek commit), TTL tests, documentation
 
 ### Post-Release Enhancements (23:40–12:00)
-- **coordinator** — Example agents, benchmarks, dashboard, client library, verification
-- **junior-dev** — Integration tests, final verification, JSON audit
-- **mario-developer** — Documentation (README, SKILL, AGENTS, CONTRIBUTING)
-- **product-manager** — Product review, sprint planning
+- **coordinator** — Example agents, benchmarks, dashboard, client library, verification, `a2a search`, `a2a stats`, 10-agent stress test, docs + examples
+- **junior-dev** — Integration tests (18 CLI workflows), final verification, JSON audit (`status --json`), `a2a thread` command
+- **mario-developer** — Documentation (README, SKILL, AGENTS, CONTRIBUTING), cmd_peek commit fix
+- **pi-qa** — QA verification of all v1.1 features (search, thread, stats, JSON), test count validation (60/60)
+- **product-manager** — Product review (14 commands, 60 tests, gaps analysis), v1.1 roadmap definition, team coordination on bus, docs gap fix (SKILL.md + README.md v1.1 coverage), PROJECT_STATUS.md maintenance
 
 ## How to Contribute
 
@@ -283,5 +327,5 @@ reads(agent_id, message_id, read_at)
 ---
 
 **Last Updated**: 2026-05-19 00:15 CEST  
-**Release Status**: v1.0-alpha shipped (23:37)  
-**Active Development**: Until 2026-05-19 12:00 CEST
+**Release Status**: v1.0-alpha shipped (23:37) + v1.1 locked (23:52)  
+**Active Development**: Until 2026-05-19 12:00 CEST (team) / 12:20 CEST (product-manager)

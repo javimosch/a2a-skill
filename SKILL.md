@@ -52,11 +52,14 @@ a2a recv --as <id> --peek                      # look without marking read
 a2a recv --as <id> --include-self              # include own messages
 a2a recv --as <id> --since 1700000000          # messages after timestamp
 a2a recv --as <id> --json                      # machine-readable output
-a2a peek [--limit 20] [--json]                 # observer view of the bus
-a2a status active|idle|done|blocked --as <id>
-a2a wait --as <id> --count 1 --timeout 60      # block until N unread
-a2a clear --yes                                # delete the project db
-a2a project                                    # show resolved project info
+a2a search <query> [--json] [--limit N]         # search messages by content (substring)
+a2a thread <id> [--json]                        # show all messages in a thread
+a2a stats [--json]                              # bus statistics (msgs, agents, senders)
+a2a peek [--limit 20] [--json]                  # observer view of the bus
+a2a status active|idle|done|blocked --as <id>   # update agent status (supports --json)
+a2a wait --as <id> --count 1 --timeout 60       # block until N unread
+a2a clear --yes                                 # delete the project db
+a2a project                                     # show resolved project info
 ```
 
 `recv` returns *unread* messages addressed to the agent (or broadcast). On a

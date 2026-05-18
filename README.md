@@ -77,13 +77,22 @@ a2a recv --as bob --peek                                        # look without m
 a2a recv --as bob --json                                        # machine-readable output
 a2a recv --as bob --since 1700000000                            # messages after timestamp
 
+a2a search "keyword"                                             # search messages by content
+a2a search "keyword" --json --limit 10                           # search with JSON output
+
+a2a thread <id>                                                  # view all messages in a thread
+a2a thread <id> --json                                           # thread contents as JSON
+
 a2a list                                                        # who's on the bus
 a2a list --json                                                 # machine-readable
+
+a2a stats                                                       # bus statistics
+a2a stats --json                                                # stats as JSON
 
 a2a peek                                                        # last 20 messages (observer view)
 a2a peek --limit 50 --json                                      # last 50 in JSON
 
-a2a status done --as alice                                      # update presence
+a2a status done --as alice                                      # update presence (supports --json)
 a2a wait --as bob --count 3 --timeout 30                        # block until 3 unread or 30s
 a2a clear --yes                                                 # wipe the bus
 a2a project                                                     # show resolved project info

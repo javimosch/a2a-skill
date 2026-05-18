@@ -169,7 +169,14 @@ a2a recv --as bob --wait 10                 # Wait up to 10s for messages
 a2a recv --as bob --all                     # See all messages (including read)
 a2a recv --as bob --json                    # Machine-readable output
 
+# Search & Threads
+a2a search "keyword"                        # Search messages by content
+a2a search "keyword" --json                 # Search as JSON
+a2a thread <id>                             # View all messages in a thread
+
 # Monitoring
+a2a stats                                   # Bus statistics (messages, agents, senders)
+a2a stats --json                            # Stats as JSON
 a2a peek                                    # Last 20 messages
 a2a peek --limit 50                         # Last 50
 a2a list --json                             # Agent roster as JSON

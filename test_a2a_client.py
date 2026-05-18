@@ -224,6 +224,88 @@ class TestA2AClient(unittest.TestCase):
         result = bob.wait_for_messages(count=2, timeout=5)
         self.assertTrue(result)
 
+    def test_search(self):
+        """Test searching messages."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+
+        alice.send("bob", "Hello world")
+        alice.send("bob", "Hello universe")
+        bob.send("alice", "Goodbye world")
+
+        # Search for "hello"
+        results = alice.search("hello", limit=10)
+        self.assertEqual(len(results), 2)
+        self.assertIn("Hello", results[0]["body"])
+
+    def test_search_case_insensitive(self):
+        """Test that search is case-insensitive."""
+        alice = A2AClient(self.project, "alice")
+
+        alice.send("bob", "Test MESSAGE")
+        alice.send("bob", "Another test")
+
+        results = alice.search("message", limit=10)
+        self.assertEqual(len(results), 1)
+        self.assertIn("Test MESSAGE", results[0]["body"])
+
+    def test_thread(self):
+        """Test retrieving a thread."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+
+        # Send messages with same thread_id
+        conn = sqlite3.connect(str(self.project_dir / "database.db"))
+        ts = time.time()
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, thread_id, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("alice", "bob", "Message 1", "thread-123", ts),
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, thread_id, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("bob", "alice", "Message 2", "thread-123", ts + 1),
+        )
+        conn.commit()
+        conn.close()
+
+        # Retrieve thread
+        messages = alice.thread("thread-123")
+        self.assertEqual(len(messages), 2)
+        self.assertEqual(messages[0]["body"], "Message 1")
+        self.assertEqual(messages[1]["body"], "Message 2")
+
+    def test_stats(self):
+        """Test getting bus statistics."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+
+        alice.send("bob", "Direct message")
+        alice.send("all", "Broadcast message")
+        bob.send("alice", "Reply")
+
+        stats = alice.stats()
+        self.assertEqual(stats["messages"], 3)
+        self.assertEqual(stats["direct_messages"], 2)
+        self.assertEqual(stats["broadcasts"], 1)
+        self.assertEqual(stats["agents_active"], 2)
+
+    def test_stats_top_senders(self):
+        """Test stats include top senders."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+
+        for i in range(3):
+            alice.send("bob", f"Message {i}")
+        bob.send("alice", "Reply")
+
+        stats = alice.stats()
+        self.assertGreater(len(stats["top_senders"]), 0)
+        # alice should be the top sender
+        self.assertEqual(stats["top_senders"][0]["agent"], "alice")
+        self.assertEqual(stats["top_senders"][0]["count"], 3)
+
 
 if __name__ == "__main__":
     unittest.main()
