@@ -166,6 +166,7 @@ Comprehensive guides for different use cases:
 - **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development
 - **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)** — Developer guidelines
 - **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)** — Release notes and roadmap
+- **[CHANGELOG.md](CHANGELOG.md)** — Complete release history and versioning
 
 ## CLI cheatsheet
 
