@@ -45,8 +45,11 @@ class RoutingClientAsync:
 
     async def _connect(self) -> aiosqlite.Connection:
         """Connect to database asynchronously."""
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = await aiosqlite.connect(str(self.db_path), timeout=10.0)
         conn.row_factory = aiosqlite.Row
+        await conn.execute("PRAGMA journal_mode=WAL")
+        await conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
     async def init_routing_table(self) -> bool:

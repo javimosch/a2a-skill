@@ -30,8 +30,11 @@ class A2AClientAsync:
     async def _connect(self) -> aiosqlite.Connection:
         """Get database connection."""
         if self._conn is None:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
             self._conn = await aiosqlite.connect(str(self.db_path), timeout=10.0)
             self._conn.row_factory = aiosqlite.Row
+            await self._conn.execute("PRAGMA journal_mode=WAL")
+            await self._conn.execute("PRAGMA busy_timeout=5000")
         return self._conn
 
     async def close(self):
