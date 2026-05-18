@@ -8,40 +8,69 @@ work on **a2a-skill**. Read this first.
 A peer-to-peer messaging skill for agentic CLI sessions. N agents from any
 CLI (`claude`, `opencode`, `pi`, …) share a SQLite bus at
 `~/.a2a/{project}/database.db` and talk to each other directly — no
-orchestrator, no central chain of command. The skill provides:
+orchestrator, no central chain of command.
 
-- `a2a.py` — Python stdlib-only CLI (the actual program)
-- `a2a` — bash wrapper that auto-locates a python3 with `sqlite3`
-- `a2a-spawn` — launcher that hides per-CLI flag differences
-- `SKILL.md` — Claude Code `/a2a` skill spec (also usable by any CLI that
-  reads `~/.agents/skills`)
-- `test_a2a.py` — unit tests (28)
-- `test_integration.py` — integration tests (CLI workflows)
-- `smoke_test.sh`, `smoke_test_multi.sh` — end-to-end tests
-- `smoke_test_examples.sh` — example agent smoke test
-- `benchmark.py` — performance benchmarks
-- `dashboard.py` — real-time bus visualization
+**Core** (stdlib-only, zero deps):
+- `a2a.py` — CLI: 14 commands (init, register, send, recv, peek, list, status, wait, clear, project, unregister, search, stats, thread)
+- `a2a` — bash wrapper that auto-locates python3+sqlite3
+- `a2a-spawn` — per-CLI launcher that hides flag differences
+
+**Python client library** (v1.1+):
+- `a2a_client.py` — sync client (A2AClient base class)
+- `a2a_client_async.py` — async client (aiosqlite)
+
+**v1.3 satellite modules** (optional, extend the base client):
+- `a2a_audit.py` — audit logging (AuditClient, AuditContextManager)
+- `a2a_crypto.py` — end-to-end encryption (CryptoClient; requires `cryptography`)
+- `a2a_fts.py` — full-text search (FTSClient; uses SQLite FTS5)
+- `a2a_priority.py` / `a2a_priority_async.py` — priority queuing (PriorityClient)
+- `a2a_routing.py` / `a2a_routing_async.py` — rule-based routing (RoutingClient)
+- `a2a_git_aware.py` — git-state-aware bus queries
+
+**Multi-language clients** (v1.2+):
+- `a2a_client.go` — Go client
+- `a2a_client.js` — Node.js client
+- `src/lib.rs` — Rust client (Cargo workspace)
+
+**Skill spec**: `SKILL.md` (root) and `docs/SKILL.md` (canonical) — Claude Code
+reads the root copy; always edit docs/ then `cp docs/SKILL.md ./SKILL.md`.
 
 ## Repository layout
 
 ```
 a2a-skill/
-├── a2a               bash wrapper — picks python+sqlite3, caches in .a2a_python
-├── a2a.py            CLI implementation (stdlib only: argparse, sqlite3, json)
-├── a2a-spawn         launches one agent per CLI with the right flags
-├── SKILL.md          /a2a skill spec — kit prompt + spawn protocol
-├── README.md         project overview + install + design notes
-├── docs/             additional documentation (installation, quickstart, etc.)
-├── AGENTS.md         this file
-├── LICENSE           MIT (attribution required)
-├── install.sh        symlinks CLI+skill into ~/.local/bin, ~/.claude/skills, ~/.agents/skills
-├── test_a2a.py       unit tests (28 tests, stdlib only)
-├── smoke_test.sh     2-claude haiku peer dialog
-├── smoke_test_multi.sh  claude + opencode + pi cross-CLI peer dialog
-├── benchmark.py       performance benchmarks (latency, throughput, TTL overhead)
-├── dashboard.py       real-time bus dashboard (agent stats, message flow)
-├── examples/         example agent collaboration patterns (researcher, code review, coordinator)
-└── docs/             ad-hoc reviews, notes
+├── a2a                   bash wrapper
+├── a2a.py                CLI (stdlib only)
+├── a2a-spawn             per-CLI launcher
+├── SKILL.md              skill spec (copy of docs/SKILL.md — do not edit directly)
+├── README.md
+├── AGENTS.md             this file
+├── LICENSE
+├── install.sh
+├── a2a_client.py         sync Python client (A2AClient)
+├── a2a_client_async.py   async Python client
+├── a2a_audit.py          v1.3: audit logging
+├── a2a_crypto.py         v1.3: encryption
+├── a2a_fts.py            v1.3: full-text search
+├── a2a_priority.py       v1.3: priority queuing (sync)
+├── a2a_priority_async.py v1.3: priority queuing (async)
+├── a2a_routing.py        v1.3: routing rules (sync)
+├── a2a_routing_async.py  v1.3: routing rules (async)
+├── a2a_git_aware.py      v1.3: git-aware bus queries
+├── a2a_server.py         REST API server
+├── a2a_client.go         Go client
+├── a2a_client.js         Node.js client
+├── src/lib.rs            Rust client
+├── test_a2a.py           unit tests (47)
+├── test_a2a_client.py    Python client tests (12)
+├── test_integration.py   integration tests (18)
+├── test_v13_features.py  v1.3 satellite module tests (30)  ← 95 tests total
+├── benchmark.py
+├── dashboard.py
+├── examples/             AGENTS.md documents patterns
+├── completion/           AGENTS.md documents shell completions
+├── docs/                 AGENTS.md documents doc ownership
+└── src/                  AGENTS.md documents Rust crate
 ```
 
 ## Database schema
@@ -64,6 +93,44 @@ Project name resolves from `--project NAME` > `$A2A_PROJECT` > `basename($PWD)`.
   is "free communication," not "consensus."
 - The CLI is **stateless** between invocations. Every command opens the db,
   does its work, closes it.
+
+## The WAL invariant (mandatory for every new db entry point)
+
+Every place that calls `sqlite3.connect()` or `aiosqlite.connect()` **must**:
+
+1. Create the parent directory before connecting.
+2. Set WAL journal mode and busy timeout immediately after connecting.
+
+**Python sync pattern** (copy verbatim):
+```python
+def _connect(self):
+    self.db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(self.db_path), timeout=10.0)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    return conn
+```
+
+**Python async pattern** (for cached-connection clients):
+```python
+async def _connect(self):
+    if self._conn is None:
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._conn = await aiosqlite.connect(str(self.db_path), timeout=10.0)
+        self._conn.row_factory = aiosqlite.Row
+        await self._conn.execute("PRAGMA journal_mode=WAL")
+        await self._conn.execute("PRAGMA busy_timeout=5000")
+    return self._conn
+```
+
+**Why**: Without this, any module that opens the database before `a2a init`
+runs will land in SQLite's default `delete` journal mode. Concurrent writers
+will deadlock. This was the root cause of the v1.3 WAL gap fixed in commits
+17f30d7, 09361ec, and 49d7093.
+
+**Known gaps**: `a2a_client.go`, `a2a_client.js`, and `src/lib.rs` do not yet
+apply this pattern. They require `a2a init` to run first. See `src/AGENTS.md`.
 
 ## How to extend safely
 
