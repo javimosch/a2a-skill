@@ -27,6 +27,7 @@ class AuditClient:
 
     def _connect(self) -> sqlite3.Connection:
         """Connect to database."""
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(self.db_path), timeout=10.0)
         conn.row_factory = sqlite3.Row
         return conn

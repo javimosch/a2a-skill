@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from a2a_crypto import CryptoClient, Priority as CryptoPriority
+from a2a_crypto import CryptoClient
 from a2a_fts import FTSClient
 from a2a_audit import AuditClient
 from a2a_priority import PriorityClient, Priority
