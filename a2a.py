@@ -189,17 +189,25 @@ def cmd_list(args):
 def cmd_status(args):
     name = project_name(args.project)
     conn = connect(name)
+    agent_id = getattr(args, "as_")
     ts = now()
     cur = conn.execute(
         "UPDATE agents SET status=?, last_seen=? WHERE id=?",
-        (args.state, ts, getattr(args, "as_")),
+        (args.state, ts, agent_id),
     )
     conn.commit()
     n = cur.rowcount
     conn.close()
     if n == 0:
-        die(f"no such agent: {getattr(args, 'as_')}")
-    print(f"agent '{getattr(args, 'as_')}' status -> {args.state}")
+        die(f"no such agent: {agent_id}")
+    if getattr(args, "json", False):
+        print(json.dumps({
+            "agent": agent_id,
+            "status": args.state,
+            "last_seen": ts,
+        }, indent=2))
+    else:
+        print(f"agent '{agent_id}' status -> {args.state}")
 
 
 def _touch(conn: sqlite3.Connection, agent_id: str):
@@ -344,6 +352,24 @@ def cmd_peek(args):
     _print_messages(rows, args.json)
 
 
+def cmd_thread(args):
+    """Show all messages in a thread."""
+    name = project_name(args.project)
+    conn = connect(name)
+    rows = conn.execute(
+        "SELECT id, sender, recipient, body, thread_id, created_at FROM messages "
+        "WHERE thread_id = ? ORDER BY created_at ASC",
+        (args.id,),
+    ).fetchall()
+    conn.close()
+    if args.json:
+        print(json.dumps([dict(r) for r in rows], indent=2))
+    elif not rows:
+        print(f"(no messages in thread '{args.id}')")
+    else:
+        _print_messages(rows, args.json)
+
+
 def cmd_clear(args):
     name = project_name(args.project)
     path = db_path(name)
@@ -354,6 +380,25 @@ def cmd_clear(args):
         die("refusing without --yes")
     path.unlink()
     print(f"cleared {path}")
+
+
+def cmd_search(args):
+    """Search messages by content."""
+    name = project_name(args.project)
+    conn = connect(name)
+    query = args.query.lower()
+    rows = conn.execute(
+        "SELECT id, sender, recipient, body, thread_id, created_at FROM messages "
+        "WHERE body LIKE ? ORDER BY created_at DESC LIMIT ?",
+        (f"%{query}%", args.limit or 50),
+    ).fetchall()
+    conn.close()
+    if args.json:
+        print(json.dumps([dict(r) for r in rows], indent=2))
+    elif not rows:
+        print(f"(no messages matching '{args.query}')")
+    else:
+        _print_messages(rows, args.json)
 
 
 def cmd_wait(args):
@@ -427,6 +472,7 @@ def build_parser():
     s = sub.add_parser("status", help="update agent status")
     s.add_argument("state", choices=["active", "idle", "done", "blocked"])
     s.add_argument("--as", dest="as_", required=True)
+    s.add_argument("--json", action="store_true")
     s.set_defaults(func=cmd_status)
 
     s = sub.add_parser("send", help="send a message")
@@ -456,6 +502,17 @@ def build_parser():
     s.add_argument("--limit", type=int, default=20)
     s.add_argument("--json", action="store_true")
     s.set_defaults(func=cmd_peek)
+
+    s = sub.add_parser("thread", help="show all messages in a thread")
+    s.add_argument("id", help="thread id")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(func=cmd_thread)
+
+    s = sub.add_parser("search", help="search messages by content")
+    s.add_argument("query", help="search query (case-insensitive substring)")
+    s.add_argument("--limit", type=int, default=50, help="max results (default: 50)")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(func=cmd_search)
 
     s = sub.add_parser("wait", help="block until N unread messages or timeout")
     s.add_argument("--as", dest="as_", required=True)
