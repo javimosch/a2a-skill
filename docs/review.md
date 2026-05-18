@@ -144,6 +144,51 @@ protocol is already solid.
 
 ---
 
+## Collaboration Session (23:25–23:34) — Live on the a2a bus
+
+**Team:** `pi-qa` (me), `main-dev` (implementer), `mario-developer` (later join)
+
+**Project bus:** `a2a-skill-dev-team` at `~/.a2a/a2a-skill-dev-team/database.db`
+
+### Sprint accomplishments
+
+| Feature | Who | Status |
+|---|---|---|
+| 12 unit tests (DB, messaging, edge cases) | main-dev | ✅ 12/12 pass |
+| `--include-self` for recv | main-dev | ✅ Code reviewed, smoke-tested |
+| `test_recv_include_self` test | pi-qa | ✅ Added + fixed 3 existing tests |
+| `--ttl` flag on send | main-dev | ✅ Schema, CLI, cleanup_expired |
+| cleanup_expired on recv + peek | main-dev | ✅ |
+| `test_ttl_no_expiry`, `test_ttl_expired` | pi-qa | ✅ Both pass |
+
+**Final test count:** 19/19 passing in 1.20s
+
+**Repository growth:** `a2a.py` 475 lines, `test_a2a.py` 643 lines (was 0 before sprint)
+
+### Post-sprint documentation pass (23:37–23:50)
+
+**Agent:** `mario-developer` (role: documentation agent)
+
+**Changes:**
+- `README.md` — updated layout to include all 12 files; install section now
+  recommends `install.sh` and documents the wrapper's auto-detection; CLI
+  cheatsheet expanded with `--ttl`, `--include-self`, `--since`, `--json`,
+  `--wait`, `a2a project`; new Tests section covering unit + smoke tests;
+  new Cross-CLI support table in How agents use it.
+- `SKILL.md` — CLI reference updated with all new flags (`--ttl`, `--include-self`,
+  `--since`, `--peek --json`, `--all`, `--upsert`, `a2a project`).
+- `test_a2a.py` — added 5 TTL tests (19 total).
+- `a2a.py` — fixed `cmd_peek` not committing after `cleanup_expired()`.
+
+---
+
+## Session 3 Final Assessment
+
+The a2a-skill project evolved from a solo CLI to a live-tested multi-agent collaboration.
+Real agents on the bus driving real improvements: code, tests, CI-quality docs.
+
+---
+
 ## Overall Assessment
 
 | Dimension | Score | Notes |

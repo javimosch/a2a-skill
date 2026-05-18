@@ -42,13 +42,21 @@ can use it.
 ```
 a2a init                                       # create ~/.a2a/{project}/database.db
 a2a register <id> [--role R] [--prompt P]      # register an agent
+a2a register <id> --upsert                     # update existing agent
 a2a list [--json]                              # list agents
 a2a send <to> "<body>" --from <id>             # to: agent-id, or 'all' for broadcast
-a2a recv --as <id> [--wait 30] [--all] [--peek] [--json]
-a2a peek [--limit 20]                          # observer view of the bus
+a2a send <to> "<body>" --from <id> --ttl 300   # message expires in 5 minutes
+a2a recv --as <id> [--wait 30]                 # unread inbox (blocks up to 30s)
+a2a recv --as <id> --all                       # include already-read messages
+a2a recv --as <id> --peek                      # look without marking read
+a2a recv --as <id> --include-self              # include own messages
+a2a recv --as <id> --since 1700000000          # messages after timestamp
+a2a recv --as <id> --json                      # machine-readable output
+a2a peek [--limit 20] [--json]                 # observer view of the bus
 a2a status active|idle|done|blocked --as <id>
 a2a wait --as <id> --count 1 --timeout 60      # block until N unread
 a2a clear --yes                                # delete the project db
+a2a project                                    # show resolved project info
 ```
 
 `recv` returns *unread* messages addressed to the agent (or broadcast). On a

@@ -236,8 +236,8 @@ class TestMessaging(unittest.TestCase):
         a2a.cmd_recv(args)  # Self-sent msg should appear
 
 
-class TestEdgeCases(unittest.TestCase):
-    """Edge cases: unknown agents, validation."""
+class TestLifecycle(unittest.TestCase):
+    """Agent lifecycle: status, unregister, listing, project info."""
 
     def setUp(self):
         self.tmpdir = tempfile.TemporaryDirectory()
@@ -250,6 +250,107 @@ class TestEdgeCases(unittest.TestCase):
             self.db_path.unlink()
         self.tmpdir.cleanup()
 
+    def _register(self, agent_id: str, role: str = "tester"):
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, role, status, created_at, last_seen) "
+            "VALUES (?,?,?,?,?)",
+            (agent_id, role, "active", a2a.now(), a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
+    def test_status_transition(self):
+        """Status command transitions agent through states."""
+        self._register("tester")
+        for state in ("idle", "active", "blocked", "done"):
+            args = a2a.argparse.Namespace(
+                project=self.project, state=state, **{"as_": "tester"}
+            )
+            a2a.cmd_status(args)
+            conn = a2a.connect(self.project)
+            row = conn.execute(
+                "SELECT status FROM agents WHERE id=?", ("tester",)
+            ).fetchone()
+            self.assertEqual(row["status"], state)
+            conn.close()
+
+    def test_status_unknown_agent(self):
+        """Status on unknown agent fails gracefully."""
+        args = a2a.argparse.Namespace(
+            project=self.project, state="done", **{"as_": "nobody"}
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_status(args)
+
+    def test_unregister_agent(self):
+        """Unregister removes an agent from the bus."""
+        self._register("remove-me")
+        args = a2a.argparse.Namespace(project=self.project, id="remove-me")
+        a2a.cmd_unregister(args)
+        conn = a2a.connect(self.project)
+        count = conn.execute(
+            "SELECT COUNT(*) FROM agents WHERE id=?", ("remove-me",)
+        ).fetchone()[0]
+        self.assertEqual(count, 0)
+        conn.close()
+
+    def test_unregister_nonexistent(self):
+        """Unregister a non-existent agent prints 0 (no error)."""
+        args = a2a.argparse.Namespace(project=self.project, id="phantom")
+        a2a.cmd_unregister(args)  # Should not crash
+
+    def test_list_agents_json(self):
+        """List agents outputs valid JSON."""
+        self._register("agent-a", role="dev")
+        self._register("agent-b", role="critic")
+        args = a2a.argparse.Namespace(project=self.project, json=True)
+        with patch("sys.stdout"):  # suppress print
+            a2a.cmd_list(args)
+        # Verify agents are in DB
+        conn = a2a.connect(self.project)
+        rows = conn.execute(
+            "SELECT id, role FROM agents ORDER BY id"
+        ).fetchall()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["id"], "agent-a")
+        self.assertEqual(rows[1]["id"], "agent-b")
+        conn.close()
+
+    def test_list_agents_empty(self):
+        """List on empty bus prints '(no agents registered)'."""
+        args = a2a.argparse.Namespace(project=self.project, json=False)
+        a2a.cmd_list(args)  # Should not crash
+
+    def test_project_info(self):
+        """Project command prints resolved project info."""
+        args = a2a.argparse.Namespace(project=self.project)
+        a2a.cmd_project(args)  # Should not crash
+
+
+class TestEdgeCases(unittest.TestCase):
+    """Edge cases: unknown agents, validation, threading."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.project = f"test-{os.getpid()}"
+        self.db_path = a2a.db_path(self.project)
+        a2a.connect(self.project, create=True).close()
+
+    def tearDown(self):
+        if self.db_path.exists():
+            self.db_path.unlink()
+        self.tmpdir.cleanup()
+
+    def _register(self, agent_id: str):
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            (agent_id, "active", a2a.now(), a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
     def test_send_unknown_recipient(self):
         """Sending to unknown agent fails gracefully."""
         args = a2a.argparse.Namespace(
@@ -259,6 +360,23 @@ class TestEdgeCases(unittest.TestCase):
         # Should raise SystemExit with a clear error
         with self.assertRaises(SystemExit):
             a2a.cmd_send(args)
+
+    def test_send_with_thread(self):
+        """Send with --thread stores thread_id on the message."""
+        self._register("alice")
+        self._register("bob")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="threaded msg",
+            **{"from_": "alice", "thread": "discussion-1"}
+        )
+        a2a.cmd_send(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT thread_id FROM messages WHERE body=?",
+            ("threaded msg",)
+        ).fetchone()
+        self.assertEqual(row["thread_id"], "discussion-1")
+        conn.close()
 
     def test_recv_unknown_agent(self):
         """Receiving as unknown agent fails gracefully."""
@@ -401,6 +519,32 @@ class TestEdgeCases(unittest.TestCase):
             ("should disappear",)
         ).fetchone()[0]
         self.assertEqual(count, 0)
+        conn.close()
+
+    def test_send_to_self(self):
+        """Sending a message to yourself works."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice",):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+        conn.close()
+
+        args = a2a.argparse.Namespace(
+            project=self.project, to="alice", body="note to self",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT sender, recipient, body FROM messages"
+        ).fetchone()
+        self.assertEqual(row["sender"], "alice")
+        self.assertEqual(row["recipient"], "alice")
+        self.assertEqual(row["body"], "note to self")
         conn.close()
 
     def test_concurrent_writes(self):

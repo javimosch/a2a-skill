@@ -15,36 +15,73 @@ work as peers. The transport is a SQLite database at
 
 ```
 a2a-skill/
-├── a2a            # bash wrapper that finds a python with sqlite3 and runs a2a.py
-├── a2a.py         # the actual CLI (stdlib only)
-├── SKILL.md       # /a2a skill spec for Claude Code
-└── README.md      # this file
+├── a2a                  # bash wrapper that finds a python with sqlite3
+├── a2a.py               # core CLI (stdlib only: argparse, sqlite3, json)
+├── a2a-spawn            # CLI-agnostic peer launcher (claude, opencode, pi, ...)
+├── SKILL.md             # /a2a skill spec — 7-step spawn protocol + kit prompt
+├── README.md            # this file
+├── AGENTS.md            # guide for AI agents working on this repo
+├── install.sh           # one-command installer (symlinks CLI + skill)
+├── test_a2a.py          # unit tests (19 tests, stdlib only)
+├── smoke_test.sh        # 2-claude haiku peer dialog
+├── smoke_test_multi.sh  # cross-CLI peer dialog (claude + opencode + pi)
+├── LICENSE              # MIT (attribution required)
+├── .gitignore
+└── docs/                # ad-hoc reviews, notes
+    └── review.md
 ```
 
 ## Install
 
-Link the CLI onto your PATH and the skill into `~/.claude/skills/`:
+Run the installer (symlinks CLI + skill to standard locations):
+
+```bash
+./install.sh
+```
+
+This links into `~/.local/bin/`, `~/.claude/skills/`, and `~/.agents/skills/` (cross-CLI).
+
+Or manually:
 
 ```bash
 ln -sf "$PWD/a2a"      ~/.local/bin/a2a            # or anywhere on PATH
+ln -sf "$PWD/a2a-spawn" ~/.local/bin/a2a-spawn
 ln -sf "$PWD"          ~/.claude/skills/a2a        # exposes /a2a in Claude Code
+ln -sf "$PWD"          ~/.agents/skills/a2a        # cross-CLI global skills
 ```
 
-Restart your Claude Code session so it picks up the new skill.
+Restart your CLI session so it picks up the new skill.
+
+> **Prerequisite:** a Python 3 with `sqlite3` built-in. The `a2a` wrapper auto-detects
+> one by probing common paths (python3.10, python3.12, etc.).
 
 ## CLI cheatsheet
 
 ```bash
-a2a init                                            # create project bus
-a2a register alice --role researcher                # add an addressable peer
+a2a init                                                        # create project bus
+a2a register alice --role researcher --prompt "..." --cli pi    # add an addressable peer
 a2a register bob   --role critic
-a2a send bob "what about Y?" --from alice           # direct
-a2a send all "team sync at noon" --from alice       # broadcast
-a2a recv --as bob --wait 30                         # block-poll inbox
-a2a list                                            # who's on the bus
-a2a peek                                            # last 20 messages
-a2a status done --as alice                          # update presence
-a2a clear --yes                                     # wipe the bus
+
+a2a send bob "what about Y?" --from alice                       # direct
+a2a send all "team sync at noon" --from alice                   # broadcast
+a2a send alice "expiring msg" --from bob --ttl 3600             # message expires in 1 hour
+
+a2a recv --as bob --wait 30                                     # block-poll inbox (unread only)
+a2a recv --as bob --all --include-self                          # all messages including self-sent
+a2a recv --as bob --peek                                        # look without marking read
+a2a recv --as bob --json                                        # machine-readable output
+a2a recv --as bob --since 1700000000                            # messages after timestamp
+
+a2a list                                                        # who's on the bus
+a2a list --json                                                 # machine-readable
+
+a2a peek                                                        # last 20 messages (observer view)
+a2a peek --limit 50 --json                                      # last 50 in JSON
+
+a2a status done --as alice                                      # update presence
+a2a wait --as bob --count 3 --timeout 30                        # block until 3 unread or 30s
+a2a clear --yes                                                 # wipe the bus
+a2a project                                                     # show resolved project info
 ```
 
 Project name resolves from `--project NAME`, then `$A2A_PROJECT`, then
@@ -58,15 +95,42 @@ Each spawned CLI session is given a *peer kit* prompt that tells it:
 - how to call `a2a recv / send / list / status`
 - the rules: no inventing peers, stay terse, mark `done` when finished
 
-The skill spawns the sessions with `claude -p` (or any CLI), passing the kit
-prompt via `--append-system-prompt`. From then on, agents drive themselves.
-See `SKILL.md` for the exact kit prompt template.
+The `a2a-spawn` launcher handles CLI-specific flags for **claude**, **opencode**, and
+**pi** — each agent receives the same kit prompt regardless of CLI. From then on,
+agents drive themselves. See `SKILL.md` for the exact kit prompt template.
 
-## Smoke test
+### Cross-CLI support
 
-See the `Smoke test recipe` section at the bottom of `SKILL.md`. Two haiku
-sessions (alice + bob) exchange a plan and a critique with no orchestrator
-in the middle.
+| CLI | Flag for kit prompt | Non-interactive mode |
+|-----|-------------------|---------------------|
+| claude | `--append-system-prompt` | `-p` + `--dangerously-skip-permissions` |
+| opencode | embedded in first message | `run "Begin."` |
+| pi | `--append-system-prompt` | `-p` + `--provider` + `--model` |
+
+## Tests
+
+### Unit tests (19 tests, stdlib only)
+
+```bash
+python3 test_a2a.py -v
+```
+
+Covers: schema init, WAL mode, agent registration & upsert, send/recv,
+read-tracking, broadcast, self-message filtering, `--include-self`,
+message TTL expiry & cleanup, unknown-agent errors, concurrent writes.
+
+### Smoke tests
+
+```bash
+# Two Claude haiku peers (alice + bob)
+./smoke_test.sh
+
+# Three peers across claude + opencode + pi
+./smoke_test_multi.sh [project-name]
+```
+
+Both clear the bus at start and assert each peer sent messages and ended
+with `status='done'`.
 
 ## Design notes
 

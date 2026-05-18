@@ -83,6 +83,11 @@ def connect(name: str, create: bool = False) -> sqlite3.Connection:
     conn.execute("PRAGMA busy_timeout=5000")
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    # migrate: add ttl_seconds if missing (older dbs)
+    try:
+        conn.execute("SELECT ttl_seconds FROM messages WHERE 1=0")
+    except sqlite3.OperationalError:
+        conn.execute("ALTER TABLE messages ADD COLUMN ttl_seconds INTEGER")
     return conn
 
 
@@ -328,6 +333,7 @@ def cmd_peek(args):
     name = project_name(args.project)
     conn = connect(name)
     cleanup_expired(conn)
+    conn.commit()
     rows = conn.execute(
         "SELECT id, sender, recipient, body, thread_id, created_at FROM messages "
         "ORDER BY created_at DESC LIMIT ?",
