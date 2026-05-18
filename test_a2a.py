@@ -647,6 +647,49 @@ class TestEdgeCases(unittest.TestCase):
         self.assertIn("hello again", output)
         self.assertNotIn("goodbye", output)
 
+    def test_stats(self):
+        """Stats command reports correct counts."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("bob", "done", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, thread_id, created_at) VALUES (?,?,?,?,?)",
+            ("alice", "bob", "direct msg", None, a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, thread_id, created_at) VALUES (?,?,?,?,?)",
+            ("alice", None, "broadcast", None, a2a.now() + 1)
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, thread_id, created_at) VALUES (?,?,?,?,?)",
+            ("bob", "alice", "reply", "topic1", a2a.now() + 2)
+        )
+        conn.commit()
+        conn.close()
+
+        # Call stats and check JSON output
+        args = a2a.argparse.Namespace(project=self.project, json=True)
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_stats(args)
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+
+        data = json.loads(output)
+        self.assertEqual(data["messages"], 3)
+        self.assertEqual(data["direct_messages"], 2)
+        self.assertEqual(data["broadcasts"], 1)
+        self.assertEqual(data["threads"], 1)
+        self.assertEqual(data["agents_active"], 1)
+        self.assertEqual(data["agents_done"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

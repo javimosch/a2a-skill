@@ -401,6 +401,58 @@ def cmd_search(args):
         _print_messages(rows, args.json)
 
 
+def cmd_stats(args):
+    """Show bus statistics."""
+    name = project_name(args.project)
+    conn = connect(name)
+
+    # Count messages and threads
+    msg_count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+    thread_count = conn.execute(
+        "SELECT COUNT(DISTINCT thread_id) FROM messages WHERE thread_id IS NOT NULL"
+    ).fetchone()[0]
+    broadcast_count = conn.execute(
+        "SELECT COUNT(*) FROM messages WHERE recipient IS NULL"
+    ).fetchone()[0]
+    direct_count = msg_count - broadcast_count
+
+    # Count agents and their statuses
+    agents = conn.execute("SELECT status, COUNT(*) FROM agents GROUP BY status").fetchall()
+    agent_status = {row[0]: row[1] for row in agents}
+    active_count = agent_status.get("active", 0)
+    done_count = agent_status.get("done", 0)
+
+    # Top senders
+    top_senders = conn.execute(
+        "SELECT sender, COUNT(*) as count FROM messages GROUP BY sender ORDER BY count DESC LIMIT 5"
+    ).fetchall()
+
+    conn.close()
+
+    stats = {
+        "project": name,
+        "messages": msg_count,
+        "direct_messages": direct_count,
+        "broadcasts": broadcast_count,
+        "threads": thread_count,
+        "agents_active": active_count,
+        "agents_done": done_count,
+        "top_senders": [{"agent": row[0], "count": row[1]} for row in top_senders],
+    }
+
+    if args.json:
+        print(json.dumps(stats, indent=2))
+    else:
+        print(f"Project: {stats['project']}")
+        print(f"  Messages: {msg_count} total ({direct_count} direct + {broadcast_count} broadcast)")
+        print(f"  Threads: {thread_count}")
+        print(f"  Agents: {active_count} active, {done_count} done")
+        if top_senders:
+            print(f"  Top senders:")
+            for sender, count in top_senders:
+                print(f"    {sender}: {count} messages")
+
+
 def cmd_wait(args):
     """Block until N messages exist for agent, or timeout."""
     name = project_name(args.project)
@@ -513,6 +565,10 @@ def build_parser():
     s.add_argument("--limit", type=int, default=50, help="max results (default: 50)")
     s.add_argument("--json", action="store_true")
     s.set_defaults(func=cmd_search)
+
+    s = sub.add_parser("stats", help="show bus statistics")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(func=cmd_stats)
 
     s = sub.add_parser("wait", help="block until N unread messages or timeout")
     s.add_argument("--as", dest="as_", required=True)
