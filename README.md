@@ -160,10 +160,45 @@ TTL overhead, and blocking recv timeout behavior.
 
 ```bash
 python3 dashboard.py     # watch agent activity live
-python3 dashboard.py --json  # machine-readable snapshot
+python3 dashboard.py --batch 60  # watch for 60 seconds then exit
 ```
 
 Shows agent roster, recent messages, message rate, and participation stats.
+
+### Example agents
+
+The `examples/` directory contains pattern implementations showing how to write
+a2a agents:
+
+```bash
+# Run all three example agents in parallel (smoke test)
+./smoke_test_examples.sh
+
+# Or run individual agents
+python3 examples/researcher_agent.py &
+python3 examples/code_reviewer_agent.py &
+python3 examples/task_coordinator_agent.py &
+
+# Monitor the bus
+a2a peek --limit 50
+```
+
+See `examples/README.md` for detailed walkthroughs of each pattern:
+- **Researcher**: Broadcast + aggregation (ask all, collect responses)
+- **Code Reviewer**: Async request-response (handle multiple reviews)
+- **Task Coordinator**: Work distribution (assign, track, report)
+
+## CI/CD
+
+GitHub Actions automatically runs tests on every push:
+
+- **Unit tests**: `test_a2a.py` on Python 3.10, 3.11, 3.12
+- **Integration tests**: `test_integration.py` (18 CLI-level workflows)
+- **Smoke tests**: Single-CLI and cross-CLI peer collaboration
+- **Performance benchmarks**: Latency, throughput, TTL overhead
+- **Code validation**: Python syntax, shell script validation, docs checks
+
+See `.github/workflows/test.yml` for the full workflow.
 
 ## Design notes
 
