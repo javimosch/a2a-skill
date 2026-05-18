@@ -129,7 +129,9 @@ Status: **Production-ready**. Locked for v1.1. Next: v1.2 (FTS5 search, message 
 - [ ] Message prioritization
 - [ ] Routing rules (agent → agent automatically)
 - [ ] Message signing/verification
+- [ ] Full-text search on messages (FTS5)
 - [ ] Message archival/expiry policies
+- [ ] Git-aware bus command (`a2a status --recent-commits`) to prevent work-collision
 
 **Integrations** (v1.4)
 - [ ] Node.js client library
@@ -272,6 +274,7 @@ reads(agent_id, message_id, read_at)
 4. **32-bit message IDs** — database can hold ~2 billion messages
 5. **Synchronous messages** — no async/await patterns yet
 6. **Basic error reporting** — could be more detailed
+7. **Bus ≠ git** — agents only see bus messages, not committed code. Work-collision smell: agents report gaps already fixed in git. Fix: kit prompt update (short-term), git-aware bus command (long-term)
 
 ### Future Enhancements (Post-v1.0)
 
@@ -320,7 +323,7 @@ reads(agent_id, message_id, read_at)
 - ✅ Well-documented functions
 
 ### Test Coverage
-- ✅ 60 automated tests (30 unit + 18 integration + 12 client library)
+- ✅ 65 automated tests (30 unit + 18 integration + 12 client + 5 multi-language/stress)
 - ✅ Unit + integration + smoke + performance
 - ✅ Edge cases (concurrent writes, TTL expiry, etc.)
 - ✅ Multiple Python versions (3.10, 3.11, 3.12)

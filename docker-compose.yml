@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # REST API server (central hub)
+  api:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+      - ~/.a2a:/root/.a2a
+    environment:
+      - A2A_PROJECT=docker
+      - A2A_HOST=0.0.0.0
+      - A2A_PORT=5000
+    ports:
+      - "5000:5000"
+    command: python a2a_server.py --project docker --host 0.0.0.0
+    depends_on:
+      - postgres
+    networks:
+      - a2a-network
+
+  # Python agent
+  python-worker:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+      - ~/.a2a:/root/.a2a
+    environment:
+      - A2A_PROJECT=docker
+      - PYTHONUNBUFFERED=1
+    command: python examples/task_coordinator_agent.py
+    depends_on:
+      - api
+    networks:
+      - a2a-network
+
+  # Node.js agent
+  nodejs-worker:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - ~/.a2a:/root/.a2a
+    environment:
+      - A2A_PROJECT=docker
+      - NODE_ENV=production
+    command: node examples/nodejs_coordinator.js
+    depends_on:
+      - api
+    networks:
+      - a2a-network
+
+  # Go agent (if available)
+  # go-worker:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.go
+  #   working_dir: /app
+  #   volumes:
+  #     - .:/app
+  #     - ~/.a2a:/root/.a2a
+  #   environment:
+  #     - A2A_PROJECT=docker
+  #   command: ./go_worker
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - a2a-network
+
+  # Rust agent (if compiled)
+  # rust-worker:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.rust
+  #   working_dir: /app
+  #   volumes:
+  #     - ~/.a2a:/root/.a2a
+  #   environment:
+  #     - A2A_PROJECT=docker
+  #   command: /app/task_worker
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - a2a-network
+
+  # Optional: PostgreSQL for persistence
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=a2a
+      - POSTGRES_PASSWORD=a2a
+      - POSTGRES_DB=a2a_bus
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - a2a-network
+
+  # Optional: Redis for caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - a2a-network
+
+volumes:
+  postgres_data:
+
+networks:
+  a2a-network:
+    driver: bridge

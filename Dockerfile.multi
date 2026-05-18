@@ -1,0 +1,74 @@
+# Multi-stage build for a2a agents in multiple languages
+
+# Python agent builder
+FROM python:3.11-slim as python-base
+WORKDIR /app
+COPY a2a_client.py .
+COPY examples/task_coordinator_agent.py .
+RUN apt-get update && apt-get install -y sqlite3
+
+# Node.js agent builder
+FROM node:18-alpine as nodejs-base
+WORKDIR /app
+COPY a2a_client.js .
+COPY examples/nodejs_coordinator.js .
+RUN npm init -y && npm install sqlite3
+
+# Go agent builder
+FROM golang:1.20-alpine as go-base
+WORKDIR /app
+COPY a2a_client.go .
+COPY examples/go_worker.go . 2>/dev/null || true
+RUN go mod init a2a || true && \
+    go get github.com/mattn/go-sqlite3
+
+# Rust agent builder
+FROM rust:1.75-alpine as rust-base
+WORKDIR /app
+COPY Cargo.toml .
+COPY src/ src/
+COPY examples/task_worker.rs examples/
+RUN apk add --no-cache sqlite-dev && \
+    cargo build --release
+
+# Runtime: Python
+FROM python:3.11-slim as python-agent
+WORKDIR /app
+COPY --from=python-base /app /app
+RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1
+CMD ["python", "-u", "task_coordinator_agent.py"]
+
+# Runtime: Node.js
+FROM node:18-alpine as nodejs-agent
+WORKDIR /app
+COPY --from=nodejs-base /app /app
+RUN apk add --no-cache sqlite
+ENV NODE_ENV=production
+CMD ["node", "nodejs_coordinator.js"]
+
+# Runtime: Go
+FROM golang:1.20-alpine as go-agent
+WORKDIR /app
+COPY --from=go-base /app /app
+RUN apk add --no-cache sqlite-dev
+CMD ["go", "run", "go_worker.go"]
+
+# Runtime: Rust
+FROM alpine:3.18 as rust-agent
+WORKDIR /app
+COPY --from=rust-base /app/target/release/task_worker /app/
+RUN apk add --no-cache sqlite-libs
+CMD ["/app/task_worker"]
+
+# CLI runtime
+FROM python:3.11-slim as cli
+WORKDIR /app
+COPY a2a .
+COPY a2a.py .
+COPY a2a_client.py .
+COPY a2a-spawn .
+RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
+RUN chmod +x a2a a2a-spawn
+ENV PATH="/app:${PATH}"
+ENTRYPOINT ["./a2a"]
