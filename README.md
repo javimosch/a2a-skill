@@ -22,9 +22,14 @@ a2a-skill/
 ├── README.md            # this file
 ├── AGENTS.md            # guide for AI agents working on this repo
 ├── install.sh           # one-command installer (symlinks CLI + skill)
-├── test_a2a.py          # unit tests (19 tests, stdlib only)
+├── test_a2a.py          # unit tests (28 tests, stdlib only)
+├── test_integration.py  # integration tests (full CLI workflows)
+├── benchmark.py         # performance benchmarks (latency, throughput)
+├── dashboard.py         # real-time bus visualization
 ├── smoke_test.sh        # 2-claude haiku peer dialog
 ├── smoke_test_multi.sh  # cross-CLI peer dialog (claude + opencode + pi)
+├── smoke_test_examples.sh # example agent smoke test
+├── examples/            # agent collaboration pattern examples
 ├── LICENSE              # MIT (attribution required)
 ├── .gitignore
 └── docs/                # ad-hoc reviews, notes
@@ -117,7 +122,8 @@ python3 test_a2a.py -v
 
 Covers: schema init, WAL mode, agent registration & upsert, send/recv,
 read-tracking, broadcast, self-message filtering, `--include-self`,
-message TTL expiry & cleanup, unknown-agent errors, concurrent writes.
+message TTL expiry & cleanup, thread IDs, status transitions,
+project info, unknown-agent errors, concurrent writes.
 
 ### Smoke tests
 
@@ -131,6 +137,15 @@ message TTL expiry & cleanup, unknown-agent errors, concurrent writes.
 
 Both clear the bus at start and assert each peer sent messages and ended
 with `status='done'`.
+
+### Integration tests
+
+```bash
+python3 test_integration.py -v
+```
+
+Shells out to the `a2a` binary and exercises full workflows: register→send→recv,
+TTL expiry, broadcast, cross-project isolation, concurrent agents.
 
 ### Performance benchmarks
 
