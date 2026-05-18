@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS messages (
     recipient   TEXT,                  -- NULL = broadcast
     body        TEXT NOT NULL,
     thread_id   TEXT,
+    ttl_seconds INTEGER,               -- NULL = never expire
     created_at  REAL NOT NULL
 );
 
@@ -92,6 +93,17 @@ def die(msg: str, code: int = 1):
 
 def now() -> float:
     return time.time()
+
+
+def cleanup_expired(conn: sqlite3.Connection) -> int:
+    """Delete messages past their TTL. Return count deleted."""
+    ts = now()
+    cur = conn.execute(
+        "DELETE FROM messages WHERE ttl_seconds IS NOT NULL "
+        "AND created_at + ttl_seconds < ?",
+        (ts,)
+    )
+    return cur.rowcount
 
 
 # ---------- commands ----------
@@ -209,10 +221,11 @@ def cmd_send(args):
     body = args.body
     if body == "-":
         body = sys.stdin.read()
+    ttl = getattr(args, "ttl", None)
     cur = conn.execute(
-        "INSERT INTO messages(sender, recipient, body, thread_id, created_at) "
-        "VALUES (?,?,?,?,?)",
-        (sender, recipient, body, args.thread, now()),
+        "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
+        "VALUES (?,?,?,?,?,?)",
+        (sender, recipient, body, args.thread, ttl, now()),
     )
     _touch(conn, sender)
     conn.commit()
@@ -313,6 +326,7 @@ def cmd_peek(args):
     """Show recent messages without marking them read; visible to all observers."""
     name = project_name(args.project)
     conn = connect(name)
+    cleanup_expired(conn)
     rows = conn.execute(
         "SELECT id, sender, recipient, body, thread_id, created_at FROM messages "
         "ORDER BY created_at DESC LIMIT ?",
@@ -413,6 +427,7 @@ def build_parser():
     s.add_argument("body", help="message body, or '-' to read from stdin")
     s.add_argument("--from", dest="from_", required=True)
     s.add_argument("--thread", help="optional thread/topic id")
+    s.add_argument("--ttl", type=int, help="message expires after N seconds (default: never)")
     s.set_defaults(func=cmd_send)
 
     s = sub.add_parser("recv", help="receive messages")
