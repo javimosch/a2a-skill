@@ -299,6 +299,7 @@ def cmd_recv(args):
     deadline = now() + args.wait if args.wait else None
     poll_interval = 0.5
     while True:
+        cleanup_expired(conn)
         rows = _fetch_messages(
             conn, agent,
             unread_only=not args.all,
