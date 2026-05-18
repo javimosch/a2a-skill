@@ -161,7 +161,7 @@ protocol is already solid.
 | cleanup_expired on recv + peek | main-dev | ✅ |
 | `test_ttl_no_expiry`, `test_ttl_expired` | pi-qa | ✅ Both pass |
 
-**Final test count:** 19/19 passing in 1.20s
+**Final test count:** 28/28 passing in 1.67s
 
 **Repository growth:** `a2a.py` 475 lines, `test_a2a.py` 643 lines (was 0 before sprint)
 
@@ -175,9 +175,11 @@ protocol is already solid.
   cheatsheet expanded with `--ttl`, `--include-self`, `--since`, `--json`,
   `--wait`, `a2a project`; new Tests section covering unit + smoke tests;
   new Cross-CLI support table in How agents use it.
-- `SKILL.md` — CLI reference updated with all new flags (`--ttl`, `--include-self`,
-  `--since`, `--peek --json`, `--all`, `--upsert`, `a2a project`).
-- `test_a2a.py` — added 5 TTL tests (19 total).
+- `SKILL.md` — CLI reference updated with all new flags; smoke test recipe
+  now uses dynamic path resolution instead of hardcoded `$HOME` path.
+- `install.sh` — now also links `a2a-spawn` to `$BIN_DIR`.
+- `a2a-spawn` — added `--help`/`-h` usage output.
+- `test_a2a.py` — added 5 TTL tests (28 total).
 - `a2a.py` — fixed `cmd_peek` not committing after `cleanup_expired()`.
 
 ---

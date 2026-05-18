@@ -23,10 +23,33 @@ MODEL=""
 PROVIDER=""
 LOG=""
 KIT_FILE=""
+usage() {
+    cat <<EOF
+a2a-spawn — CLI-agnostic launcher for an a2a peer agent.
+
+Usage:
+  a2a-spawn --cli claude|opencode|pi --id NAME [options]
+
+Required:
+  --cli TYPE     Agentic CLI to launch (claude, opencode, pi)
+  --id NAME      Agent identifier on the a2a bus
+  --kit-file FILE  Path to the kit prompt file
+
+Options:
+  --model NAME   Model to use (e.g. haiku, anthropic/claude-haiku-4-5)
+  --provider     Provider for pi CLI (e.g. google, openai)
+  --log FILE     Log file (default: /tmp/a2a-<id>.log)
+
+Outputs the spawned PID to stdout.
+EOF
+    exit 0
+}
+
 EXTRA_ARGS=()
 
 while [ $# -gt 0 ]; do
     case "$1" in
+        -h|--help) usage;;
         --cli)        CLI="$2";        shift 2;;
         --id)         ID="$2";         shift 2;;
         --model)      MODEL="$2";      shift 2;;

@@ -10,11 +10,13 @@ AGENTS_SKILL_DIR="${A2A_AGENTS_SKILL_DIR:-$HOME/.agents/skills}"
 
 mkdir -p "$BIN_DIR" "$CLAUDE_SKILL_DIR" "$AGENTS_SKILL_DIR"
 
-ln -sfn "$DIR/a2a"  "$BIN_DIR/a2a"
-ln -sfn "$DIR"      "$CLAUDE_SKILL_DIR/a2a"
-ln -sfn "$DIR"      "$AGENTS_SKILL_DIR/a2a"
+ln -sfn "$DIR/a2a"        "$BIN_DIR/a2a"
+ln -sfn "$DIR/a2a-spawn"   "$BIN_DIR/a2a-spawn"
+ln -sfn "$DIR"            "$CLAUDE_SKILL_DIR/a2a"
+ln -sfn "$DIR"            "$AGENTS_SKILL_DIR/a2a"
 
 echo "linked $BIN_DIR/a2a              -> $DIR/a2a"
+echo "linked $BIN_DIR/a2a-spawn        -> $DIR/a2a-spawn"
 echo "linked $CLAUDE_SKILL_DIR/a2a     -> $DIR"
 echo "linked $AGENTS_SKILL_DIR/a2a     -> $DIR"
 echo

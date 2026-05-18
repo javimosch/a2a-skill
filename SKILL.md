@@ -254,7 +254,12 @@ Database survives between sessions — useful for resuming.
 This is the canonical end-to-end check. Drop it into a scratch dir and run.
 
 ```bash
-A2A=/home/jarancibia/ai/a2a-skill/a2a
+# Auto-locate a2a (resolves from PATH or common locations)
+A2A="$(command -v a2a 2>/dev/null)"
+[ -z "$A2A" ] && [ -x "$HOME/.agents/skills/a2a/a2a" ] && A2A="$HOME/.agents/skills/a2a/a2a"
+[ -z "$A2A" ] && [ -x "$HOME/.claude/skills/a2a/a2a" ] && A2A="$HOME/.claude/skills/a2a/a2a"
+[ -z "$A2A" ] && { echo "a2a not found"; exit 1; }
+
 PROJECT=a2a-smoke-$$
 export A2A_PROJECT=$PROJECT
 
