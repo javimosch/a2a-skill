@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 a2a Client Library — Python API for a2a peer messaging.
 

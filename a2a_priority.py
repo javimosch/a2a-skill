@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 a2a Message Prioritization — Priority-aware message queuing and delivery (v1.3).
 

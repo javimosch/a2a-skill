@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 a2a REST API Server — HTTP interface for a2a messaging
 Provides REST endpoints for all core operations over HTTP.

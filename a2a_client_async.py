@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 a2a Async Client Library — Asyncio-based API for high-performance a2a messaging.
 

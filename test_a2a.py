@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """Unit tests for a2a.py — peer messaging CLI.
 
 Covers: DB schema, message send/recv, read-tracking, filtering, edge cases.

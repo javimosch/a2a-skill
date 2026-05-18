@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 a2a Full-Text Search (FTS5) — Advanced message discovery and filtering.
 

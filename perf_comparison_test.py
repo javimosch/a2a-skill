@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """Compare performance: a2a CLI vs a2a_client.py library"""
 
 import os

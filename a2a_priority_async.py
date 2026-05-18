@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 a2a Async Message Prioritization — High-performance priority-aware messaging (v1.3).
 

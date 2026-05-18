@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 a2a Audit Logging — Message lifecycle tracking for compliance and debugging (v1.3).
 

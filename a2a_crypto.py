@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 a2a Message Encryption — End-to-end encrypted messaging (v1.3).
 

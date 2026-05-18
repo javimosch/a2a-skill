@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """a2a — agent-to-agent peer messaging over SQLite.
 
 CLI-agnostic. Any agentic CLI (claude, opencode, pi, ...) shells out to this

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 a2a Message Routing — Smart message distribution and rule-based delivery (v1.3).
 
