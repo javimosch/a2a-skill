@@ -245,7 +245,14 @@ def cmd_send(args):
     mid = cur.lastrowid
     conn.close()
     target = recipient if recipient else "ALL"
-    print(f"#{mid} {sender} -> {target}")
+    if getattr(args, "json", False):
+        print(json.dumps({
+            "id": mid,
+            "sender": sender,
+            "recipient": target,
+        }, indent=2))
+    else:
+        print(f"#{mid} {sender} -> {target}")
 
 
 def _fetch_messages(conn, agent_id, unread_only, since, limit, mark_read, include_self=False):
@@ -536,6 +543,7 @@ def build_parser():
     s.add_argument("--from", dest="from_", required=True)
     s.add_argument("--thread", help="optional thread/topic id")
     s.add_argument("--ttl", type=int, help="message expires after N seconds (default: never)")
+    s.add_argument("--json", action="store_true", help="output as JSON")
     s.set_defaults(func=cmd_send)
 
     s = sub.add_parser("recv", help="receive messages")
