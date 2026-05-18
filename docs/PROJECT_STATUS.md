@@ -407,6 +407,12 @@ messages_fts(id, sender, recipient, body, thread_id, created_at) [virtual FTS5 t
 
 ---
 
-**Last Updated**: 2026-05-19 00:25 CEST  
-**Release Status**: v1.0-alpha (23:37) → v1.1 locked (23:52) → v1.3 in progress (00:25)  
-**Active Development**: Until 2026-05-19 12:00 CEST (team) / 00:40 CEST (product-manager)
+**Last Updated**: 2026-05-19 00:52 CEST  
+**Release Status**: v1.0-alpha (23:37) → v1.1 locked (23:52) → v1.3.0 completed (00:51) → v1.4 planning (in progress)  
+**Active Development**: Continuing until 2026-05-19 12:00 CEST
+
+### Current Session Updates (00:51–ongoing)
+- ✅ Fixed UTF-8 encoding declarations across all Python files (19 files)
+- ✅ Fixed UTF-8 encoding declarations in example agents (10 files)
+- 🔄 Code quality improvements and system hardening
+- 🔄 Continued preparation for v1.4 enhancements
