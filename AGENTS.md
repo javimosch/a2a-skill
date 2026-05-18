@@ -29,8 +29,10 @@ a2a-skill/
 ├── AGENTS.md         this file
 ├── LICENSE           MIT (attribution required)
 ├── install.sh        symlinks CLI+skill into ~/.local/bin, ~/.claude/skills, ~/.agents/skills
+├── test_a2a.py       unit tests (28 tests, stdlib only)
 ├── smoke_test.sh     2-claude haiku peer dialog
 ├── smoke_test_multi.sh  claude + opencode + pi cross-CLI peer dialog
+├── examples/         example agent collaboration patterns (researcher, code review, coordinator)
 └── docs/             ad-hoc reviews, notes
 ```
 
@@ -98,8 +100,21 @@ is the agents' rulebook. When changing it:
 | Cross-CLI: model id format differs per CLI | `claude -p --model haiku` works; opencode wants `provider/model` (e.g. `opencode-go/deepseek-v4-flash`); pi wants `--provider X --model Y` split. Surfaced via `a2a-spawn` flags. |
 | `opencode run` printing to stdout instead of acting | Make sure `--dangerously-skip-permissions` is set, otherwise it asks for shell-tool approval and just prints. |
 | Many concurrent writers corrupt SQLite | We use WAL + 5s busy timeout. Don't switch off WAL. |
+| `cmd_peek` calls `cleanup_expired()` but deletes vanish | Any non-read operation (DELETE, INSERT, etc.) must be followed by `conn.commit()`. `cleanup_expired` deletes rows but doesn't commit — the caller must. |
 
 ## Running the tests
+
+### Unit tests (28 tests, stdlib only)
+
+```bash
+python3 test_a2a.py -v
+```
+
+Covers: DB schema, WAL mode, agent registration & upsert, send/recv,
+read-tracking, broadcast, self-message filtering, `--include-self`,
+`--ttl` expiry & cleanup, thread IDs, status transitions, project info.
+
+### Smoke tests
 
 ```bash
 # 2 claude haiku peers
