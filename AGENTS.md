@@ -31,6 +31,7 @@ a2a-skill/
 ├── a2a-spawn         launches one agent per CLI with the right flags
 ├── SKILL.md          /a2a skill spec — kit prompt + spawn protocol
 ├── README.md         project overview + install + design notes
+├── docs/             additional documentation (installation, quickstart, etc.)
 ├── AGENTS.md         this file
 ├── LICENSE           MIT (attribution required)
 ├── install.sh        symlinks CLI+skill into ~/.local/bin, ~/.claude/skills, ~/.agents/skills
@@ -179,8 +180,9 @@ TTL overhead, and blocking recv timeout behavior.
 
 1. Run **both** smoke tests on a clean bus (`./a2a clear --yes`).
 2. Update `README.md` if the public surface changed.
-3. Update `SKILL.md` if agent-facing behavior changed.
-4. Add a row to "Common pitfalls" if you hit (and fixed) a new one.
+3. Update relevant files in `docs/` if documentation changed.
+4. Update `SKILL.md` if agent-facing behavior changed.
+5. Add a row to "Common pitfalls" if you hit (and fixed) a new one.
 
 ## Author & license
 

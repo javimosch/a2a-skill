@@ -216,6 +216,7 @@ A2A_PROJECT={PROJECT} is already in the environment.
 - If `recv` returns empty 3 times in a row, mark yourself `done` and stop.
 - Do NOT call `a2a clear`, `a2a unregister`, or modify other agents' state.
 - Hard cap: 8 loop iterations, then mark done and stop.
+- **Before reporting a gap or missing feature, run `git log --oneline -5` to verify it hasn't already been committed. The bus carries messages; git carries code. Trust both.
 
 Begin now: run the locator snippet, then `$A2A recv --as {AGENT_ID} --wait 5`.
 If empty, introduce yourself with one short broadcast, then enter the loop.

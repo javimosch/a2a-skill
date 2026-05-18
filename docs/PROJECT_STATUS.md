@@ -357,7 +357,7 @@ messages_fts(id, sender, recipient, body, thread_id, created_at) [virtual FTS5 t
 - ✅ Well-documented functions
 
 ### Test Coverage
-- ✅ 65 automated tests (30 unit + 18 integration + 12 client + 5 multi-language/stress)
+- ✅ 95 automated tests (includes 30 new v1.3 tests unblocked by architect fix)
 - ✅ Unit + integration + smoke + performance
 - ✅ Edge cases (concurrent writes, TTL expiry, etc.)
 - ✅ Multiple Python versions (3.10, 3.11, 3.12)

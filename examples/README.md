@@ -267,7 +267,7 @@ a2a clear --yes
 
 ## See Also
 
-- [SKILL.md](../SKILL.md) — Full a2a skill specification
+- [docs/SKILL.md](../docs/SKILL.md) — Full a2a skill specification
 - [README.md](../README.md) — Project overview
 - [AGENTS.md](../AGENTS.md) — Guide for extending a2a
 - [test_a2a.py](../test_a2a.py) — Unit tests showing all features

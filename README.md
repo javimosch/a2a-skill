@@ -29,30 +29,30 @@ a2a-skill/
 
 📚 Documentation
 ├── README.md            # overview (this file)
-├── INSTALLATION.md      # setup & troubleshooting guide
-├── QUICKSTART.md        # 5-minute intro
-├── SKILL.md             # /a2a skill spec — 7-step spawn protocol
 ├── AGENTS.md            # guide for AI agents working on this repo
-├── CLIENT_API.md        # Python client library reference
-├── NODE_CLIENT_API.md   # Node.js client library reference
-├── GO_CLIENT_API.md     # Go client library reference
-├── RUST_CLIENT_API.md   # Rust client library reference
-├── REST_API.md          # HTTP REST interface reference
-├── GIT_AWARE.md         # work-collision detection & prevention
-├── INTEGRATION_GUIDE.md # multi-interface coordination guide
-├── ADVANCED_PATTERNS.md # optimization & patterns guide
+├── docs/INSTALLATION.md      # setup & troubleshooting guide
+├── docs/QUICKSTART.md        # 5-minute intro
+├── docs/SKILL.md             # /a2a skill spec — 7-step spawn protocol
+├── docs/CLIENT_API.md        # Python client library reference
+├── docs/NODE_CLIENT_API.md   # Node.js client library reference
+├── docs/GO_CLIENT_API.md     # Go client library reference
+├── docs/RUST_CLIENT_API.md   # Rust client library reference
+├── docs/REST_API.md          # HTTP REST interface reference
+├── docs/GIT_AWARE.md         # work-collision detection & prevention
+├── docs/INTEGRATION_GUIDE.md # multi-interface coordination guide
+├── docs/ADVANCED_PATTERNS.md # optimization & patterns guide
 │
 📦 v1.3 Features
-├── ENCRYPTION.md        # end-to-end encryption (symmetric & asymmetric)
-├── FTS_SEARCH.md        # full-text search with relevance ranking
-├── AUDIT.md             # message lifecycle audit logging
-├── PRIORITY.md          # 4-level priority queue ordering
-├── ROUTING.md           # rule-based message distribution
+├── docs/ENCRYPTION.md        # end-to-end encryption (symmetric & asymmetric)
+├── docs/FTS_SEARCH.md        # full-text search with relevance ranking
+├── docs/AUDIT.md             # message lifecycle audit logging
+├── docs/PRIORITY.md          # 4-level priority queue ordering
+├── docs/ROUTING.md           # rule-based message distribution
 │
 📖 Developer Guides
-├── CONTRIBUTING.md      # developer guidelines
-├── PROJECT_STATUS.md    # release notes & roadmap
-├── DEPLOYMENT.md        # Docker, Kubernetes, systemd deployment
+├── docs/CONTRIBUTING.md      # developer guidelines
+├── docs/PROJECT_STATUS.md    # release notes & roadmap
+├── docs/DEPLOYMENT.md        # Docker, Kubernetes, systemd deployment
 
 🧪 Tests & Benchmarks
 ├── test_a2a.py          # unit tests (30 core tests)
@@ -117,25 +117,25 @@ Restart your CLI session so it picks up the new skill.
 
 Comprehensive guides for different use cases:
 
-- **[QUICKSTART.md](QUICKSTART.md)** — 5-minute introduction with examples
-- **[INSTALLATION.md](INSTALLATION.md)** — Setup, prerequisites, platform-specific notes
+- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — 5-minute introduction with examples
+- **[docs/INSTALLATION.md](docs/INSTALLATION.md)** — Setup, prerequisites, platform-specific notes
 
 **Client Libraries:**
-- **[CLIENT_API.md](CLIENT_API.md)** — Python client library reference
-- **[NODE_CLIENT_API.md](NODE_CLIENT_API.md)** — Node.js client library reference
-- **[GO_CLIENT_API.md](GO_CLIENT_API.md)** — Go client library reference
-- **[RUST_CLIENT_API.md](RUST_CLIENT_API.md)** — Rust client library reference
-- **[REST_API.md](REST_API.md)** — HTTP REST interface for microservices
-- **[INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)** — Multi-interface coordination examples
+- **[docs/CLIENT_API.md](docs/CLIENT_API.md)** — Python client library reference
+- **[docs/NODE_CLIENT_API.md](docs/NODE_CLIENT_API.md)** — Node.js client library reference
+- **[docs/GO_CLIENT_API.md](docs/GO_CLIENT_API.md)** — Go client library reference
+- **[docs/RUST_CLIENT_API.md](docs/RUST_CLIENT_API.md)** — Rust client library reference
+- **[docs/REST_API.md](docs/REST_API.md)** — HTTP REST interface for microservices
+- **[docs/INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md)** — Multi-interface coordination examples
 
 **Advanced Topics:**
-- **[ADVANCED_PATTERNS.md](ADVANCED_PATTERNS.md)** — Performance optimization, monitoring, error recovery
-- **[GIT_AWARE.md](GIT_AWARE.md)** — Work-collision prevention with git state tracking
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** — Docker, Kubernetes, systemd, and security
-- **[SKILL.md](SKILL.md)** — `/a2a` skill architecture and spawn protocol
+- **[docs/ADVANCED_PATTERNS.md](docs/ADVANCED_PATTERNS.md)** — Performance optimization, monitoring, error recovery
+- **[docs/GIT_AWARE.md](docs/GIT_AWARE.md)** — Work-collision prevention with git state tracking
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — Docker, Kubernetes, systemd, and security
+- **[docs/SKILL.md](docs/SKILL.md)** — `/a2a` skill architecture and spawn protocol
 - **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Developer guidelines
-- **[PROJECT_STATUS.md](PROJECT_STATUS.md)** — Release notes and roadmap
+- **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)** — Developer guidelines
+- **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)** — Release notes and roadmap
 
 ## CLI cheatsheet
 

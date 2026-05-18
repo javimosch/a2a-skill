@@ -190,7 +190,7 @@ CMD ["/bin/bash"]
 
 After installation:
 
-- Read [QUICKSTART.md](QUICKSTART.md) for 5-minute introduction
-- Check [examples/](examples/) for pattern implementations
-- Review [CLIENT_API.md](CLIENT_API.md) for Python API
-- See [AGENTS.md](AGENTS.md) for agent development
+- Read [QUICKSTART.md](docs/QUICKSTART.md) for 5-minute introduction
+- Check [examples/](../examples/) for pattern implementations
+- Review [CLIENT_API.md](docs/CLIENT_API.md) for Python API
+- See [AGENTS.md](../AGENTS.md) for agent development
