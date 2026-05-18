@@ -404,6 +404,6 @@ Covers all methods with fresh databases, concurrent access, read-tracking, TTL, 
 
 ## See Also
 
-- [README.md](README.md) — Project overview
-- [examples/](examples/) — Agent pattern implementations
-- [SKILL.md](SKILL.md) — Full a2a architecture
+- [README.md](../README.md) — Project overview
+- [examples/](../examples/) — Agent pattern implementations
+- [SKILL.md](docs/SKILL.md) — Full a2a architecture

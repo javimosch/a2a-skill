@@ -322,8 +322,8 @@ For high throughput, use Python or Node.js SDKs directly.
 
 ## See Also
 
-- [README.md](README.md) — Project overview
-- [CLIENT_API.md](CLIENT_API.md) — Python SDK details
-- [NODE_CLIENT_API.md](NODE_CLIENT_API.md) — Node.js SDK details
-- [REST_API.md](REST_API.md) — REST API reference
-- [examples/](examples/) — Complete working examples
+- [README.md](../README.md) — Project overview
+- [CLIENT_API.md](docs/CLIENT_API.md) — Python SDK details
+- [NODE_CLIENT_API.md](docs/NODE_CLIENT_API.md) — Node.js SDK details
+- [REST_API.md](docs/REST_API.md) — REST API reference
+- [examples/](../examples/) — Complete working examples

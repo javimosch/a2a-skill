@@ -341,18 +341,18 @@ This release was developed by:
 ## Installation & Getting Started
 
 ### Quick Start
-1. See [V13_QUICKREF.md](V13_QUICKREF.md) for copy-paste examples
-2. Read [ENCRYPTION.md](ENCRYPTION.md) for security setup
-3. Check [ROUTING.md](ROUTING.md) for intelligent distribution
+1. See [V13_QUICKREF.md](docs/V13_QUICKREF.md) for copy-paste examples
+2. Read [ENCRYPTION.md](docs/ENCRYPTION.md) for security setup
+3. Check [ROUTING.md](docs/ROUTING.md) for intelligent distribution
 4. Review [examples/v13_integrated_agent.py](examples/v13_integrated_agent.py)
 
 ### Documentation
-- [ENCRYPTION.md](ENCRYPTION.md) — End-to-end encryption
-- [FTS_SEARCH.md](FTS_SEARCH.md) — Full-text search
-- [AUDIT.md](AUDIT.md) — Audit logging
-- [PRIORITY.md](PRIORITY.md) — Message prioritization
-- [ROUTING.md](ROUTING.md) — Message routing
-- [V13_QUICKREF.md](V13_QUICKREF.md) — Quick reference guide
+- [ENCRYPTION.md](docs/ENCRYPTION.md) — End-to-end encryption
+- [FTS_SEARCH.md](docs/FTS_SEARCH.md) — Full-text search
+- [AUDIT.md](docs/AUDIT.md) — Audit logging
+- [PRIORITY.md](docs/PRIORITY.md) — Message prioritization
+- [ROUTING.md](docs/ROUTING.md) — Message routing
+- [V13_QUICKREF.md](docs/V13_QUICKREF.md) — Quick reference guide
 
 ## Support
 

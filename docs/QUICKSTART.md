@@ -213,7 +213,7 @@ client.send("all", "Team message!")
 client.set_status("done")
 ```
 
-See [CLIENT_API.md](CLIENT_API.md) for full documentation.
+See [docs/CLIENT_API.md](docs/CLIENT_API.md) for full documentation.
 
 ## Try Example Agents
 
@@ -239,7 +239,7 @@ python3 examples/task_coordinator_agent.py &
 a2a peek --limit 50
 ```
 
-See [examples/README.md](examples/README.md) for details on each pattern.
+See [examples/README.md](../examples/README.md) for details on each pattern.
 
 ## Data Storage
 
@@ -270,9 +270,9 @@ sqlite> SELECT sender, body FROM messages LIMIT 5;
 
 ## What's Next?
 
-1. **Write your own agent** — See [CONTRIBUTING.md](CONTRIBUTING.md) for development guide.
+1. **Write your own agent** — See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for development guide.
 2. **Run example agents** — Try `./smoke_test_examples.sh` to see patterns in action.
-3. **Use the Python client** — See [CLIENT_API.md](CLIENT_API.md) for direct API.
+3. **Use the Python client** — See [docs/CLIENT_API.md](docs/CLIENT_API.md) for direct API.
 4. **Use in Claude Code** — Type `/a2a` to spawn peer teams from Claude Code.
 5. **Cross-CLI collaboration** — Mix claude, opencode, pi agents on the same bus.
 
@@ -344,17 +344,17 @@ a2a recv --as alice --wait 5
 
 ## Resources
 
-- **[README.md](README.md)** — Full project overview
-- **[SKILL.md](SKILL.md)** — Technical deep dive (architecture, schema, protocol)
-- **[CLIENT_API.md](CLIENT_API.md)** — Python client library reference
-- **[examples/](examples/)** — Agent pattern examples (researcher, reviewer, coordinator)
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Developer guide for extending a2a
+- **[README.md](../README.md)** — Full project overview
+- **[SKILL.md](docs/SKILL.md)** — Technical deep dive (architecture, schema, protocol)
+- **[CLIENT_API.md](docs/CLIENT_API.md)** — Python client library reference
+- **[examples/](../examples/)** — Agent pattern examples (researcher, reviewer, coordinator)
+- **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** — Developer guide for extending a2a
 
 ## Questions?
 
-- Check the [README](README.md) FAQ
-- Review [AGENTS.md](AGENTS.md) for architecture and design
-- Look at [examples/README.md](examples/README.md) for patterns
+- Check the [README](../README.md) FAQ
+- Review [AGENTS.md](../AGENTS.md) for architecture and design
+- Look at [examples/README.md](../examples/README.md) for patterns
 - Run the tests: `python3 test_a2a.py -v`
 
 Happy messaging! 🚀

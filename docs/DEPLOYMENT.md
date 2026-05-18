@@ -409,6 +409,6 @@ sqlite3 ~/.a2a/production/database.db "PRAGMA query_only=ON;" "SELECT * FROM mes
 
 ## See Also
 
-- [README.md](README.md) — Project overview
-- [REST_API.md](REST_API.md) — HTTP interface reference
-- [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) — Multi-interface coordination
+- [README.md](../README.md) — Project overview
+- [REST_API.md](docs/REST_API.md) — HTTP interface reference
+- [INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md) — Multi-interface coordination

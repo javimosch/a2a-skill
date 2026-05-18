@@ -184,10 +184,10 @@ For optimizations:
 ## Documentation
 
 - **README.md**: User-facing overview, install, quick start
-- **SKILL.md**: Full specification of `/a2a` skill for Claude Code
+- **docs/SKILL.md**: Full specification of `/a2a` skill for Claude Code
 - **AGENTS.md**: Developer guide for extending a2a
 - **examples/README.md**: Pattern walkthroughs and tutorials
-- **CONTRIBUTING.md**: This file — for contributors
+- **docs/CONTRIBUTING.md**: This file — for contributors
 
 Keep docs in sync with code. If you change behavior, update docs too.
 

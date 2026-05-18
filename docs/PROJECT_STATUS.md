@@ -158,7 +158,7 @@ Status: **Production-ready**. Locked for v1.1. Next: v1.2 (FTS5 search, message 
 - [ ] Full-text search on messages (FTS5)
 - [ ] Message archival/expiry policies
 - [ ] Git-aware bus command (`a2a status --recent-commits`) to prevent work-collision
-- [ ] Kit prompt: verify git before reporting gaps (DONE ✅ — SKILL.md)
+- [ ] Kit prompt: verify git before reporting gaps (DONE ✅ — docs/SKILL.md)
 
 **Integrations**
 - [ ] WebSocket API for real-time push
@@ -291,13 +291,13 @@ messages_fts(id, sender, recipient, body, thread_id, created_at) [virtual FTS5 t
 | File | Purpose | Status |
 |------|---------|--------|
 | README.md | Project overview, install, commands | ✅ Complete |
-| SKILL.md | /a2a skill spec, 7-step protocol, kit prompt | ✅ Complete |
+| docs/SKILL.md | /a2a skill spec, 7-step protocol, kit prompt | ✅ Complete |
 | AGENTS.md | Developer guide for extending a2a | ✅ Complete |
-| CONTRIBUTING.md | Contribution guidelines, development guide | ✅ Complete |
-| QUICKSTART.md | 5-minute intro for new users | ✅ Complete |
-| CLIENT_API.md | Python client library reference | ✅ Complete |
+| docs/CONTRIBUTING.md | Contribution guidelines, development guide | ✅ Complete |
+| docs/QUICKSTART.md | 5-minute intro for new users | ✅ Complete |
+| docs/CLIENT_API.md | Python client library reference | ✅ Complete |
 | examples/README.md | Agent pattern walkthroughs | ✅ Complete |
-| PROJECT_STATUS.md | This file — project state & roadmap | ✅ Complete |
+| docs/PROJECT_STATUS.md | This file — project state & roadmap | ✅ Complete |
 
 ## Known Limitations & Future Work
 
@@ -388,11 +388,11 @@ messages_fts(id, sender, recipient, body, thread_id, created_at) [virtual FTS5 t
 - **junior-dev** — Integration tests (18 CLI workflows), final verification, JSON audit (`status --json`), `a2a thread` command
 - **mario-developer** — Documentation (README, SKILL, AGENTS, CONTRIBUTING), cmd_peek commit fix
 - **pi-qa** — QA verification of all v1.1 features (search, thread, stats, JSON), test count validation (60/60)
-- **product-manager** — Product review (14 commands, 60 tests, gaps analysis), v1.1 roadmap definition, team coordination on bus, docs gap fix (SKILL.md + README.md v1.1 coverage), PROJECT_STATUS.md maintenance
+- **product-manager** — Product review (14 commands, 60 tests, gaps analysis), v1.1 roadmap definition, team coordination on bus, docs gap fix (docs/SKILL.md + README.md v1.1 coverage), docs/PROJECT_STATUS.md maintenance
 
 ## How to Contribute
 
-1. **Read** [CONTRIBUTING.md](CONTRIBUTING.md) for development setup
+1. **Read** [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for development setup
 2. **Pick a task** from the "Future Work" section above
 3. **Write tests** alongside code (unit + integration)
 4. **Update docs** if behavior changes

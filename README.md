@@ -69,17 +69,20 @@ a2a-skill/
 
 🔨 Tools & Examples
 ├── examples/
-│   ├── researcher_agent.py
-│   ├── code_reviewer_agent.py
-│   ├── task_coordinator_agent.py
-│   ├── critic_agent.py
-│   ├── debugger_agent.py
-│   ├── async_task_worker.py     # High-concurrency async agent
-│   ├── collision_detector.py     # Work-collision prevention agent
-│   └── task_worker.rs           # Rust agent example
-├── smoke_test.sh        # 2-claude haiku peer dialog
-├── smoke_test_multi.sh  # cross-CLI peer dialog (claude + opencode + pi)
-├── smoke_test_examples.sh # example agent smoke test
+│   ├── researcher_agent.py          # Broadcast + aggregation pattern
+│   ├── code_reviewer_agent.py        # Async request-response pattern
+│   ├── task_coordinator_agent.py     # Work distribution pattern
+│   ├── critic_agent.py               # Debate and feedback loop
+│   ├── debugger_agent.py             # Debugging and error investigation
+│   ├── async_task_worker.py          # High-concurrency async agent
+│   ├── collision_detector.py         # Work-collision prevention agent
+│   ├── v13_integrated_agent.py       # All v1.3 features in action
+│   ├── secure_team_agent.py          # Asymmetric encryption + routing + audit
+│   ├── compliance_archival_agent.py  # Full-text search + audit + archival
+│   └── task_worker.rs                # Rust agent example
+├── smoke_test.sh            # 2-claude haiku peer dialog
+├── smoke_test_multi.sh      # cross-CLI peer dialog (claude + opencode + pi)
+├── smoke_test_examples.sh   # example agent smoke test
 
 📋 Project
 ├── Cargo.toml           # Rust library configuration
@@ -128,10 +131,20 @@ Comprehensive guides for different use cases:
 - **[docs/REST_API.md](docs/REST_API.md)** — HTTP REST interface for microservices
 - **[docs/INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md)** — Multi-interface coordination examples
 
+**v1.3 Feature Guides:**
+- **[docs/V13_QUICKREF.md](docs/V13_QUICKREF.md)** — Quick copy-paste examples for all v1.3 features
+- **[docs/ENCRYPTION.md](docs/ENCRYPTION.md)** — End-to-end encryption (symmetric & asymmetric)
+- **[docs/FTS_SEARCH.md](docs/FTS_SEARCH.md)** — Full-text search with phrase & boolean queries
+- **[docs/AUDIT.md](docs/AUDIT.md)** — Message lifecycle audit logging for compliance
+- **[docs/PRIORITY.md](docs/PRIORITY.md)** — 4-level priority queue ordering
+- **[docs/ROUTING.md](docs/ROUTING.md)** — Rule-based message distribution with pattern matching
+
 **Advanced Topics:**
 - **[docs/ADVANCED_PATTERNS.md](docs/ADVANCED_PATTERNS.md)** — Performance optimization, monitoring, error recovery
 - **[docs/GIT_AWARE.md](docs/GIT_AWARE.md)** — Work-collision prevention with git state tracking
+- **[docs/OPERATIONS_GUIDE.md](docs/OPERATIONS_GUIDE.md)** — Production deployment, monitoring, backup, troubleshooting
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — Docker, Kubernetes, systemd, and security
+- **[docs/V14_ARCHITECTURE.md](docs/V14_ARCHITECTURE.md)** — v1.4 roadmap: gRPC, WebSocket, Jaeger tracing, Prometheus
 - **[docs/SKILL.md](docs/SKILL.md)** — `/a2a` skill architecture and spawn protocol
 - **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development
 - **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)** — Developer guidelines
