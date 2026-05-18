@@ -241,7 +241,11 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         """Get database connection"""
         project = self.server.project
         db_path = Path.home() / '.a2a' / project / 'database.db'
-        return sqlite3.connect(str(db_path), timeout=10.0)
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(db_path), timeout=10.0)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
+        return conn
 
     def respond_json(self, data, status=200):
         """Send JSON response"""
