@@ -173,7 +173,7 @@ class TestMessaging(unittest.TestCase):
         args = a2a.argparse.Namespace(
             project=self.project, **{"as_": "bob", "wait": 0, "all": False,
                                      "peek": False, "limit": 0, "since": None,
-                                     "json": False}
+                                     "json": False, "include_self": False}
         )
         # Capture output — for now just verify no crash
         a2a.cmd_recv(args)
@@ -195,7 +195,7 @@ class TestMessaging(unittest.TestCase):
         args = a2a.argparse.Namespace(
             project=self.project, **{"as_": "bob", "wait": 0, "all": True,
                                      "peek": False, "limit": 0, "since": None,
-                                     "json": False}
+                                     "json": False, "include_self": False}
         )
         a2a.cmd_recv(args)  # Should not crash
 
@@ -213,9 +213,27 @@ class TestMessaging(unittest.TestCase):
         args = a2a.argparse.Namespace(
             project=self.project, **{"as_": "alice", "wait": 0, "all": False,
                                      "peek": False, "limit": 0, "since": None,
-                                     "json": False}
+                                     "json": False, "include_self": False}
         )
         a2a.cmd_recv(args)  # Self-sent msg should not appear
+
+    def test_recv_include_self(self):
+        """--include-self makes self-sent messages visible."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) "
+            "VALUES (?,?,?,?)",
+            ("alice", "alice", "self message", a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
+        args = a2a.argparse.Namespace(
+            project=self.project, **{"as_": "alice", "wait": 0, "all": False,
+                                     "peek": False, "limit": 0, "since": None,
+                                     "json": False, "include_self": True}
+        )
+        a2a.cmd_recv(args)  # Self-sent msg should appear
 
 
 class TestEdgeCases(unittest.TestCase):
@@ -252,6 +270,139 @@ class TestEdgeCases(unittest.TestCase):
         with self.assertRaises(SystemExit):
             a2a.cmd_recv(args)
 
+    def test_ttl_send(self):
+        """Send with --ttl stores ttl_seconds correctly."""
+        # Register agents
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+        conn.close()
+
+        # Send with TTL
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="expiring msg",
+            **{"from_": "alice", "thread": None, "ttl": 3600}
+        )
+        a2a.cmd_send(args)
+
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT body, ttl_seconds FROM messages WHERE body=?",
+            ("expiring msg",)
+        ).fetchone()
+        self.assertEqual(row["body"], "expiring msg")
+        self.assertEqual(row["ttl_seconds"], 3600)
+        conn.close()
+
+    def test_ttl_no_expiry_default(self):
+        """Send without --ttl leaves ttl_seconds as NULL (never expire)."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+        conn.close()
+
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="persistent msg",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT ttl_seconds FROM messages WHERE body=?",
+            ("persistent msg",)
+        ).fetchone()
+        self.assertIsNone(row["ttl_seconds"])
+        conn.close()
+
+    def test_ttl_cleanup_expired(self):
+        """cleanup_expired() removes messages past their TTL."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+
+        # Insert an already-expired message (TTL 1s, created 10s ago)
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("alice", "bob", "gone", 1, a2a.now() - 10)
+        )
+        # Insert a non-expired message (TTL 3600s, just now)
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("alice", "bob", "keep", 3600, a2a.now())
+        )
+        # Insert a message with no TTL (should never expire)
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("alice", None, "forever", None, a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
+        # Run cleanup
+        conn = a2a.connect(self.project)
+        deleted = a2a.cleanup_expired(conn)
+        conn.commit()
+
+        self.assertGreaterEqual(deleted, 1, "Expected at least 1 expired msg deleted")
+
+        remaining = conn.execute(
+            "SELECT body FROM messages ORDER BY body"
+        ).fetchall()
+        remaining_bodies = [r["body"] for r in remaining]
+        self.assertIn("keep", remaining_bodies)
+        self.assertIn("forever", remaining_bodies)
+        self.assertNotIn("gone", remaining_bodies)
+        conn.close()
+
+    def test_ttl_cleanup_on_peek(self):
+        """peek triggers cleanup_expired so expired msgs don't appear."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+        # Insert expired message
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("alice", None, "should disappear", 1, a2a.now() - 10)
+        )
+        conn.commit()
+        conn.close()
+
+        # Peek triggers cleanup
+        args = a2a.argparse.Namespace(
+            project=self.project, limit=10, json=False
+        )
+        a2a.cmd_peek(args)
+
+        # Verify expired message is gone
+        conn = a2a.connect(self.project)
+        count = conn.execute(
+            "SELECT COUNT(*) FROM messages WHERE body=?",
+            ("should disappear",)
+        ).fetchone()[0]
+        self.assertEqual(count, 0)
+        conn.close()
+
     def test_concurrent_writes(self):
         """Multiple agents can write concurrently (WAL handles it)."""
         # Register two agents
@@ -281,6 +432,41 @@ class TestEdgeCases(unittest.TestCase):
         count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
         self.assertEqual(count, 5)
         conn.close()
+
+
+    def test_ttl_no_expiry(self):
+        """Message with 0 TTL (no expiry) persists after cleanup."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("agent-a", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("agent-a", None, "no-ttl", None, a2a.now())
+        )
+        conn.commit()
+        n = a2a.cleanup_expired(conn)
+        conn.close()
+        self.assertEqual(n, 0, "message with NULL ttl should NOT be deleted")
+
+    def test_ttl_expired(self):
+        """Message past its TTL is deleted by cleanup_expired."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("agent-b", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("agent-b", None, "old", 1, a2a.now() - 10)  # 10s ago, TTL=1s
+        )
+        conn.commit()
+        n = a2a.cleanup_expired(conn)
+        conn.close()
+        self.assertGreaterEqual(n, 1, "expired message should be deleted")
 
 
 if __name__ == "__main__":
