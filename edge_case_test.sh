@@ -87,8 +87,7 @@ export A2A_PROJECT="$PROJECT"
 "$A2A" register alice --role tester >/dev/null
 "$A2A" register bob --role tester >/dev/null
 
-MSG_ID=$("$A2A" send bob "" --from alice 2>&1)
-if [ -n "$MSG_ID" ] && [ "$MSG_ID" -gt 0 ]; then
+if "$A2A" send bob "" --from alice > /dev/null 2>&1; then
     echo "✅ Empty messages stored"
 else
     echo "⚠️  Empty messages may not be stored (expected behavior)"

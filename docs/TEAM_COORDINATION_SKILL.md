@@ -113,6 +113,13 @@ ROLE-CROSS signal. Architect and PM were unaware until the commit message
 appeared in `git log`. Result: duplicate review overhead.
 → Fix: ROLE-CROSS before crossing; CLAIM the crossing as a task.
 
+**Anti-pattern 4 — Immediate fix without assignment**
+qa-claude found a `grep -c` arithmetic defect in `edge_case_test.sh`, committed
+the fix directly (`30bf40d`) without filing a bug report, sending a ROLE-CROSS
+signal, or waiting for architect/PM to assign the task. The fix was correct and
+harmless — but QA was in dev territory with no audit trail.
+→ Fix: report the defect on the bus → wait for assignment → dev fixes it.
+
 ---
 
 ## 6. Kit Prompt Snippet
