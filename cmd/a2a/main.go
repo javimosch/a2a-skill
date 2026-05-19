@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +13,71 @@ import (
 )
 
 const Version = "1.0.0"
+
+var _ = strconv.Itoa // ensure import
+
+// hasFlag checks if a flag (--name) is present in os.Args[2:].
+func hasFlag(name string) bool {
+	for _, a := range os.Args[2:] {
+		if a == name {
+			return true
+		}
+	}
+	return false
+}
+
+// getFlagValue returns the value after --name in os.Args[2:], or empty string.
+func getFlagValue(name string) string {
+	for i, a := range os.Args[2:] {
+		if a == name && i+1 < len(os.Args[2:]) {
+			return os.Args[2+i+1]
+		}
+	}
+	return ""
+}
+
+// getFlagInt returns int value for --name.
+func getFlagInt(name string) int {
+	v := getFlagValue(name)
+	if v == "" {
+		return 0
+	}
+	n, _ := strconv.Atoi(v)
+	return n
+}
+
+// getFlagFloat returns float64 for --name.
+func getFlagFloat(name string) float64 {
+	v := getFlagValue(name)
+	if v == "" {
+		return 0
+	}
+	n, _ := strconv.ParseFloat(v, 64)
+	return n
+}
+
+// positionalArgs returns non-flag positional args from os.Args[2:],
+// skipping known flag names and their values.
+func positionalArgs() []string {
+	var args []string
+	skipNext := false
+	for i := 2; i < len(os.Args); i++ {
+		arg := os.Args[i]
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		if strings.HasPrefix(arg, "--") {
+			// --flag value: skip both unless it's --bool-flag without value
+			if i+1 < len(os.Args) && !strings.HasPrefix(os.Args[i+1], "--") {
+				skipNext = true
+			}
+			continue
+		}
+		args = append(args, arg)
+	}
+	return args
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -24,8 +89,8 @@ func main() {
 	switch cmd {
 	case "init", "register", "unregister", "list", "status",
 		"send", "recv", "peek", "thread", "search", "stats",
-		"wait", "clear", "project", "version", "--version", "-v", "help", "--help", "-h":
-		// valid commands
+		"wait", "clear", "project", "version", "--version", "-v",
+		"help", "--help", "-h":
 	default:
 		fmt.Fprintf(os.Stderr, "a2a: unknown command: %s\n", cmd)
 		printHelp()
@@ -96,7 +161,6 @@ Project resolution:
 }
 
 func resolveProject() string {
-	// Check --project flag first
 	for i, arg := range os.Args {
 		if arg == "--project" && i+1 < len(os.Args) {
 			return os.Args[i+1]
@@ -116,23 +180,16 @@ func newClient(agentID string) *a2a.Client {
 	return a2a.NewClient(resolveProject(), agentID)
 }
 
-func asJSON() bool {
-	for _, arg := range os.Args {
-		if arg == "--json" {
-			return true
-		}
-	}
-	return false
-}
-
 func printJSON(v interface{}) {
 	b, _ := json.MarshalIndent(v, "", "  ")
 	fmt.Println(string(b))
 }
 
+// ---------- commands ----------
+
 func cmdInit() {
-	cli := newClient("")
-	if err := cli.InitProject(); err != nil {
+	c := newClient("")
+	if err := c.InitProject(); err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: init error: %v\n", err)
 		os.Exit(1)
 	}
@@ -146,18 +203,11 @@ func cmdRegister() {
 		os.Exit(1)
 	}
 	agentID := os.Args[2]
-
-	var role, prompt, cli string
-	var pid int
-	upsert := false
-
-	fs := flag.NewFlagSet("register", flag.ExitOnError)
-	fs.StringVar(&role, "role", "", "")
-	fs.StringVar(&prompt, "prompt", "", "")
-	fs.StringVar(&cli, "cli", "", "")
-	fs.IntVar(&pid, "pid", 0, "")
-	fs.BoolVar(&upsert, "upsert", false, "")
-	fs.Parse(os.Args[3:])
+	role := getFlagValue("--role")
+	prompt := getFlagValue("--prompt")
+	cli := getFlagValue("--cli")
+	pid := getFlagInt("--pid")
+	upsert := hasFlag("--upsert")
 
 	c := newClient(agentID)
 	if err := c.InitProject(); err != nil {
@@ -172,16 +222,17 @@ func cmdRegister() {
 }
 
 func cmdUnregister() {
-	if len(os.Args) < 3 {
+	args := positionalArgs()
+	if len(args) < 1 {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a unregister <id>")
 		os.Exit(1)
 	}
-	c := newClient(os.Args[2])
+	c := newClient(args[0])
 	if err := c.Unregister(); err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: unregister error: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("removed agent '%s'\n", os.Args[2])
+	fmt.Printf("removed agent '%s'\n", args[0])
 }
 
 func cmdList() {
@@ -191,7 +242,7 @@ func cmdList() {
 		fmt.Fprintf(os.Stderr, "a2a: list error: %v\n", err)
 		os.Exit(1)
 	}
-	if asJSON() {
+	if hasFlag("--json") {
 		printJSON(peers)
 		return
 	}
@@ -214,61 +265,58 @@ func cmdList() {
 }
 
 func cmdStatus() {
-	fs := flag.NewFlagSet("status", flag.ExitOnError)
-	agentID := fs.String("as", "", "")
-	jsonFlag := fs.Bool("json", false, "")
-	fs.Parse(os.Args[2:])
+	agentID := getFlagValue("--as")
+	jsonFlag := hasFlag("--json")
+	args := positionalArgs()
 
-	if fs.NArg() < 1 || *agentID == "" {
+	if len(args) < 1 || agentID == "" {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a status <state> --as <id> [--json]")
 		os.Exit(1)
 	}
-	state := fs.Arg(0)
+	state := args[0]
 
-	c := newClient(*agentID)
+	c := newClient(agentID)
 	if err := c.SetStatus(state); err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: status error: %v\n", err)
 		os.Exit(1)
 	}
 
-	if *jsonFlag {
+	if jsonFlag {
 		printJSON(map[string]interface{}{
-			"agent":   *agentID,
-			"status":  state,
+			"agent":  agentID,
+			"status": state,
 		})
 	} else {
-		fmt.Printf("agent '%s' status -> %s\n", *agentID, state)
+		fmt.Printf("agent '%s' status -> %s\n", agentID, state)
 	}
 }
 
 func cmdSend() {
-	fs := flag.NewFlagSet("send", flag.ExitOnError)
-	from := fs.String("from", "", "")
-	thread := fs.String("thread", "", "")
-	ttl := fs.Int("ttl", 0, "")
-	jsonFlag := fs.Bool("json", false, "")
-	fs.Parse(os.Args[2:])
+	from := getFlagValue("--from")
+	thread := getFlagValue("--thread")
+	ttl := getFlagInt("--ttl")
+	jsonFlag := hasFlag("--json")
+	args := positionalArgs()
 
-	if *from == "" || fs.NArg() < 2 {
+	if from == "" || len(args) < 2 {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a send <to> <body> --from <id> [--thread T] [--ttl N] [--json]")
 		os.Exit(1)
 	}
 
-	to := fs.Arg(0)
-	body := fs.Arg(1)
-	// Read body from stdin if "-"
+	to := args[0]
+	body := args[1]
 	if body == "-" {
 		stdin, _ := os.ReadFile(os.Stdin.Name())
-		body = string(stdin)
+		body = strings.TrimSpace(string(stdin))
 	}
 
 	var ttlPtr *int
-	if ttl != nil && *ttl > 0 {
-		ttlPtr = ttl
+	if ttl > 0 {
+		ttlPtr = &ttl
 	}
 
-	c := newClient(*from)
-	mid, err := c.Send(to, body, *thread, ttlPtr)
+	c := newClient(from)
+	mid, err := c.Send(to, body, thread, ttlPtr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: send error: %v\n", err)
 		os.Exit(1)
@@ -279,90 +327,91 @@ func cmdSend() {
 		target = "ALL"
 	}
 
-	if *jsonFlag {
+	if jsonFlag {
 		printJSON(map[string]interface{}{
 			"id":        mid,
-			"sender":    *from,
+			"sender":    from,
 			"recipient": target,
 		})
 	} else {
-		fmt.Printf("#%d %s -> %s\n", mid, *from, target)
+		fmt.Printf("#%d %s -> %s\n", mid, from, target)
 	}
 }
 
 func cmdRecv() {
-	fs := flag.NewFlagSet("recv", flag.ExitOnError)
-	agentID := fs.String("as", "", "")
-	wait := fs.Float64("wait", 0, "")
-	limit := fs.Int("limit", 0, "")
-	includeAll := fs.Bool("all", false, "")
-	includeSelf := fs.Bool("include-self", false, "")
-	peekMode := fs.Bool("peek", false, "")
-	jsonFlag := fs.Bool("json", false, "")
-	fs.Parse(os.Args[2:])
+	agentID := getFlagValue("--as")
+	waitSec := getFlagFloat("--wait")
+	limit := getFlagInt("--limit")
+	includeAll := hasFlag("--all")
+	includeSelf := hasFlag("--include-self")
+	peekMode := hasFlag("--peek")
+	jsonFlag := hasFlag("--json")
 
-	if *agentID == "" {
+	if agentID == "" {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a recv --as <id> [--wait N] [--limit N] [--all] [--include-self] [--peek] [--json]")
 		os.Exit(1)
 	}
 
-	c := newClient(*agentID)
-	unreadOnly := !*includeAll
-
-	deadline := time.Now().Add(time.Duration(*wait) * time.Second)
+	c := newClient(agentID)
+	unreadOnly := !includeAll
+	deadline := time.Now().Add(time.Duration(waitSec * float64(time.Second)))
 	pollInterval := 500 * time.Millisecond
 
 	for {
-		msgs, err := c.Recv(0, unreadOnly, *includeSelf, *limit)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "a2a: recv error: %v\n", err)
-			os.Exit(1)
-		}
-
-		// Filter out already-read if peeking
-		if *peekMode {
-			msgs = nil
-			// re-fetch without marking read
-			dbMsgs, err := c.Peek(*limit)
-			if err == nil {
-				msgs = dbMsgs
+		if peekMode {
+			msgs, err := c.Peek(limit)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "a2a: recv error: %v\n", err)
+				os.Exit(1)
 			}
-		}
-
-		if len(msgs) > 0 || *wait == 0 {
-			c.Touch()
-			if *jsonFlag {
-				printJSON(msgs)
-			} else {
-				printMessages(msgs)
+			if len(msgs) > 0 || waitSec == 0 {
+				if jsonFlag {
+					printJSON(msgs)
+				} else {
+					printMessages(msgs)
+				}
+				return
 			}
-			return
+		} else {
+			msgs, err := c.Recv(0, unreadOnly, includeSelf, limit)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "a2a: recv error: %v\n", err)
+				os.Exit(1)
+			}
+			if len(msgs) > 0 || waitSec == 0 {
+				if jsonFlag {
+					printJSON(msgs)
+				} else {
+					printMessages(msgs)
+				}
+				return
+			}
 		}
 
 		if time.Now().After(deadline) {
-			if *jsonFlag {
+			if jsonFlag {
 				printJSON([]a2a.Message{})
 			}
 			return
 		}
-
 		time.Sleep(pollInterval)
 	}
 }
 
 func cmdPeek() {
-	fs := flag.NewFlagSet("peek", flag.ExitOnError)
-	limit := fs.Int("limit", 20, "")
-	jsonFlag := fs.Bool("json", false, "")
-	fs.Parse(os.Args[2:])
+	limit := getFlagInt("--limit")
+	if limit == 0 {
+		limit = 20
+	}
+	jsonFlag := hasFlag("--json")
 
 	c := newClient("")
-	msgs, err := c.Peek(*limit)
+	msgs, err := c.Peek(limit)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: peek error: %v\n", err)
 		os.Exit(1)
 	}
-	if *jsonFlag {
+	if jsonFlag {
 		printJSON(msgs)
 	} else {
 		printMessages(msgs)
@@ -370,15 +419,13 @@ func cmdPeek() {
 }
 
 func cmdThread() {
-	fs := flag.NewFlagSet("thread", flag.ExitOnError)
-	jsonFlag := fs.Bool("json", false, "")
-	fs.Parse(os.Args[2:])
-
-	if fs.NArg() < 1 {
+	jsonFlag := hasFlag("--json")
+	args := positionalArgs()
+	if len(args) < 1 {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a thread <id> [--json]")
 		os.Exit(1)
 	}
-	threadID := fs.Arg(0)
+	threadID := args[0]
 
 	c := newClient("")
 	msgs, err := c.Thread(threadID)
@@ -386,7 +433,7 @@ func cmdThread() {
 		fmt.Fprintf(os.Stderr, "a2a: thread error: %v\n", err)
 		os.Exit(1)
 	}
-	if *jsonFlag {
+	if jsonFlag {
 		printJSON(msgs)
 	} else if len(msgs) == 0 {
 		fmt.Printf("(no messages in thread '%s')\n", threadID)
@@ -396,24 +443,25 @@ func cmdThread() {
 }
 
 func cmdSearch() {
-	fs := flag.NewFlagSet("search", flag.ExitOnError)
-	limit := fs.Int("limit", 50, "")
-	jsonFlag := fs.Bool("json", false, "")
-	fs.Parse(os.Args[2:])
-
-	if fs.NArg() < 1 {
+	limit := getFlagInt("--limit")
+	if limit == 0 {
+		limit = 50
+	}
+	jsonFlag := hasFlag("--json")
+	args := positionalArgs()
+	if len(args) < 1 {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a search <query> [--limit N] [--json]")
 		os.Exit(1)
 	}
-	query := fs.Arg(0)
+	query := args[0]
 
 	c := newClient("")
-	msgs, err := c.Search(query, *limit)
+	msgs, err := c.Search(query, limit)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: search error: %v\n", err)
 		os.Exit(1)
 	}
-	if *jsonFlag {
+	if jsonFlag {
 		printJSON(msgs)
 	} else if len(msgs) == 0 {
 		fmt.Printf("(no messages matching '%s')\n", query)
@@ -423,7 +471,7 @@ func cmdSearch() {
 }
 
 func cmdStats() {
-	jsonFlag := asJSON()
+	jsonFlag := hasFlag("--json")
 
 	c := newClient("")
 	stats, err := c.Stats()
@@ -433,8 +481,7 @@ func cmdStats() {
 	}
 
 	if jsonFlag {
-		b, _ := json.MarshalIndent(stats, "", "  ")
-		fmt.Println(string(b))
+		printJSON(stats)
 		return
 	}
 
@@ -451,40 +498,37 @@ func cmdStats() {
 }
 
 func cmdWait() {
-	fs := flag.NewFlagSet("wait", flag.ExitOnError)
-	agentID := fs.String("as", "", "")
-	count := fs.Int("count", 1, "")
-	timeout := fs.Float64("timeout", 60, "")
-	fs.Parse(os.Args[2:])
+	agentID := getFlagValue("--as")
+	count := getFlagInt("--count")
+	if count == 0 {
+		count = 1
+	}
+	timeout := getFlagFloat("--timeout")
+	if timeout == 0 {
+		timeout = 60
+	}
 
-	if *agentID == "" {
+	if agentID == "" {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a wait --as <id> [--count N] [--timeout N]")
 		os.Exit(1)
 	}
 
-	c := newClient(*agentID)
-	n, err := c.Wait(*count, *timeout)
+	c := newClient(agentID)
+	n, err := c.Wait(count, timeout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: wait error: %v\n", err)
 		os.Exit(1)
 	}
-	if n >= *count {
+	if n >= count {
 		fmt.Printf("ok: %d unread\n", n)
 	} else {
-		fmt.Fprintf(os.Stderr, "a2a: timeout: only %d unread (wanted %d)\n", n, *count)
+		fmt.Fprintf(os.Stderr, "a2a: timeout: only %d unread (wanted %d)\n", n, count)
 		os.Exit(2)
 	}
 }
 
 func cmdClear() {
-	yes := false
-	for _, arg := range os.Args {
-		if arg == "--yes" {
-			yes = true
-			break
-		}
-	}
-	if !yes {
+	if !hasFlag("--yes") {
 		fmt.Fprintln(os.Stderr, "a2a: refusing without --yes")
 		os.Exit(1)
 	}
@@ -504,7 +548,6 @@ func cmdProject() {
 	c := newClient("")
 	info := c.ProjectInfo()
 	printJSON(info)
-	// Also include exists in human-readable
 	if info["exists"].(bool) {
 		fmt.Printf("project '%s' exists at %s\n", info["project"], info["db"])
 	} else {
@@ -518,7 +561,7 @@ func printMessages(msgs []a2a.Message) {
 		if m.Recipient != nil {
 			target = *m.Recipient
 		}
-		ts := time.Unix(int64(m.CreatedAt), 0).Format("15:04:05")
+		ts := time.Unix(int64(m.CreatedAt), int64((m.CreatedAt-float64(int64(m.CreatedAt)))*1e9)).Format("15:04:05")
 		thread := ""
 		if m.ThreadID != nil {
 			thread = fmt.Sprintf(" [thread:%s]", *m.ThreadID)
@@ -529,5 +572,3 @@ func printMessages(msgs []a2a.Message) {
 		}
 	}
 }
-
-
