@@ -102,7 +102,7 @@ func TestSendRecv(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", 0, false)
 
-	msgs, err := c2.Recv(0, true, false, 0)
+	msgs, err := c2.RecvSimple(0, true, false, 0)
 	if err != nil {
 		t.Fatalf("Recv: %v", err)
 	}
@@ -404,7 +404,7 @@ func TestRecvWithTTLCleanup(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", 0, false)
 
-	msgs, err := c2.Recv(0, true, false, 10)
+	msgs, err := c2.RecvSimple(0, true, false, 10)
 	if err != nil {
 		t.Fatalf("Recv with TTL: %v", err)
 	}

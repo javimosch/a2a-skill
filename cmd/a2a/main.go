@@ -348,14 +348,26 @@ func cmdRecv() {
 	includeSelf := hasFlag("--include-self")
 	peekMode := hasFlag("--peek")
 	jsonFlag := hasFlag("--json")
+	sinceStr := getFlagValue("--since")
 
 	if agentID == "" {
-		fmt.Fprintln(os.Stderr, "a2a: usage: a2a recv --as <id> [--wait N] [--limit N] [--all] [--include-self] [--peek] [--json]")
+		fmt.Fprintln(os.Stderr, "a2a: usage: a2a recv --as <id> [--wait N] [--limit N] [--all] [--include-self] [--peek] [--since TS] [--json]")
 		os.Exit(1)
 	}
 
 	c := newClient(agentID)
 	unreadOnly := !includeAll
+
+	var since *float64
+	if sinceStr != "" {
+		s, err := strconv.ParseFloat(sinceStr, 64)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "a2a: invalid --since value: %v\n", err)
+			os.Exit(1)
+		}
+		since = &s
+	}
+
 	deadline := time.Now().Add(time.Duration(waitSec * float64(time.Second)))
 	pollInterval := 500 * time.Millisecond
 
@@ -375,7 +387,13 @@ func cmdRecv() {
 				return
 			}
 		} else {
-			msgs, err := c.Recv(0, unreadOnly, includeSelf, limit)
+			msgs, err := c.Recv(a2a.RecvOpts{
+				Wait:        waitSec,
+				UnreadOnly:  unreadOnly,
+				IncludeSelf: includeSelf,
+				Limit:       limit,
+				Since:       since,
+			})
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "a2a: recv error: %v\n", err)
 				os.Exit(1)

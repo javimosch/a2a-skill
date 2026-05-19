@@ -121,8 +121,31 @@ func (c *Client) SendSimple(to, message string) (int64, error) {
 	return c.Send(to, message, "", nil)
 }
 
-// Recv receives messages. Calls CleanupExpired and Touch at start.
-func (c *Client) Recv(wait int, unreadOnly bool, includeSelf bool, limit int) ([]Message, error) {
+// RecvOpts configures the Recv call
+var DefaultRecvOpts = RecvOpts{
+	Wait:        0,
+	UnreadOnly:  true,
+	IncludeSelf: false,
+	Limit:       0,
+	Since:       nil, // no timestamp filter
+}
+
+// RecvOpts holds optional parameters for Recv
+type RecvOpts struct {
+	// Wait blocks up to N seconds for at least one message (0 = no wait)
+	Wait float64
+	// UnreadOnly filters to messages not yet read by this agent
+	UnreadOnly bool
+	// IncludeSelf includes messages sent by this agent
+	IncludeSelf bool
+	// Limit caps the number of returned messages (0 = unlimited)
+	Limit int
+	// Since filters to messages created after this timestamp (nil = no filter)
+	Since *float64
+}
+
+// Recv receives messages with full options. Calls CleanupExpired and Touch at start.
+func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 	c.CleanupExpired()
 	c.Touch()
 
@@ -132,27 +155,32 @@ func (c *Client) Recv(wait int, unreadOnly bool, includeSelf bool, limit int) ([
 	}
 	defer db.Close()
 
-	deadline := time.Now().Add(time.Duration(wait) * time.Second)
+	deadline := time.Now().Add(time.Duration(opts.Wait * float64(time.Second)))
 	pollInterval := 100 * time.Millisecond
 
 	for {
 		query := "SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE (recipient = ? OR recipient IS NULL)"
 		args := []interface{}{c.AgentID}
 
-		if !includeSelf {
+		if !opts.IncludeSelf {
 			query += " AND sender != ?"
 			args = append(args, c.AgentID)
 		}
 
-		if unreadOnly {
+		if opts.UnreadOnly {
 			query += " AND NOT EXISTS (SELECT 1 FROM reads WHERE agent_id = ? AND message_id = messages.id)"
 			args = append(args, c.AgentID)
 		}
 
+		if opts.Since != nil {
+			query += " AND created_at > ?"
+			args = append(args, *opts.Since)
+		}
+
 		query += " ORDER BY created_at ASC"
-		if limit > 0 {
+		if opts.Limit > 0 {
 			query += " LIMIT ?"
-			args = append(args, limit)
+			args = append(args, opts.Limit)
 		}
 
 		rows, err := db.Query(query, args...)
@@ -182,12 +210,22 @@ func (c *Client) Recv(wait int, unreadOnly bool, includeSelf bool, limit int) ([
 			return messages, nil
 		}
 
-		if wait == 0 || time.Now().After(deadline) {
+		if opts.Wait == 0 || time.Now().After(deadline) {
 			return messages, nil
 		}
 
 		time.Sleep(pollInterval)
 	}
+}
+
+// RecvSimple is a backward-compatible wrapper for Recv with positional args.
+func (c *Client) RecvSimple(wait int, unreadOnly, includeSelf bool, limit int) ([]Message, error) {
+	return c.Recv(RecvOpts{
+		Wait:        float64(wait),
+		UnreadOnly:  unreadOnly,
+		IncludeSelf: includeSelf,
+		Limit:       limit,
+	})
 }
 
 // Peek views recent messages without marking read. Calls CleanupExpired first.
