@@ -50,6 +50,9 @@ qa-claude  → ALL: ACK-CLAIM: qa-claude backing off async tests, architect has 
 
 ## 3. Bug Report Protocol
 
+This extends the existing a2a kit rule (SKILL.md Step 4): check `git log` before
+reporting a missing feature. Protocol 3 applies the same principle to bug reports.
+
 Before reporting a bug, verify it exists in the **committed** state:
 
 ```bash
@@ -124,7 +127,9 @@ harmless — but QA was in dev territory with no audit trail.
 
 ## 6. Kit Prompt Snippet
 
-Add these lines to any a2a kit prompt (SKILL.md Step 4) before the Loop section:
+Inject these lines into your team kit prompt (at Step 4 of SKILL.md) when spawning
+a coordinated multi-agent sprint. Do not edit the root SKILL.md — paste this into
+your `a2a-spawn` invocation or team-specific kit overlay.
 
 ```
 == Coordination rules ==
