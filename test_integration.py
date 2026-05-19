@@ -355,5 +355,137 @@ class TestIntegration(unittest.TestCase):
                 self.assertIn(f"Hello from {other}", bodies)
 
 
+    # ---- Thread command ----
+
+    def test_thread_command(self):
+        """a2a thread <id> returns all messages in a thread."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        tid = "qa-thread-001"
+        a2a("send", "bob", "first in thread", "--from", "alice",
+            "--thread", tid, project=self.project)
+        a2a("send", "bob", "second in thread", "--from", "alice",
+            "--thread", tid, project=self.project)
+        a2a("send", "bob", "unrelated message", "--from", "alice",
+            project=self.project)
+        result = a2a("thread", tid, "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 2)
+        bodies = {m["body"] for m in msgs}
+        self.assertIn("first in thread", bodies)
+        self.assertIn("second in thread", bodies)
+        self.assertNotIn("unrelated message", bodies)
+
+    def test_thread_command_empty(self):
+        """a2a thread <unknown-id> returns empty list without error."""
+        result = a2a("thread", "nonexistent-thread-id", "--json",
+                     project=self.project)
+        self.assertEqual(result.returncode, 0)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(msgs, [])
+
+    # ---- Stats command ----
+
+    def test_stats_command(self):
+        """a2a stats returns correct counts."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "all", "broadcast one", "--from", "alice",
+            project=self.project)
+        a2a("send", "bob", "direct one", "--from", "alice",
+            project=self.project)
+        result = a2a("stats", "--json", project=self.project)
+        stats = json.loads(result.stdout)
+        self.assertEqual(stats["messages"], 2)
+        self.assertEqual(stats["broadcasts"], 1)
+        self.assertEqual(stats["direct_messages"], 1)
+        self.assertGreaterEqual(stats["agents_active"], 2)
+
+    def test_stats_empty_bus(self):
+        """a2a stats on a fresh bus reports zero messages."""
+        result = a2a("stats", "--json", project=self.project)
+        stats = json.loads(result.stdout)
+        self.assertEqual(stats["messages"], 0)
+
+    # ---- Search command ----
+
+    def test_search_cli_returns_matches(self):
+        """a2a search finds messages containing the query term."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "the authentication service is down",
+            "--from", "alice", project=self.project)
+        a2a("send", "bob", "deployment completed successfully",
+            "--from", "alice", project=self.project)
+        result = a2a("search", "authentication", "--json",
+                     project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 1)
+        self.assertIn("authentication", msgs[0]["body"])
+
+    def test_search_cli_no_matches(self):
+        """a2a search returns empty list when nothing matches."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "hello world", "--from", "alice",
+            project=self.project)
+        result = a2a("search", "zzznomatch", "--json",
+                     project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(msgs, [])
+
+    def test_search_cli_case_insensitive(self):
+        """a2a search is case-insensitive."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "Deploy Complete", "--from", "alice",
+            project=self.project)
+        result = a2a("search", "deploy", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertGreaterEqual(len(msgs), 1)
+
+    # ---- Project command ----
+
+    def test_project_command(self):
+        """a2a project reports the active project name."""
+        result = a2a("project", project=self.project)
+        self.assertIn(self.project, result.stdout)
+
+    def test_project_command_json(self):
+        """a2a project always outputs JSON with project name and db path."""
+        result = a2a("project", project=self.project)
+        info = json.loads(result.stdout)
+        self.assertEqual(info["project"], self.project)
+        self.assertIn("db", info)
+        self.assertIn("exists", info)
+
+    # ---- Wait command ----
+
+    def test_wait_returns_when_message_arrives(self):
+        """a2a wait returns once a matching message is on the bus."""
+        import threading
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+
+        def send_after_delay():
+            time.sleep(0.5)
+            a2a("send", "bob", "wake up bob", "--from", "alice",
+                project=self.project)
+
+        t = threading.Thread(target=send_after_delay)
+        t.start()
+        result = a2a("wait", "--as", "bob", "--timeout", "5",
+                     project=self.project)
+        t.join(timeout=6)
+        self.assertEqual(result.returncode, 0)
+
+    def test_wait_times_out_when_no_message(self):
+        """a2a wait exits with non-zero when timeout expires with no message."""
+        a2a("register", "bob", project=self.project)
+        result = a2a("wait", "--as", "bob", "--timeout", "1",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
