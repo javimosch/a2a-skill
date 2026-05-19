@@ -120,6 +120,94 @@ class TestFullTextSearch(unittest.TestCase):
         self.assertIn("-resolved", query)
 
 
+class TestFTSClientWithDB(unittest.TestCase):
+    """Real-database tests for FTSClient search methods."""
+
+    def setUp(self):
+        import os
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        import a2a
+        self.project = f"fts-db-test-{os.getpid()}-{id(self)}"
+        conn = a2a.connect(self.project, create=True)
+        conn.execute(
+            "INSERT INTO agents(id, role, status, created_at, last_seen) VALUES (?,?,?,?,?)",
+            ("alice", "tester", "active", 1000.0, 1000.0),
+        )
+        conn.execute(
+            "INSERT INTO agents(id, role, status, created_at, last_seen) VALUES (?,?,?,?,?)",
+            ("bob", "tester", "active", 1000.0, 1000.0),
+        )
+        bodies = [
+            "authentication service is down",
+            "deployment completed successfully",
+            "error in authentication module",
+            "database backup finished",
+        ]
+        for i, body in enumerate(bodies):
+            conn.execute(
+                "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+                ("alice", "bob", body, 1000.0 + i),
+            )
+        conn.commit()
+        conn.close()
+        self.fts = FTSClient(self.project, "alice")
+        self.assertTrue(self.fts.init_fts_table(), "FTS init must succeed")
+        self.assertTrue(self.fts.rebuild_fts_index(), "FTS rebuild must succeed")
+
+    def tearDown(self):
+        import a2a
+        try:
+            conn = a2a.connect(self.project)
+            conn.execute("DROP TABLE IF EXISTS messages_fts")
+            conn.execute("DELETE FROM messages")
+            conn.execute("DELETE FROM agents")
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+    def test_search_fts_single_term(self):
+        """search_fts finds messages containing a single term."""
+        results = self.fts.search_fts("authentication")
+        bodies = [r["body"] for r in results]
+        self.assertEqual(len(results), 2)
+        self.assertTrue(all("authentication" in b for b in bodies))
+
+    def test_search_fts_boolean_and(self):
+        """search_fts AND operator requires both terms."""
+        results = self.fts.search_fts("authentication AND error")
+        self.assertEqual(len(results), 1)
+        self.assertIn("error", results[0]["body"])
+
+    def test_search_fts_no_match(self):
+        """search_fts returns empty list when nothing matches."""
+        results = self.fts.search_fts("zzznomatch")
+        self.assertEqual(results, [])
+
+    def test_search_fts_limit(self):
+        """search_fts respects the limit parameter."""
+        results = self.fts.search_fts("a", limit=1)
+        self.assertLessEqual(len(results), 1)
+
+    def test_rebuild_fts_index(self):
+        """rebuild_fts_index returns True on success."""
+        ok = self.fts.rebuild_fts_index()
+        self.assertTrue(ok)
+
+    def test_get_search_stats(self):
+        """get_search_stats returns indexed_messages count."""
+        stats = self.fts.get_search_stats()
+        self.assertIn("indexed_messages", stats)
+        self.assertGreaterEqual(stats["indexed_messages"], 0)
+        self.assertIn("total_messages", stats)
+        self.assertEqual(stats["total_messages"], 4)
+
+    def test_get_total_messages(self):
+        """_get_total_messages returns correct count."""
+        self.assertEqual(self.fts._get_total_messages(), 4)
+
+
 class TestAuditLogging(unittest.TestCase):
     """Test suite for audit logging (v1.3)."""
 
