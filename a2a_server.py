@@ -280,8 +280,8 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
 
     def get_db(self):
         """Get database connection"""
-        project = self.server.project
-        db_path = Path.home() / '.a2a' / project / 'database.db'
+        # Use precomputed absolute path so HOME changes in tests don't affect routing.
+        db_path = Path(self.server.db_path)
         db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(db_path), timeout=10.0)
         conn.execute("PRAGMA journal_mode=WAL")
@@ -305,6 +305,8 @@ def run_server(project, host='localhost', port=5000):
     """Run the a2a REST API server"""
     server = HTTPServer((host, port), A2ARequestHandler)
     server.project = project
+    # Resolve db_path at startup so HOME changes in tests don't affect routing.
+    server.db_path = str(Path.home() / '.a2a' / project / 'database.db')
     
     print(f'a2a REST API Server')
     print(f'  Project: {project}')
