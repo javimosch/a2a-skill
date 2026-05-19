@@ -5,12 +5,8 @@ The `a2a_client.go` module provides a Go API for a2a messaging, enabling integra
 ## Installation
 
 ```bash
-# Add to your go.mod
-go get github.com/mattn/go-sqlite3
-go get github.com/mattn/go-sqlite3
-
-# Copy a2a_client.go to your project
-cp a2a_client.go .
+# Add to your go.mod (root of this repo is the Go module)
+go get github.com/jarancibia/a2a-skill
 ```
 
 ## Quick Start
@@ -58,18 +54,28 @@ func main() {
 
 Create a new client.
 
-### Send(to, message string, ttlSeconds *int) (int64, error)
+### Send(to, message, threadID string, ttlSeconds *int) (int64, error)
 
-Send a message. Set `to` to "all", "*", or "broadcast" for broadcast messages.
+Send a message with optional thread ID and TTL. Set `to` to "all", "*", or "broadcast" for broadcast messages.
+Pass thread ID as "" for no thread, or nil ttlSeconds for no expiry.
 
 ```go
 ttl := 3600
-msgID, err := client.Send("bob", "Hello", &ttl)
+msgID, err := client.Send("bob", "Hello", "thread-1", &ttl)
+```
+
+### SendSimple(to, message string) (int64, error)
+
+Backward-compatible wrapper for `Send()` without thread or TTL.
+
+```go
+msgID, err := client.SendSimple("bob", "Hello")
 ```
 
 ### Recv(wait int, unreadOnly, includeSelf bool, limit int) ([]Message, error)
 
-Receive messages. Returns after finding messages, or after `wait` seconds.
+Receive messages. Calls `CleanupExpired()` and `Touch()` internally before
+fetching. Returns after finding messages, or after `wait` seconds.
 
 ```go
 messages, err := client.Recv(30, true, false, 10)
@@ -141,6 +147,78 @@ Get stats as JSON string.
 
 ```go
 jsonStr, err := client.StatsJSON()
+```
+
+### InitProject() error
+
+Create the database and schema. No-op if already exists. Migrates older
+schemas that lack the `ttl_seconds` column.
+
+```go
+client.InitProject()
+```
+
+### Register(role, prompt, cli string, pid int, upsert bool) error
+
+Register this agent on the bus. If `upsert` is true, updates existing
+registration instead of failing.
+
+```go
+client.AgentID = "alice"
+client.Register("planner", "Plan things", "claude", 0, true)
+```
+
+### Unregister() error
+
+Remove this agent from the bus.
+
+```go
+client.Unregister()
+```
+
+### Touch() error
+
+Update the agent's `last_seen` timestamp to now.
+
+```go
+client.Touch()
+```
+
+### CleanupExpired() (int, error)
+
+Delete messages that have exceeded their TTL. Returns count of deleted
+messages. Called automatically by `Recv()` and `Peek()`.
+
+```go
+deleted, err := client.CleanupExpired()
+```
+
+### Wait(count int, timeoutSec float64) (int, error)
+
+Block until at least `count` unread messages exist for this agent, or
+until `timeoutSec` seconds elapse. Returns the number of unread messages
+found.
+
+```go
+unread, err := client.Wait(1, 30)
+```
+
+### Clear() error
+
+Delete the entire database file. All bus data is lost.
+
+```go
+client.Clear()
+```
+
+### ProjectInfo() map[string]interface{}
+
+Returns resolved project metadata: project name, database path, and
+whether the database file exists.
+
+```go
+info := client.ProjectInfo()
+fmt.Println(info["db"], info["exists"])
 ```
 
 ## Example: Task Worker
