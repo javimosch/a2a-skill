@@ -772,3 +772,66 @@ func TestSetStatusUnknownAgentFails(t *testing.T) {
 		t.Fatal("expected error for unknown agent SetStatus, got nil")
 	}
 }
+
+func TestPeekEmpty(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("tester", "", "", 0, false)
+
+	msgs, err := c.Peek(10)
+	if err != nil {
+		t.Fatalf("Peek on empty bus: %v", err)
+	}
+	if len(msgs) != 0 {
+		t.Fatalf("expected 0 messages on empty bus, got %d", len(msgs))
+	}
+}
+
+func TestPeekJSON(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("tester", "", "", 0, false)
+	c2 := NewClient(c.Project, "bob")
+	c2.Register("tester", "", "", 0, false)
+
+	c.Send("bob", "peek test", "", nil)
+	msgs, err := c.Peek(10)
+	if err != nil {
+		t.Fatalf("Peek: %v", err)
+	}
+	if len(msgs) != 1 {
+		t.Fatalf("expected 1 message, got %d", len(msgs))
+	}
+	if msgs[0].Body != "peek test" {
+		t.Fatalf("expected 'peek test', got '%s'", msgs[0].Body)
+	}
+}
+
+func TestBroadcastRecipientIsNil(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("tester", "", "", 0, false)
+
+	_, err := c.Send("all", "broadcast msg", "", nil)
+	if err != nil {
+		t.Fatalf("Send broadcast: %v", err)
+	}
+
+	msgs, err := c.Peek(10)
+	if err != nil {
+		t.Fatalf("Peek: %v", err)
+	}
+	if len(msgs) != 1 {
+		t.Fatalf("expected 1 message, got %d", len(msgs))
+	}
+	// Recipient should be nil/empty for broadcasts
+	if msgs[0].Recipient != nil {
+		t.Fatalf("expected nil recipient for broadcast, got %v", *msgs[0].Recipient)
+	}
+}
