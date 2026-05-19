@@ -294,7 +294,6 @@ func cmdStatus() {
 func cmdSend() {
 	from := getFlagValue("--from")
 	thread := getFlagValue("--thread")
-	ttl := getFlagInt("--ttl")
 	jsonFlag := hasFlag("--json")
 	args := positionalArgs()
 
@@ -311,8 +310,11 @@ func cmdSend() {
 	}
 
 	var ttlPtr *int
-	if ttl > 0 {
-		ttlPtr = &ttl
+	if hasFlag("--ttl") {
+		t := getFlagInt("--ttl")
+		if t > 0 {
+			ttlPtr = &t
+		}
 	}
 
 	c := newClient(from)
@@ -399,9 +401,9 @@ func cmdRecv() {
 }
 
 func cmdPeek() {
-	limit := getFlagInt("--limit")
-	if limit == 0 {
-		limit = 20
+	limit := 20
+	if hasFlag("--limit") {
+		limit = getFlagInt("--limit")
 	}
 	jsonFlag := hasFlag("--json")
 
@@ -443,9 +445,9 @@ func cmdThread() {
 }
 
 func cmdSearch() {
-	limit := getFlagInt("--limit")
-	if limit == 0 {
-		limit = 50
+	limit := 50
+	if hasFlag("--limit") {
+		limit = getFlagInt("--limit")
 	}
 	jsonFlag := hasFlag("--json")
 	args := positionalArgs()
@@ -499,13 +501,13 @@ func cmdStats() {
 
 func cmdWait() {
 	agentID := getFlagValue("--as")
-	count := getFlagInt("--count")
-	if count == 0 {
-		count = 1
+	count := 1 // default
+	if hasFlag("--count") {
+		count = getFlagInt("--count")
 	}
-	timeout := getFlagFloat("--timeout")
-	if timeout == 0 {
-		timeout = 60
+	timeout := 60.0 // default
+	if hasFlag("--timeout") {
+		timeout = getFlagFloat("--timeout")
 	}
 
 	if agentID == "" {
