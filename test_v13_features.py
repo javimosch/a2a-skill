@@ -618,6 +618,24 @@ class TestPriorityClientWithDB(unittest.TestCase):
         self.assertEqual(stats["HIGH"], 1)
         self.assertEqual(stats["NORMAL"], 1)
 
+    def test_recv_by_priority_wait0_nonblocking(self):
+        """recv_by_priority(wait=0) must return immediately with no messages."""
+        import time
+        start = time.time()
+        result = self.alice.recv_by_priority(0, wait=0)
+        elapsed = time.time() - start
+        self.assertEqual(result, [])
+        self.assertLess(elapsed, 1.0)
+
+    def test_recv_above_priority_wait0_nonblocking(self):
+        """recv_above_priority(wait=0) must return immediately with no messages."""
+        import time
+        start = time.time()
+        result = self.alice.recv_above_priority(0, wait=0)
+        elapsed = time.time() - start
+        self.assertEqual(result, [])
+        self.assertLess(elapsed, 1.0)
+
 
 def run_tests():
     """Run all v1.3 feature tests."""
