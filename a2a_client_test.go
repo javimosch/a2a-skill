@@ -1,9 +1,12 @@
 package a2a
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 )
 
 func setupTestProject(t *testing.T) (*Client, func()) {
@@ -449,6 +452,189 @@ func TestDBPath(t *testing.T) {
 	expected := filepath.Join(home, ".a2a", "test-proj", "database.db")
 	if c.dbPath != expected {
 		t.Fatalf("expected db path %s, got %s", expected, c.dbPath)
+	}
+}
+
+func TestSendEmptyBody(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	mid, err := c.Send("bob", "", "", nil)
+	if err != nil {
+		t.Fatalf("Send empty body: %v", err)
+	}
+	if mid <= 0 {
+		t.Fatal("expected positive message id")
+	}
+
+	// Verify it was stored
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+	msgs, err := c2.RecvSimple(0, true, false, 10)
+	if err != nil {
+		t.Fatalf("Recv: %v", err)
+	}
+	if len(msgs) != 1 {
+		t.Fatalf("expected 1 message, got %d", len(msgs))
+	}
+	if msgs[0].Body != "" {
+		t.Fatalf("expected empty body, got '%s'", msgs[0].Body)
+	}
+}
+
+func TestSendSpecialChars(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	special := "hello\nmulti\nline\nwith\ttabs\nand🚀emoji\nand\"quotes\""
+	mid, err := c.Send("bob", special, "", nil)
+	if err != nil {
+		t.Fatalf("Send special chars: %v", err)
+	}
+	_ = mid
+
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+	msgs, err := c2.RecvSimple(0, true, false, 10)
+	if err != nil {
+		t.Fatalf("Recv: %v", err)
+	}
+	if msgs[0].Body != special {
+		t.Fatalf("body mismatch:\nexpected: %q\ngot:      %q", special, msgs[0].Body)
+	}
+}
+
+func TestSendLongBody(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	// 10KB body
+	longBody := strings.Repeat("Lorem ipsum dolor sit amet. ", 500)
+	mid, err := c.Send("bob", longBody, "", nil)
+	if err != nil {
+		t.Fatalf("Send long body (10KB): %v", err)
+	}
+	if mid <= 0 {
+		t.Fatal("expected positive message id")
+	}
+
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+	msgs, err := c2.RecvSimple(0, true, false, 10)
+	if err != nil {
+		t.Fatalf("Recv: %v", err)
+	}
+	if len(msgs) != 1 {
+		t.Fatalf("expected 1 message, got %d", len(msgs))
+	}
+	if len(msgs[0].Body) != len(longBody) {
+		t.Fatalf("body length mismatch: expected %d, got %d", len(longBody), len(msgs[0].Body))
+	}
+}
+
+func TestRecvSince(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	// Create message at a known timestamp
+	c.Send("bob", "old message", "", nil)
+	time.Sleep(10 * time.Millisecond)
+	since := nowSec()
+	c.Send("bob", "new message", "", nil)
+
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
+	msgs, err := c2.Recv(RecvOpts{Since: &since, UnreadOnly: true, Wait: 2})
+	if err != nil {
+		t.Fatalf("Recv with Since: %v", err)
+	}
+	if len(msgs) != 1 {
+		t.Fatalf("expected 1 message after 'since', got %d", len(msgs))
+	}
+	if msgs[0].Body != "new message" {
+		t.Fatalf("expected 'new message', got '%s'", msgs[0].Body)
+	}
+}
+
+func TestUnregister(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	// Verify registered
+	peers, err := c.ListPeers()
+	if err != nil {
+		t.Fatalf("ListPeers: %v", err)
+	}
+	if len(peers) != 1 {
+		t.Fatalf("expected 1 peer, got %d", len(peers))
+	}
+
+	// Unregister
+	if err := c.Unregister(); err != nil {
+		t.Fatalf("Unregister: %v", err)
+	}
+
+	peers, err = c.ListPeers()
+	if err != nil {
+		t.Fatalf("ListPeers after unregister: %v", err)
+	}
+	if len(peers) != 0 {
+		t.Fatalf("expected 0 peers after unregister, got %d", len(peers))
+	}
+}
+
+func TestConcurrentSendRecv(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
+	// Concurrent send/recv
+	done := make(chan bool)
+	go func() {
+		for i := 0; i < 5; i++ {
+			c.Send("bob", fmt.Sprintf("msg-%d", i), "", nil)
+			time.Sleep(10 * time.Millisecond)
+		}
+		done <- true
+	}()
+
+	count := 0
+	for count < 5 {
+		msgs, err := c2.RecvSimple(5, true, false, 5)
+		if err != nil {
+			t.Fatalf("Concurrent Recv: %v", err)
+		}
+		count += len(msgs)
+	}
+	<-done
+	if count < 5 {
+		t.Fatalf("expected at least 5 messages, got %d", count)
 	}
 }
 

@@ -355,6 +355,10 @@ func cmdRecv() {
 		os.Exit(1)
 	}
 
+	if limit == 0 {
+		limit = 100 // Python default
+	}
+
 	c := newClient(agentID)
 	unreadOnly := !includeAll
 
