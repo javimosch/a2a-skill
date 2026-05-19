@@ -742,6 +742,43 @@ class TestAuditClientWithDB(unittest.TestCase):
         deleted = self.audit.cleanup_old_logs(days=90)
         self.assertEqual(deleted, 0)
 
+    def test_search_audit_logs_by_agent(self):
+        """search_audit_logs filters by agent_id."""
+        self.audit.log_operation("alice", "send")
+        self.audit.log_operation("bob", "recv")
+        results = self.audit.search_audit_logs(agent_id="alice")
+        self.assertTrue(all(r["agent_id"] == "alice" for r in results))
+        self.assertGreater(len(results), 0)
+
+    def test_search_audit_logs_by_result(self):
+        """search_audit_logs filters by result value."""
+        self.audit.log_operation("alice", "send", result="success")
+        self.audit.log_operation("alice", "recv", result="failure")
+        results = self.audit.search_audit_logs(result="failure")
+        self.assertTrue(all(r["result"] == "failure" for r in results))
+
+    def test_search_audit_logs_time_range(self):
+        """search_audit_logs respects start_time and end_time filters."""
+        now = time.time()
+        self.audit.log_operation("alice", "send")
+        results = self.audit.search_audit_logs(start_time=now - 10, end_time=now + 10)
+        self.assertGreater(len(results), 0)
+        # No results outside the range
+        results_future = self.audit.search_audit_logs(start_time=now + 1000)
+        self.assertEqual(results_future, [])
+
+    def test_audit_context_manager_logs_failure(self):
+        """AuditContextManager logs 'failure' result when exception is raised."""
+        from a2a_audit import AuditContextManager
+        try:
+            with AuditContextManager(self.audit, "alice", "send") as ctx:
+                ctx.details["reason"] = "test failure"
+                raise ValueError("simulated error")
+        except ValueError:
+            pass
+        results = self.audit.search_audit_logs(operation="send", result="failure")
+        self.assertTrue(len(results) > 0)
+
 
 class TestPriorityClientWithDB(unittest.TestCase):
     """Real-database tests for PriorityClient send/recv."""
