@@ -118,6 +118,11 @@ class TestIntegration(unittest.TestCase):
 
     # ---- Registration & Lifecycle ----
 
+    def test_list_empty_bus(self):
+        """a2a list on a fresh bus prints empty notice (no crash)."""
+        result = a2a("list", project=self.project)
+        self.assertIn("no agents", result.stdout.lower())
+
     def test_register_and_list(self):
         """Register agents and list them."""
         a2a("register", "agent-a", "--role", "dev", project=self.project)
@@ -229,6 +234,22 @@ class TestIntegration(unittest.TestCase):
         agents = json.loads(result.stdout)
         self.assertEqual(agents[0]["status"], "done")
 
+    def test_status_json_output(self):
+        """a2a status --json returns machine-readable confirmation."""
+        a2a("register", "worker", project=self.project)
+        result = a2a("status", "active", "--as", "worker", "--json",
+                     project=self.project)
+        info = json.loads(result.stdout)
+        self.assertEqual(info["agent"], "worker")
+        self.assertEqual(info["status"], "active")
+        self.assertIn("last_seen", info)
+
+    def test_status_nonexistent_agent_fails(self):
+        """a2a status on an unregistered agent exits non-zero."""
+        result = a2a("status", "active", "--as", "ghost",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+
     # ---- Unregister ----
 
     def test_unregister(self):
@@ -283,6 +304,31 @@ class TestIntegration(unittest.TestCase):
         # With --all — should show again
         result3 = a2a("recv", "--as", "bob", "--all", "--json", project=self.project)
         self.assertGreaterEqual(len(json.loads(result3.stdout)), 1)
+
+    # ---- Limit flag ----
+
+    def test_recv_limit(self):
+        """a2a recv --limit N returns at most N messages."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        for i in range(5):
+            a2a("send", "bob", f"msg {i}", "--from", "alice",
+                project=self.project)
+        result = a2a("recv", "--as", "bob", "--limit", "2", "--all",
+                     "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertLessEqual(len(msgs), 2)
+
+    def test_peek_limit(self):
+        """a2a peek --limit N returns at most N messages."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        for i in range(5):
+            a2a("send", "all", f"broadcast {i}", "--from", "alice",
+                project=self.project)
+        result = a2a("peek", "--limit", "3", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertLessEqual(len(msgs), 3)
 
     # ---- JSON Output ----
 
