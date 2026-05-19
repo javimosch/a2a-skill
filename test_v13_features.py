@@ -491,6 +491,134 @@ class TestErrorHandling(unittest.TestCase):
         self.assertEqual(Priority.CRITICAL, 4)
 
 
+class TestAuditClientWithDB(unittest.TestCase):
+    """Real-database tests for AuditClient core operations."""
+
+    def setUp(self):
+        import os
+        import sys
+        import a2a
+        self.project = f"audit-db-test-{os.getpid()}-{id(self)}"
+        conn = a2a.connect(self.project, create=True)
+        conn.commit()
+        conn.close()
+        self.audit = AuditClient(self.project)
+        self.assertTrue(self.audit.init_audit_table(), "audit table init must succeed")
+
+    def tearDown(self):
+        import a2a
+        try:
+            conn = a2a.connect(self.project)
+            conn.execute("DROP TABLE IF EXISTS audit_log")
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+    def test_log_operation_returns_true(self):
+        """log_operation persists an entry and returns True."""
+        ok = self.audit.log_operation("alice", "send", message_id=1,
+                                      details={"recipient": "bob"})
+        self.assertTrue(ok)
+
+    def test_get_agent_audit_trail(self):
+        """get_agent_audit_trail returns entries for the given agent."""
+        self.audit.log_operation("alice", "send", message_id=1)
+        self.audit.log_operation("alice", "recv", message_id=2)
+        self.audit.log_operation("bob", "send", message_id=3)
+        trail = self.audit.get_agent_audit_trail("alice")
+        self.assertEqual(len(trail), 2)
+        ops = {r["operation"] for r in trail}
+        self.assertIn("send", ops)
+        self.assertIn("recv", ops)
+
+    def test_get_audit_stats(self):
+        """get_audit_stats returns operation counts."""
+        self.audit.log_operation("alice", "send")
+        self.audit.log_operation("alice", "send")
+        self.audit.log_operation("bob", "recv")
+        stats = self.audit.get_audit_stats()
+        self.assertIn("total_operations", stats)
+        self.assertGreaterEqual(stats["total_operations"], 3)
+
+    def test_search_audit_logs_by_operation(self):
+        """search_audit_logs filters by operation type."""
+        self.audit.log_operation("alice", "send")
+        self.audit.log_operation("alice", "recv")
+        results = self.audit.search_audit_logs(operation="send")
+        self.assertTrue(all(r["operation"] == "send" for r in results))
+
+
+class TestPriorityClientWithDB(unittest.TestCase):
+    """Real-database tests for PriorityClient send/recv."""
+
+    def setUp(self):
+        import os
+        import a2a
+        self.project = f"priority-db-test-{os.getpid()}-{id(self)}"
+        conn = a2a.connect(self.project, create=True)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, role, status, created_at, last_seen) "
+                "VALUES (?,?,?,?,?)",
+                (agent_id, "tester", "active", 1000.0, 1000.0),
+            )
+        conn.commit()
+        conn.close()
+        self.alice = PriorityClient(self.project, "alice")
+        self.bob = PriorityClient(self.project, "bob")
+        self.assertTrue(self.alice.init_priority_table())
+
+    def tearDown(self):
+        import a2a
+        try:
+            conn = a2a.connect(self.project)
+            conn.execute("DELETE FROM messages")
+            conn.execute("DELETE FROM agents")
+            conn.execute("DELETE FROM reads")
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+    def test_send_returns_message_id(self):
+        """send() returns a positive integer message ID."""
+        msg_id = self.alice.send("bob", "hello", priority=Priority.NORMAL)
+        self.assertIsInstance(msg_id, int)
+        self.assertGreater(msg_id, 0)
+
+    def test_recv_priority_ordering(self):
+        """recv() returns messages ordered by priority descending."""
+        self.alice.send("bob", "low prio", priority=Priority.LOW)
+        self.alice.send("bob", "critical prio", priority=Priority.CRITICAL)
+        self.alice.send("bob", "normal prio", priority=Priority.NORMAL)
+        msgs = self.bob.recv(unread_only=False, include_self=False,
+                             priority_aware=True)
+        self.assertGreaterEqual(len(msgs), 3)
+        priorities = [m["priority"] for m in msgs]
+        self.assertEqual(priorities, sorted(priorities, reverse=True))
+
+    def test_get_critical_messages(self):
+        """get_critical_messages returns only CRITICAL priority messages (from recipient's view)."""
+        self.alice.send("bob", "routine update", priority=Priority.NORMAL)
+        self.alice.send("bob", "ALERT: system down", priority=Priority.CRITICAL)
+        # Must check from bob's perspective — alice sent to bob, not to herself
+        critical = self.bob.get_critical_messages(unread_only=False)
+        self.assertGreaterEqual(len(critical), 1)
+        self.assertTrue(all(m["priority"] == Priority.CRITICAL for m in critical))
+
+    def test_get_priority_stats(self):
+        """get_priority_stats returns priority-name keys with message counts."""
+        self.alice.send("bob", "msg1", priority=Priority.HIGH)
+        self.alice.send("bob", "msg2", priority=Priority.NORMAL)
+        stats = self.alice.get_priority_stats()
+        # Returns {"HIGH": N, "NORMAL": N, ...} keyed by Priority enum name
+        self.assertIn("HIGH", stats)
+        self.assertIn("NORMAL", stats)
+        self.assertEqual(stats["HIGH"], 1)
+        self.assertEqual(stats["NORMAL"], 1)
+
+
 def run_tests():
     """Run all v1.3 feature tests."""
     loader = unittest.TestLoader()
