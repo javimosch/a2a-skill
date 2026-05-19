@@ -28,7 +28,8 @@ orchestrator, no central chain of command.
 - `a2a_git_aware.py` — git-state-aware bus queries
 
 **Multi-language clients** (v1.2+):
-- `a2a_client.go` — Go client
+- `a2a_client.go` — Go client library
+- `cmd/a2a/main.go` — Go CLI binary (companion, ~1.3MB, zero deps)
 - `a2a_client.js` — Node.js client
 - `src/lib.rs` — Rust client (Cargo workspace)
 
@@ -58,7 +59,15 @@ a2a-skill/
 ├── a2a_routing_async.py  v1.3: routing rules (async)
 ├── a2a_git_aware.py      v1.3: git-aware bus queries
 ├── a2a_server.py         REST API server
-├── a2a_client.go         Go client
+├── a2a_client.go         Go client library
+├── a2a_client_test.go    Go library tests (35)
+├── go.mod                Go module (companion binary)
+├── go.sum
+├── cmd/a2a/main.go       Go CLI binary entry point
+├── build.sh              Go build script
+├── Makefile              Go build/test/cover targets
+├── smoke_test_go.sh      Go CLI smoke test (24 tests)
+├── verify_json_parity.sh Go vs Python JSON cross-verify
 ├── a2a_client.js         Node.js client
 ├── src/lib.rs            Rust client
 ├── test_a2a.py           unit tests (43)
