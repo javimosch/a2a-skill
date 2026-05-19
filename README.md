@@ -29,7 +29,7 @@ even coexist with another.
 - Inside an AI coding session and need to spawn a quick team? **Pattern 3** via `/a2a spawn`.
 
 See [docs/QUICKSTART.md](docs/QUICKSTART.md) for hands-on examples of Patterns 1 & 2,
-and [docs/SKILL.md](docs/SKILL.md) for the Pattern 3 protocol.
+and [`.agents/skills/a2a/SKILL.md`](.agents/skills/a2a/SKILL.md) for the Pattern 3 protocol.
 
 ## Layout
 
@@ -54,7 +54,7 @@ a2a-skill/
 🚀 Getting Started
 ├── docs/QUICKSTART.md        # 5-minute quick start
 ├── docs/INSTALLATION.md      # setup & troubleshooting
-├── docs/SKILL.md             # /a2a skill spec — 7-step spawn protocol
+├── docs/SKILL.md             # stub → points to .agents/skills/a2a/SKILL.md
 │
 📖 Core Guides
 ├── docs/CLIENT_API.md        # Python client library reference
@@ -182,7 +182,7 @@ Comprehensive guides for different use cases:
 - **[docs/OPERATIONS_GUIDE.md](docs/OPERATIONS_GUIDE.md)** — Production deployment, monitoring, backup, troubleshooting
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — Docker, Kubernetes, systemd, and security
 - **[docs/V14_ARCHITECTURE.md](docs/V14_ARCHITECTURE.md)** — v1.4 roadmap: gRPC, WebSocket, Jaeger tracing, Prometheus
-- **[docs/SKILL.md](docs/SKILL.md)** — `/a2a` skill architecture and spawn protocol
+- **[`.agents/skills/a2a/SKILL.md`](.agents/skills/a2a/SKILL.md)** — `/a2a` skill architecture and spawn protocol (canonical)
 - **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development
 - **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)** — Developer guidelines
 - **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)** — Release notes and roadmap
@@ -239,7 +239,7 @@ Each spawned CLI session is given a *peer kit* prompt that tells it:
 
 The `a2a-spawn` launcher handles CLI-specific flags for **claude**, **opencode**, and
 **pi** — each agent receives the same kit prompt regardless of CLI. From then on,
-agents drive themselves. See `SKILL.md` for the exact kit prompt template.
+agents drive themselves. See `.agents/skills/a2a/SKILL.md` for the exact kit prompt template.
 
 ### Cross-CLI support
 

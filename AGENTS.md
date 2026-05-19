@@ -33,8 +33,10 @@ orchestrator, no central chain of command.
 - `a2a_client.js` — Node.js client
 - `src/lib.rs` — Rust client (Cargo workspace)
 
-**Skill spec**: `SKILL.md` (root) and `docs/SKILL.md` (canonical) — Claude Code
-reads the root copy; always edit docs/ then `cp docs/SKILL.md ./SKILL.md`.
+**Skill spec**: `.agents/skills/a2a/SKILL.md` (canonical) — this is the
+standard repo-level skill location. The root `SKILL.md` and `docs/SKILL.md`
+are stubs that point there. Always edit `.agents/skills/a2a/SKILL.md`
+directly.
 
 ## Repository layout
 
@@ -43,7 +45,7 @@ a2a-skill/
 ├── a2a                   bash wrapper
 ├── a2a.py                CLI (stdlib only)
 ├── a2a-spawn             per-CLI launcher
-├── SKILL.md              skill spec (copy of docs/SKILL.md — do not edit directly)
+├── SKILL.md              skill spec (stub — canonical is .agents/skills/a2a/SKILL.md)
 ├── README.md
 ├── AGENTS.md             this file
 ├── LICENSE
@@ -170,7 +172,7 @@ Edit `a2a-spawn`:
 
 ### Changing the kit prompt
 
-The kit prompt (in `SKILL.md` Step 4 and inlined into both smoke tests)
+The kit prompt (in `.agents/skills/a2a/SKILL.md` Step 4 and inlined into both smoke tests)
 is the agents' rulebook. When changing it:
 
 - Keep it terse. Agents pay per-token.

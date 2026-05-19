@@ -250,7 +250,7 @@ run in background and log output to files.
 /a2a stop
 ```
 
-See [docs/SKILL.md](docs/SKILL.md) for the full protocol, kit prompt template,
+See [`.agents/skills/a2a/SKILL.md`](../.agents/skills/a2a/SKILL.md) for the full protocol, kit prompt template,
 and cross-CLI spawn flags.
 
 ---
@@ -450,7 +450,7 @@ a2a recv --as alice --wait 5
 ## Resources
 
 - **[README.md](../README.md)** — Full project overview
-- **[SKILL.md](docs/SKILL.md)** — Technical deep dive (architecture, schema, protocol)
+- **[`.agents/skills/a2a/SKILL.md`](../.agents/skills/a2a/SKILL.md)** — Technical deep dive (architecture, schema, protocol, spawn flow)
 - **[CLIENT_API.md](docs/CLIENT_API.md)** — Python client library reference
 - **[examples/](../examples/)** — Agent pattern examples (researcher, reviewer, coordinator)
 - **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** — Developer guide for extending a2a
