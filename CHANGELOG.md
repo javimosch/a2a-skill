@@ -22,7 +22,7 @@ All notable changes to a2a-skill are documented here.
   - `query.lower()` broke AND/OR/NOT operators; LIKE path now uses `lower(body)`
 - FTS5 search quality tests (6): single term, AND, OR, prefix, --fts flag, LIKE fallback
 - FTS5 rebuild regression test using `set_trace_callback` (commit `fad3319`)
-- Total test count: 95 → 301 (276 pass + 25 skipped pending `aiosqlite` install)
+- Total test count: 95 → 303 (278 pass + 25 skipped pending `aiosqlite` install)
 - **WAL Invariant — All Non-Python Clients** closed in v1.3.1:
   - `a2a_client.js` → `node:sqlite` (built-in, Node 22+) with `mkdirSync` + WAL + `busy_timeout` (commit `5c30c02`)
   - `a2a_client.go` → `os.MkdirAll` + `PRAGMA journal_mode=WAL` + `busy_timeout=5000` (commit `4fcf652`)
