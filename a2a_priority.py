@@ -175,6 +175,9 @@ class PriorityClient(A2AClient):
                 if messages:
                     return messages
 
+                if wait <= 0:
+                    return []
+
                 if deadline and time.time() >= deadline:
                     return []
 
@@ -239,6 +242,9 @@ class PriorityClient(A2AClient):
                 if messages:
                     return messages
 
+                if wait <= 0:
+                    return []
+
                 if deadline and time.time() >= deadline:
                     return []
 
@@ -302,6 +308,9 @@ class PriorityClient(A2AClient):
 
                 if messages:
                     return messages
+
+                if wait <= 0:
+                    return []
 
                 if deadline and time.time() >= deadline:
                     return []

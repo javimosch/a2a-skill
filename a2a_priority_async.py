@@ -176,6 +176,9 @@ class PriorityClientAsync:
                 if messages:
                     return messages
 
+                if wait <= 0:
+                    return []
+
                 if deadline and time.time() >= deadline:
                     return []
 
@@ -242,6 +245,9 @@ class PriorityClientAsync:
                 if messages:
                     return messages
 
+                if wait <= 0:
+                    return []
+
                 if deadline and time.time() >= deadline:
                     return []
 
@@ -307,6 +313,9 @@ class PriorityClientAsync:
 
                 if messages:
                     return messages
+
+                if wait <= 0:
+                    return []
 
                 if deadline and time.time() >= deadline:
                     return []
