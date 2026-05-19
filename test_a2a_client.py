@@ -353,6 +353,33 @@ class TestA2AClient(unittest.TestCase):
         results = alice.search("zzznomatch")
         self.assertEqual(results, [])
 
+    def test_thread_returns_empty_for_nonexistent_thread(self):
+        """thread() returns [] when thread_id has no messages."""
+        alice = A2AClient(self.project, "alice")
+        messages = alice.thread("nonexistent-thread-id")
+        self.assertEqual(messages, [])
+
+    def test_stats_empty_bus(self):
+        """stats() works correctly on a bus with no messages."""
+        alice = A2AClient(self.project, "alice")
+        stats = alice.stats()
+        self.assertEqual(stats["messages"], 0)
+        self.assertEqual(stats["direct_messages"], 0)
+        self.assertEqual(stats["broadcasts"], 0)
+        self.assertEqual(stats["threads"], 0)
+        self.assertEqual(stats["top_senders"], [])
+
+    def test_list_peers_reflects_status_changes(self):
+        """list_peers shows updated status after set_status call."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+
+        bob.set_status("done")
+        peers = alice.list_peers()
+        peer_map = {p["id"]: p for p in peers}
+        self.assertEqual(peer_map["alice"]["status"], "active")
+        self.assertEqual(peer_map["bob"]["status"], "done")
+
 
 if __name__ == "__main__":
     unittest.main()
