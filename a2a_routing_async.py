@@ -44,7 +44,7 @@ class RoutingClientAsync:
         self.db_path = Path.home() / ".a2a" / project / "database.db"
         self.rules: List[RoutingRule] = []
 
-    async def _connect(self) -> aiosqlite.Connection:
+    async def _connect(self) -> "aiosqlite.Connection":
         """Connect to database asynchronously."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = await aiosqlite.connect(str(self.db_path), timeout=10.0)

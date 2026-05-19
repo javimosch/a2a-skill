@@ -692,5 +692,91 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(data["agents_done"], 1)
 
 
+class TestWALInvariant(unittest.TestCase):
+    """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
+
+    def setUp(self):
+        self.test_home = tempfile.mkdtemp()
+        self.original_home = os.environ.get("HOME")
+        os.environ["HOME"] = self.test_home
+
+    def tearDown(self):
+        if self.original_home:
+            os.environ["HOME"] = self.original_home
+        import shutil
+        shutil.rmtree(self.test_home, ignore_errors=True)
+
+    def _open_db(self, project: str) -> sqlite3.Connection:
+        """Open the project database directly."""
+        db_path = Path(self.test_home) / ".a2a" / project / "database.db"
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def test_a2a_connect_sets_wal(self):
+        """a2a.connect() enables WAL journal mode."""
+        project = f"wal-test-{os.getpid()}"
+        conn = a2a.connect(project, create=True)
+        mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+        conn.close()
+        self.assertEqual(mode, "wal")
+
+    def test_a2a_connect_sets_busy_timeout(self):
+        """a2a.connect() sets busy_timeout to 5000 ms."""
+        project = f"busy-test-{os.getpid()}"
+        conn = a2a.connect(project, create=True)
+        timeout = conn.execute("PRAGMA busy_timeout").fetchone()[0]
+        conn.close()
+        self.assertEqual(timeout, 5000)
+
+    def test_mkdir_guard_creates_parent(self):
+        """a2a.connect() creates parent directory automatically."""
+        project = f"mkdir-test-{os.getpid()}"
+        db_path = Path(self.test_home) / ".a2a" / project / "database.db"
+        self.assertFalse(db_path.parent.exists())
+        conn = a2a.connect(project, create=True)
+        conn.close()
+        self.assertTrue(db_path.parent.exists())
+        self.assertTrue(db_path.exists())
+
+    def test_wal_survives_reconnect(self):
+        """WAL mode persists across multiple connections to the same db."""
+        project = f"wal-reconnect-{os.getpid()}"
+        conn = a2a.connect(project, create=True)
+        conn.close()
+
+        # Reconnect without create — WAL should already be set by first open
+        conn2 = a2a.connect(project, create=False)
+        mode = conn2.execute("PRAGMA journal_mode").fetchone()[0]
+        conn2.close()
+        self.assertEqual(mode, "wal")
+
+    def test_a2a_client_sets_wal(self):
+        """A2AClient (sync) enables WAL on connection."""
+        from a2a_client import A2AClient
+        project = f"client-wal-{os.getpid()}"
+        # Pre-create schema so client can connect
+        conn = a2a.connect(project, create=True)
+        conn.close()
+
+        client = A2AClient(project, "agent")
+        db_conn = client._connect()
+        mode = db_conn.execute("PRAGMA journal_mode").fetchone()[0]
+        db_conn.close()
+        self.assertEqual(mode, "wal")
+
+    def test_a2a_client_mkdir_guard(self):
+        """A2AClient creates parent directory before connecting."""
+        from a2a_client import A2AClient
+        project = f"client-mkdir-{os.getpid()}"
+        db_path = Path(self.test_home) / ".a2a" / project / "database.db"
+        self.assertFalse(db_path.parent.exists())
+
+        client = A2AClient(project, "agent")
+        conn = client._connect()
+        conn.close()
+        self.assertTrue(db_path.parent.exists())
+
+
 if __name__ == "__main__":
     unittest.main()
