@@ -2,7 +2,8 @@
 
 This document explores integration opportunities between a2a and external skills/libraries that can enhance multi-agent collaboration.
 
-> **Availability audit (pm-2, 2026-05-19):** rtk-context-memory-graph ✅ confirmed at `~/.agents/skills/rtk-context-memory-graph`. `sc` (supercli) ✅ available. `beads` ❌ not installed on this machine — section 2 below is aspirational only.
+> **Note:** The integrations below depend on optional tools (`sc`, `rtk`, `beads`) that vary by environment.
+> Check availability with: `command -v sc`, `sc plugins list | grep graphify`, `command -v rtk`.
 
 ## Available Enhancements
 
@@ -362,6 +363,5 @@ To add new integration examples or improve existing ones:
 
 ---
 
-**Status:** Proof of Concept — availability audited by pm-2 (2026-05-19 20:42 Paris)
-**Last Updated:** 2026-05-19 20:42 Paris time
-**Authors:** devin (skill-integrator, initial draft), pm-2 (availability audit)
+**Status:** Proof of Concept — verify tool availability in your environment before use
+**Last Updated:** 2026-05-19

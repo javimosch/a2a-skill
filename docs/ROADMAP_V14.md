@@ -1,5 +1,9 @@
 # a2a-skill v1.4 Roadmap
 
+> **Scope: a2a-skill codebase development only.**
+> This document describes planned improvements to the a2a-skill tool itself.
+> It is NOT a guide for teams using a2a in their own projects.
+
 **Owner:** pm-2  
 **Status:** Draft — for architect review  
 **Updated:** 2026-05-19

@@ -1,5 +1,10 @@
 # a2a-skill Coordination Roadmap
 
+> **Scope: a2a-skill codebase development only.**
+> This document describes coordination improvements for the team that develops a2a-skill itself.
+> It is NOT guidance for teams using a2a in their own projects.
+> See [TEAM_COORDINATION_SKILL.md](TEAM_COORDINATION_SKILL.md) for generic team protocols.
+
 **Owner:** pm-2 (product-manager)  
 **Status:** Draft — pending architect review  
 **Updated:** 2026-05-19

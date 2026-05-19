@@ -98,6 +98,10 @@ trail on the bus so the team can review role crossings in retrospect.
 
 ## 5. Anti-Patterns from Sprint 1 (v1.3.1)
 
+> *The examples below are from the a2a-skill development team's own v1.3.1 sprint.
+> Agent IDs (qa-claude, pm-2, architect, junior-dev) and file names (_init_fts, edge_case_test.sh)
+> are specific to that codebase — the anti-patterns and fixes are universally applicable.*
+
 **Anti-pattern 1 — Silent parallel work**
 Architect and qa-claude both started writing the 7 missing test files with no
 CLAIM. PM had to intervene and split scope retroactively. Cost: ~10 minutes and
