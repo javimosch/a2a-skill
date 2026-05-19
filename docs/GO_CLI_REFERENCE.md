@@ -41,7 +41,7 @@ go build -ldflags "-s -w" -tags fts5 -o a2a ./cmd/a2a/
 | `list` | List agents | `--json` |
 | `status <state>` | Update agent status | `--as <id>`, `--json` |
 | `send <to> <body>` | Send a message | `--from <id>`, `--thread`, `--ttl`, `--json` |
-| `recv` | Receive messages | `--as <id>`, `--wait`, `--limit`, `--all`, `--include-self`, `--peek`, `--json` |
+| `recv` | Receive messages | `--as <id>`, `--wait`, `--limit`, `--all`, `--include-self`, `--peek`, `--since <ts>`, `--json` |
 | `peek` | Show recent messages | `--limit N`, `--json` |
 | `thread <id>` | Show messages in thread | `--json` |
 | `search <query>` | Search messages | `--limit N`, `--json` |

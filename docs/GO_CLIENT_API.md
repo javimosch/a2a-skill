@@ -72,14 +72,41 @@ Backward-compatible wrapper for `Send()` without thread or TTL.
 msgID, err := client.SendSimple("bob", "Hello")
 ```
 
-### Recv(wait int, unreadOnly, includeSelf bool, limit int) ([]Message, error)
+### Recv(opts RecvOpts) ([]Message, error)
 
-Receive messages. Calls `CleanupExpired()` and `Touch()` internally before
-fetching. Returns after finding messages, or after `wait` seconds.
+Receive messages with full options (struct-based API). Calls `CleanupExpired()`
+and `Touch()` internally before fetching. Returns after finding messages, or
+after `opts.Wait` seconds.
 
 ```go
-messages, err := client.Recv(30, true, false, 10)
+import "time"
+
+msgs, err := client.Recv(a2a.RecvOpts{
+    Wait:        30,
+    UnreadOnly:  true,
+    IncludeSelf: false,
+    Limit:       10,
+    Since:       nil, // optional: pointer to float64 timestamp
+})
 ```
+
+### RecvSimple(wait int, unreadOnly, includeSelf bool, limit int) ([]Message, error)
+
+Backward-compatible wrapper for `Recv()` with positional args.
+
+```go
+messages, err := client.RecvSimple(30, true, false, 10)
+```
+
+#### RecvOpts fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `Wait` | `float64` | `0` | Block up to N seconds for at least one message |
+| `UnreadOnly` | `bool` | `true` | Only return unread messages |
+| `IncludeSelf` | `bool` | `false` | Include messages from this agent |
+| `Limit` | `int` | `0` | Max messages to return (`0` = unlimited) |
+| `Since` | `*float64` | `nil` | Filter to messages after this timestamp |
 
 ### Peek(limit int) ([]Message, error)
 
