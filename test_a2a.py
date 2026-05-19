@@ -648,6 +648,25 @@ class TestEdgeCases(unittest.TestCase):
         self.assertIn("hello again", output)
         self.assertNotIn("goodbye", output)
 
+    def test_fts_init_rebuild_only_on_first_call(self):
+        """_init_fts() only triggers FTS5 rebuild when table is newly created."""
+        conn = a2a.connect(self.project)
+        rebuild_calls = []
+
+        def trace(sql):
+            if "rebuild" in sql.lower():
+                rebuild_calls.append(sql)
+
+        conn.set_trace_callback(trace)
+        a2a._init_fts(conn)
+        self.assertEqual(len(rebuild_calls), 1, "rebuild should run exactly once on first init")
+
+        rebuild_calls.clear()
+        a2a._init_fts(conn)
+        self.assertEqual(len(rebuild_calls), 0, "rebuild must not run on subsequent _init_fts calls")
+        conn.set_trace_callback(None)
+        conn.close()
+
     def test_stats(self):
         """Stats command reports correct counts."""
         conn = a2a.connect(self.project)
