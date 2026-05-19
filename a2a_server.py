@@ -63,6 +63,10 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
             self.handle_recv(data)
         elif path == '/status':
             self.handle_set_status(data)
+        elif path == '/register':
+            self.handle_register(data)
+        elif path == '/unregister':
+            self.handle_unregister(data)
         else:
             self.respond_json({'error': f'Not found: {path}'}, 404)
 
@@ -71,6 +75,7 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         to = data.get('to')
         message = data.get('message')
         ttl = data.get('ttl_seconds')
+        thread_id = data.get('thread_id')
 
         if not to or not message:
             self.respond_json({'error': 'Missing to or message'}, 400)
@@ -79,11 +84,11 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         try:
             db = self.get_db()
             cursor = db.execute(
-                'INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) VALUES (?,?,?,?,?)',
-                ('http-client', None if to.lower() in ('all', '*') else to, message, ttl, time.time())
+                'INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) VALUES (?,?,?,?,?,?)',
+                ('http-client', None if to.lower() in ('all', '*') else to, message, thread_id, ttl, time.time())
             )
             db.commit()
-            self.respond_json({'id': cursor.lastrowid, 'status': 'sent'})
+            self.respond_json({'message_id': cursor.lastrowid, 'status': 'sent'})
         except Exception as e:
             self.respond_json({'error': str(e)}, 500)
 
@@ -238,6 +243,41 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self.respond_json({'error': str(e)}, 500)
 
+    def handle_register(self, data):
+        """POST /register - Register an agent"""
+        agent_id = data.get('agent_id')
+        role = data.get('role', '')
+        if not agent_id:
+            self.respond_json({'error': 'Missing agent_id'}, 400)
+            return
+        try:
+            db = self.get_db()
+            now = time.time()
+            db.execute(
+                "INSERT OR REPLACE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (agent_id, role, data.get('prompt', ''), data.get('cli', ''),
+                 'active', data.get('pid', 0), now, now),
+            )
+            db.commit()
+            self.respond_json({'agent_id': agent_id, 'role': role, 'status': 'active'})
+        except Exception as e:
+            self.respond_json({'error': str(e)}, 500)
+
+    def handle_unregister(self, data):
+        """POST /unregister - Unregister an agent"""
+        agent_id = data.get('agent_id')
+        if not agent_id:
+            self.respond_json({'error': 'Missing agent_id'}, 400)
+            return
+        try:
+            db = self.get_db()
+            db.execute("DELETE FROM agents WHERE id = ?", (agent_id,))
+            db.commit()
+            self.respond_json({'agent_id': agent_id, 'unregistered': True})
+        except Exception as e:
+            self.respond_json({'error': str(e)}, 500)
+
     def get_db(self):
         """Get database connection"""
         project = self.server.project
@@ -281,6 +321,8 @@ def run_server(project, host='localhost', port=5000):
     print(f'  POST /send                   - Send message')
     print(f'  POST /recv                   - Receive messages')
     print(f'  POST /status                 - Set agent status')
+    print(f'  POST /register               - Register an agent')
+    print(f'  POST /unregister             - Unregister an agent')
     print(f'')
     print(f'Try: curl http://{host}:{port}/health')
     print(f'')

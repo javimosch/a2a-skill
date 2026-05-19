@@ -161,8 +161,8 @@ class TestA2ARestServer(unittest.TestCase):
         """POST /send sends a direct message."""
         status, body = self._post("/send", {"to": "bob", "message": "Hello Bob"})
         self.assertEqual(status, 200)
-        self.assertIn("id", body)
-        self.assertGreater(body["id"], 0)
+        self.assertIn("message_id", body)
+        self.assertGreater(body["message_id"], 0)
         self.assertEqual(body["status"], "sent")
 
     def test_send_broadcast(self):
@@ -327,6 +327,46 @@ class TestA2ARestServer(unittest.TestCase):
         status, body = self._post("/status", {"agent": "alice"})
         self.assertEqual(status, 400)
         self.assertIn("error", body)
+
+    # --- /register and /unregister ---
+
+    def test_register_creates_agent(self):
+        """POST /register adds agent to the bus."""
+        status, body = self._post("/register", {"agent_id": "new-bot", "role": "tester"})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["agent_id"], "new-bot")
+        self.assertEqual(body["status"], "active")
+
+    def test_register_missing_agent_id_returns_400(self):
+        """POST /register without agent_id returns 400."""
+        status, body = self._post("/register", {"role": "tester"})
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
+    def test_unregister_removes_agent(self):
+        """POST /unregister removes agent from bus."""
+        self._post("/register", {"agent_id": "to-remove", "role": "temp"})
+        status, body = self._post("/unregister", {"agent_id": "to-remove"})
+        self.assertEqual(status, 200)
+        self.assertTrue(body["unregistered"])
+
+    def test_unregister_missing_agent_id_returns_400(self):
+        """POST /unregister without agent_id returns 400."""
+        status, body = self._post("/unregister", {})
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
+    # --- /send with thread_id ---
+
+    def test_send_with_thread_id(self):
+        """POST /send with thread_id stores thread on message."""
+        status, body = self._post("/send", {
+            "to": "alice",
+            "message": "threaded message",
+            "thread_id": "t-42",
+        })
+        self.assertEqual(status, 200)
+        self.assertIn("message_id", body)
 
     # --- 404 ---
 

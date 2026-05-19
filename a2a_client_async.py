@@ -45,7 +45,11 @@ class A2AClientAsync:
             self._conn = None
 
     async def send(
-        self, to: str, message: str, ttl_seconds: Optional[int] = None
+        self,
+        to: str,
+        message: str,
+        ttl_seconds: Optional[int] = None,
+        thread_id: Optional[str] = None,
     ) -> int:
         """Send a message.
 
@@ -53,6 +57,7 @@ class A2AClientAsync:
             to: Recipient agent ID, or "all" for broadcast
             message: Message body
             ttl_seconds: Optional time-to-live in seconds
+            thread_id: Optional thread ID to group related messages
 
         Returns:
             Message ID
@@ -60,14 +65,58 @@ class A2AClientAsync:
         conn = await self._connect()
         recipient = None if to.lower() in ("all", "*", "broadcast") else to
         await conn.execute(
-            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (self.agent_id, recipient, message, ttl_seconds, time.time()),
+            "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (self.agent_id, recipient, message, thread_id, ttl_seconds, time.time()),
         )
         await conn.commit()
         cursor = await conn.execute("SELECT last_insert_rowid() as id")
         row = await cursor.fetchone()
         return row["id"] if row else 0
+
+    async def register(
+        self,
+        role: str,
+        prompt: str = "",
+        cli: str = "",
+        pid: int = 0,
+        upsert: bool = True,
+    ) -> bool:
+        """Register this agent on the bus (async).
+
+        Args:
+            role: Agent's role description
+            prompt: System prompt (optional)
+            cli: CLI tool name (optional)
+            pid: Process ID (optional)
+            upsert: Replace existing registration if True
+
+        Returns:
+            True on success
+        """
+        conn = await self._connect()
+        sql = (
+            "INSERT OR REPLACE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            if upsert else
+            "INSERT INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        now = time.time()
+        await conn.execute(sql, (self.agent_id, role, prompt, cli, "active", pid, now, now))
+        await conn.commit()
+        return True
+
+    async def unregister(self) -> bool:
+        """Remove this agent from the bus (async).
+
+        Returns:
+            True on success
+        """
+        conn = await self._connect()
+        await conn.execute("DELETE FROM agents WHERE id = ?", (self.agent_id,))
+        await conn.commit()
+        return True
 
     async def recv(
         self,
@@ -129,7 +178,10 @@ class A2AClientAsync:
 
                 return [dict(row) for row in rows]
 
-            if deadline and time.time() >= deadline:
+            if not deadline:
+                return []
+
+            if time.time() >= deadline:
                 return []
 
             await asyncio.sleep(0.1)

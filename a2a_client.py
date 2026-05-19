@@ -35,13 +35,20 @@ class A2AClient:
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
-    def send(self, to: str, message: str, ttl_seconds: Optional[int] = None) -> int:
+    def send(
+        self,
+        to: str,
+        message: str,
+        ttl_seconds: Optional[int] = None,
+        thread_id: Optional[str] = None,
+    ) -> int:
         """Send a message.
 
         Args:
             to: Recipient agent ID, or "all" for broadcast
             message: Message body
             ttl_seconds: Optional time-to-live in seconds
+            thread_id: Optional thread ID to group related messages
 
         Returns:
             Message ID
@@ -50,13 +57,63 @@ class A2AClient:
         try:
             recipient = None if to.lower() in ("all", "*", "broadcast") else to
             cur = conn.execute(
-                "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (self.agent_id, recipient, message, ttl_seconds, time.time()),
+                "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (self.agent_id, recipient, message, thread_id, ttl_seconds, time.time()),
             )
             conn.commit()
             msg_id = cur.lastrowid
             return msg_id
+        finally:
+            conn.close()
+
+    def register(
+        self,
+        role: str,
+        prompt: str = "",
+        cli: str = "",
+        pid: int = 0,
+        upsert: bool = True,
+    ) -> bool:
+        """Register this agent on the bus.
+
+        Args:
+            role: Agent's role description
+            prompt: System prompt (optional)
+            cli: CLI tool name (optional)
+            pid: Process ID (optional)
+            upsert: Replace existing registration if True
+
+        Returns:
+            True on success
+        """
+        conn = self._connect()
+        try:
+            sql = (
+                "INSERT OR REPLACE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                if upsert else
+                "INSERT INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            )
+            now = time.time()
+            conn.execute(sql, (self.agent_id, role, prompt, cli, "active", pid, now, now))
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+    def unregister(self) -> bool:
+        """Remove this agent from the bus.
+
+        Returns:
+            True on success
+        """
+        conn = self._connect()
+        try:
+            conn.execute("DELETE FROM agents WHERE id = ?", (self.agent_id,))
+            conn.commit()
+            return True
         finally:
             conn.close()
 

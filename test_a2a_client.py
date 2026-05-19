@@ -380,6 +380,34 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(peer_map["alice"]["status"], "active")
         self.assertEqual(peer_map["bob"]["status"], "done")
 
+    def test_send_with_thread_id(self):
+        """send() stores thread_id on message."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        msg_id = alice.send("bob", "threaded msg", thread_id="t-99")
+        self.assertGreater(msg_id, 0)
+        thread_msgs = bob.thread("t-99")
+        self.assertEqual(len(thread_msgs), 1)
+        self.assertEqual(thread_msgs[0]["body"], "threaded msg")
+
+    def test_register_adds_agent(self):
+        """register() inserts agent into the DB."""
+        client = A2AClient(self.project, "new-agent-x")
+        result = client.register("tester", cli="pytest")
+        self.assertTrue(result)
+        peers = A2AClient(self.project, "alice").list_peers()
+        ids = {p["id"] for p in peers}
+        self.assertIn("new-agent-x", ids)
+
+    def test_unregister_removes_agent(self):
+        """unregister() deletes agent from DB."""
+        client = A2AClient(self.project, "temp-agent-y")
+        client.register("temp")
+        client.unregister()
+        peers = A2AClient(self.project, "alice").list_peers()
+        ids = {p["id"] for p in peers}
+        self.assertNotIn("temp-agent-y", ids)
+
 
 if __name__ == "__main__":
     unittest.main()
