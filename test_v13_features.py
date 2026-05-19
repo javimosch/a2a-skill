@@ -637,6 +637,209 @@ class TestPriorityClientWithDB(unittest.TestCase):
         self.assertLess(elapsed, 1.0)
 
 
+class TestRoutingClientWithDB(unittest.TestCase):
+    """Real-database tests for RoutingClient DB-backed methods."""
+
+    def setUp(self):
+        import os
+        import a2a
+        self.project = f"routing-db-test-{os.getpid()}-{id(self)}"
+        conn = a2a.connect(self.project, create=True)
+        for agent_id in ("alice", "bob", "carol"):
+            conn.execute(
+                "INSERT INTO agents(id, role, status, created_at, last_seen) "
+                "VALUES (?,?,?,?,?)",
+                (agent_id, "tester", "active", 1000.0, 1000.0),
+            )
+        conn.commit()
+        conn.close()
+        self.alice = RoutingClient(self.project, "alice")
+        self.bob = RoutingClient(self.project, "bob")
+        self.assertTrue(self.alice.init_routing_table())
+
+    def tearDown(self):
+        import a2a
+        try:
+            conn = a2a.connect(self.project)
+            conn.execute("DELETE FROM messages")
+            conn.execute("DELETE FROM agents")
+            conn.execute("DELETE FROM reads")
+            try:
+                conn.execute("DELETE FROM routing_rules")
+            except Exception:
+                pass
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+    def test_init_routing_table_creates_table(self):
+        """init_routing_table creates routing_rules table."""
+        import a2a
+        conn = a2a.connect(self.project)
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='routing_rules'")
+        self.assertIsNotNone(cursor.fetchone())
+        conn.close()
+
+    def test_add_rule_and_get_rules(self):
+        """add_rule persists rule; get_rules retrieves it."""
+        rule = RoutingRule(
+            name="alert-forward",
+            action=RoutingAction.FORWARD,
+            match_content="ALERT",
+            forward_to="bob",
+        )
+        self.assertTrue(self.alice.add_rule(rule))
+        rules = self.alice.get_rules()
+        self.assertEqual(len(rules), 1)
+        self.assertEqual(rules[0].name, "alert-forward")
+        self.assertEqual(rules[0].action, RoutingAction.FORWARD)
+        self.assertEqual(rules[0].forward_to, "bob")
+        self.assertEqual(rules[0].match_content, "ALERT")
+
+    def test_add_multiple_rules_ordered_by_creation(self):
+        """Multiple rules returned in creation order."""
+        self.alice.add_rule(RoutingRule("rule-a", RoutingAction.DELIVER))
+        self.alice.add_rule(RoutingRule("rule-b", RoutingAction.DISCARD))
+        self.alice.add_rule(RoutingRule("rule-c", RoutingAction.ESCALATE))
+        rules = self.alice.get_rules()
+        self.assertEqual([r.name for r in rules], ["rule-a", "rule-b", "rule-c"])
+
+    def test_disable_rule(self):
+        """disable_rule sets enabled=False in DB."""
+        rule = RoutingRule("spam-filter", RoutingAction.DISCARD, match_content="spam")
+        self.alice.add_rule(rule)
+        self.assertTrue(self.alice.disable_rule("spam-filter"))
+        rules = self.alice.get_rules()
+        self.assertFalse(rules[0].enabled)
+
+    def test_enable_rule(self):
+        """enable_rule sets enabled=True after disable."""
+        rule = RoutingRule("spam-filter", RoutingAction.DISCARD, match_content="spam")
+        self.alice.add_rule(rule)
+        self.alice.disable_rule("spam-filter")
+        self.assertTrue(self.alice.enable_rule("spam-filter"))
+        rules = self.alice.get_rules()
+        self.assertTrue(rules[0].enabled)
+
+    def test_delete_rule(self):
+        """delete_rule removes rule from DB."""
+        self.alice.add_rule(RoutingRule("temp-rule", RoutingAction.QUEUE))
+        self.assertTrue(self.alice.delete_rule("temp-rule"))
+        rules = self.alice.get_rules()
+        self.assertEqual(len(rules), 0)
+
+    def test_get_routing_stats_empty(self):
+        """get_routing_stats returns zeros when no rules exist."""
+        stats = self.alice.get_routing_stats()
+        self.assertEqual(stats["total_rules"], 0)
+        self.assertEqual(stats["enabled_rules"], 0)
+        self.assertEqual(stats["disabled_rules"], 0)
+
+    def test_get_routing_stats_with_rules(self):
+        """get_routing_stats returns correct counts by action and enabled state."""
+        self.alice.add_rule(RoutingRule("r1", RoutingAction.FORWARD))
+        self.alice.add_rule(RoutingRule("r2", RoutingAction.DISCARD))
+        self.alice.add_rule(RoutingRule("r3", RoutingAction.FORWARD))
+        self.alice.disable_rule("r2")
+        stats = self.alice.get_routing_stats()
+        self.assertEqual(stats["total_rules"], 3)
+        self.assertEqual(stats["enabled_rules"], 2)
+        self.assertEqual(stats["disabled_rules"], 1)
+        self.assertEqual(stats["by_action"]["forward"], 2)
+        self.assertEqual(stats["by_action"]["discard"], 1)
+
+    def test_recv_with_routing_no_rules_defaults_to_deliver(self):
+        """With no rules, all messages land in deliver bucket."""
+        self.bob.send("alice", "hello from bob")
+        routed = self.alice.recv_with_routing()
+        self.assertIn("deliver", routed)
+        self.assertGreaterEqual(len(routed["deliver"]), 1)
+        self.assertEqual(len(routed["forward"]), 0)
+        self.assertEqual(len(routed["discard"]), 0)
+
+    def test_recv_with_routing_content_match_routes_to_correct_action(self):
+        """A matching content rule routes message to its action bucket."""
+        self.alice.add_rule(RoutingRule(
+            name="escalate-alerts",
+            action=RoutingAction.ESCALATE,
+            match_content="ALERT",
+        ))
+        self.bob.send("alice", "ALERT: disk full")
+        self.bob.send("alice", "routine update")
+        routed = self.alice.recv_with_routing()
+        self.assertEqual(len(routed["escalate"]), 1)
+        self.assertEqual(routed["escalate"][0]["message"]["body"], "ALERT: disk full")
+        self.assertEqual(len(routed["deliver"]), 1)
+
+    def test_recv_with_routing_disabled_rule_is_skipped(self):
+        """A disabled rule does not affect routing."""
+        self.alice.add_rule(RoutingRule(
+            name="discard-spam",
+            action=RoutingAction.DISCARD,
+            match_content="spam",
+        ))
+        self.alice.disable_rule("discard-spam")
+        self.bob.send("alice", "spam message")
+        routed = self.alice.recv_with_routing()
+        self.assertEqual(len(routed["discard"]), 0)
+        self.assertEqual(len(routed["deliver"]), 1)
+
+    def test_apply_routing_discard_marks_message_read(self):
+        """apply_routing() on discarded messages marks them read for this agent."""
+        import a2a
+        self.alice.add_rule(RoutingRule(
+            name="discard-noise",
+            action=RoutingAction.DISCARD,
+            match_content="noise",
+        ))
+        self.bob.send("alice", "noise noise noise")
+        routed = self.alice.recv_with_routing()
+        self.assertEqual(len(routed["discard"]), 1)
+        self.assertTrue(self.alice.apply_routing(routed))
+        conn = a2a.connect(self.project)
+        msg_id = routed["discard"][0]["message"]["id"]
+        cursor = conn.execute(
+            "SELECT 1 FROM reads WHERE agent_id = ? AND message_id = ?",
+            ("alice", msg_id),
+        )
+        self.assertIsNotNone(cursor.fetchone())
+        conn.close()
+
+    def test_smart_router_custom_matcher(self):
+        """SmartRouter routes via custom matcher function."""
+        from a2a_routing import SmartRouter
+        handled = []
+        router = SmartRouter(self.alice)
+        router.add_custom_matcher(
+            matcher=lambda m: "urgent" in m.get("body", "").lower(),
+            handler=lambda m: handled.append(m),
+        )
+        msg = {"id": 1, "body": "URGENT: server down", "sender": "bob", "priority": 3}
+        result = router.route_message(msg)
+        self.assertTrue(result)
+        self.assertEqual(len(handled), 1)
+
+    def test_smart_router_no_match_returns_false(self):
+        """SmartRouter returns False when no matcher or rule matches."""
+        from a2a_routing import SmartRouter
+        router = SmartRouter(self.alice)
+        msg = {"id": 2, "body": "routine update", "sender": "bob"}
+        result = router.route_message(msg)
+        self.assertFalse(result)
+
+    def test_smart_router_batch_counts_unhandled(self):
+        """SmartRouter.route_batch returns unhandled count for unmatched messages."""
+        from a2a_routing import SmartRouter
+        router = SmartRouter(self.alice)
+        messages = [
+            {"id": 1, "body": "msg1", "sender": "bob"},
+            {"id": 2, "body": "msg2", "sender": "bob"},
+        ]
+        stats = router.route_batch(messages)
+        self.assertEqual(stats["unhandled"], 2)
+
+
 def run_tests():
     """Run all v1.3 feature tests."""
     loader = unittest.TestLoader()
