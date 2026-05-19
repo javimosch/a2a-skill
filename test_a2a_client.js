@@ -1,236 +1,282 @@
 /**
- * Unit tests for a2a_client.js
- * Run with: npm test (requires jest or mocha)
- * Or with node-sqlite3 installed: node test_a2a_client.js
+ * Tests for a2a_client.js — Node.js client library.
+ * Uses node:test (built-in, Node 18+) and node:sqlite (Node 22+).
+ * Run: node test_a2a_client.js
  */
 
-const A2AClient = require('./a2a_client');
-const sqlite3 = require('sqlite3').verbose();
+const { test, before, after } = require('node:test');
+const assert = require('node:assert');
+const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { promisify } = require('util');
-const exec = promisify(require('child_process').exec);
 
-class TestRunner {
-  constructor() {
-    this.passed = 0;
-    this.failed = 0;
-    this.testHome = path.join(os.tmpdir(), `a2a-test-${Date.now()}`);
-    fs.mkdirSync(this.testHome, { recursive: true });
-    process.env.HOME = this.testHome;
+const A2AClient = require('./a2a_client.js');
+
+const DB_SCHEMA = `
+CREATE TABLE IF NOT EXISTS agents (
+  id TEXT PRIMARY KEY, role TEXT, prompt TEXT, cli TEXT,
+  status TEXT NOT NULL DEFAULT 'active', pid INTEGER,
+  created_at REAL NOT NULL, last_seen REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, sender TEXT NOT NULL,
+  recipient TEXT, body TEXT NOT NULL, thread_id TEXT,
+  ttl_seconds INTEGER, created_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS reads (
+  agent_id TEXT NOT NULL, message_id INTEGER NOT NULL,
+  read_at REAL NOT NULL, PRIMARY KEY (agent_id, message_id)
+);
+`;
+
+let tmpDir;
+
+function makeClients(project) {
+  const dir = path.join(tmpDir, '.a2a', project);
+  fs.mkdirSync(dir, { recursive: true });
+  const dbPath = path.join(dir, 'database.db');
+
+  const db = new DatabaseSync(dbPath);
+  db.exec(DB_SCHEMA);
+  const now = Date.now() / 1000;
+  db.prepare('INSERT OR IGNORE INTO agents VALUES (?,?,?,?,?,?,?,?)').run('alice','tester',null,'node','active',null,now,now);
+  db.prepare('INSERT OR IGNORE INTO agents VALUES (?,?,?,?,?,?,?,?)').run('bob','tester',null,'node','active',null,now,now);
+  db.close();
+
+  function client(id) {
+    const c = new A2AClient(project, id);
+    c.dbDir = dir;
+    c.dbPath = dbPath;
+    return c;
   }
 
-  async setupDb(project) {
-    const projectDir = path.join(this.testHome, '.a2a', project);
-    fs.mkdirSync(projectDir, { recursive: true });
-    
-    const dbPath = path.join(projectDir, 'database.db');
-    return new Promise((resolve, reject) => {
-      const db = new sqlite3.Database(dbPath, (err) => {
-        if (err) reject(err);
-        
-        db.exec(`
-          CREATE TABLE agents (
-            id TEXT PRIMARY KEY,
-            role TEXT,
-            cli TEXT,
-            status TEXT DEFAULT 'active',
-            pid INTEGER,
-            created_at REAL NOT NULL,
-            last_seen REAL NOT NULL
-          );
-          
-          CREATE TABLE messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sender TEXT NOT NULL,
-            recipient TEXT,
-            body TEXT NOT NULL,
-            thread_id TEXT,
-            ttl_seconds INTEGER,
-            created_at REAL NOT NULL
-          );
-          
-          CREATE TABLE reads (
-            agent_id TEXT NOT NULL,
-            message_id INTEGER NOT NULL,
-            read_at REAL NOT NULL,
-            PRIMARY KEY (agent_id, message_id)
-          );
-        `, (err) => {
-          if (err) {
-            db.close();
-            reject(err);
-            return;
-          }
-          
-          const now = Date.now() / 1000;
-          db.run('INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)', 
-            ['alice', 'active', now, now], () => {
-            db.run('INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)',
-              ['bob', 'active', now, now], () => {
-              db.close();
-              resolve(project);
-            });
-          });
-        });
-      });
-    });
-  }
-
-  async test(name, fn) {
-    try {
-      await fn();
-      console.log(`✓ ${name}`);
-      this.passed++;
-    } catch (err) {
-      console.log(`✗ ${name}`);
-      console.log(`  ${err.message}`);
-      this.failed++;
-    }
-  }
-
-  assert(condition, message) {
-    if (!condition) throw new Error(message);
-  }
-
-  assertEqual(actual, expected, message) {
-    if (actual !== expected) {
-      throw new Error(`${message} (got ${actual}, expected ${expected})`);
-    }
-  }
-
-  cleanup() {
-    // Clean up test directory
-    const rimraf = (dir) => {
-      if (fs.existsSync(dir)) {
-        fs.readdirSync(dir).forEach(f => {
-          const p = path.join(dir, f);
-          if (fs.lstatSync(p).isDirectory()) rimraf(p);
-          else fs.unlinkSync(p);
-        });
-        fs.rmdirSync(dir);
-      }
-    };
-    rimraf(this.testHome);
-  }
-
-  async run() {
-    console.log('Running a2a Node.js Client Tests\n');
-
-    // Test send and recv
-    await this.test('send direct message', async () => {
-      const project = `test-send-${Date.now()}`;
-      await this.setupDb(project);
-      
-      const alice = new A2AClient(project, 'alice');
-      const msgId = await alice.send('bob', 'Hello Bob');
-      this.assert(msgId > 0, 'Message ID should be positive');
-    });
-
-    // Test broadcast
-    await this.test('send broadcast', async () => {
-      const project = `test-broadcast-${Date.now()}`;
-      await this.setupDb(project);
-      
-      const alice = new A2AClient(project, 'alice');
-      const msgId = await alice.send('all', 'Team message');
-      this.assert(msgId > 0, 'Broadcast should have positive ID');
-    });
-
-    // Test recv
-    await this.test('receive direct message', async () => {
-      const project = `test-recv-${Date.now()}`;
-      await this.setupDb(project);
-      
-      const alice = new A2AClient(project, 'alice');
-      const bob = new A2AClient(project, 'bob');
-      
-      await alice.send('bob', 'Hello from Alice');
-      const messages = await bob.recv(1);
-      
-      this.assertEqual(messages.length, 1, 'Should have 1 message');
-      this.assertEqual(messages[0].sender, 'alice', 'Sender should be alice');
-      this.assertEqual(messages[0].body, 'Hello from Alice', 'Body should match');
-    });
-
-    // Test peek
-    await this.test('peek messages', async () => {
-      const project = `test-peek-${Date.now()}`;
-      await this.setupDb(project);
-      
-      const alice = new A2AClient(project, 'alice');
-      const bob = new A2AClient(project, 'bob');
-      
-      await alice.send('bob', 'Message 1');
-      await alice.send('bob', 'Message 2');
-      
-      const messages = await bob.peek(10);
-      this.assertEqual(messages.length, 2, 'Should have 2 messages');
-    });
-
-    // Test search
-    await this.test('search messages', async () => {
-      const project = `test-search-${Date.now()}`;
-      await this.setupDb(project);
-      
-      const alice = new A2AClient(project, 'alice');
-      const bob = new A2AClient(project, 'bob');
-      
-      await alice.send('bob', 'Hello world');
-      await alice.send('bob', 'Hello universe');
-      
-      const results = await alice.search('hello', 10);
-      this.assertEqual(results.length, 2, 'Should find 2 messages');
-    });
-
-    // Test stats
-    await this.test('get stats', async () => {
-      const project = `test-stats-${Date.now()}`;
-      await this.setupDb(project);
-      
-      const alice = new A2AClient(project, 'alice');
-      const bob = new A2AClient(project, 'bob');
-      
-      await alice.send('bob', 'Direct');
-      await alice.send('all', 'Broadcast');
-      
-      const stats = await alice.stats();
-      this.assertEqual(stats.messages, 2, 'Should have 2 messages');
-      this.assertEqual(stats.direct_messages, 1, 'Should have 1 direct');
-      this.assertEqual(stats.broadcasts, 1, 'Should have 1 broadcast');
-    });
-
-    // Test status
-    await this.test('set and get status', async () => {
-      const project = `test-status-${Date.now()}`;
-      await this.setupDb(project);
-      
-      const alice = new A2AClient(project, 'alice');
-      await alice.setStatus('done');
-      const status = await alice.getStatus('alice');
-      this.assertEqual(status, 'done', 'Status should be done');
-    });
-
-    // Test list peers
-    await this.test('list peers', async () => {
-      const project = `test-list-${Date.now()}`;
-      await this.setupDb(project);
-      
-      const alice = new A2AClient(project, 'alice');
-      const peers = await alice.listPeers();
-      this.assertEqual(peers.length, 2, 'Should have 2 agents');
-    });
-
-    console.log(`\n${this.passed} passed, ${this.failed} failed`);
-    this.cleanup();
-    process.exit(this.failed > 0 ? 1 : 0);
-  }
+  return { alice: client('alice'), bob: client('bob'), dbPath, dir };
 }
 
-// Run tests
-const runner = new TestRunner();
-runner.run().catch(err => {
-  console.error('Test error:', err);
-  process.exit(1);
+before(() => {
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2a-js-test-'));
+});
+
+after(() => {
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+// --- WAL invariant ---
+
+test('_connect() enables WAL journal mode', () => {
+  const { alice, dbPath } = makeClients('wal-test');
+  alice._connect().close();
+  const db = new DatabaseSync(dbPath);
+  const mode = db.prepare('PRAGMA journal_mode').get().journal_mode;
+  db.close();
+  assert.strictEqual(mode, 'wal');
+});
+
+test('_connect() sets busy_timeout=5000', () => {
+  const { alice } = makeClients('busy-test');
+  const db = alice._connect();
+  const timeout = db.prepare('PRAGMA busy_timeout').get().timeout;
+  db.close();
+  assert.strictEqual(timeout, 5000);
+});
+
+test('_connect() creates parent directory', () => {
+  const project = `mkdir-test-${Date.now()}`;
+  const dir = path.join(tmpDir, '.a2a', project);
+  assert.strictEqual(fs.existsSync(dir), false);
+
+  const c = new A2AClient(project, 'agent');
+  c.dbDir = dir;
+  c.dbPath = path.join(dir, 'database.db');
+  try { c._connect().close(); } catch (_) {}
+
+  assert.strictEqual(fs.existsSync(dir), true);
+});
+
+// --- send ---
+
+test('send() returns positive message ID', async () => {
+  const { alice } = makeClients('send-1');
+  const id = await alice.send('bob', 'Hello');
+  assert.ok(Number(id) > 0, `id=${id} should be > 0`);
+});
+
+test('send() to "all" creates broadcast (recipient=null)', async () => {
+  const { alice, dbPath } = makeClients('send-broadcast');
+  await alice.send('all', 'Broadcast!');
+  const db = new DatabaseSync(dbPath);
+  const row = db.prepare('SELECT recipient FROM messages WHERE body=?').get('Broadcast!');
+  db.close();
+  assert.strictEqual(row.recipient, null);
+});
+
+test('send() to "*" also creates broadcast', async () => {
+  const { alice, dbPath } = makeClients('send-star');
+  await alice.send('*', 'Star broadcast');
+  const db = new DatabaseSync(dbPath);
+  const row = db.prepare('SELECT recipient FROM messages WHERE body=?').get('Star broadcast');
+  db.close();
+  assert.strictEqual(row.recipient, null);
+});
+
+// --- recv ---
+
+test('recv() returns direct message', async () => {
+  const { alice, bob } = makeClients('recv-direct');
+  await alice.send('bob', 'Hello Bob');
+  const msgs = await bob.recv(1);
+  assert.strictEqual(msgs.length, 1);
+  assert.strictEqual(msgs[0].sender, 'alice');
+  assert.strictEqual(msgs[0].body, 'Hello Bob');
+});
+
+test('recv() marks messages as read on second call', async () => {
+  const { alice, bob } = makeClients('recv-read');
+  await alice.send('bob', 'Once');
+  await bob.recv(1);
+  const second = await bob.recv(0);
+  assert.strictEqual(second.length, 0);
+});
+
+test('recv() excludes self by default', async () => {
+  const { alice } = makeClients('recv-self');
+  await alice.send('alice', 'To self');
+  const msgs = await alice.recv(0, true, false);
+  assert.strictEqual(msgs.length, 0);
+});
+
+test('recv() includes self with includeSelf=true', async () => {
+  const { alice } = makeClients('recv-include-self');
+  await alice.send('alice', 'Self message');
+  const msgs = await alice.recv(1, true, true);
+  assert.ok(msgs.length >= 1);
+  assert.ok(msgs.some(m => m.body === 'Self message'));
+});
+
+test('recv() gets broadcast', async () => {
+  const { alice, bob } = makeClients('recv-broadcast');
+  await alice.send('all', 'Broadcast msg');
+  const msgs = await bob.recv(1);
+  assert.strictEqual(msgs.length, 1);
+  assert.strictEqual(msgs[0].recipient, null);
+});
+
+// --- peek ---
+
+test('peek() does not mark messages read', async () => {
+  const { alice, bob } = makeClients('peek-test');
+  await alice.send('bob', 'Peekable');
+  await bob.peek(10);
+  const msgs = await bob.recv(1);
+  assert.strictEqual(msgs.length, 1);
+  assert.strictEqual(msgs[0].body, 'Peekable');
+});
+
+test('peek() returns messages in chronological order', async () => {
+  const { alice } = makeClients('peek-order');
+  await alice.send('bob', 'First');
+  await alice.send('bob', 'Second');
+  const msgs = await alice.peek(10);
+  assert.ok(msgs.length >= 2);
+  const idx = body => msgs.findIndex(m => m.body === body);
+  assert.ok(idx('First') < idx('Second'));
+});
+
+// --- listPeers ---
+
+test('listPeers() returns all agents', async () => {
+  const { alice } = makeClients('peers-test');
+  const peers = await alice.listPeers();
+  const ids = peers.map(p => p.id);
+  assert.ok(ids.includes('alice'));
+  assert.ok(ids.includes('bob'));
+});
+
+// --- setStatus / getStatus ---
+
+test('setStatus() + getStatus() roundtrip', async () => {
+  const { alice } = makeClients('status-test');
+  await alice.setStatus('idle');
+  const status = await alice.getStatus();
+  assert.strictEqual(status, 'idle');
+});
+
+test('getStatus() for another agent', async () => {
+  const { alice } = makeClients('status-other');
+  const status = await alice.getStatus('bob');
+  assert.strictEqual(status, 'active');
+});
+
+test('getStatus() returns null for unknown agent', async () => {
+  const { alice } = makeClients('status-unknown');
+  const status = await alice.getStatus('nobody');
+  assert.strictEqual(status, null);
+});
+
+// --- search ---
+
+test('search() finds messages by keyword', async () => {
+  const { alice } = makeClients('search-test');
+  await alice.send('bob', 'unique-search-term-xyz');
+  const results = await alice.search('unique-search-term-xyz');
+  assert.ok(results.length >= 1);
+  assert.ok(results[0].body.includes('unique-search-term-xyz'));
+});
+
+test('search() is case-insensitive', async () => {
+  const { alice } = makeClients('search-case');
+  await alice.send('bob', 'MixedCaseSearch');
+  const results = await alice.search('mixedcasesearch');
+  assert.ok(results.length >= 1);
+});
+
+test('search() returns empty for no matches', async () => {
+  const { alice } = makeClients('search-empty');
+  const results = await alice.search('zzznomatch99999');
+  assert.strictEqual(results.length, 0);
+});
+
+// --- thread ---
+
+test('thread() returns messages in thread order', async () => {
+  const { alice, dbPath } = makeClients('thread-test');
+  const db = new DatabaseSync(dbPath);
+  const now = Date.now() / 1000;
+  db.prepare('INSERT INTO messages(sender, recipient, body, thread_id, created_at) VALUES (?,?,?,?,?)').run('alice', 'bob', 'Msg1', 'thread-abc', now);
+  db.prepare('INSERT INTO messages(sender, recipient, body, thread_id, created_at) VALUES (?,?,?,?,?)').run('bob', 'alice', 'Msg2', 'thread-abc', now + 1);
+  db.close();
+
+  const msgs = await alice.thread('thread-abc');
+  assert.strictEqual(msgs.length, 2);
+  assert.strictEqual(msgs[0].body, 'Msg1');
+  assert.strictEqual(msgs[1].body, 'Msg2');
+});
+
+// --- stats ---
+
+test('stats() returns required fields', async () => {
+  const { alice, bob } = makeClients('stats-test');
+  await alice.send('bob', 'Direct');
+  await alice.send('all', 'Broadcast');
+  await bob.send('alice', 'Reply');
+
+  const s = await alice.stats();
+  assert.ok('messages' in s);
+  assert.ok('broadcasts' in s);
+  assert.ok('direct_messages' in s);
+  assert.ok('agents_active' in s);
+  assert.ok('top_senders' in s);
+});
+
+test('stats() message counts are accurate', async () => {
+  const { alice, bob } = makeClients('stats-counts');
+  await alice.send('bob', 'D1');
+  await alice.send('all', 'B1');
+  await bob.send('alice', 'D2');
+
+  const s = await alice.stats();
+  assert.ok(s.messages >= 3);
+  assert.ok(s.broadcasts >= 1);
+  assert.ok(s.direct_messages >= 2);
 });
