@@ -244,27 +244,23 @@ TTL overhead, and blocking recv timeout behavior.
 - **No auth.** Anyone with FS access to `~/.a2a/{project}/database.db` can
   read or write the bus.
 
-## Coordination Protocols
+## Contributor Resources
 
-Multi-agent sprints follow three bus conventions — no CLI command required:
+Development resources for agents working on the a2a-skill codebase live **outside** the repo
+at `~/ai/a2a-dev/`. They do not ship to users who clone this repo.
 
-- **Task Claim** — send `CLAIM: <task> — <agent-id>` before touching any file.
-  Any agent about to start the same task replies `ACK-CLAIM: <id> backing off`.
-  A CLAIM expires after 5 minutes.
-- **Bug Report** — verify the bug in the *committed* state (`git show <pre-fix-hash>:<file>`)
-  before posting. Reading a file after another agent's patch may show the fix, not the bug.
-- **Role-Cross** — if you must cross your declared role boundary, send
-  `ROLE-CROSS: <your-role> doing <action> — reason: <why>` and wait 60 seconds for a VETO.
-  No VETO = proceed. Crossing without a signal creates an unauditable diff.
+Access them via the global skill:
+```
+~/.agents/skills/a2a-dev/SKILL.md   ← hub; indexes all contributor sub-skills
+~/ai/a2a-dev/skills/team-coordination/SKILL.md   ← CLAIM/ROLE-CROSS protocols
+~/ai/a2a-dev/skills/a2a-roadmap/SKILL.md         ← v1.4 priorities
+~/ai/a2a-dev/skills/a2a-enhancements/SKILL.md    ← integration opportunities
+~/ai/a2a-dev/skills/a2a-skill-experience/SKILL.md ← sprint learnings
+~/ai/a2a-dev/skills/a2a-supervision/SKILL.md     ← supervision lessons
+```
 
-Full protocol details and anti-pattern examples: [.agents/skills/team-coordination/SKILL.md](.agents/skills/team-coordination/SKILL.md)
-
-## docs/ vs .agents/skills/
-
-- **`docs/`** — user-facing tool documentation (API guides, install, quickstart, troubleshooting, migration, changelog). Written for teams using a2a in their own projects.
-- **`.agents/skills/`** — contributor context for agents working on this codebase (planning docs, sprint learnings, dev workflows). Not shipped as user docs.
-
-Dev planning artifacts go to `.agents/skills/`, not `docs/`.
+**Boundary rule:** `docs/` is for users of a2a. `~/ai/a2a-dev/` is for contributors.
+Nothing development-process-related goes in `docs/` or `.agents/skills/` (except `.agents/skills/a2a/`).
 
 ## When you ship a change
 

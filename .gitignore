@@ -30,9 +30,10 @@ __pycache__/
 node_modules/
 package-lock.json
 
-# Dev-team sprint skills (internal, not for external users)
-.agents/skills/a2a-skill-experience/
-.agents/skills/a2a-supervision/
+# All .agents/skills/ subdirs except the generic a2a usage skill
+# Dev-process skills live at ~/ai/a2a-dev/ — not in this repo
+.agents/skills/*/
+!.agents/skills/a2a/
 
 # Claude Code session state
 .claude/
