@@ -61,10 +61,13 @@ a2a-skill/
 ├── a2a_client.go         Go client
 ├── a2a_client.js         Node.js client
 ├── src/lib.rs            Rust client
-├── test_a2a.py           unit tests (47)
-├── test_a2a_client.py    Python client tests (12)
-├── test_integration.py   integration tests (18)
-├── test_v13_features.py  v1.3 satellite module tests (30)  ← 95 tests total
+├── test_a2a.py           unit tests (43)
+├── test_a2a_client.py    Python client tests (17)
+├── test_integration.py   integration tests (34)
+├── test_v13_features.py  v1.3 satellite module tests (30)
+├── test_git_aware.py     git-aware module tests (29)
+├── test_server.py        REST API tests (33)
+├── test_async_modules.py async client tests (25, 23 skip-guarded)  ← 211 tests total
 ├── benchmark.py
 ├── dashboard.py
 ├── examples/             AGENTS.md documents patterns
@@ -180,7 +183,7 @@ is the agents' rulebook. When changing it:
 
 ## Running the tests
 
-### Unit tests (28 tests, stdlib only)
+### Unit tests (43 tests, stdlib only)
 
 ```bash
 python3 test_a2a.py -v
