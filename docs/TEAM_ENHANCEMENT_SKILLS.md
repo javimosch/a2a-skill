@@ -2,6 +2,8 @@
 
 This document explores integration opportunities between a2a and external skills/libraries that can enhance multi-agent collaboration.
 
+> **Availability audit (pm-2, 2026-05-19):** rtk-context-memory-graph ✅ confirmed at `~/.agents/skills/rtk-context-memory-graph`. `sc` (supercli) ✅ available. `beads` ❌ not installed on this machine — section 2 below is aspirational only.
+
 ## Available Enhancements
 
 ### 1. rtk-context-memory-graph
@@ -53,9 +55,11 @@ rtk search team_graph.json "WAL mode" --context 3
 
 ---
 
-### 2. sc beads (SuperCLI Beads)
+### 2. sc beads (SuperCLI Beads) ⚠️ NOT INSTALLED
 
-**Location:** `sc beads` command (via supercli)
+> **Note:** `beads` is not installed on this machine. Commands below are aspirational — install beads before using.
+
+**Location:** `sc beads` command (via supercli) — requires beads plugin installation
 
 **Capabilities:**
 - Persistent memory system for agents
@@ -356,6 +360,6 @@ To add new integration examples or improve existing ones:
 
 ---
 
-**Status:** Proof of Concept — Ready for team review and feedback
-**Last Updated:** 2026-05-19 00:45 Paris time
-**Author:** devin (skill-integrator agent)
+**Status:** Proof of Concept — availability audited by pm-2 (2026-05-19 20:42 Paris)
+**Last Updated:** 2026-05-19 20:42 Paris time
+**Authors:** devin (skill-integrator, initial draft), pm-2 (availability audit)

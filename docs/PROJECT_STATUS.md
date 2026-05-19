@@ -407,12 +407,17 @@ messages_fts(id, sender, recipient, body, thread_id, created_at) [virtual FTS5 t
 
 ---
 
-**Last Updated**: 2026-05-19 00:52 CEST  
-**Release Status**: v1.0-alpha (23:37) → v1.1 locked (23:52) → v1.3.0 completed (00:51) → v1.4 planning (in progress)  
-**Active Development**: Continuing until 2026-05-19 12:00 CEST
+**Last Updated**: 2026-05-19 20:41 CEST  
+**Release Status**: v1.0-alpha (23:37) → v1.1 locked (23:52) → v1.3.0 completed (00:51) → v1.3.1 hardening (in progress, ~20:40)  
+**Active Development**: Continuing until 2026-05-19 21:30 CEST
 
-### Current Session Updates (00:51–ongoing)
-- ✅ Fixed UTF-8 encoding declarations across all Python files (19 files)
-- ✅ Fixed UTF-8 encoding declarations in example agents (10 files)
-- 🔄 Code quality improvements and system hardening
-- 🔄 Continued preparation for v1.4 enhancements
+### Current Session Updates (20:40–ongoing)
+- ✅ FTS5 full-text search landed (77ce5c5) — cmd_search upgraded from LIKE to FTS5 MATCH with LIKE fallback
+- 🔄 v1.3.1 hardening: architect implementing 40-50 tests for 7 QA-flagged coverage gaps
+  - ❌ a2a_client_async.py — 0 tests (in progress)
+  - ❌ a2a_priority_async.py — 0 tests (in progress)
+  - ❌ a2a_routing_async.py — 0 tests (in progress)
+  - ❌ a2a_git_aware.py — 0 tests (in progress)
+  - ❌ a2a_server.py REST API — 0 tests (in progress)
+  - ❌ WAL mode invariant — no test verifies PRAGMA journal_mode=WAL (in progress)
+  - ❌ mkdir guard — no test verifies parent dir created before connect (in progress)
