@@ -307,6 +307,29 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(stats["top_senders"][0]["agent"], "alice")
         self.assertEqual(stats["top_senders"][0]["count"], 3)
 
+    def test_recv_with_limit(self):
+        """Test recv respects the limit parameter."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+
+        for i in range(5):
+            alice.send("bob", f"Message {i}")
+
+        messages = bob.recv(wait=1, limit=3)
+        self.assertEqual(len(messages), 3)
+
+    def test_peek_empty(self):
+        """Test peek on empty bus returns empty list."""
+        alice = A2AClient(self.project, "alice")
+        messages = alice.peek()
+        self.assertEqual(messages, [])
+
+    def test_get_status_unknown_agent(self):
+        """Test get_status returns None for unknown agent."""
+        alice = A2AClient(self.project, "alice")
+        status = alice.get_status("nonexistent-agent")
+        self.assertIsNone(status)
+
 
 if __name__ == "__main__":
     unittest.main()
