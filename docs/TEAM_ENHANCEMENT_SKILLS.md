@@ -62,55 +62,44 @@ sc graphify.graph.search team_graph.json "WAL mode"
 
 ---
 
-### 2. sc beads (SuperCLI Beads) ⚠️ NOT INSTALLED
+### 2. sc beads (SuperCLI Beads)
 
-> **Note:** `beads` is not installed on this machine. Commands below are aspirational — install beads before using.
+**Location:** `sc beads` command (via supercli) — wraps `br` (beads_rust) for lightweight
+issue tracking. Available on this machine: `sc beads --help`.
 
-**Location:** `sc beads` command (via supercli) — requires beads plugin installation
+**What it actually is:** `br`/beads_rust is an issue tracker, not a free-form memory store.
+Resources: `install`, `workspace`, `issue`, `dep`, `sync`, `stats`.
 
 **Capabilities:**
-- Persistent memory system for agents
-- Store/retrieve structured data (JSON, text, code)
-- Cross-session memory retention
-- Full-text search across stored beads
-- Tag-based organization
+- Workspace and project management (`sc beads workspace`)
+- Issue creation and tracking (`sc beads issue`)
+- Dependency tracking (`sc beads dep`)
+- Sync and stats reporting (`sc beads sync`, `sc beads stats`)
 
-**Integration with a2a:**
+**Integration with a2a (issue tracking angle):**
 
-```python
-# Example: Persistent team memory
-import beads
+```bash
+# Create a workspace for the a2a sprint
+sc beads workspace create a2a-sprint
 
-# Store important decisions
-beads.add("decision", {
-    "topic": "WAL mode enforcement",
-    "decision": "All SQLite entrypoints must use WAL mode",
-    "rationale": "Prevents delete journal mode bugs",
-    "commit": "17f30d7"
-})
+# File an issue when an agent finds a bug
+sc beads issue create "FTS5 rebuild runs on every search call" --type bug
 
-# Retrieve for context
-decisions = beads.search("WAL")
+# Track sprint tasks as issues
+sc beads issue create "Add WAL invariant tests" --type task
+
+# Check sprint stats
+sc beads stats
 ```
 
 **Use Cases:**
-- **Decision Memory:** Store team decisions beyond bus TTL
-- **Pattern Library:** Save reusable code patterns and solutions
-- **Sprint Handoff:** Preserve context between team rotations
-- **Knowledge Base:** Build searchable team knowledge repository
-- **Configuration Memory:** Store project-specific configurations
+- **Bug Tracking:** Agents file issues when they find defects on the bus
+- **Task Management:** Coordinator creates issues; agents update status
+- **Sprint Reporting:** `sc beads stats` for end-of-sprint metrics
+- **Dependency Mapping:** Track which tasks block others
 
-**Proof of Concept:**
-```bash
-# Store architectural decisions
-sc beads add --tag architecture --type decision "WAL mode required for all SQLite entrypoints to prevent delete journal mode bugs"
-
-# Store code patterns
-sc beads add --tag pattern --type code "mkdir guard pattern for SQLite parent directories"
-
-# Retrieve for new agents
-sc beads search --tag architecture --format json
-```
+> **Note:** sc beads is NOT a general-purpose key-value memory store. For
+> persistent agent memory, see the graphify skill or the `mem` skill.
 
 ---
 
@@ -324,16 +313,19 @@ sc graphify.report.html graph.json --file team_report.html
 > **Note:** `rtk` (at /usr/local/bin/rtk) is a token-reduction CLI proxy — not a
 > graph builder. The graphify plugin handles knowledge graph construction.
 
-### Quick Start with beads
+### Quick Start with beads (br issue tracker)
 ```bash
-# Install supercli (if not already)
-# Already available via: sc command
+# sc beads wraps br (beads_rust) — issue tracking, not memory storage
+# sc command is available: sc beads --help
 
-# Store a decision
-sc beads add --tag decision "WAL mode required for all SQLite entrypoints"
+# Create a workspace
+sc beads workspace create my-sprint
 
-# Search decisions
-sc beads search --tag decision
+# File a bug found during the sprint
+sc beads issue create "FTS5 rebuild on every search" --type bug
+
+# View sprint stats
+sc beads stats
 ```
 
 ### Quick Start with plugins
