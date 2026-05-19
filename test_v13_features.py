@@ -1044,6 +1044,71 @@ class TestRoutingClientWithDB(unittest.TestCase):
         self.assertEqual(stats["unhandled"], 2)
 
 
+class TestPriorityQueueWithDB(unittest.TestCase):
+    """Real-database tests for PriorityQueue poll and peek_critical."""
+
+    def setUp(self):
+        import os
+        import a2a
+        self.project = f"pq-db-test-{os.getpid()}-{id(self)}"
+        conn = a2a.connect(self.project, create=True)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, role, status, created_at, last_seen) "
+                "VALUES (?,?,?,?,?)",
+                (agent_id, "tester", "active", 1000.0, 1000.0),
+            )
+        conn.commit()
+        conn.close()
+        self.alice = PriorityClient(self.project, "alice")
+        self.bob = PriorityClient(self.project, "bob")
+        self.assertTrue(self.alice.init_priority_table())
+        self.queue = PriorityQueue(self.bob, "bob")
+
+    def tearDown(self):
+        import a2a
+        try:
+            conn = a2a.connect(self.project)
+            conn.execute("DELETE FROM messages")
+            conn.execute("DELETE FROM agents")
+            conn.execute("DELETE FROM reads")
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+    def test_poll_returns_messages(self):
+        """PriorityQueue.poll() returns messages and clears internal queue."""
+        self.alice.send("bob", "msg1", priority=Priority.NORMAL)
+        self.alice.send("bob", "msg2", priority=Priority.HIGH)
+        msgs = self.queue.poll(wait=0)
+        self.assertEqual(len(msgs), 2)
+        # Critical comes first due to priority ordering
+        priorities = [m["priority"] for m in msgs]
+        self.assertEqual(priorities, sorted(priorities, reverse=True))
+
+    def test_poll_with_limit(self):
+        """PriorityQueue.poll(limit=1) returns only 1 message and caches the rest."""
+        self.alice.send("bob", "msg1", priority=Priority.NORMAL)
+        self.alice.send("bob", "msg2", priority=Priority.NORMAL)
+        first = self.queue.poll(wait=0, limit=1)
+        self.assertEqual(len(first), 1)
+
+    def test_peek_critical_returns_only_critical(self):
+        """PriorityQueue.peek_critical() returns only unread CRITICAL messages."""
+        self.alice.send("bob", "low noise", priority=Priority.LOW)
+        self.alice.send("bob", "urgent!", priority=Priority.CRITICAL)
+        msgs = self.queue.peek_critical()
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(msgs[0]["priority"], Priority.CRITICAL)
+
+    def test_peek_critical_empty_when_none(self):
+        """PriorityQueue.peek_critical() returns [] when no critical messages."""
+        self.alice.send("bob", "just info", priority=Priority.NORMAL)
+        msgs = self.queue.peek_critical()
+        self.assertEqual(msgs, [])
+
+
 def run_tests():
     """Run all v1.3 feature tests."""
     loader = unittest.TestLoader()
@@ -1058,6 +1123,7 @@ def run_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestAuditClientWithDB))
     suite.addTests(loader.loadTestsFromTestCase(TestMessagePriority))
     suite.addTests(loader.loadTestsFromTestCase(TestPriorityClientWithDB))
+    suite.addTests(loader.loadTestsFromTestCase(TestPriorityQueueWithDB))
     suite.addTests(loader.loadTestsFromTestCase(TestMessageRouting))
     suite.addTests(loader.loadTestsFromTestCase(TestRoutingClientWithDB))
     suite.addTests(loader.loadTestsFromTestCase(TestIntegrationScenarios))
