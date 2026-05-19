@@ -129,12 +129,9 @@ runs will land in SQLite's default `delete` journal mode. Concurrent writers
 will deadlock. This was the root cause of the v1.3 WAL gap fixed in commits
 17f30d7, 09361ec, and 49d7093.
 
-**Known gaps**: `src/lib.rs` does not yet apply this pattern. It requires
-`a2a init` to run first. See `src/AGENTS.md`.
-
-`a2a_client.go` and `a2a_client.js` were upgraded in v1.3.1 to apply the full
-WAL invariant (mkdir + WAL + busy_timeout=5000) on every connection — no prior
-`a2a init` required.
+All language clients (Python sync/async, Node.js, Go, Rust) were upgraded
+in v1.3.1 to apply mkdir + WAL + busy_timeout=5000 on every connection.
+No prior `a2a init` is required by any client.
 
 ## How to extend safely
 

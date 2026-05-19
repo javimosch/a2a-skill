@@ -8,26 +8,23 @@ Rust client library for the a2a bus. Single file: `lib.rs`.
 manage messages on the same SQLite bus used by the Python CLI and all other
 language clients. The Cargo workspace is defined in `../Cargo.toml`.
 
-## Known gap: WAL mode and mkdir
+## WAL invariant (fixed in v1.3.1)
 
-`Client::connect()` currently calls `Connection::open()` without:
-1. Creating the parent directory (`~/.a2a/{project}/`)
-2. Setting `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000`
-
-**This means the Rust client requires `a2a init` to have run before first use.**
-It will panic if the directory does not exist, and will use SQLite's default
-`delete` journal mode (which breaks concurrent writes from multiple agents).
-
-Fix before shipping Rust agents in production:
+`Client::connect()` creates the parent directory and applies the WAL invariant:
 
 ```rust
 fn connect(&self) -> SqliteResult<Connection> {
-    std::fs::create_dir_all(self.db_path.parent().unwrap()).ok();
+    if let Some(parent) = self.db_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
     let conn = Connection::open(&self.db_path)?;
     conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;")?;
     Ok(conn)
 }
 ```
+
+No prior `a2a init` required. All language clients (Python, JS, Go, Rust) now
+apply this pattern consistently.
 
 ## Public API
 
@@ -72,5 +69,4 @@ carry their own Cargo.toml.
 ## Go and Node clients
 
 `a2a_client.go` and `a2a_client.js` live at the project root, not in `src/`.
-They have the same WAL/mkdir gap as this Rust client. Apply the same fix
-pattern when updating them.
+All three were upgraded in v1.3.1 to apply the WAL invariant on every connection.

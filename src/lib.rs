@@ -67,9 +67,15 @@ impl Client {
         }
     }
 
-    /// Connect to database
+    /// Connect to database applying the WAL invariant.
+    /// Creates the parent directory if it does not exist.
     fn connect(&self) -> SqliteResult<Connection> {
-        Connection::open(&self.db_path)
+        if let Some(parent) = self.db_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let conn = Connection::open(&self.db_path)?;
+        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;")?;
+        Ok(conn)
     }
 
     /// Get current timestamp
