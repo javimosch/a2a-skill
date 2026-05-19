@@ -85,6 +85,39 @@ class TestEncryption(unittest.TestCase):
         self.assertIsNotNone(key)
         self.assertIn("BEGIN PUBLIC KEY", key)
 
+    def test_unwrap_encrypted_message_round_trip(self):
+        """unwrap_encrypted_message decrypts a wrapped message."""
+        public_key, _ = self.crypto.generate_keypair()
+        message = "Top secret"
+        wrapped = self.crypto.wrap_encrypted_message(message, public_key)
+
+        result = CryptoClient.unwrap_encrypted_message(wrapped, self.crypto)
+        self.assertEqual(result, message)
+
+    def test_unwrap_encrypted_message_returns_none_for_plain(self):
+        """unwrap_encrypted_message returns None for non-encrypted input."""
+        result = CryptoClient.unwrap_encrypted_message("plain text", self.crypto)
+        self.assertIsNone(result)
+
+    def test_unwrap_encrypted_message_returns_none_for_invalid_json(self):
+        """unwrap_encrypted_message returns None for malformed JSON."""
+        result = CryptoClient.unwrap_encrypted_message("{bad json", self.crypto)
+        self.assertIsNone(result)
+
+    def test_encrypt_and_decrypt_file(self):
+        """encrypt_file and decrypt_file preserve file contents."""
+        from a2a_crypto import encrypt_file, decrypt_file
+        import os
+
+        key = self.crypto.generate_symmetric_key()
+        filepath = os.path.join(self.temp_dir, "secret.txt")
+        original = "File contents to encrypt"
+        Path(filepath).write_text(original)
+
+        encrypt_file(filepath, key)
+        recovered = decrypt_file(filepath, key)
+        self.assertEqual(recovered, original)
+
 
 class TestFullTextSearch(unittest.TestCase):
     """Test suite for full-text search (v1.3)."""
