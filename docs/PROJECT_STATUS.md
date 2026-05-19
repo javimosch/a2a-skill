@@ -421,15 +421,21 @@ messages_fts(id, sender, recipient, body, thread_id, created_at) [virtual FTS5 t
   - test_async_modules.py: 25 tests, 23 skipped (async stubs; aiosqlite not installed)
   - test_a2a.py: +6 WAL/mkdir invariant tests (now 36 total)
 - ✅ Fixed NameError in a2a_priority_async.py + a2a_routing_async.py (string type hints)
-- ✅ Total: **188 tests, 100% green**
+- ✅ FTS5 search quality tests +6, FTS5 MATCH query fix (2f255bb)
+- ✅ FTS5 rebuild regression test with trace callback (fad3319)
+- ✅ Go client WAL invariant fixed (4fcf652) — connect() applies mkdir+WAL+busy_timeout
+- ✅ Rust client WAL invariant fixed (150c8b6) — connect() applies mkdir+WAL+busy_timeout
+- ✅ a2a_client.js upgraded to node:sqlite (5c30c02) — zero external deps, WAL applied
+- ✅ Total: **195 Python + 23 JS tests = 218 tests, 100% green** (23 async skip-guarded)
 
-| Suite | Tests |
-|-------|-------|
-| test_a2a.py | 36 |
-| test_a2a_client.py | 17 |
-| test_integration.py | 18 |
-| test_v13_features.py | 30 |
-| test_git_aware.py | 29 |
-| test_server.py | 33 |
-| test_async_modules.py | 25 (23 skip) |
-| **Total** | **188** |
+| Suite | Tests | Language |
+|-------|-------|----------|
+| test_a2a.py | 43 | Python |
+| test_a2a_client.py | 17 | Python |
+| test_integration.py | 18 | Python |
+| test_v13_features.py | 30 | Python |
+| test_git_aware.py | 29 | Python |
+| test_server.py | 33 | Python |
+| test_async_modules.py | 25 (23 skip) | Python |
+| test_a2a_client.js | 23 | Node.js |
+| **Total** | **218** | |
