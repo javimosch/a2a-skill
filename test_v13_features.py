@@ -481,6 +481,11 @@ class TestMessageRouting(unittest.TestCase):
         self.assertTrue(rule.matches(msg1))
         self.assertFalse(rule.matches(msg2))
 
+    def test_pattern_matching_invalid_regex_falls_back_to_false(self):
+        """_matches_pattern swallows re.error and returns False for invalid regex."""
+        result = RoutingRule._matches_pattern("normal text", "[unclosed-bracket")
+        self.assertFalse(result)
+
     def test_priority_matching(self):
         """Test priority-based rule matching."""
         rule = RoutingRule(
