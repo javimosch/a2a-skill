@@ -1,0 +1,102 @@
+name: Release Go CLI
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build a2a ${{ matrix.os }}/${{ matrix.arch }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: amd64
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-latest
+            arch: arm64
+            goos: linux
+            goarch: arm64
+            cc: aarch64-linux-gnu-gcc
+          - os: macos-latest
+            arch: amd64
+            goos: darwin
+            goarch: amd64
+          - os: macos-latest
+            arch: arm64
+            goos: darwin
+            goarch: arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install cross-compiler (linux/arm64)
+        if: matrix.arch == 'arm64' && matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CC: ${{ matrix.cc }}
+          CGO_ENABLED: '1'
+        run: |
+          BINARY="a2a-${{ matrix.goos }}-${{ matrix.goarch }}"
+          go build -ldflags "-s -w -X main.Version=${GITHUB_REF_NAME#v}" -tags fts5 -o "$BINARY" ./cmd/a2a/
+          sha256sum "$BINARY" > "${BINARY}.sha256"
+          echo "binary=$BINARY" >> $GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: a2a-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            a2a-${{ matrix.goos }}-${{ matrix.goarch }}
+            a2a-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: a2a ${{ github.ref_name }}
+          body: |
+            ## a2a Go CLI ${{ github.ref_name }}
+
+            Download the binary for your platform:
+            ```
+            curl -sL "https://github.com/jarancibia/a2a-skill/releases/download/${{ github.ref_name }}/a2a-{os}-{arch}" -o /tmp/a2a
+            chmod +x /tmp/a2a
+            /tmp/a2a version
+            ```
+
+            | Platform | Binary |
+            |----------|--------|
+            | Linux x86_64 | `a2a-linux-amd64` |
+            | Linux ARM64 | `a2a-linux-arm64` |
+            | macOS x86_64 | `a2a-darwin-amd64` |
+            | macOS ARM64 | `a2a-darwin-arm64` |
+          files: |
+            a2a-*/*
+          draft: false
+          prerelease: false
