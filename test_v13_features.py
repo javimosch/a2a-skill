@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch
 from a2a_crypto import CryptoClient
 from a2a_fts import FTSClient
 from a2a_audit import AuditClient
-from a2a_priority import PriorityClient, Priority
+from a2a_priority import PriorityClient, Priority, PriorityQueue
 from a2a_routing import RoutingClient, RoutingRule, RoutingAction
 
 
@@ -796,6 +796,49 @@ class TestPriorityClientWithDB(unittest.TestCase):
         elapsed = time.time() - start
         self.assertEqual(result, [])
         self.assertLess(elapsed, 1.0)
+
+    def test_get_priority_stats_by_agent(self):
+        """get_priority_stats_by_agent returns counts keyed by priority name for one sender."""
+        self.alice.send("bob", "critical msg", priority=Priority.CRITICAL)
+        self.alice.send("bob", "normal msg", priority=Priority.NORMAL)
+        self.bob.send("alice", "bob high", priority=Priority.HIGH)
+
+        stats = self.alice.get_priority_stats_by_agent("alice")
+        self.assertIn("CRITICAL", stats)
+        self.assertIn("NORMAL", stats)
+        self.assertNotIn("HIGH", stats)
+        self.assertEqual(stats["CRITICAL"], 1)
+        self.assertEqual(stats["NORMAL"], 1)
+
+    def test_mark_read_prevents_recv(self):
+        """mark_read() marks a message so subsequent recv won't return it."""
+        msg_id = self.alice.send("bob", "secret", priority=Priority.HIGH)
+        self.bob.mark_read(msg_id)
+        msgs = self.bob.recv(wait=0, unread_only=True)
+        self.assertEqual(msgs, [])
+
+    def test_get_high_priority_messages(self):
+        """get_high_priority_messages returns HIGH and CRITICAL, not NORMAL or LOW."""
+        self.alice.send("bob", "low noise", priority=Priority.LOW)
+        self.alice.send("bob", "normal info", priority=Priority.NORMAL)
+        self.alice.send("bob", "high alert", priority=Priority.HIGH)
+        self.alice.send("bob", "critical!", priority=Priority.CRITICAL)
+        msgs = self.bob.get_high_priority_messages(unread_only=False)
+        priorities = {m["priority"] for m in msgs}
+        self.assertIn(Priority.HIGH, priorities)
+        self.assertIn(Priority.CRITICAL, priorities)
+        self.assertNotIn(Priority.LOW, priorities)
+        self.assertNotIn(Priority.NORMAL, priorities)
+
+    def test_recv_not_priority_aware_orders_by_timestamp(self):
+        """recv(priority_aware=False) orders messages by created_at ASC, not priority."""
+        self.alice.send("bob", "first low", priority=Priority.LOW)
+        self.alice.send("bob", "second critical", priority=Priority.CRITICAL)
+        msgs = self.bob.recv(wait=0, unread_only=False, priority_aware=False)
+        self.assertGreaterEqual(len(msgs), 2)
+        # First inserted must come first
+        self.assertEqual(msgs[0]["body"], "first low")
+        self.assertEqual(msgs[1]["body"], "second critical")
 
 
 class TestRoutingClientWithDB(unittest.TestCase):
