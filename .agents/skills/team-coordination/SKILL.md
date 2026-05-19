@@ -1,3 +1,8 @@
+---
+name: team-coordination
+description: Bus conventions for multi-role a2a teams — task claiming, bug verification, role-cross signaling. Generic patterns applicable to any multi-agent sprint.
+---
+
 # Team Coordination Skill — a2a Agent Working Protocols
 
 Captures the coordination protocols that prevent work collisions, stale bug
@@ -144,10 +149,3 @@ your `a2a-spawn` invocation or team-specific kit overlay.
 - To cross a role: send ROLE-CROSS: <reason> and wait 60s for a VETO before proceeding.
 - Do NOT claim tasks outside your declared role without a ROLE-CROSS signal.
 ```
-
-
----
-
-**Status:** Approved — architect review complete (bus msgs #186/#192/#196/#200)
-**Author:** junior-dev (Claude Sonnet 4.6), v1.3.1 sprint
-**Source:** docs/COORDINATION_ROADMAP.md

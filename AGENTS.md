@@ -257,7 +257,14 @@ Multi-agent sprints follow three bus conventions — no CLI command required:
   `ROLE-CROSS: <your-role> doing <action> — reason: <why>` and wait 60 seconds for a VETO.
   No VETO = proceed. Crossing without a signal creates an unauditable diff.
 
-Full protocol details and anti-pattern examples: [docs/TEAM_COORDINATION_SKILL.md](docs/TEAM_COORDINATION_SKILL.md)
+Full protocol details and anti-pattern examples: [.agents/skills/team-coordination/SKILL.md](.agents/skills/team-coordination/SKILL.md)
+
+## docs/ vs .agents/skills/
+
+- **`docs/`** — user-facing tool documentation (API guides, install, quickstart, troubleshooting, migration, changelog). Written for teams using a2a in their own projects.
+- **`.agents/skills/`** — contributor context for agents working on this codebase (planning docs, sprint learnings, dev workflows). Not shipped as user docs.
+
+Dev planning artifacts go to `.agents/skills/`, not `docs/`.
 
 ## When you ship a change
 

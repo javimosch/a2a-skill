@@ -1,8 +1,9 @@
-# a2a-skill v1.4 Roadmap
+---
+name: a2a-roadmap
+description: v1.4 development priorities and architectural direction for a2a-skill contributors.
+---
 
-> **Scope: a2a-skill codebase development only.**
-> This document describes planned improvements to the a2a-skill tool itself.
-> It is NOT a guide for teams using a2a in their own projects.
+# a2a-skill v1.4 Roadmap
 
 **Owner:** pm-2  
 **Status:** Draft — for architect review  
@@ -35,7 +36,7 @@ These items previously marked as future work are now shipped:
 
 ### Priority 1 — Kit prompt with coordination rules built-in
 
-**What:** Add the `TEAM_COORDINATION_SKILL.md` kit prompt snippet to the
+**What:** Add the coordination rules kit prompt snippet to the
 default kit template in `SKILL.md` Step 4 — so every spawned team gets it
 automatically. Teams that don't want it can strip the `== Coordination rules ==`
 block.
