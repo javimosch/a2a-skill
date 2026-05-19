@@ -94,8 +94,10 @@ fi
 echo "using a2a at: $A2A"
 ```
 
-## Related
+## See Also
 
 - [GO_CLIENT_API.md](GO_CLIENT_API.md) — Go library reference
+- [GO_TESTING.md](GO_TESTING.md) — Go test and verification guide
 - [CLIENT_API.md](CLIENT_API.md) — Python client API
 - [QUICKSTART.md](QUICKSTART.md) — Getting started
+- [AGENTS.md](../AGENTS.md) — Agent development guide
