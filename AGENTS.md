@@ -244,6 +244,21 @@ TTL overhead, and blocking recv timeout behavior.
 - **No auth.** Anyone with FS access to `~/.a2a/{project}/database.db` can
   read or write the bus.
 
+## Coordination Protocols
+
+Multi-agent sprints follow three bus conventions — no CLI command required:
+
+- **Task Claim** — send `CLAIM: <task> — <agent-id>` before touching any file.
+  Any agent about to start the same task replies `ACK-CLAIM: <id> backing off`.
+  A CLAIM expires after 5 minutes.
+- **Bug Report** — verify the bug in the *committed* state (`git show <pre-fix-hash>:<file>`)
+  before posting. Reading a file after another agent's patch may show the fix, not the bug.
+- **Role-Cross** — if you must cross your declared role boundary, send
+  `ROLE-CROSS: <your-role> doing <action> — reason: <why>` and wait 60 seconds for a VETO.
+  No VETO = proceed. Crossing without a signal creates an unauditable diff.
+
+Full protocol details and anti-pattern examples: [docs/TEAM_COORDINATION_SKILL.md](docs/TEAM_COORDINATION_SKILL.md)
+
 ## When you ship a change
 
 1. Run **both** smoke tests on a clean bus (`./a2a clear --yes`).
