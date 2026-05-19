@@ -29,3 +29,10 @@ __pycache__/
 # Node.js (web UI / examples)
 node_modules/
 package-lock.json
+
+# Dev-team sprint skills (internal, not for external users)
+.agents/skills/a2a-skill-experience/
+.agents/skills/a2a-supervision/
+
+# Claude Code session state
+.claude/

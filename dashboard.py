@@ -24,7 +24,7 @@ def run(cmd):
     return result.stdout.strip()
 
 class A2ADashboard:
-    def __init__(self, project="a2a-skill-dev-team"):
+    def __init__(self, project="default"):
         self.project = project
         self.a2a = "a2a"
         self.last_message_id = 0
@@ -201,7 +201,7 @@ class A2ADashboard:
         print("\nDashboard session ended.")
 
 def main():
-    project = os.environ.get("A2A_PROJECT", "a2a-skill-dev-team")
+    project = os.environ.get("A2A_PROJECT", "default")
     duration = None
 
     # Parse arguments
