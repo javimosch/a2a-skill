@@ -23,6 +23,11 @@ All notable changes to a2a-skill are documented here.
 - FTS5 search quality tests (6): single term, AND, OR, prefix, --fts flag, LIKE fallback
 - FTS5 rebuild regression test using `set_trace_callback` (commit `fad3319`)
 - Total test count: 95 → 195 (23 skipped pending `aiosqlite` install)
+- **WAL Invariant — All Non-Python Clients** closed in v1.3.1:
+  - `a2a_client.js` → `node:sqlite` (built-in, Node 22+) with `mkdirSync` + WAL + `busy_timeout` (commit `5c30c02`)
+  - `a2a_client.go` → `os.MkdirAll` + `PRAGMA journal_mode=WAL` + `busy_timeout=5000` (commit `4fcf652`)
+  - `src/lib.rs` → `create_dir_all` + WAL + `busy_timeout=5000` (commit `150c8b6`)
+  - No prior `a2a init` required by any client language
 
 ---
 
