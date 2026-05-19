@@ -36,8 +36,28 @@ If the user wants a strict orchestrator → workers pattern, prefer the standard
 
 ## The CLI
 
+`a2a` is available as a Python script (stdlib only) or a Go binary
+(zero dependencies, ~1.3MB). Both share the same commands and JSON output.
+See [GO_CLI_REFERENCE.md](GO_CLI_REFERENCE.md) for the Go binary.
+
+### Python (reference)
+
 `a2a` is a small Python script. It is CLI-agnostic — anything that can shell out
-can use it.
+can use it. Requires python3 + sqlite3 (both stdlib, always available on modern systems).
+
+### Go (companion binary)
+
+The Go binary is a drop-in replacement with faster startup (~5ms vs ~80ms)
+and zero runtime dependencies. Download or build:
+
+```bash
+# Download latest release
+curl -sL "https://github.com/jarancibia/a2a-skill/releases/latest/download/a2a-$(uname -s)-$(uname -m)" -o /tmp/a2a
+chmod +x /tmp/a2a
+
+# Or build from source
+cd a2a-skill && go build -tags fts5 -o a2a ./cmd/a2a/
+```
 
 ```
 a2a init                                       # create ~/.a2a/{project}/database.db
@@ -70,20 +90,25 @@ to N seconds for at least one new message.
 
 ### Step 0 — Locate the a2a binary
 
-The `a2a` CLI lives next to the skill. Resolution order:
+The `a2a` CLI lives next to the skill. It is available as a Python script
+(default) or a faster Go binary companion. Resolution order:
 
-1. `$PATH` (preferred — installer symlinks it into `~/.local/bin`)
-2. `~/.agents/skills/a2a/a2a` (global cross-CLI skills path)
-3. `~/.claude/skills/a2a/a2a` (Claude Code skills path)
-4. The skill source directory itself
+1. `$A2A_BIN` env var (overrides all — set this to a downloaded Go binary)
+2. `$PATH` (preferred — installer symlinks it into `~/.local/bin`)
+3. `~/.agents/skills/a2a/a2a` (global cross-CLI skills path)
+4. `~/.claude/skills/a2a/a2a` (Claude Code skills path)
+5. The skill source directory itself
 
 ```bash
-for cand in \
-    "$(command -v a2a 2>/dev/null)" \
-    "$HOME/.agents/skills/a2a/a2a" \
-    "$HOME/.claude/skills/a2a/a2a" ; do
+A2A="${A2A_BIN:-}"
+if [ -z "$A2A" ]; then
+  for cand in \
+      "$(command -v a2a 2>/dev/null)" \
+      "$HOME/.agents/skills/a2a/a2a" \
+      "$HOME/.claude/skills/a2a/a2a" ; do
     if [ -x "$cand" ]; then A2A="$cand"; break; fi
-done
+  done
+fi
 [ -z "${A2A:-}" ] && { echo "a2a binary not found"; exit 1; }
 PROJECT="${A2A_PROJECT:-$(basename "$PWD")}"
 export A2A_PROJECT="$PROJECT"
