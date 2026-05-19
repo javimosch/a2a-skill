@@ -110,13 +110,13 @@ export A2A_PROJECT="$PROJECT"
 sleep 2
 
 # Peek should still show it (peek doesn't clean)
-BEFORE_CLEANUP=$("$A2A" peek --json | grep -c '"id"' || echo 0)
+BEFORE_CLEANUP=$("$A2A" peek --json | grep -c '"id"')
 
 # Recv should trigger cleanup
 "$A2A" recv --as bob --wait 1 >/dev/null || true
 
 # Peek should show fewer (or same if not cleaned yet)
-AFTER_CLEANUP=$("$A2A" peek --json | grep -c '"id"' || echo 0)
+AFTER_CLEANUP=$("$A2A" peek --json | grep -c '"id"')
 
 if [ "$BEFORE_CLEANUP" -ge 0 ] && [ "$AFTER_CLEANUP" -le "$BEFORE_CLEANUP" ]; then
     echo "✅ Message TTL expiration works"
@@ -163,7 +163,7 @@ export A2A_PROJECT="$PROJECT"
 "$A2A" send bob "Another test with _ underscore" --from alice >/dev/null
 
 # Search should handle special chars gracefully
-RESULTS=$("$A2A" search "%" --json 2>&1 | grep -c '"id"' || echo 0)
+RESULTS=$("$A2A" search "%" --json 2>&1 | grep -c '"id"')
 if [ "$RESULTS" -ge 0 ]; then
     echo "✅ Search with special characters works"
 else
