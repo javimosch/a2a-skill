@@ -91,6 +91,11 @@ func TestSendRecv(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
 
+	// Register bob as a peer
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
 	// Send from alice to bob
 	mid, err := c.Send("bob", "hello bob", "", nil)
 	if err != nil {
@@ -99,11 +104,6 @@ func TestSendRecv(t *testing.T) {
 	if mid <= 0 {
 		t.Fatalf("expected positive message id, got %d", mid)
 	}
-
-	// Bob recv
-	c2 := NewClient(c.Project, "bob")
-	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
 
 	msgs, err := c2.RecvSimple(0, true, false, 0)
 	if err != nil {
@@ -139,6 +139,12 @@ func TestPeek(t *testing.T) {
 
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
+
+	// Register bob as peer
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
 	c.Send("bob", "msg1", "", nil)
 	c.Send("bob", "msg2", "", nil)
 
@@ -157,6 +163,11 @@ func TestSearch(t *testing.T) {
 
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
+
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
 	c.Send("bob", "hello world", "", nil)
 	c.Send("bob", "goodbye moon", "", nil)
 
@@ -175,6 +186,11 @@ func TestThread(t *testing.T) {
 
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
+
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
 	c.Send("bob", "msg1", "thread-1", nil)
 	c.Send("bob", "msg2", "thread-1", nil)
 	c.Send("bob", "other", "", nil)
@@ -195,7 +211,7 @@ func TestSetAndGetStatus(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
 
-	if err := c.SetStatus("done"); err != nil {
+	if _, err := c.SetStatus("done"); err != nil {
 		t.Fatalf("SetStatus: %v", err)
 	}
 
@@ -214,6 +230,11 @@ func TestStats(t *testing.T) {
 
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
+
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
 	c.Send("bob", "msg1", "", nil)
 	c.Send("bob", "msg2", "", nil)
 
@@ -238,6 +259,10 @@ func TestStatsJSON(t *testing.T) {
 
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
+
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
 	c.Send("bob", "test", "", nil)
 
 	json, err := c.StatsJSON()
@@ -349,6 +374,10 @@ func TestSendWithThread(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
 
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
 	mid, err := c.Send("bob", "with thread", "my-thread", nil)
 	if err != nil {
 		t.Fatalf("Send with thread: %v", err)
@@ -364,6 +393,10 @@ func TestSendWithTTL(t *testing.T) {
 
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
+
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
 
 	ttl := 3600
 	mid, err := c.Send("bob", "with ttl", "", &ttl)
@@ -381,6 +414,10 @@ func TestSendSimple(t *testing.T) {
 
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
+
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
 
 	mid, err := c.SendSimple("bob", "hello via simple")
 	if err != nil {
@@ -462,6 +499,10 @@ func TestSendEmptyBody(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
 
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
 	mid, err := c.Send("bob", "", "", nil)
 	if err != nil {
 		t.Fatalf("Send empty body: %v", err)
@@ -471,9 +512,6 @@ func TestSendEmptyBody(t *testing.T) {
 	}
 
 	// Verify it was stored
-	c2 := NewClient(c.Project, "bob")
-	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
 	msgs, err := c2.RecvSimple(0, true, false, 10)
 	if err != nil {
 		t.Fatalf("Recv: %v", err)
@@ -493,6 +531,10 @@ func TestSendSpecialChars(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
 
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
 	special := "hello\nmulti\nline\nwith\ttabs\nand🚀emoji\nand\"quotes\""
 	mid, err := c.Send("bob", special, "", nil)
 	if err != nil {
@@ -500,9 +542,6 @@ func TestSendSpecialChars(t *testing.T) {
 	}
 	_ = mid
 
-	c2 := NewClient(c.Project, "bob")
-	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
 	msgs, err := c2.RecvSimple(0, true, false, 10)
 	if err != nil {
 		t.Fatalf("Recv: %v", err)
@@ -519,6 +558,10 @@ func TestSendLongBody(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
 
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
 	// 10KB body
 	longBody := strings.Repeat("Lorem ipsum dolor sit amet. ", 500)
 	mid, err := c.Send("bob", longBody, "", nil)
@@ -529,9 +572,6 @@ func TestSendLongBody(t *testing.T) {
 		t.Fatal("expected positive message id")
 	}
 
-	c2 := NewClient(c.Project, "bob")
-	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
 	msgs, err := c2.RecvSimple(0, true, false, 10)
 	if err != nil {
 		t.Fatalf("Recv: %v", err)
@@ -551,15 +591,15 @@ func TestRecvSince(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", 0, false)
 
+	c2 := NewClient(c.Project, "bob")
+	c2.InitProject()
+	c2.Register("critic", "", "", 0, false)
+
 	// Create message at a known timestamp
 	c.Send("bob", "old message", "", nil)
 	time.Sleep(10 * time.Millisecond)
 	since := nowSec()
 	c.Send("bob", "new message", "", nil)
-
-	c2 := NewClient(c.Project, "bob")
-	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
 
 	msgs, err := c2.Recv(RecvOpts{Since: &since, UnreadOnly: true, Wait: 2})
 	if err != nil {

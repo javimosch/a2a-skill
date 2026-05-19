@@ -276,15 +276,17 @@ func cmdStatus() {
 	state := args[0]
 
 	c := newClient(agentID)
-	if err := c.SetStatus(state); err != nil {
+	lastSeen, err := c.SetStatus(state)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: status error: %v\n", err)
 		os.Exit(1)
 	}
 
 	if jsonFlag {
 		printJSON(map[string]interface{}{
-			"agent":  agentID,
-			"status": state,
+			"agent":     agentID,
+			"status":    state,
+			"last_seen": lastSeen,
 		})
 	} else {
 		fmt.Printf("agent '%s' status -> %s\n", agentID, state)
@@ -360,6 +362,10 @@ func cmdRecv() {
 	}
 
 	c := newClient(agentID)
+	if exists, err := c.AgentExists(agentID); err != nil || !exists {
+		fmt.Fprintf(os.Stderr, "a2a: unknown agent '%s' — register first\n", agentID)
+		os.Exit(1)
+	}
 	unreadOnly := !includeAll
 
 	var since *float64
@@ -474,13 +480,19 @@ func cmdSearch() {
 	jsonFlag := hasFlag("--json")
 	args := positionalArgs()
 	if len(args) < 1 {
-		fmt.Fprintln(os.Stderr, "a2a: usage: a2a search <query> [--limit N] [--json]")
+		fmt.Fprintln(os.Stderr, "a2a: usage: a2a search <query> [--limit N] [--json] [--fts]")
 		os.Exit(1)
 	}
 	query := args[0]
 
 	c := newClient("")
-	msgs, err := c.Search(query, limit)
+	var msgs []a2a.Message
+	var err error
+	if hasFlag("--fts") {
+		msgs, err = c.SearchFTS(query, limit)
+	} else {
+		msgs, err = c.Search(query, limit)
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: search error: %v\n", err)
 		os.Exit(1)
@@ -572,11 +584,6 @@ func cmdProject() {
 	c := newClient("")
 	info := c.ProjectInfo()
 	printJSON(info)
-	if info["exists"].(bool) {
-		fmt.Printf("project '%s' exists at %s\n", info["project"], info["db"])
-	} else {
-		fmt.Printf("project '%s' — database does not exist at %s\n", info["project"], info["db"])
-	}
 }
 
 func printMessages(msgs []a2a.Message) {

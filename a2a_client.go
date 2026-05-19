@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -95,9 +96,20 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 	}
 	defer db.Close()
 
-	recipient := to
-	if to == "all" || to == "*" || to == "broadcast" {
-		recipient = ""
+	// Validate sender exists
+	var count int
+	if err := db.QueryRow("SELECT COUNT(1) FROM agents WHERE id=?", c.AgentID).Scan(&count); err != nil || count == 0 {
+		return 0, fmt.Errorf("unknown sender '%s' — register first", c.AgentID)
+	}
+
+	var recip *string
+	if to != "all" && to != "*" && to != "broadcast" {
+		// Validate recipient exists
+		if err := db.QueryRow("SELECT COUNT(1) FROM agents WHERE id=?", to).Scan(&count); err != nil || count == 0 {
+			return 0, fmt.Errorf("unknown recipient '%s'", to)
+		}
+		r := to
+		recip = &r
 	}
 
 	var tid *string
@@ -107,7 +119,7 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 
 	result, err := db.Exec(
 		"INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) VALUES (?,?,?,?,?,?)",
-		c.AgentID, recipient, message, tid, ttlSeconds, nowSec(),
+		c.AgentID, recip, message, tid, ttlSeconds, nowSec(),
 	)
 	if err != nil {
 		return 0, err
@@ -188,7 +200,7 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 			return nil, err
 		}
 
-		var messages []Message
+		messages := []Message{}
 		ts := nowSec()
 
 		for rows.Next() {
@@ -247,7 +259,7 @@ func (c *Client) Peek(limit int) ([]Message, error) {
 	}
 	defer rows.Close()
 
-	var messages []Message
+	messages := []Message{}
 	for rows.Next() {
 		var m Message
 		err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &m.CreatedAt)
@@ -292,19 +304,39 @@ func (c *Client) ListPeers() ([]Peer, error) {
 	return peers, nil
 }
 
-// SetStatus updates agent status
-func (c *Client) SetStatus(status string) error {
+// AgentExists returns true if the agent is registered in the project.
+func (c *Client) AgentExists(agentID string) (bool, error) {
 	db, err := c.connect()
 	if err != nil {
-		return err
+		return false, err
+	}
+	defer db.Close()
+	var count int
+	err = db.QueryRow("SELECT COUNT(1) FROM agents WHERE id=?", agentID).Scan(&count)
+	return count > 0, err
+}
+
+// SetStatus updates agent status. Returns (lastSeen, error). Errors if agent doesn't exist.
+func (c *Client) SetStatus(status string) (float64, error) {
+	db, err := c.connect()
+	if err != nil {
+		return 0, err
 	}
 	defer db.Close()
 
-	_, err = db.Exec(
+	ts := nowSec()
+	result, err := db.Exec(
 		"UPDATE agents SET status=?, last_seen=? WHERE id=?",
-		status, nowSec(), c.AgentID,
+		status, ts, c.AgentID,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		return 0, fmt.Errorf("unknown agent '%s' — register first", c.AgentID)
+	}
+	return ts, nil
 }
 
 // GetStatus gets agent status
@@ -327,7 +359,7 @@ func (c *Client) GetStatus(agentID string) (string, error) {
 	return status, err
 }
 
-// Search searches messages by content
+// Search searches messages by content (LIKE-based substring search).
 func (c *Client) Search(query string, limit int) ([]Message, error) {
 	db, err := c.connect()
 	if err != nil {
@@ -336,15 +368,15 @@ func (c *Client) Search(query string, limit int) ([]Message, error) {
 	defer db.Close()
 
 	rows, err := db.Query(
-		"SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE body LIKE ? ORDER BY created_at DESC LIMIT ?",
-		fmt.Sprintf("%%%s%%", query), limit,
+		"SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
+		fmt.Sprintf("%%%s%%", strings.ToLower(query)), limit,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var messages []Message
+	messages := []Message{}
 	for rows.Next() {
 		var m Message
 		err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &m.CreatedAt)
@@ -355,6 +387,59 @@ func (c *Client) Search(query string, limit int) ([]Message, error) {
 	}
 
 	return messages, nil
+}
+
+// SearchFTS performs full-text search using SQLite FTS5.
+// Requires the binary to be built with -tags fts5.
+// Falls back to LIKE search if FTS5 is unavailable.
+func (c *Client) SearchFTS(query string, limit int) ([]Message, error) {
+	db, err := c.connect()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	// Try to create FTS5 virtual table (no-op if exists)
+	_, ftsErr := db.Exec(`CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+		id, sender, recipient, body, thread_id, created_at,
+		content=messages, content_rowid=id
+	)`)
+
+	if ftsErr == nil {
+		// Try to sync via triggers
+		db.Exec(`CREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages BEGIN
+		  INSERT INTO messages_fts(rowid, id, sender, recipient, body, thread_id, created_at)
+		  VALUES (new.rowid, new.id, new.sender, new.recipient, new.body, new.thread_id, new.created_at); END`)
+		db.Exec(`CREATE TRIGGER IF NOT EXISTS messages_fts_delete AFTER DELETE ON messages BEGIN
+		  DELETE FROM messages_fts WHERE rowid = old.id; END`)
+		db.Exec(`CREATE TRIGGER IF NOT EXISTS messages_fts_update AFTER UPDATE ON messages BEGIN
+		  DELETE FROM messages_fts WHERE rowid = old.id;
+		  INSERT INTO messages_fts(rowid, id, sender, recipient, body, thread_id, created_at)
+		  VALUES (new.rowid, new.id, new.sender, new.recipient, new.body, new.thread_id, new.created_at); END`)
+		db.Exec("INSERT INTO messages_fts(messages_fts) VALUES('rebuild')")
+
+		rows, err := db.Query(
+			`SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at
+			 FROM messages_fts JOIN messages m ON messages_fts.rowid = m.rowid
+			 WHERE messages_fts MATCH ? ORDER BY rank LIMIT ?`,
+			query, limit,
+		)
+		if err == nil {
+			defer rows.Close()
+			messages := []Message{}
+			for rows.Next() {
+				var m Message
+				if err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &m.CreatedAt); err != nil {
+					return nil, err
+				}
+				messages = append(messages, m)
+			}
+			return messages, nil
+		}
+	}
+
+	// Fall back to LIKE search
+	return c.Search(query, limit)
 }
 
 // Thread gets all messages in a thread
@@ -374,7 +459,7 @@ func (c *Client) Thread(threadID string) ([]Message, error) {
 	}
 	defer rows.Close()
 
-	var messages []Message
+	messages := []Message{}
 	for rows.Next() {
 		var m Message
 		err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &m.CreatedAt)
