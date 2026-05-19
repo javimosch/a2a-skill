@@ -586,6 +586,53 @@ class TestIntegration(unittest.TestCase):
         msgs = json.loads(result.stdout)
         self.assertEqual(msgs, [])
 
+    def test_recv_all_includes_already_read_messages(self):
+        """recv --all returns messages even if already read."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "first read", "--from", "alice", project=self.project)
+        # First recv marks message as read
+        a2a("recv", "--as", "bob", "--json", project=self.project)
+        # Second recv without --all returns empty
+        result = a2a("recv", "--as", "bob", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(msgs, [])
+        # recv --all should still return it
+        result = a2a("recv", "--as", "bob", "--all", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 1)
+
+    def test_recv_include_self_delivers_own_broadcast(self):
+        """recv --include-self returns messages sent by the agent itself."""
+        a2a("register", "alice", project=self.project)
+        a2a("send", "all", "my own broadcast", "--from", "alice", project=self.project)
+        result = a2a("recv", "--as", "alice", "--include-self", "--all", "--json",
+                     project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertTrue(any(m["body"] == "my own broadcast" for m in msgs))
+
+    def test_list_json_returns_array(self):
+        """list --json output is a valid JSON array with agent fields."""
+        a2a("register", "alice", "--role", "planner", project=self.project)
+        result = a2a("list", "--json", project=self.project)
+        agents = json.loads(result.stdout)
+        self.assertIsInstance(agents, list)
+        self.assertEqual(len(agents), 1)
+        self.assertIn("id", agents[0])
+        self.assertIn("role", agents[0])
+        self.assertEqual(agents[0]["id"], "alice")
+
+    def test_peek_json_valid(self):
+        """peek --json returns valid JSON array."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "peeked message", "--from", "alice", project=self.project)
+        result = a2a("peek", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertIsInstance(msgs, list)
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(msgs[0]["body"], "peeked message")
+
 
 if __name__ == "__main__":
     unittest.main()
