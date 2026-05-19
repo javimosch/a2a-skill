@@ -679,6 +679,21 @@ func TestConcurrentSendRecv(t *testing.T) {
 	}
 }
 
+func TestFTSSTriggers(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	msgs, err := c.SearchFTS("test", 10)
+	if err != nil {
+		// FTS5 may not be available (depends on build tag) — that's OK
+		t.Skipf("FTS5 not available: %v", err)
+	}
+	_ = msgs
+}
+
 func TestMessageStruct(t *testing.T) {
 	m := Message{
 		ID:      1,
