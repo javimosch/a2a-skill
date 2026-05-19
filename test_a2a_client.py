@@ -330,6 +330,29 @@ class TestA2AClient(unittest.TestCase):
         status = alice.get_status("nonexistent-agent")
         self.assertIsNone(status)
 
+    def test_set_status_nonexistent_agent_is_noop(self):
+        """set_status on unknown agent silently does nothing."""
+        ghost = A2AClient(self.project, "ghost-agent")
+        # Should not raise; UPDATE WHERE id=? with no matching row is a no-op
+        ghost.set_status("done")
+        # Confirm ghost was never actually registered
+        alice = A2AClient(self.project, "alice")
+        self.assertIsNone(alice.get_status("ghost-agent"))
+
+    def test_wait_for_messages_returns_false_on_timeout(self):
+        """wait_for_messages returns False when messages never arrive."""
+        bob = A2AClient(self.project, "bob")
+        # No messages sent — should timeout quickly
+        result = bob.wait_for_messages(count=1, timeout=0.3)
+        self.assertFalse(result)
+
+    def test_search_returns_empty_when_no_match(self):
+        """search returns [] when query has no matching messages."""
+        alice = A2AClient(self.project, "alice")
+        alice.send("bob", "Hello world")
+        results = alice.search("zzznomatch")
+        self.assertEqual(results, [])
+
 
 if __name__ == "__main__":
     unittest.main()
