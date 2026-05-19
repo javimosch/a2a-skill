@@ -935,9 +935,13 @@ def run_tests():
     # Add all test cases
     suite.addTests(loader.loadTestsFromTestCase(TestEncryption))
     suite.addTests(loader.loadTestsFromTestCase(TestFullTextSearch))
+    suite.addTests(loader.loadTestsFromTestCase(TestFTSClientWithDB))
     suite.addTests(loader.loadTestsFromTestCase(TestAuditLogging))
+    suite.addTests(loader.loadTestsFromTestCase(TestAuditClientWithDB))
     suite.addTests(loader.loadTestsFromTestCase(TestMessagePriority))
+    suite.addTests(loader.loadTestsFromTestCase(TestPriorityClientWithDB))
     suite.addTests(loader.loadTestsFromTestCase(TestMessageRouting))
+    suite.addTests(loader.loadTestsFromTestCase(TestRoutingClientWithDB))
     suite.addTests(loader.loadTestsFromTestCase(TestIntegrationScenarios))
     suite.addTests(loader.loadTestsFromTestCase(TestErrorHandling))
 

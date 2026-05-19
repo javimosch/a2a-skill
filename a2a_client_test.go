@@ -303,8 +303,8 @@ func TestProjectInfo(t *testing.T) {
 	defer cleanup()
 
 	info := c.ProjectInfo()
-	if info["project"] != "a2a-go-test" {
-		t.Fatalf("expected project 'a2a-go-test', got '%s'", info["project"])
+	if info["project"] != c.Project {
+		t.Fatalf("expected project '%s', got '%s'", c.Project, info["project"])
 	}
 	if info["exists"] != true {
 		t.Fatal("expected exists=true")
