@@ -64,6 +64,10 @@ echo "🧪 Test Suite 1: Unit Tests"
 echo ""
 run_test "a2a core unit tests" "$PYTHON3 test_a2a.py -v"
 run_test "a2a client library tests" "$PYTHON3 test_a2a_client.py -v"
+run_test "a2a v1.3 feature tests" "$PYTHON3 test_v13_features.py -v"
+run_test "a2a git-aware module tests" "$PYTHON3 test_git_aware.py -v"
+run_test "a2a REST server tests" "$PYTHON3 test_server.py -v"
+run_test "a2a async module tests (skipped without aiosqlite)" "$PYTHON3 test_async_modules.py -v"
 
 # 3. Run integration tests
 echo "🧪 Test Suite 2: Integration Tests"
@@ -93,7 +97,9 @@ echo "✔️  Test Suite 6: Code Validation"
 echo ""
 
 echo "  Checking Python syntax..."
-$PYTHON3 -m py_compile a2a.py test_a2a.py test_integration.py test_a2a_client.py benchmark.py dashboard.py a2a_client.py
+$PYTHON3 -m py_compile a2a.py test_a2a.py test_integration.py test_a2a_client.py \
+    test_v13_features.py test_git_aware.py test_server.py test_async_modules.py \
+    benchmark.py dashboard.py a2a_client.py
 echo "  ✓ All Python files compile"
 
 echo "  Checking shell scripts..."
