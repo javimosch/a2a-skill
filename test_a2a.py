@@ -667,6 +667,82 @@ class TestEdgeCases(unittest.TestCase):
         conn.set_trace_callback(None)
         conn.close()
 
+    def _search_output(self, project, query, fts=True):
+        """Helper: run cmd_search and return stdout."""
+        import io, sys
+        args = a2a.argparse.Namespace(project=project, query=query, limit=50, json=False, fts=fts)
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_search(args)
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        return output
+
+    def _seed_fts_messages(self, project):
+        """Insert messages for FTS5 quality tests."""
+        conn = a2a.connect(project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        messages = [
+            "authentication token expired",
+            "database connection failed",
+            "user login successful",
+            "authentication error on retry",
+            "deployment pipeline complete",
+        ]
+        for i, body in enumerate(messages):
+            conn.execute(
+                "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+                ("alice", None, body, a2a.now() + i)
+            )
+        conn.commit()
+        conn.close()
+
+    def test_fts_single_term(self):
+        """FTS5 search finds messages containing a single term."""
+        self._seed_fts_messages(self.project)
+        out = self._search_output(self.project, "authentication")
+        self.assertIn("authentication token expired", out)
+        self.assertIn("authentication error on retry", out)
+        self.assertNotIn("database connection", out)
+
+    def test_fts_boolean_and(self):
+        """FTS5 AND operator requires both terms to be present."""
+        self._seed_fts_messages(self.project)
+        out = self._search_output(self.project, "authentication AND error")
+        self.assertIn("authentication error on retry", out)
+        self.assertNotIn("authentication token expired", out)
+
+    def test_fts_boolean_or(self):
+        """FTS5 OR operator returns messages with either term."""
+        self._seed_fts_messages(self.project)
+        out = self._search_output(self.project, "login OR deployment")
+        self.assertIn("user login successful", out)
+        self.assertIn("deployment pipeline complete", out)
+        self.assertNotIn("authentication", out)
+
+    def test_fts_prefix_query(self):
+        """FTS5 prefix* matches terms starting with the prefix."""
+        self._seed_fts_messages(self.project)
+        out = self._search_output(self.project, "auth*")
+        self.assertIn("authentication token expired", out)
+        self.assertIn("authentication error on retry", out)
+        self.assertNotIn("database connection", out)
+
+    def test_fts_forced_flag(self):
+        """--fts flag forces FTS5 path even without prior init."""
+        self._seed_fts_messages(self.project)
+        out = self._search_output(self.project, "database", fts=True)
+        self.assertIn("database connection failed", out)
+
+    def test_search_like_fallback(self):
+        """Search without FTS still finds matches via LIKE fallback."""
+        self._seed_fts_messages(self.project)
+        out = self._search_output(self.project, "pipeline", fts=False)
+        self.assertIn("deployment pipeline complete", out)
+
     def test_stats(self):
         """Stats command reports correct counts."""
         conn = a2a.connect(self.project)

@@ -434,23 +434,23 @@ def cmd_search(args):
     """Search messages by content."""
     name = project_name(args.project)
     conn = connect(name)
-    query = args.query.lower()
-    use_fts = args.fts or _init_fts(conn)
+    fts_ready = _init_fts(conn)
+    use_fts = args.fts or fts_ready
     if use_fts:
         try:
             rows = conn.execute(
                 "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at "
                 "FROM messages_fts JOIN messages m ON messages_fts.rowid = m.rowid "
                 "WHERE messages_fts MATCH ? ORDER BY rank LIMIT ?",
-                (query, args.limit or 50),
+                (args.query, args.limit or 50),
             ).fetchall()
         except sqlite3.OperationalError:
             use_fts = False
     if not use_fts:
         rows = conn.execute(
             "SELECT id, sender, recipient, body, thread_id, created_at FROM messages "
-            "WHERE body LIKE ? ORDER BY created_at DESC LIMIT ?",
-            (f"%{query}%", args.limit or 50),
+            "WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
+            (f"%{args.query.lower()}%", args.limit or 50),
         ).fetchall()
     conn.close()
     if args.json:
