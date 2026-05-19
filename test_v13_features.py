@@ -1010,6 +1010,7 @@ def run_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestEncryption))
     suite.addTests(loader.loadTestsFromTestCase(TestFullTextSearch))
     suite.addTests(loader.loadTestsFromTestCase(TestFTSClientWithDB))
+    suite.addTests(loader.loadTestsFromTestCase(TestSearchQueryBuilder))
     suite.addTests(loader.loadTestsFromTestCase(TestAuditLogging))
     suite.addTests(loader.loadTestsFromTestCase(TestAuditClientWithDB))
     suite.addTests(loader.loadTestsFromTestCase(TestMessagePriority))
