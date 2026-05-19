@@ -16,11 +16,13 @@ All notable changes to a2a-skill are documented here.
   - `test_server.py` — 33 REST API endpoint tests for `a2a_server.py`
   - `test_async_modules.py` — 25 async tests (23 skip-guarded when aiosqlite absent)
   - `test_a2a.py` — +6 WAL invariant + mkdir guard tests (`TestWALInvariant`)
-- Bug fix: `_init_fts()` in `a2a.py` — FTS5 rebuild ran on every search call; now only
-  runs at first-time table creation (one-time cost, not per-query). Commit: `848e9dd`
-- FTS5 rebuild regression test (`test_fts_init_rebuild_only_on_first_call`) using
-  `set_trace_callback` to assert rebuild fires exactly once. Commit: `fad3319`
-- Total test count: 95 → 189 (23 skipped pending `aiosqlite` install)
+- Bug fixes in `cmd_search` / `_init_fts()` (commit `848e9dd`, `2f255bb`):
+  - FTS5 rebuild ran on every search call; now only on first table creation
+  - `--fts` flag short-circuited `_init_fts`, leaving table uninitialised
+  - `query.lower()` broke AND/OR/NOT operators; LIKE path now uses `lower(body)`
+- FTS5 search quality tests (6): single term, AND, OR, prefix, --fts flag, LIKE fallback
+- FTS5 rebuild regression test using `set_trace_callback` (commit `fad3319`)
+- Total test count: 95 → 195 (23 skipped pending `aiosqlite` install)
 
 ---
 
