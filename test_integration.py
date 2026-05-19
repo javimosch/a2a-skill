@@ -633,6 +633,39 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(len(msgs), 1)
         self.assertEqual(msgs[0]["body"], "peeked message")
 
+    def test_recv_limit_caps_returned_messages(self):
+        """recv --limit 2 returns at most 2 messages even if 4 are waiting."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        for i in range(4):
+            a2a("send", "bob", f"msg {i}", "--from", "alice", project=self.project)
+        result = a2a("recv", "--as", "bob", "--limit", "2", "--json",
+                     project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertLessEqual(len(msgs), 2)
+
+    def test_stats_shows_message_count(self):
+        """stats command returns correct message total."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "msg1", "--from", "alice", project=self.project)
+        a2a("send", "all", "broadcast", "--from", "alice", project=self.project)
+        result = a2a("stats", "--json", project=self.project)
+        data = json.loads(result.stdout)
+        self.assertEqual(data["messages"], 2)
+        self.assertEqual(data["broadcasts"], 1)
+        self.assertEqual(data["direct_messages"], 1)
+
+    def test_search_with_limit(self):
+        """search --limit 1 returns at most 1 result."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "hello world", "--from", "alice", project=self.project)
+        a2a("send", "bob", "hello universe", "--from", "alice", project=self.project)
+        result = a2a("search", "hello", "--json", "--limit", "1", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertLessEqual(len(msgs), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
