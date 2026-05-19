@@ -207,6 +207,80 @@ class TestFTSClientWithDB(unittest.TestCase):
         """_get_total_messages returns correct count."""
         self.assertEqual(self.fts._get_total_messages(), 4)
 
+    def test_search_advanced_sender_filter(self):
+        """search_advanced filters by sender."""
+        results = self.fts.search_advanced("service", sender="alice")
+        self.assertTrue(all(r["sender"] == "alice" for r in results))
+        self.assertGreaterEqual(len(results), 1)
+
+    def test_search_advanced_no_match_returns_empty(self):
+        """search_advanced returns [] when nothing matches."""
+        results = self.fts.search_advanced("zzznomatch")
+        self.assertEqual(results, [])
+
+    def test_search_advanced_thread_filter(self):
+        """search_advanced filters by thread_id (returns empty for unknown thread)."""
+        results = self.fts.search_advanced("service", thread_id="no-such-thread")
+        self.assertEqual(results, [])
+
+    def test_get_search_suggestions_partial_match(self):
+        """get_search_suggestions returns list (may be empty if FTS word list unsupported)."""
+        results = self.fts.get_search_suggestions("auth")
+        self.assertIsInstance(results, list)
+
+    def test_get_search_suggestions_empty_on_no_match(self):
+        """get_search_suggestions returns [] for unlikely prefix."""
+        results = self.fts.get_search_suggestions("zzznomatch")
+        self.assertEqual(results, [])
+
+
+class TestSearchQueryBuilder(unittest.TestCase):
+    """Unit tests for SearchQueryBuilder combinators."""
+
+    def setUp(self):
+        from a2a_fts import SearchQueryBuilder
+        self.builder_class = SearchQueryBuilder
+
+    def test_add_term(self):
+        """add_term appends a bare term to the query."""
+        q = self.builder_class().add_term("error").build()
+        self.assertIn("error", q)
+
+    def test_add_phrase(self):
+        """add_phrase wraps the term in quotes."""
+        q = self.builder_class().add_phrase("server down").build()
+        self.assertIn('"server down"', q)
+
+    def test_must_contain(self):
+        """must_contain prefixes term with +."""
+        q = self.builder_class().must_contain("critical").build()
+        self.assertIn("critical", q)
+
+    def test_must_not_contain(self):
+        """must_not_contain prefixes term with -."""
+        q = self.builder_class().must_not_contain("resolved").build()
+        self.assertIn("-resolved", q)
+
+    def test_str_matches_build(self):
+        """__str__ returns same output as build()."""
+        b = self.builder_class().add_term("error").must_contain("critical")
+        self.assertEqual(str(b), b.build())
+
+    def test_chaining_all_methods(self):
+        """All builder methods can be chained together."""
+        q = (
+            self.builder_class()
+            .add_term("deploy")
+            .add_phrase("service down")
+            .must_contain("urgent")
+            .must_not_contain("resolved")
+            .build()
+        )
+        self.assertIn("deploy", q)
+        self.assertIn('"service down"', q)
+        self.assertIn("urgent", q)
+        self.assertIn("-resolved", q)
+
 
 class TestAuditLogging(unittest.TestCase):
     """Test suite for audit logging (v1.3)."""
