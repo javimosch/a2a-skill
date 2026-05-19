@@ -532,6 +532,60 @@ class TestIntegration(unittest.TestCase):
                      project=self.project, expect_fail=True)
         self.assertNotEqual(result.returncode, 0)
 
+    # ---- Clear command ----
+
+    def test_clear_requires_yes_flag(self):
+        """a2a clear without --yes exits non-zero."""
+        result = a2a("clear", project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_clear_deletes_database(self):
+        """a2a clear --yes removes the project database."""
+        a2a("register", "alice", project=self.project)
+        self.assertTrue(os.path.exists(db_path(self.project)))
+        a2a("clear", "--yes", project=self.project)
+        self.assertFalse(os.path.exists(db_path(self.project)))
+
+    def test_clear_nonexistent_db_is_noop(self):
+        """a2a clear --yes on a project with no DB reports nothing to clear."""
+        import uuid
+        fresh_project = f"a2a-clear-test-{uuid.uuid4().hex[:8]}"
+        result = a2a("clear", "--yes", project=fresh_project)
+        self.assertIn("nothing", result.stdout.lower())
+
+    # ---- recv --since flag ----
+
+    def test_recv_since_filters_old_messages(self):
+        """recv --since <ts> returns only messages created after ts."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "old message", "--from", "alice",
+            project=self.project)
+        # record timestamp after first message
+        import time
+        ts = time.time()
+        time.sleep(0.05)
+        a2a("send", "bob", "new message", "--from", "alice",
+            project=self.project)
+        result = a2a("recv", "--as", "bob", "--since", str(ts), "--json",
+                     project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(msgs[0]["body"], "new message")
+
+    def test_recv_since_empty_when_no_new_messages(self):
+        """recv --since <future_ts> returns [] when nothing is newer."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "old message", "--from", "alice",
+            project=self.project)
+        import time
+        future_ts = time.time() + 3600
+        result = a2a("recv", "--as", "bob", "--since", str(future_ts),
+                     "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(msgs, [])
+
 
 if __name__ == "__main__":
     unittest.main()
