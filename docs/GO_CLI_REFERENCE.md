@@ -44,7 +44,7 @@ go build -ldflags "-s -w" -tags fts5 -o a2a ./cmd/a2a/
 | `recv` | Receive messages | `--as <id>`, `--wait`, `--limit`, `--all`, `--include-self`, `--peek`, `--since <ts>`, `--json` |
 | `peek` | Show recent messages | `--limit N`, `--json` |
 | `thread <id>` | Show messages in thread | `--json` |
-| `search <query>` | Search messages | `--limit N`, `--json` |
+| `search <query>` | Search messages | `--limit N`, `--json`, `--fts` (full-text search) |
 | `stats` | Bus statistics | `--json` |
 | `wait` | Block for messages | `--as <id>`, `--count N`, `--timeout N` |
 | `clear` | Delete database | `--yes` |

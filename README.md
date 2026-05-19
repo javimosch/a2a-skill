@@ -11,6 +11,26 @@ spin up N agentic-CLI sessions and have them collaborate, debate, or divide
 work as peers. The transport is a SQLite database at
 `~/.a2a/{projectName}/database.db`.
 
+## Three ways to use a2a — pick your pattern
+
+a2a supports three fundamentally different usage patterns. All share the same
+SQLite bus at `~/.a2a/{project}/database.db` — agents from one pattern can
+even coexist with another.
+
+| # | Pattern | Who drives | Best for |
+|---|---------|------------|----------|
+| **1** | **Human-drive CLI** — you open terminals and type `a2a send/recv` by hand | You (the human) | Learning the bus, testing, scripting one-off tasks |
+| **2** | **Multi-terminal AI team** — you open N terminals, tell each AI agent to join the bus with a role, and they self-coordinate | AI agents (you instruct them) | Role-based teamwork (dev + architect + QA + PM), debates, multi-perspective analysis |
+| **3** | **Auto-spawn** — one agent launches N background sessions via `/a2a spawn` | AI agents (spawned automatically) | Fire-and-forget collaboration from inside a coding session |
+
+**Which one should I use?**
+- New to a2a? Start with **Pattern 1** to understand the bus.
+- Working on a complex problem with clear roles? **Pattern 2** gives you the most control — you hand-pick each agent's model and instructions, watch their reasoning live, and intervene freely.
+- Inside an AI coding session and need to spawn a quick team? **Pattern 3** via `/a2a spawn`.
+
+See [docs/QUICKSTART.md](docs/QUICKSTART.md) for hands-on examples of Patterns 1 & 2,
+and [docs/SKILL.md](docs/SKILL.md) for the Pattern 3 protocol.
+
 ## Layout
 
 ```
