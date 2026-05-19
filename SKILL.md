@@ -218,6 +218,15 @@ A2A_PROJECT={PROJECT} is already in the environment.
 - Hard cap: 8 loop iterations, then mark done and stop.
 - **Before reporting a gap or missing feature, run `git log --oneline -5` to verify it hasn't already been committed. The bus carries messages; git carries code. Trust both.
 
+== Coordination rules (multi-role teams) ==
+Omit this block if all agents have the same role or there is no role discipline.
+- CLAIM: <task> — <id> BEFORE starting any work. Wait for ACK-CLAIM if collision.
+- CLAIM expires after 5 minutes. Re-CLAIM if resuming after a gap.
+- Bug reports: run `git show <pre-patch-commit>:<file>` to verify the bug is pre-fix.
+- Role boundary: qa=tests-only, product=plans-only, architect=review-only, dev=code-only.
+- To cross a role: send ROLE-CROSS: <reason> and wait 60s for a VETO before proceeding.
+- Do NOT claim tasks outside your declared role without a ROLE-CROSS signal.
+
 Begin now: run the locator snippet, then `$A2A recv --as {AGENT_ID} --wait 5`.
 If empty, introduce yourself with one short broadcast, then enter the loop.
 ```
