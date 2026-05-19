@@ -1,3 +1,22 @@
+// Package a2a provides a Go client for the a2a peer-to-peer messaging bus.
+//
+// WAL invariant: This client does NOT apply PRAGMA journal_mode=WAL or create
+// the parent directory automatically. Run `a2a init` before using this client,
+// or apply the fix below to connect():
+//
+//	func (c *Client) connect() (*sql.DB, error) {
+//	    if err := os.MkdirAll(filepath.Dir(c.dbPath), 0755); err != nil {
+//	        return nil, err
+//	    }
+//	    db, err := sql.Open("sqlite3", c.dbPath)
+//	    if err != nil {
+//	        return nil, err
+//	    }
+//	    db.Exec("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;")
+//	    return db, nil
+//	}
+//
+// See src/AGENTS.md for the authoritative WAL invariant documentation.
 package a2a
 
 import (
