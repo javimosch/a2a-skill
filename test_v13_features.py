@@ -548,6 +548,93 @@ class TestAuditClientWithDB(unittest.TestCase):
         results = self.audit.search_audit_logs(operation="send")
         self.assertTrue(all(r["operation"] == "send" for r in results))
 
+    def test_get_message_audit_trail(self):
+        """get_message_audit_trail returns entries for a specific message_id."""
+        self.audit.log_operation("alice", "send", message_id=42)
+        self.audit.log_operation("bob", "recv", message_id=42)
+        self.audit.log_operation("alice", "send", message_id=99)
+        trail = self.audit.get_message_audit_trail(42)
+        self.assertEqual(len(trail), 2)
+        msg_ids = {r["message_id"] for r in trail}
+        self.assertEqual(msg_ids, {42})
+        agents = {r["agent_id"] for r in trail}
+        self.assertIn("alice", agents)
+        self.assertIn("bob", agents)
+
+    def test_get_message_audit_trail_empty(self):
+        """get_message_audit_trail returns [] for unknown message_id."""
+        trail = self.audit.get_message_audit_trail(999)
+        self.assertEqual(trail, [])
+
+    def test_export_audit_log(self):
+        """export_audit_log writes a valid JSON file."""
+        import json as _json
+        import tempfile
+        self.audit.log_operation("alice", "send", message_id=1)
+        self.audit.log_operation("bob", "recv", message_id=1)
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            ok = self.audit.export_audit_log(path)
+            self.assertTrue(ok)
+            with open(path) as f:
+                data = _json.load(f)
+            self.assertIsInstance(data, list)
+            self.assertGreaterEqual(len(data), 2)
+            ops = {r["operation"] for r in data}
+            self.assertIn("send", ops)
+            self.assertIn("recv", ops)
+        finally:
+            import os as _os
+            _os.unlink(path)
+
+    def test_export_audit_log_time_filter(self):
+        """export_audit_log respects start_time/end_time filters."""
+        import json as _json
+        import tempfile
+        import time as _time
+        t0 = _time.time()
+        self.audit.log_operation("alice", "send")
+        self.audit.log_operation("bob", "recv")
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = f.name
+        try:
+            ok = self.audit.export_audit_log(path, end_time=t0)
+            self.assertTrue(ok)
+            with open(path) as f:
+                data = _json.load(f)
+            self.assertEqual(data, [])
+        finally:
+            import os as _os
+            _os.unlink(path)
+
+    def test_cleanup_old_logs(self):
+        """cleanup_old_logs deletes entries older than N days."""
+        import time as _time
+        import sqlite3 as _sqlite3
+        import a2a as _a2a
+        conn = _a2a.connect(self.project)
+        old_ts = (_time.time() - 100 * 86400)
+        conn.execute(
+            "INSERT INTO audit_log(timestamp, agent_id, operation, result) VALUES (?,?,?,?)",
+            (old_ts, "alice", "send", "ok"),
+        )
+        conn.commit()
+        conn.close()
+        deleted = self.audit.cleanup_old_logs(days=90)
+        self.assertGreaterEqual(deleted, 1)
+        conn = _a2a.connect(self.project)
+        row = conn.execute("SELECT COUNT(*) FROM audit_log WHERE timestamp < ?",
+                           (_time.time() - 90 * 86400,)).fetchone()
+        conn.close()
+        self.assertEqual(row[0], 0)
+
+    def test_cleanup_old_logs_preserves_recent(self):
+        """cleanup_old_logs does not delete recent entries."""
+        self.audit.log_operation("alice", "send")
+        deleted = self.audit.cleanup_old_logs(days=90)
+        self.assertEqual(deleted, 0)
+
 
 class TestPriorityClientWithDB(unittest.TestCase):
     """Real-database tests for PriorityClient send/recv."""
