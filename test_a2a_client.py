@@ -408,6 +408,43 @@ class TestA2AClient(unittest.TestCase):
         ids = {p["id"] for p in peers}
         self.assertNotIn("temp-agent-y", ids)
 
+    def test_register_stores_all_fields(self):
+        """register() persists role, prompt, cli, and pid."""
+        client = A2AClient(self.project, "detail-agent")
+        client.register("analyst", prompt="analyze data", cli="pytest", pid=9999)
+        peers = client.list_peers()
+        peer = next(p for p in peers if p["id"] == "detail-agent")
+        self.assertEqual(peer["role"], "analyst")
+        self.assertEqual(peer["cli"], "pytest")
+        self.assertEqual(peer["pid"], 9999)
+
+    def test_unregister_nonexistent_is_noop(self):
+        """unregister() on unknown agent silently returns True."""
+        client = A2AClient(self.project, "never-registered-agent")
+        result = client.unregister()
+        self.assertTrue(result)
+
+    def test_send_with_thread_id_groups_messages(self):
+        """send() with same thread_id groups multiple messages into one thread."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        alice.send("bob", "thread msg 1", thread_id="group-1")
+        alice.send("bob", "thread msg 2", thread_id="group-1")
+        alice.send("bob", "no thread msg")
+        thread_msgs = bob.thread("group-1")
+        self.assertEqual(len(thread_msgs), 2)
+        self.assertTrue(all(m["thread_id"] == "group-1" for m in thread_msgs))
+
+    def test_register_returns_true_on_upsert(self):
+        """register() with upsert=True updates an existing agent and returns True."""
+        alice = A2AClient(self.project, "alice")
+        result = alice.register("planner", upsert=True)
+        self.assertTrue(result)
+        # Role should be updated
+        peers = alice.list_peers()
+        peer = next(p for p in peers if p["id"] == "alice")
+        self.assertEqual(peer["role"], "planner")
+
 
 if __name__ == "__main__":
     unittest.main()
