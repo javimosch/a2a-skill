@@ -25,3 +25,7 @@ Cargo.lock
 __pycache__/
 *.pyc
 *.pyo
+
+# Node.js (web UI / examples)
+node_modules/
+package-lock.json

@@ -62,7 +62,7 @@ sqlite3 ~/.a2a/your-project/database.db ".backup /tmp/db.bak" && \
 ### Option A: Git (recommended)
 
 ```bash
-cd ~/ai/a2a-skill
+cd /path/to/a2a-skill
 git fetch origin
 git checkout main  # or v1.3.0 tag
 git pull
@@ -72,7 +72,7 @@ git pull
 
 ```bash
 # Download v1.3.0 release
-cd ~/ai/a2a-skill
+cd /path/to/a2a-skill
 git tag -l | grep v1.3.0
 git checkout v1.3.0
 ```
@@ -391,7 +391,7 @@ sudo systemctl stop a2a
 cp ~/backups/a2a/database_v12_backup.db ~/.a2a/your-project/database.db
 
 # 3. Revert code
-cd ~/ai/a2a-skill
+cd /path/to/a2a-skill
 git checkout v1.2  # or previous version tag
 
 # 4. Restart service

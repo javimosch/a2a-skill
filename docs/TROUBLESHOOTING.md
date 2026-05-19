@@ -617,7 +617,7 @@ ModuleNotFoundError: No module named 'a2a_client'
 
 1. **Set PYTHONPATH**:
 ```bash
-export PYTHONPATH=$PYTHONPATH:~/ai/a2a-skill
+export PYTHONPATH=$PYTHONPATH:~/.agents/skills/a2a
 python3 script.py
 ```
 
@@ -625,14 +625,14 @@ python3 script.py
 ```python
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path.home() / 'ai' / 'a2a-skill'))
+sys.path.insert(0, str(Path.home() / '.agents' / 'skills' / 'a2a'))
 
 from a2a_client import A2AClient
 ```
 
-3. **Install in development mode**:
+3. **Install in development mode** (from your local clone):
 ```bash
-cd ~/ai/a2a-skill
+cd /path/to/a2a-skill
 pip install -e .
 ```
 

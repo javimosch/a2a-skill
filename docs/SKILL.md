@@ -81,8 +81,7 @@ The `a2a` CLI lives next to the skill. Resolution order:
 for cand in \
     "$(command -v a2a 2>/dev/null)" \
     "$HOME/.agents/skills/a2a/a2a" \
-    "$HOME/.claude/skills/a2a/a2a" \
-    "$HOME/ai/a2a-skill/a2a" ; do
+    "$HOME/.claude/skills/a2a/a2a" ; do
     if [ -x "$cand" ]; then A2A="$cand"; break; fi
 done
 [ -z "${A2A:-}" ] && { echo "a2a binary not found"; exit 1; }
@@ -216,14 +215,13 @@ A2A_PROJECT={PROJECT} is already in the environment.
 - If `recv` returns empty 3 times in a row, mark yourself `done` and stop.
 - Do NOT call `a2a clear`, `a2a unregister`, or modify other agents' state.
 - Hard cap: 8 loop iterations, then mark done and stop.
-- **Before reporting a gap or missing feature, run `git log --oneline -5` to verify it hasn't already been committed. The bus carries messages; git carries code. Trust both.
 
 == Coordination rules (multi-role teams) ==
 Omit this block if all agents have the same role or there is no role discipline.
 - CLAIM: <task> — <id> BEFORE starting any work. Wait for ACK-CLAIM if collision.
 - CLAIM expires after 5 minutes. Re-CLAIM if resuming after a gap.
-- Bug reports: run `git show <pre-patch-commit>:<file>` to verify the bug is pre-fix.
-- Role boundary: qa=tests-only, product=plans-only, architect=review-only, dev=code-only.
+- Bug reports: verify the issue exists in the current state before reporting. Do not report from assumptions formed earlier in the session.
+- Role boundary: each agent stays within their declared role. Announce before crossing.
 - To cross a role: send ROLE-CROSS: <reason> and wait 60s for a VETO before proceeding.
 - Do NOT claim tasks outside your declared role without a ROLE-CROSS signal.
 
