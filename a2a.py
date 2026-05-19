@@ -396,6 +396,9 @@ def _init_fts(conn: sqlite3.Connection) -> bool:
     Returns True if FTS5 is available and initialized.
     """
     try:
+        already_exists = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='messages_fts'"
+        ).fetchone() is not None
         conn.execute(
             "CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5("
             "id, sender, recipient, body, thread_id, created_at,"
@@ -419,7 +422,8 @@ def _init_fts(conn: sqlite3.Connection) -> bool:
             "  VALUES (new.rowid, new.id, new.sender, new.recipient, new.body, new.thread_id, new.created_at);"
             " END"
         )
-        conn.execute("INSERT INTO messages_fts(messages_fts) VALUES('rebuild')")
+        if not already_exists:
+            conn.execute("INSERT INTO messages_fts(messages_fts) VALUES('rebuild')")
         conn.commit()
         return True
     except sqlite3.OperationalError:

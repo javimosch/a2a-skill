@@ -2,6 +2,26 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.1] — 2026-05-19 (Hardening)
+
+### Changed
+- **FTS5 CLI Search** — `a2a search` now uses SQLite FTS5 MATCH instead of LIKE substring
+  - Boolean operators (AND, OR, NOT) supported directly in the CLI
+  - Automatic LIKE fallback when FTS5 index is unavailable
+  - Commit: `77ce5c5`
+
+### Added (v1.3.1 Test Hardening Sprint — complete)
+- Test coverage for 5 previously untested modules (commit `2f97130`):
+  - `test_git_aware.py` — 29 tests for `a2a_git_aware.py`
+  - `test_server.py` — 33 REST API endpoint tests for `a2a_server.py`
+  - `test_async_modules.py` — 25 async tests (23 skip-guarded when aiosqlite absent)
+  - `test_a2a.py` — +6 WAL invariant + mkdir guard tests (`TestWALInvariant`)
+- Bug fix: `_init_fts()` in `a2a.py` — FTS5 rebuild ran on every search call; now only
+  runs at first-time table creation (one-time cost, not per-query)
+- Total test count: 95 → 188 (23 skipped pending `aiosqlite` install)
+
+---
+
 ## [1.3.0] — 2026-05-19
 
 ### Added (v1.3 Features)
