@@ -1043,6 +1043,35 @@ class TestRoutingClientWithDB(unittest.TestCase):
         stats = router.route_batch(messages)
         self.assertEqual(stats["unhandled"], 2)
 
+    def test_smart_router_add_handler_called_on_rule_match(self):
+        """SmartRouter.add_handler registers action handler invoked via rule fallback."""
+        from a2a_routing import SmartRouter
+        handled = []
+        rule = RoutingRule("urgent-rule", RoutingAction.ESCALATE, match_content="urgent")
+        self.assertTrue(self.alice.add_rule(rule))
+
+        router = SmartRouter(self.alice)
+        router.add_handler("escalate", lambda m: handled.append(m["body"]))
+
+        msg = {"id": 5, "body": "urgent matter", "sender": "bob", "priority": 3, "thread_id": None}
+        result = router.route_message(msg)
+        self.assertTrue(result)
+        self.assertIn("urgent matter", handled)
+
+    def test_smart_router_add_handler_chaining(self):
+        """SmartRouter.add_handler returns self for method chaining."""
+        from a2a_routing import SmartRouter
+        router = SmartRouter(self.alice)
+        result = router.add_handler("deliver", lambda m: None)
+        self.assertIs(result, router)
+
+    def test_smart_router_add_custom_matcher_chaining(self):
+        """SmartRouter.add_custom_matcher returns self for method chaining."""
+        from a2a_routing import SmartRouter
+        router = SmartRouter(self.alice)
+        result = router.add_custom_matcher(lambda m: False, lambda m: None)
+        self.assertIs(result, router)
+
 
 class TestPriorityQueueWithDB(unittest.TestCase):
     """Real-database tests for PriorityQueue poll and peek_critical."""
