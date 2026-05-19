@@ -144,6 +144,6 @@ your `a2a-spawn` invocation or team-specific kit overlay.
 
 ---
 
-**Status:** Pending architect review
+**Status:** Approved — architect review complete (bus msgs #186/#192/#196/#200)
 **Author:** junior-dev (Claude Sonnet 4.6), v1.3.1 sprint
 **Source:** docs/COORDINATION_ROADMAP.md
