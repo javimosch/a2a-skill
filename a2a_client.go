@@ -86,8 +86,9 @@ func (c *Client) connect() (*sql.DB, error) {
 	return db, nil
 }
 
-// Send sends a message
-func (c *Client) Send(to, message string, ttlSeconds *int) (int64, error) {
+// Send sends a message to a peer (or broadcast if recipient is "all"/"*"/"broadcast").
+// threadID may be empty string for no thread. ttlSeconds may be nil for no expiry.
+func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, error) {
 	db, err := c.connect()
 	if err != nil {
 		return 0, err
@@ -99,9 +100,14 @@ func (c *Client) Send(to, message string, ttlSeconds *int) (int64, error) {
 		recipient = ""
 	}
 
+	var tid *string
+	if threadID != "" {
+		tid = &threadID
+	}
+
 	result, err := db.Exec(
-		"INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) VALUES (?,?,?,?,?)",
-		c.AgentID, recipient, message, ttlSeconds, time.Now().Unix(),
+		"INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) VALUES (?,?,?,?,?,?)",
+		c.AgentID, recipient, message, tid, ttlSeconds, nowSec(),
 	)
 	if err != nil {
 		return 0, err
@@ -110,8 +116,16 @@ func (c *Client) Send(to, message string, ttlSeconds *int) (int64, error) {
 	return result.LastInsertId()
 }
 
-// Recv receives messages
+// SendSimple sends a message without thread or TTL. Backward-compat wrapper for old 3-arg calls.
+func (c *Client) SendSimple(to, message string) (int64, error) {
+	return c.Send(to, message, "", nil)
+}
+
+// Recv receives messages. Calls CleanupExpired and Touch at start.
 func (c *Client) Recv(wait int, unreadOnly bool, includeSelf bool, limit int) ([]Message, error) {
+	c.CleanupExpired()
+	c.Touch()
+
 	db, err := c.connect()
 	if err != nil {
 		return nil, err
@@ -147,7 +161,7 @@ func (c *Client) Recv(wait int, unreadOnly bool, includeSelf bool, limit int) ([
 		}
 
 		var messages []Message
-		ts := time.Now().Unix()
+		ts := nowSec()
 
 		for rows.Next() {
 			var m Message
@@ -176,8 +190,10 @@ func (c *Client) Recv(wait int, unreadOnly bool, includeSelf bool, limit int) ([
 	}
 }
 
-// Peek views recent messages without marking read
+// Peek views recent messages without marking read. Calls CleanupExpired first.
 func (c *Client) Peek(limit int) ([]Message, error) {
+	c.CleanupExpired()
+
 	db, err := c.connect()
 	if err != nil {
 		return nil, err
@@ -248,7 +264,7 @@ func (c *Client) SetStatus(status string) error {
 
 	_, err = db.Exec(
 		"UPDATE agents SET status=?, last_seen=? WHERE id=?",
-		status, time.Now().Unix(), c.AgentID,
+		status, nowSec(), c.AgentID,
 	)
 	return err
 }
@@ -383,4 +399,179 @@ func (c *Client) StatsJSON() (string, error) {
 	}
 	b, err := json.MarshalIndent(stats, "", "  ")
 	return string(b), err
+}
+
+// SchemaDDL matches a2a.py SCHEMA exactly
+const SchemaDDL = `
+CREATE TABLE IF NOT EXISTS agents (
+    id          TEXT PRIMARY KEY,
+    role        TEXT,
+    prompt      TEXT,
+    cli         TEXT,
+    status      TEXT NOT NULL DEFAULT 'active',
+    pid         INTEGER,
+    created_at  REAL NOT NULL,
+    last_seen   REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender      TEXT NOT NULL,
+    recipient   TEXT,
+    body        TEXT NOT NULL,
+    thread_id   TEXT,
+    ttl_seconds INTEGER,
+    created_at  REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS reads (
+    agent_id    TEXT NOT NULL,
+    message_id  INTEGER NOT NULL,
+    read_at     REAL NOT NULL,
+    PRIMARY KEY (agent_id, message_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
+CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
+`
+
+// nowSec returns sub-second precision timestamp matching Python's time.time()
+func nowSec() float64 {
+	return float64(time.Now().UnixNano()) / 1e9
+}
+
+// InitProject creates the database and schema. No-op if already exists.
+func (c *Client) InitProject() error {
+	db, err := c.connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	if _, err := db.Exec(SchemaDDL); err != nil {
+		return err
+	}
+	// migrate: add ttl_seconds if missing (older dbs)
+	var hasTTL bool
+	_ = db.QueryRow("SELECT COUNT(*) FROM pragma_table_info('messages') WHERE name='ttl_seconds'").Scan(&hasTTL)
+	if !hasTTL {
+		db.Exec("ALTER TABLE messages ADD COLUMN ttl_seconds INTEGER")
+	}
+	return nil
+}
+
+// Register registers an agent. If upsert is true, updates existing.
+func (c *Client) Register(role, prompt, cli string, pid int, upsert bool) error {
+	db, err := c.connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	ts := nowSec()
+	_, err = db.Exec(
+		`INSERT INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen)
+		 VALUES (?,?,?,?,?,?,?,?)`,
+		c.AgentID, role, prompt, cli, "active", pid, ts, ts,
+	)
+	if err != nil {
+		if upsert {
+			_, err = db.Exec(
+				`UPDATE agents SET role=COALESCE(?,role), prompt=COALESCE(?,prompt),
+				 cli=COALESCE(?,cli), pid=COALESCE(?,pid), status='active', last_seen=?
+				 WHERE id=?`,
+				role, prompt, cli, pid, ts, c.AgentID,
+			)
+			return err
+		}
+		return fmt.Errorf("agent '%s' already registered (use upsert=true to update): %w", c.AgentID, err)
+	}
+	return nil
+}
+
+// Unregister removes an agent from the bus.
+func (c *Client) Unregister() error {
+	db, err := c.connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	_, err = db.Exec("DELETE FROM agents WHERE id=?", c.AgentID)
+	return err
+}
+
+// Touch updates last_seen for the agent.
+func (c *Client) Touch() error {
+	db, err := c.connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	_, err = db.Exec("UPDATE agents SET last_seen=? WHERE id=?", nowSec(), c.AgentID)
+	return err
+}
+
+// CleanupExpired deletes messages past their TTL. Returns count deleted.
+func (c *Client) CleanupExpired() (int, error) {
+	db, err := c.connect()
+	if err != nil {
+		return 0, err
+	}
+	defer db.Close()
+	res, err := db.Exec(
+		"DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?",
+		nowSec(),
+	)
+	if err != nil {
+		return 0, err
+	}
+	n, _ := res.RowsAffected()
+	return int(n), nil
+}
+
+// ProjectInfo returns resolved project information.
+func (c *Client) ProjectInfo() map[string]interface{} {
+	_, err := os.Stat(c.dbPath)
+	return map[string]interface{}{
+		"project": c.Project,
+		"db":      c.dbPath,
+		"exists":  err == nil,
+	}
+}
+
+// Clear deletes the database file entirely.
+func (c *Client) Clear() error {
+	return os.Remove(c.dbPath)
+}
+
+// Wait blocks until at least count unread messages exist for this agent,
+// or until timeout seconds elapse. Returns the number of unread messages found.
+func (c *Client) Wait(count int, timeoutSec float64) (int, error) {
+	deadline := time.Now().Add(time.Duration(timeoutSec * float64(time.Second)))
+	pollInterval := 500 * time.Millisecond
+	for {
+		db, err := c.connect()
+		if err != nil {
+			return 0, err
+		}
+		var unread int
+		err = db.QueryRow(
+			`SELECT COUNT(*) FROM messages m
+			 WHERE (m.recipient = ? OR m.recipient IS NULL)
+			 AND m.sender != ?
+			 AND NOT EXISTS (SELECT 1 FROM reads r WHERE r.agent_id = ? AND r.message_id = m.id)`,
+			c.AgentID, c.AgentID, c.AgentID,
+		).Scan(&unread)
+		db.Close()
+		if err != nil {
+			return 0, err
+		}
+		if unread >= count {
+			return unread, nil
+		}
+		if time.Now().After(deadline) {
+			return unread, nil
+		}
+		time.Sleep(pollInterval)
+	}
 }
