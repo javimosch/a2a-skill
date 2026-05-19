@@ -708,3 +708,67 @@ func TestMessageStruct(t *testing.T) {
 		t.Fatal("CreatedAt should preserve sub-second precision")
 	}
 }
+
+func TestAgentExists(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("tester", "", "", 0, false)
+
+	exists, err := c.AgentExists("alice")
+	if err != nil {
+		t.Fatalf("AgentExists: %v", err)
+	}
+	if !exists {
+		t.Fatal("expected alice to exist")
+	}
+
+	exists, err = c.AgentExists("ghost")
+	if err != nil {
+		t.Fatalf("AgentExists ghost: %v", err)
+	}
+	if exists {
+		t.Fatal("expected ghost not to exist")
+	}
+}
+
+func TestSendToUnknownRecipientFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("tester", "", "", 0, false)
+
+	_, err := c.Send("nonexistent-bob", "hello", "", nil)
+	if err == nil {
+		t.Fatal("expected error sending to unknown recipient, got nil")
+	}
+}
+
+func TestSendFromUnregisteredSenderFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "ghost-sender"
+	// Register a real recipient but not the sender
+	c2 := NewClient(c.Project, "bob")
+	c2.Register("tester", "", "", 0, false)
+
+	_, err := c.Send("bob", "hello", "", nil)
+	if err == nil {
+		t.Fatal("expected error sending from unregistered sender, got nil")
+	}
+}
+
+func TestSetStatusUnknownAgentFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "ghost"
+	// Don't register — SetStatus should return an error
+	_, err := c.SetStatus("done")
+	if err == nil {
+		t.Fatal("expected error for unknown agent SetStatus, got nil")
+	}
+}
