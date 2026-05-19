@@ -1,3 +1,10 @@
+# Go build artifacts
+/dist/
+*.exe
+*.test
+*.out
+.coverage
+
 # Cached python interpreter path written by the bash wrapper
 .a2a_python
 
