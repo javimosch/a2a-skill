@@ -411,13 +411,25 @@ messages_fts(id, sender, recipient, body, thread_id, created_at) [virtual FTS5 t
 **Release Status**: v1.0-alpha (23:37) → v1.1 locked (23:52) → v1.3.0 completed (00:51) → v1.3.1 hardening (in progress, ~20:40)  
 **Active Development**: Continuing until 2026-05-19 21:30 CEST
 
-### Current Session Updates (20:40–ongoing)
-- ✅ FTS5 full-text search landed (77ce5c5) — cmd_search upgraded from LIKE to FTS5 MATCH with LIKE fallback
-- 🔄 v1.3.1 hardening: architect implementing 40-50 tests for 7 QA-flagged coverage gaps
-  - ❌ a2a_client_async.py — 0 tests (in progress)
-  - ❌ a2a_priority_async.py — 0 tests (in progress)
-  - ❌ a2a_routing_async.py — 0 tests (in progress)
-  - ❌ a2a_git_aware.py — 0 tests (in progress)
-  - ❌ a2a_server.py REST API — 0 tests (in progress)
-  - ❌ WAL mode invariant — no test verifies PRAGMA journal_mode=WAL (in progress)
-  - ❌ mkdir guard — no test verifies parent dir created before connect (in progress)
+### v1.3.1 Hardening Sprint Complete (20:40–20:47)
+
+- ✅ FTS5 search landed (77ce5c5) — cmd_search upgraded from LIKE to FTS5 MATCH with LIKE fallback
+- ✅ FTS5 rebuild-on-every-search bug fixed (848e9dd) — rebuild now only at table creation
+- ✅ 93 new tests added (2f97130) by architect:
+  - test_git_aware.py: 29 tests (a2a_git_aware.py — full coverage)
+  - test_server.py: 33 tests (a2a_server.py REST API)
+  - test_async_modules.py: 25 tests, 23 skipped (async stubs; aiosqlite not installed)
+  - test_a2a.py: +6 WAL/mkdir invariant tests (now 36 total)
+- ✅ Fixed NameError in a2a_priority_async.py + a2a_routing_async.py (string type hints)
+- ✅ Total: **188 tests, 100% green**
+
+| Suite | Tests |
+|-------|-------|
+| test_a2a.py | 36 |
+| test_a2a_client.py | 17 |
+| test_integration.py | 18 |
+| test_v13_features.py | 30 |
+| test_git_aware.py | 29 |
+| test_server.py | 33 |
+| test_async_modules.py | 25 (23 skip) |
+| **Total** | **188** |

@@ -43,15 +43,22 @@ security_clusters = graph.query("encryption and security")
 
 **Proof of Concept:**
 ```bash
-# Export bus to graph
-a2a peek --json --limit 500 | rtk build --format json -o team_graph.json
+# Export bus messages to a file
+a2a peek --json --limit 500 > /tmp/bus.json
 
-# Generate report
-rtk report team_graph.json --output html --file team_collaboration.html
+# Build knowledge graph via sc graphify plugin (installed)
+sc graphify.graph.build /tmp/bus.json --output team_graph.json
 
-# Search for patterns
-rtk search team_graph.json "WAL mode" --context 3
+# Generate HTML report
+sc graphify.report.html team_graph.json --file team_collaboration.html
+
+# Search graph for patterns
+sc graphify.graph.search team_graph.json "WAL mode"
 ```
+
+> **Note:** `rtk` is a CLI proxy for token-optimized output (git, ls, tree, etc.) —
+> it does NOT support graph subcommands (`build/report/search`). Use `sc graphify`
+> (installed — `sc plugins list | grep graphify`) for knowledge graph work.
 
 ---
 
@@ -301,18 +308,21 @@ for test in test_plan:
 
 ## Getting Started
 
-### Quick Start with rtk-graph
+### Quick Start with graphify (via sc plugin)
 ```bash
-# Install rtk-graph skill
-# Already at: ~/.agents/skills/rtk-context-memory-graph
+# graphify is installed: sc plugins list | grep graphify
+# The ~/.agents/skills/rtk-context-memory-graph skill documents the strategy
 
 # Export bus to graph
 a2a peek --json --limit 100 > /tmp/bus.json
-rtk build /tmp/bus.json --output graph.json
+sc graphify.graph.build /tmp/bus.json --output graph.json
 
-# Generate report
-rtk report graph.json --output html --file team_report.html
+# Generate HTML report
+sc graphify.report.html graph.json --file team_report.html
 ```
+
+> **Note:** `rtk` (at /usr/local/bin/rtk) is a token-reduction CLI proxy — not a
+> graph builder. The graphify plugin handles knowledge graph construction.
 
 ### Quick Start with beads
 ```bash
