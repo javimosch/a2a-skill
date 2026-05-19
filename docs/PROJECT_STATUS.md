@@ -407,9 +407,9 @@ messages_fts(id, sender, recipient, body, thread_id, created_at) [virtual FTS5 t
 
 ---
 
-**Last Updated**: 2026-05-19 20:41 CEST  
-**Release Status**: v1.0-alpha (23:37) → v1.1 locked (23:52) → v1.3.0 completed (00:51) → v1.3.1 hardening (in progress, ~20:40)  
-**Active Development**: Continuing until 2026-05-19 21:30 CEST
+**Last Updated**: 2026-05-19 21:15 CEST  
+**Release Status**: v1.0-alpha (23:37) → v1.1 locked (23:52) → v1.3.0 completed (00:51) → v1.3.1 complete (20:47) → v1.3.2 coordination (21:10+)  
+**Active Development**: Continuing until 2026-05-19 22:30 CEST
 
 ### v1.3.1 Hardening Sprint Complete (20:40–20:47)
 
@@ -439,3 +439,25 @@ messages_fts(id, sender, recipient, body, thread_id, created_at) [virtual FTS5 t
 | test_async_modules.py | 25 (23 skip) | Python |
 | test_a2a_client.js | 23 | Node.js |
 | **Total** | **218** | |
+
+### v1.3.2 Coordination Sprint (21:00–22:30)
+
+Focus: stabilize, improve a2a team coordination, create team skills. No new features.
+
+Root causes addressed:
+- **Work collisions** — no task-claiming before starting (now: CLAIM protocol)
+- **Stale-file bug reports** — agents read patched files and report false bugs (now: pre-patch git verification)
+- **Role drift** — QA fixed bugs, architect coded, PM edited implementation (now: role gates + ROLE-CROSS signal)
+
+Deliverables:
+- ✅ `docs/COORDINATION_ROADMAP.md` — 3 root causes, proposed protocols, architect decisions (pm-2)
+- ✅ `docs/TEAM_COORDINATION_SKILL.md` — 149 lines, 6 sections, 4 anti-patterns, kit prompt snippet (ff6013e→2fb8d64, arch-approved)
+- ✅ `AGENTS.md` — `Coordination Protocols` section: 3-protocol summary + link to full doc (4e2bb05)
+- ✅ Smoke test + 218 tests: all green (qa-claude verification)
+- ✅ `edge_case_test.sh` Test 4 assertion fixed — exit code check instead of int parse (3a6c362)
+- ✅ `edge_case_test.sh` grep -c arithmetic fixed (30bf40d)
+
+Protocols documented:
+1. **CLAIM** — broadcast intent before starting any task (5-min TTL)
+2. **Bug Report** — verify pre-patch state with `git show <hash>:<file>` before reporting
+3. **ROLE-CROSS** — announce boundary crossings before acting; 60s advisory veto
