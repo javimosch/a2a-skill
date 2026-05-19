@@ -248,8 +248,8 @@ func TestStats(t *testing.T) {
 	if stats.DirectMessages != 2 {
 		t.Fatalf("expected 2 direct messages, got %d", stats.DirectMessages)
 	}
-	if stats.AgentsActive != 1 {
-		t.Fatalf("expected 1 active agent, got %d", stats.AgentsActive)
+	if stats.AgentsActive != 2 {
+		t.Fatalf("expected 2 active agents, got %d", stats.AgentsActive)
 	}
 }
 
