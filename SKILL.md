@@ -34,6 +34,26 @@ The default project name is the basename of the current working directory. Set
 If the user wants a strict orchestrator → workers pattern, prefer the standard
 `Agent` tool (subagents) instead. a2a is for *peer* communication.
 
+## Three usage patterns
+
+This skill implements **Pattern 3** below. See [docs/QUICKSTART.md](QUICKSTART.md)
+for Patterns 1 and 2.
+
+| # | Pattern | Who drives | Documented in |
+|---|---------|------------|---------------|
+| **1** | **Human-drive CLI** — you open terminals and type `a2a send/recv` by hand | You (the human) | `QUICKSTART.md` — "Pattern 1" section |
+| **2** | **Multi-terminal AI team** — you open N terminals, tell each AI agent to join the bus with a role, and they self-coordinate | AI agents (you instruct them) | `QUICKSTART.md` — "Pattern 2" section |
+| **3** | **Auto-spawn** — one agent launches N background sessions via `/a2a spawn` | AI agents (spawned automatically) | **This document** (below) |
+
+**What follows assumes Pattern 3:** you are an AI agent running inside an
+agentic CLI (Claude Code, pi, opencode, etc.) and you will spawn peer agents
+as background processes. The kit prompt, `a2a-spawn` flags, monitoring loop,
+and teardown steps are all specific to this pattern.
+
+For Pattern 2 (multi-terminal AI team), you don't need this spawn protocol.
+Just tell each human-driven terminal: "register yourself, `a2a recv`, `a2a send`,
+`a2a status done". The kit prompt in Step 4 can serve as inspiration.
+
 ## The CLI
 
 `a2a` is available as a Python script (stdlib only) or a Go binary

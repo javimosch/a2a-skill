@@ -34,7 +34,27 @@ ln -sf "$PWD"     ~/.claude/skills/a2a
 
 **Prerequisite:** Python 3 with `sqlite3` (most systems have this built-in).
 
-## Your First 2-Agent Conversation
+## Choose your pattern
+
+a2a supports three usage patterns. Pick the one that fits your workflow.
+
+| # | Pattern | Who drives | When to use |
+|---|---------|------------|-------------|
+| **1** | **Human-drive CLI** — you open terminals and type `a2a send/recv` by hand | You (the human) | Learning the bus, testing, quick scripting |
+| **2** | **Multi-terminal AI team** — you open N terminals, tell each AI agent to join the bus with a role, and they self-coordinate | AI agents (you instruct them) | Role-based teamwork, debates, complex multi-perspective analysis |
+| **3** | **Auto-spawn** — one agent launches N background sessions via `/a2a spawn` | AI agents (spawned automatically) | Fire-and-forget collaboration from inside a coding session |
+
+**Start here ↓** Pattern 1 is the simplest way to learn the bus.
+Skip to [Pattern 2](#pattern-2-multi-terminal-ai-team) if you already know the basics,
+or [Pattern 3](#pattern-3-auto-spawn-from-another-agent) for the auto-spawn flow.
+
+---
+
+## Pattern 1: Human-drive CLI — you type commands
+
+In this pattern, **you** are the agent. You open terminals, register peers,
+type `a2a send` / `a2a recv` yourself. The AI isn't involved — this is you
+learning the bus.
 
 ### Terminal 1: Agent Alice
 
@@ -149,6 +169,91 @@ a2a send coordinator "All tests pass! Ready to ship" --from worker2
 # You should now see both completion reports
 a2a recv --as coordinator --wait 20
 ```
+
+---
+
+## Pattern 2: Multi-terminal AI team — you instruct agents, they drive
+
+In this pattern, **you open N terminals and tell each AI agent about the bus.**
+You give them roles (e.g. developer, architect, QA, product manager) and a
+shared project name. The agents then self-coordinate — they `recv`, `send`,
+and `status done` on their own, just like peers in a messaging app.
+
+This is the most flexible pattern: you hand-pick each agent's model, watch
+their reasoning in real-time, and intervene by injecting messages as a
+"human" agent on the bus.
+
+### Example: 4-role team
+
+```bash
+# Terminal 0 — one-time setup (any project name works)
+a2a init --project my-app
+a2a register dev        --role developer
+a2a register architect  --role architect
+a2a register qa         --role tester
+a2a register pm         --role "product manager"
+```
+
+Now open **four terminals**, one per agent. In each terminal, launch an AI
+CLI (claude, pi, opencode, etc.) and give it instructions like this:
+
+> You are agent `dev` on the a2a peer bus (project=my-app).
+> Your role: developer.
+> Known peers: architect, qa, pm.
+>
+> Use `a2a recv --as dev --wait 15` to check your inbox.
+> Use `a2a send <peer> "message" --from dev` to talk to peers.
+> Use `a2a list --json` to see who is online.
+> Coordinate with your team. When done, `a2a status done --as dev`.
+
+Each agent gets the same structure but a different `{agent_id}` and `{role}`.
+They discover each other via `a2a list --json` and start collaborating
+without any central orchestrator.
+
+### Tips for running Pattern 2
+
+- **Export A2A_PROJECT** in each terminal so you don't need `--project`:
+  ```bash
+  export A2A_PROJECT=my-app
+  ```
+- **Register yourself as a human peer** to inject messages mid-work:
+  ```bash
+  a2a register human --role user --upsert
+  a2a send all "Change of plan: focus on auth first" --from human
+  ```
+- **Watch the bus** from a 5th terminal:
+  ```bash
+  watch -n 5 "a2a peek --limit 20"
+  ```
+- **Each agent** needs the `a2a` binary on PATH and shell access (standard
+  for claude, pi, opencode).
+- Agents self-regulate via the kit prompt conventions (iteration cap, "3 empty
+  recvs = done"). You can also stop them by closing their terminal.
+
+---
+
+## Pattern 3: Auto-spawn from another agent
+
+In this pattern, an AI agent (inside Claude Code, pi, or opencode) launches
+N background peer sessions automatically using the `/a2a` skill. The spawning
+agent handles registration, kit prompt generation, PID tracking, and teardown.
+
+This is a fire-and-forget pattern — you don't watch each terminal. The agents
+run in background and log output to files.
+
+```bash
+# Inside Claude Code:
+/a2a spawn alice --role planner --cli claude --model haiku
+/a2a spawn bob   --role critic  --cli claude --model haiku
+/a2a list
+/a2a peek
+/a2a stop
+```
+
+See [docs/SKILL.md](docs/SKILL.md) for the full protocol, kit prompt template,
+and cross-CLI spawn flags.
+
+---
 
 ## Commands Reference
 

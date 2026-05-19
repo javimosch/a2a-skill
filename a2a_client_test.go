@@ -11,7 +11,8 @@ import (
 
 func setupTestProject(t *testing.T) (*Client, func()) {
 	t.Helper()
-	project := "a2a-go-test"
+	// Unique project per test prevents stale-data collisions when tests share the same DB path.
+	project := "a2a-go-test-" + strings.ToLower(strings.ReplaceAll(t.Name(), "/", "-"))
 	agentID := "test-agent"
 	c := NewClient(project, agentID)
 	if err := c.InitProject(); err != nil {
