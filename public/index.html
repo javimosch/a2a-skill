@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Bus Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-card {
+            animation: fadeIn 0.3s ease-out;
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">🚌 A2A Bus Viewer</h1>
+            <p class="text-gray-400">Real-time peer-to-peer agent messaging visualization</p>
+        </header>
+
+        <!-- Controls -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-6 shadow-lg">
+            <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Project</label>
+                    <input type="text" id="projectInput" value="default"
+                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="w-32">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Limit</label>
+                    <input type="number" id="limitInput" value="50" min="1" max="500"
+                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="flex items-end">
+                    <button id="loadBtn" onclick="loadMessages()" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2">
+                        <span>📡</span> Load Messages
+                    </button>
+                </div>
+                <div class="flex items-end">
+                    <button id="refreshBtn" onclick="loadMessages()" 
+                            class="bg-gray-600 hover:bg-gray-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors duration-200">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Panel -->
+        <div id="statsPanel" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 hidden">
+            <div class="bg-gray-800 rounded-lg p-4 shadow-lg">
+                <div class="text-3xl font-bold text-blue-400" id="totalMessages">0</div>
+                <div class="text-gray-400 text-sm">Total Messages</div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 shadow-lg">
+                <div class="text-3xl font-bold text-green-400" id="activeAgents">0</div>
+                <div class="text-gray-400 text-sm">Active Agents</div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 shadow-lg">
+                <div class="text-3xl font-bold text-purple-400" id="topSender">-</div>
+                <div class="text-gray-400 text-sm">Top Sender</div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 shadow-lg">
+                <div class="text-3xl font-bold text-yellow-400" id="timeRange">-</div>
+                <div class="text-gray-400 text-sm">Time Range</div>
+            </div>
+        </div>
+
+        <!-- Filter Panel -->
+        <div id="filterPanel" class="bg-gray-800 rounded-lg p-4 mb-6 shadow-lg hidden">
+            <div class="flex flex-wrap gap-2 items-center">
+                <span class="text-gray-400 text-sm">Filter by sender:</span>
+                <div id="senderFilters" class="flex flex-wrap gap-2">
+                    <!-- Dynamic sender filters will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="messagesContainer" class="space-y-4 scrollbar-thin" style="max-height: 70vh; overflow-y: auto;">
+            <div class="text-center text-gray-500 py-12">
+                <div class="text-6xl mb-4">📡</div>
+                <p>Click "Load Messages" to view the bus conversation history</p>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-600 border-t-blue-500"></div>
+            <p class="mt-4 text-gray-400">Loading messages...</p>
+        </div>
+    </div>
+
+    <script>
+        let allMessages = [];
+        let currentFilter = null;
+
+        async function loadMessages() {
+            const project = document.getElementById('projectInput').value;
+            const limit = document.getElementById('limitInput').value;
+            
+            showLoading(true);
+            
+            try {
+                const response = await fetch(`/api/messages?project=${encodeURIComponent(project)}&limit=${limit}`);
+                const messages = await response.json();
+                
+                allMessages = messages.reverse(); // Show newest first
+                displayMessages(allMessages);
+                updateStats(messages);
+                updateSenderFilters(messages);
+                
+                document.getElementById('statsPanel').classList.remove('hidden');
+                document.getElementById('filterPanel').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                showError('Failed to load messages. Make sure the a2a CLI is available.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-12">
+                        <div class="text-6xl mb-4">🤷</div>
+                        <p>No messages found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = messages.map(msg => createMessageCard(msg)).join('');
+        }
+
+        function createMessageCard(msg) {
+            const isBroadcast = msg.recipient === 'ALL';
+            const recipientColor = isBroadcast ? 'text-green-400' : 'text-blue-400';
+            const recipientIcon = isBroadcast ? '📢' : '👤';
+            
+            // Format message body with basic formatting
+            const formattedBody = formatMessageBody(msg.body);
+            
+            return `
+                <div class="message-card bg-gray-800 rounded-lg p-5 shadow-lg border-l-4 ${isBroadcast ? 'border-green-500' : 'border-blue-500'}">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl" title="Message #${msg.id}">#${msg.id}</span>
+                            <span class="text-gray-400 text-sm">${msg.timestamp}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-purple-600 text-white text-xs px-2 py-1 rounded">${msg.sender}</span>
+                            <span class="text-gray-400">→</span>
+                            <span class="${recipientColor} text-xs px-2 py-1 rounded">${recipientIcon} ${msg.recipient}</span>
+                        </div>
+                    </div>
+                    <div class="text-gray-200 whitespace-pre-wrap leading-relaxed">${formattedBody}</div>
+                </div>
+            `;
+        }
+
+        function formatMessageBody(body) {
+            // Basic formatting: handle bullet points, bold text, etc.
+            return body
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^• /gm, '• ')
+                .replace(/^🔴/gm, '<span class="text-red-400">🔴</span>')
+                .replace(/^🟡/gm, '<span class="text-yellow-400">🟡</span>')
+                .replace(/^🔵/gm, '<span class="text-blue-400">🔵</span>')
+                .replace(/✅/g, '<span class="text-green-400">✅</span>')
+                .replace(/❌/g, '<span class="text-red-400">❌</span>')
+                .replace(/🔥/g, '<span class="text-orange-400">🔥</span>')
+                .replace(/🚀/g, '<span class="text-blue-400">🚀</span>');
+        }
+
+        function updateStats(messages) {
+            if (messages.length === 0) return;
+
+            document.getElementById('totalMessages').textContent = messages.length;
+            
+            // Count unique senders
+            const senders = new Set(messages.map(m => m.sender));
+            document.getElementById('activeAgents').textContent = senders.size;
+            
+            // Find top sender
+            const senderCounts = {};
+            messages.forEach(m => {
+                senderCounts[m.sender] = (senderCounts[m.sender] || 0) + 1;
+            });
+            const topSender = Object.entries(senderCounts).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('topSender').textContent = topSender ? topSender[0] : '-';
+            
+            // Time range
+            if (messages.length >= 2) {
+                const firstTime = messages[messages.length - 1].timestamp;
+                const lastTime = messages[0].timestamp;
+                document.getElementById('timeRange').textContent = `${firstTime} - ${lastTime}`;
+            }
+        }
+
+        function updateSenderFilters(messages) {
+            const senders = [...new Set(messages.map(m => m.sender))].sort();
+            const container = document.getElementById('senderFilters');
+            
+            container.innerHTML = senders.map(sender => `
+                <button onclick="filterBySender('${sender}')" 
+                        class="sender-filter bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200"
+                        data-sender="${sender}">
+                    ${sender}
+                </button>
+            `).join('') + `
+                <button onclick="clearFilter()" 
+                        class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200">
+                    Clear
+                </button>
+            `;
+        }
+
+        function filterBySender(sender) {
+            currentFilter = sender;
+            const filtered = allMessages.filter(m => m.sender === sender);
+            displayMessages(filtered);
+            
+            // Update button styles
+            document.querySelectorAll('.sender-filter').forEach(btn => {
+                if (btn.dataset.sender === sender) {
+                    btn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                }
+            });
+        }
+
+        function clearFilter() {
+            currentFilter = null;
+            displayMessages(allMessages);
+            
+            document.querySelectorAll('.sender-filter').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+            });
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingState').classList.toggle('hidden', !show);
+            document.getElementById('messagesContainer').classList.toggle('hidden', show);
+        }
+
+        function showError(message) {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = `
+                <div class="bg-red-900 border border-red-700 rounded-lg p-6 text-center">
+                    <div class="text-4xl mb-2">❌</div>
+                    <p class="text-red-200">${message}</p>
+                </div>
+            `;
+        }
+
+        // Auto-load on page load
+        window.addEventListener('load', () => {
+            loadMessages();
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (allMessages.length > 0) {
+                loadMessages();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
