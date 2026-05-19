@@ -308,7 +308,7 @@ class RoutingClientAsync:
                 async for row in cursor:
                     messages.append(dict(row))
 
-                if messages or (deadline and time.time() >= deadline):
+                if messages or not wait or (deadline and time.time() >= deadline):
                     break
 
                 await asyncio.sleep(poll_interval)
