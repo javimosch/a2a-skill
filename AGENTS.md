@@ -129,12 +129,12 @@ runs will land in SQLite's default `delete` journal mode. Concurrent writers
 will deadlock. This was the root cause of the v1.3 WAL gap fixed in commits
 17f30d7, 09361ec, and 49d7093.
 
-**Known gaps**: `a2a_client.go` and `src/lib.rs` do not yet apply this pattern.
-They require `a2a init` to run first. See `src/AGENTS.md`.
+**Known gaps**: `src/lib.rs` does not yet apply this pattern. It requires
+`a2a init` to run first. See `src/AGENTS.md`.
 
-`a2a_client.js` was upgraded in v1.3.1 to use `node:sqlite` (built-in, Node 22+)
-and now applies mkdir + WAL + busy_timeout on every `_connect()` call — no prior
-`a2a init` required. Run `node test_a2a_client.js` to verify.
+`a2a_client.go` and `a2a_client.js` were upgraded in v1.3.1 to apply the full
+WAL invariant (mkdir + WAL + busy_timeout=5000) on every connection — no prior
+`a2a init` required.
 
 ## How to extend safely
 
