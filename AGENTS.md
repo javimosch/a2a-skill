@@ -71,12 +71,12 @@ a2a-skill/
 ├── a2a_client.js         Node.js client
 ├── src/lib.rs            Rust client
 ├── test_a2a.py           unit tests (43)
-├── test_a2a_client.py    Python client tests (17)
+├── test_a2a_client.py    Python client tests (29)
 ├── test_integration.py   integration tests (39)
-├── test_v13_features.py  v1.3 satellite module tests (79)
+├── test_v13_features.py  v1.3 satellite module tests (98)
 ├── test_git_aware.py     git-aware module tests (29)
-├── test_server.py        REST API tests (33)
-├── test_async_modules.py async client tests (25, 23 skip-guarded)  ← 265 tests total
+├── test_server.py        REST API tests (38)
+├── test_async_modules.py async client tests (25, 23 skip-guarded)  ← 301 tests total
 ├── benchmark.py
 ├── dashboard.py
 ├── examples/             AGENTS.md documents patterns
@@ -202,7 +202,7 @@ Covers: DB schema, WAL mode, agent registration & upsert, send/recv,
 read-tracking, broadcast, self-message filtering, `--include-self`,
 `--ttl` expiry & cleanup, thread IDs, status transitions, project info.
 
-### Python client tests (17 tests)
+### Python client tests (29 tests)
 
 ```bash
 python3 test_a2a_client.py -v
@@ -220,7 +220,7 @@ python3 test_integration.py -v
 Shells out to the `a2a` binary and verifies full workflows: register→send→recv,
 TTL expiry, broadcast, cross-project isolation, concurrent agents.
 
-### v1.3 satellite module tests (79 + 29 + 33 + 25 tests)
+### v1.3 satellite module tests (98 + 29 + 38 + 25 tests)
 
 ```bash
 python3 test_v13_features.py -v   # encryption, FTS, audit, priority, routing
