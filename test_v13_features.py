@@ -1080,6 +1080,41 @@ class TestRoutingClientWithDB(unittest.TestCase):
         self.assertIsNotNone(cursor.fetchone())
         conn.close()
 
+    def test_apply_routing_forward_inserts_forwarded_message(self):
+        """apply_routing() on forwarded messages inserts a new message to forward_to."""
+        import a2a
+        # priority column is required by apply_routing forward path
+        PriorityClient(self.project, "alice").init_priority_table()
+        self.alice.add_rule(RoutingRule(
+            name="forward-urgent",
+            action=RoutingAction.FORWARD,
+            match_content="urgent",
+            forward_to="carol",
+        ))
+        self.bob.send("alice", "urgent request")
+        routed = self.alice.recv_with_routing()
+        self.assertEqual(len(routed["forward"]), 1)
+        self.assertTrue(self.alice.apply_routing(routed))
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT body FROM messages WHERE recipient = ? AND sender = ?",
+            ("carol", "alice"),
+        ).fetchone()
+        conn.close()
+        self.assertIsNotNone(row)
+        self.assertIn("urgent request", row["body"])
+
+    def test_recv_with_routing_limit_caps_each_bucket(self):
+        """recv_with_routing(limit=1) caps each action bucket to 1 item."""
+        self.alice.add_rule(RoutingRule(
+            name="deliver-all", action=RoutingAction.DELIVER
+        ))
+        self.bob.send("alice", "msg 1")
+        self.bob.send("alice", "msg 2")
+        self.bob.send("alice", "msg 3")
+        routed = self.alice.recv_with_routing(limit=1)
+        self.assertLessEqual(len(routed["deliver"]), 1)
+
     def test_smart_router_custom_matcher(self):
         """SmartRouter routes via custom matcher function."""
         from a2a_routing import SmartRouter
