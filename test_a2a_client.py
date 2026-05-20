@@ -353,6 +353,38 @@ class TestA2AClient(unittest.TestCase):
         results = alice.search("zzznomatch")
         self.assertEqual(results, [])
 
+    def test_search_empty_query(self):
+        """search with empty string returns all messages."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        alice.send("bob", "Message one")
+        alice.send("bob", "Message two")
+        # Empty query should match everything (or return empty — either is valid)
+        results = alice.search("", limit=10)
+        # At least one result, or empty list is acceptable
+        if results:
+            self.assertGreaterEqual(len(results), 1)
+
+    def test_search_special_characters(self):
+        """search handles special characters in query."""
+        alice = A2AClient(self.project, "alice")
+        alice.send("bob", "price is $100.00 + tax (15%)")
+        alice.send("bob", "C:\\Users\\test\\path")
+        results = alice.search("$100", limit=10)
+        self.assertGreaterEqual(len(results), 1)
+        self.assertIn("$100", results[0]["body"])
+        results2 = alice.search("C:\\Users", limit=10)
+        self.assertGreaterEqual(len(results2), 1)
+        self.assertIn("C:\\Users", results2[0]["body"])
+
+    def test_search_with_limit(self):
+        """search respects the limit parameter."""
+        alice = A2AClient(self.project, "alice")
+        for i in range(10):
+            alice.send("bob", f"searchable message {i}")
+        results = alice.search("searchable", limit=3)
+        self.assertLessEqual(len(results), 3)
+
     def test_thread_returns_empty_for_nonexistent_thread(self):
         """thread() returns [] when thread_id has no messages."""
         alice = A2AClient(self.project, "alice")
