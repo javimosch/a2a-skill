@@ -24,6 +24,9 @@ until something arrives. There is no orchestrator: communication flows freely.
 The default project name is the basename of the current working directory. Set
 `A2A_PROJECT` or pass `--project NAME` to override.
 
+For the full list of CLI commands and their usage (Python & Go binaries), see
+[CLI_REFERENCE.md](CLI_REFERENCE.md).
+
 ## When to use
 
 - The user asks for "multiple claude sessions talking to each other"
@@ -53,58 +56,6 @@ and teardown steps are all specific to this pattern.
 For Pattern 2 (multi-terminal AI team), you don't need this spawn protocol.
 Just tell each human-driven terminal: "register yourself, `a2a recv`, `a2a send`,
 `a2a status done". The kit prompt in Step 4 can serve as inspiration.
-
-## The CLI
-
-`a2a` is available as a Python script (stdlib only) or a Go binary
-(zero dependencies, ~1.3MB). Both share the same commands and JSON output.
-See [GO_CLI_REFERENCE.md](GO_CLI_REFERENCE.md) for the Go binary.
-
-### Python (reference)
-
-`a2a` is a small Python script. It is CLI-agnostic — anything that can shell out
-can use it. Requires python3 + sqlite3 (both stdlib, always available on modern systems).
-
-### Go (companion binary)
-
-The Go binary is a drop-in replacement with faster startup (~5ms vs ~80ms)
-and zero runtime dependencies. Download or build:
-
-```bash
-# Download latest release
-curl -sL "https://github.com/jarancibia/a2a-skill/releases/latest/download/a2a-$(uname -s)-$(uname -m)" -o /tmp/a2a
-chmod +x /tmp/a2a
-
-# Or build from source
-cd a2a-skill && go build -tags fts5 -o a2a ./cmd/a2a/
-```
-
-```
-a2a init                                       # create ~/.a2a/{project}/database.db
-a2a register <id> [--role R] [--prompt P]      # register an agent
-a2a register <id> --upsert                     # update existing agent
-a2a list [--json]                              # list agents
-a2a send <to> "<body>" --from <id>             # to: agent-id, or 'all' for broadcast
-a2a send <to> "<body>" --from <id> --ttl 300   # message expires in 5 minutes
-a2a recv --as <id> [--wait 30]                 # unread inbox (blocks up to 30s)
-a2a recv --as <id> --all                       # include already-read messages
-a2a recv --as <id> --peek                      # look without marking read
-a2a recv --as <id> --include-self              # include own messages
-a2a recv --as <id> --since 1700000000          # messages after timestamp
-a2a recv --as <id> --json                      # machine-readable output
-a2a search <query> [--json] [--limit N]         # search messages by content (substring)
-a2a thread <id> [--json]                        # show all messages in a thread
-a2a stats [--json]                              # bus statistics (msgs, agents, senders)
-a2a peek [--limit 20] [--json]                  # observer view of the bus
-a2a status active|idle|done|blocked --as <id>   # update agent status (supports --json)
-a2a wait --as <id> --count 1 --timeout 60       # block until N unread
-a2a clear --yes                                 # delete the project db
-a2a project                                     # show resolved project info
-```
-
-`recv` returns *unread* messages addressed to the agent (or broadcast). On a
-successful read, messages are marked read for that agent. `--wait N` blocks up
-to N seconds for at least one new message.
 
 ## What You Must Do When Invoked
 
@@ -305,172 +256,9 @@ When the user signals stop, or when every agent's status is `done`:
 Leave the database intact unless the user asks to wipe it (`/a2a clear`).
 Database survives between sessions — useful for resuming.
 
-## Smoke test recipe (haiku, non-interactive)
+## Related Documentation
 
-This is the canonical end-to-end check. Drop it into a scratch dir and run.
-
-```bash
-# Auto-locate a2a (resolves from PATH or common locations)
-A2A="$(command -v a2a 2>/dev/null)"
-[ -z "$A2A" ] && [ -x "$HOME/.agents/skills/a2a/a2a" ] && A2A="$HOME/.agents/skills/a2a/a2a"
-[ -z "$A2A" ] && [ -x "$HOME/.claude/skills/a2a/a2a" ] && A2A="$HOME/.claude/skills/a2a/a2a"
-[ -z "$A2A" ] && { echo "a2a not found"; exit 1; }
-
-PROJECT=a2a-smoke-$$
-export A2A_PROJECT=$PROJECT
-
-"$A2A" init
-"$A2A" register alice --role planner \
-  --prompt "Propose a one-line plan for greeting the team, then ask bob to critique."
-"$A2A" register bob   --role critic  \
-  --prompt "Critique alice's plan in one sentence. Then mark yourself done."
-
-KIT() {  # build kit prompt for a given id/role/prompt
-  cat <<EOF
-You are agent "$1" on an a2a peer bus (project=$PROJECT).
-Role: $2
-Instruction: $3
-Use: $A2A --project $PROJECT recv --as $1 --wait 15
-     $A2A --project $PROJECT send <peer> "msg" --from $1
-     $A2A --project $PROJECT status done --as $1
-Peers: $($A2A list --json)
-Stay terse. After 2 empty recvs, mark done and exit.
-EOF
-}
-
-claude -p --model haiku --dangerously-skip-permissions \
-  --append-system-prompt "$(KIT alice planner 'introduce yourself and ask bob to critique your one-line plan')" \
-  "Begin." > /tmp/$PROJECT-alice.log 2>&1 &
-ALICE_PID=$!
-
-claude -p --model haiku --dangerously-skip-permissions \
-  --append-system-prompt "$(KIT bob critic 'wait for alice, critique in one sentence, then status done')" \
-  "Begin." > /tmp/$PROJECT-bob.log 2>&1 &
-BOB_PID=$!
-
-# tail the bus
-for i in 1 2 3 4 5 6; do sleep 5; "$A2A" peek --limit 20; echo "---"; done
-wait $ALICE_PID $BOB_PID 2>/dev/null
-"$A2A" peek --limit 50
-```
-
-Success = there are messages from `alice` to `bob` *and* from `bob` to `alice`
-on the bus, and both agents end with `status='done'`.
-
-## Honesty rules
-
-- Agents only know what's on the bus. If they invent peers, that's a bug.
-- The database is the source of truth — never claim a message was sent without
-  checking it appears in `peek`.
-- If a spawned CLI never produces messages within ~60s, dump its log
-  (`/tmp/a2a-$PROJECT-<id>.log`) and tell the user what went wrong.
-- Do not run a2a in production-touching projects without an explicit user ok —
-  agents can run shell commands.
-
-## Common pitfalls from smoke tests
-
-These were discovered while running Pattern 3 (auto-spawn) smoke tests. Future
-agents using the `/a2a` skill should heed them.
-
-### 1. `A2A_PROJECT` must be exported before spawning
-
-The spawned CLI process inherits the parent shell's environment. Setting
-`A2A_PROJECT=myproject` without `export` in the spawning script means the
-agent won't see it. It falls back to `basename($PWD)`, which may resolve to
-the wrong project — agents end up on different buses and never see each
-other's messages.
-
-**Fix:** Always `export A2A_PROJECT="$PROJECT"` before calling `a2a-spawn`.
-Or, to be safe, include `--project $PROJECT` explicitly in every `a2a`
-command inside the kit prompt.
-
-### 2. `--project` flag position differs between Go and Python
-
-The installed `a2a` binary (via `install.sh`) may be Go-compiled. The Go
-binary requires `--project` **after** the subcommand:
-
-```bash
-a2a peek --project myproject --limit 10    # Go: works
-a2a --project myproject peek --limit 10    # Go: FAILS
-```
-
-The Python `a2a.py` reference requires it **before** the subcommand:
-
-```bash
-python3 a2a.py --project myproject peek    # Python: works
-python3 a2a.py peek --project myproject    # Python: FAILS
-```
-
-**Safest approach:** Use the `A2A_PROJECT` environment variable. It works
-identically for both Go and Python binaries:
-
-```bash
-export A2A_PROJECT=myproject
-a2a peek --limit 10                        # works for Go AND Python
-```
-
-### 3. Empty log files ≠ stuck agent
-
-When spawning with `a2a-spawn`, the log file (`--log FILE`) may appear empty
-for a long time. CLIs like `claude` buffer stdout aggressively and may not
-flush until the process exits. An empty log does not mean the agent is stuck
-or the spawn failed.
-
-**Fix:** Check agent progress via the bus:
-
-```bash
-ps aux | grep claude              # verify process is running
-a2a list --json --project X       # check agent status (active? done?)
-a2a peek --limit 10               # see if any messages were sent
-```
-
-Only dump the log after ~60s of no bus activity.
-
-### 4. Kit prompts must be self-contained
-
-The kit prompt (Step 4) tells the agent "A2A_PROJECT is already in the
-environment." If it isn't actually exported, the agent will write to the
-wrong database and appear to send messages that no peer can see. This is
-the most common cause of "agents don't find each other."
-
-**Fix:** Either:
-- `export A2A_PROJECT="$PROJECT"` before spawning, OR
-- Include `--project $PROJECT` in every `a2a` command in the kit prompt
-
-Doing both is safest.
-
-### 5. Cross-project contamination is silent
-
-If two agents land on different projects (e.g. one resolves `basename($PWD)`
-to `project-a` and another to `project-b`), neither will error. They simply
-write to different SQLite databases and never see each other's messages.
-
-**Fix:** Always verify with `a2a list` that all agents appear in the same
-project. The project info is visible in `a2a project` and `a2a list --json`.
-
-### 6. PID registration requires correct project context
-
-When running `a2a register alice --pid "$PID" --upsert` after spawning, the
-command uses the current project (via `A2A_PROJECT` or `basename($PWD)`). If
-the context is wrong, it will register (or update) the agent on a different
-project's bus.
-
-**Fix:** Always pass `--project "$PROJECT"` or ensure `A2A_PROJECT` is
-exported before registering PIDs.
-
-### 7. Broadcast messages appear in `recv` for all agents
-
-A message sent to `all` (or `*` or `broadcast`) sets `recipient=NULL` in the
-database. Every agent's `recv` will return it as an unread message — once per
-agent. This is by design (per-agent read-tracking), but it means a single
-broadcast produces N database rows in the `reads` table.
-
-### 8. The spawned CLI must be able to find `a2a` on PATH
-
-Agents running inside spawned CLI sessions (claude, pi, opencode) will shell
-out to `a2a`. If `a2a` is not on the spawned process's `$PATH` (e.g. installed
-only in the parent shell's config), the agent will fail with "command not
-found."
-
-**Fix:** Use the locator snippet from Step 4 to resolve `a2a` dynamically, or
-hardcode the full path in the kit prompt.
+- [CLI_REFERENCE.md](CLI_REFERENCE.md) — Full CLI command reference (Python & Go binaries)
+- [SMOKE_TEST.md](SMOKE_TEST.md) — Canonical end-to-end smoke test recipe
+- [HONESTY_RULES.md](HONESTY_RULES.md) — Agent honesty guidelines
+- [PITFALLS.md](PITFALLS.md) — Common pitfalls and how to avoid them
