@@ -666,6 +666,49 @@ class TestIntegration(unittest.TestCase):
         msgs = json.loads(result.stdout)
         self.assertLessEqual(len(msgs), 1)
 
+    def test_broadcast_without_registered_recipients(self):
+        """Broadcast to 'all' works even if no other agents are registered."""
+        a2a("register", "alice", project=self.project)
+        # Only alice is registered — broadcast should still succeed
+        a2a("send", "all", "lonely broadcast", "--from", "alice",
+            project=self.project)
+        self.assertEqual(count_messages(self.project), 1)
+
+    def test_multiple_sends_to_same_agent_chronological_order(self):
+        """recv returns messages in chronological order when sent to same agent."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "first msg", "--from", "alice", project=self.project)
+        a2a("send", "bob", "second msg", "--from", "alice", project=self.project)
+        a2a("send", "bob", "third msg", "--from", "alice", project=self.project)
+        result = a2a("recv", "--as", "bob", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 3)
+        self.assertEqual(msgs[0]["body"], "first msg")
+        self.assertEqual(msgs[1]["body"], "second msg")
+        self.assertEqual(msgs[2]["body"], "third msg")
+
+    def test_recv_empty_on_fresh_bus(self):
+        """recv on a bus with no messages returns empty without error."""
+        a2a("register", "alice", project=self.project)
+        result = a2a("recv", "--as", "alice", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(msgs, [])
+
+    def test_peek_does_not_mark_read(self):
+        """peek does not mark messages as read — recv still sees them."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "peekable msg", "--from", "alice", project=self.project)
+        # Peek should see the message
+        result_peek = a2a("peek", "--json", project=self.project)
+        peek_msgs = json.loads(result_peek.stdout)
+        self.assertEqual(len(peek_msgs), 1)
+        # Recv after peek should still see it as unread
+        result_recv = a2a("recv", "--as", "bob", "--json", project=self.project)
+        recv_msgs = json.loads(result_recv.stdout)
+        self.assertEqual(len(recv_msgs), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
