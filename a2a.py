@@ -370,9 +370,7 @@ def cmd_thread(args):
         (args.id,),
     ).fetchall()
     conn.close()
-    if args.json:
-        print(json.dumps([dict(r) for r in rows], indent=2))
-    elif not rows:
+    if not rows:
         print(f"(no messages in thread '{args.id}')")
     else:
         _print_messages(rows, args.json)
@@ -386,8 +384,12 @@ def cmd_clear(args):
         return
     if not args.yes:
         die("refusing without --yes")
-    path.unlink()
-    print(f"cleared {path}")
+    # Remove the database and any WAL-related files
+    for suffix in ("", "-wal", "-shm"):
+        p = path.with_suffix(path.suffix + suffix)
+        if p.exists():
+            p.unlink()
+    print(f"cleared {name} project database")
 
 
 def _init_fts(conn: sqlite3.Connection) -> bool:
@@ -453,9 +455,7 @@ def cmd_search(args):
             (f"%{args.query.lower()}%", args.limit or 50),
         ).fetchall()
     conn.close()
-    if args.json:
-        print(json.dumps([dict(r) for r in rows], indent=2))
-    elif not rows:
+    if not rows:
         print(f"(no messages matching '{args.query}')")
     else:
         _print_messages(rows, args.json)
