@@ -377,7 +377,7 @@ print("✓ SQLite optimizations applied")
 du -sh ~/.a2a/your-project/database.db
 
 # If > 1GB, consider archival
-# See OPERATIONS_GUIDE.md for archival procedures
+# See TROUBLESHOOTING.md below for archival options
 ```
 
 ### Issue: High memory usage
@@ -416,7 +416,7 @@ conn.execute("PRAGMA cache_size=1000")  # 4MB instead of 40MB
 
 3. **Archive old messages**:
 ```python
-# See OPERATIONS_GUIDE.md for archival procedures
+# Consider archival via a separate backup process
 ```
 
 ---
@@ -711,10 +711,7 @@ python3 test_v13_features.py -v
 ```
 
 4. **Read documentation**:
-- OPERATIONS_GUIDE.md — Production deployment
 - SECURITY_HARDENING.md — Security setup
-- TESTING_V13.md — Testing procedures
-- RELEASE_v1.3.0.md — Feature documentation
 
 5. **Check git history**:
 ```bash

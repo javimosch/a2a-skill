@@ -77,7 +77,6 @@ All notable changes to a2a-skill are documented here.
   - aiosqlite backend for non-blocking database access
 
 - **Production Guides** — Comprehensive operational documentation
-  - [OPERATIONS_GUIDE.md](docs/OPERATIONS_GUIDE.md) — Deployment, monitoring, backup
   - [SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md) — Enterprise security setup
   - [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — 30+ common issues and solutions
   - [MIGRATION_V12_TO_V13.md](docs/MIGRATION_V12_TO_V13.md) — Zero-downtime upgrade
