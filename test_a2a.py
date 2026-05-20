@@ -613,6 +613,129 @@ class TestEdgeCases(unittest.TestCase):
         conn.close()
         self.assertGreaterEqual(n, 1, "expired message should be deleted")
 
+    def test_ttl_zero_immediate_expiry(self):
+        """TTL=0 means the message expires immediately."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("alice", None, "instant", 0, a2a.now())
+        )
+        conn.commit()
+        # Even with 0 TTL, cleanup should remove it (created_at equals now,
+        # but 0 seconds TTL means it's already expired)
+        deleted = a2a.cleanup_expired(conn)
+        conn.commit()
+        remaining = conn.execute(
+            "SELECT COUNT(*) FROM messages WHERE body='instant'"
+        ).fetchone()[0]
+        conn.close()
+        self.assertGreaterEqual(deleted, 1)
+        self.assertEqual(remaining, 0, "TTL=0 message should be removed")
+
+    def test_ttl_negative_expires_immediately(self):
+        """Negative TTL value should be treated as immediate expiry."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("alice", None, "neg-ttl", -1, a2a.now())
+        )
+        conn.commit()
+        deleted = a2a.cleanup_expired(conn)
+        conn.commit()
+        remaining = conn.execute(
+            "SELECT COUNT(*) FROM messages WHERE body='neg-ttl'"
+        ).fetchone()[0]
+        conn.close()
+        self.assertGreaterEqual(deleted, 1)
+        self.assertEqual(remaining, 0, "negative TTL message should be removed")
+
+    def test_ttl_recv_hides_expired(self):
+        """recv should not return messages that have already expired."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+        # Insert expired message (10s old with 1s TTL)
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("alice", "bob", "old news", 1, a2a.now() - 10)
+        )
+        # Insert non-expired message
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("bob", "alice", "fresh news", 3600, a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
+        # recv should only return the non-expired message
+        args = a2a.argparse.Namespace(
+            project=self.project, as_="alice", wait=0,
+            all=False, include_self=False, peek=False, since=None, limit=None, json=False
+        )
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_recv(args)
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        self.assertIn("fresh news", output)
+        self.assertNotIn("old news", output)
+
+    def test_cross_project_isolation(self):
+        """Messages from one project should not appear in another project."""
+        project_a = f"{self.project}-a"
+        project_b = f"{self.project}-b"
+        a2a.connect(project_a, create=True).close()
+        a2a.connect(project_b, create=True).close()
+        # Register agents in both projects
+        for p in (project_a, project_b):
+            conn = a2a.connect(p)
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                ("alice", "active", a2a.now(), a2a.now())
+            )
+            conn.commit()
+            conn.close()
+        # Send message in project_a
+        args = a2a.argparse.Namespace(
+            project=project_a, to="alice", body="secret project a msg",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+        # Verify it's only in project_a
+        conn_a = a2a.connect(project_a)
+        count_a = conn_a.execute(
+            "SELECT COUNT(*) FROM messages WHERE body='secret project a msg'"
+        ).fetchone()[0]
+        conn_a.close()
+        conn_b = a2a.connect(project_b)
+        count_b = conn_b.execute(
+            "SELECT COUNT(*) FROM messages WHERE body='secret project a msg'"
+        ).fetchone()[0]
+        conn_b.close()
+        # Clean up
+        for db in (a2a.db_path(project_a), a2a.db_path(project_b)):
+            if db.exists():
+                db.unlink()
+        self.assertEqual(count_a, 1, "message should exist in project A")
+        self.assertEqual(count_b, 0, "message should NOT leak to project B")
+
     def test_search(self):
         """Search finds messages by substring."""
         conn = a2a.connect(self.project)
