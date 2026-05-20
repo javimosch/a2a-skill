@@ -26,7 +26,6 @@ matches what you write.
 | `RUST_CLIENT_API.md` | `src/lib.rs` | `Client` struct methods |
 | `DEPLOYMENT.md` | `docker-compose.yml`, `Dockerfile.multi` | image definitions |
 | `ADVANCED_PATTERNS.md` | `examples/` | example files |
-| `CONTRIBUTING.md` | project workflow | `install.sh`, test commands |
 | `PROJECT_STATUS.md` | release tracking | git tags, version numbers |
 
 ## SKILL.md is duplicated intentionally
