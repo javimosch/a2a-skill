@@ -12,9 +12,6 @@ Demonstrates all v1.3 features working together:
 """
 
 import asyncio
-import time
-import json
-from datetime import datetime
 
 from a2a_client_async import A2AClientAsync
 from a2a_crypto import CryptoClient

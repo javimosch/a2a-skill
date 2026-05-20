@@ -13,7 +13,7 @@ Demonstrates v1.3 audit and search features:
 import json
 import sqlite3
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 from a2a_fts import FTSClient

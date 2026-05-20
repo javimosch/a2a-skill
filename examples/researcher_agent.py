@@ -13,8 +13,6 @@ This agent demonstrates:
 import os
 import json
 import subprocess
-import sys
-import time
 
 def run(cmd):
     """Execute shell command and return output."""
