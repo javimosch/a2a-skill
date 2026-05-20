@@ -78,19 +78,10 @@ a2a-skill/
 🔧 Operations & Deployment
 ├── docs/DEPLOYMENT.md        # Docker, Kubernetes, systemd deployment
 ├── docs/OPERATIONS_GUIDE.md  # production monitoring & backup
-├── docs/MIGRATION_V12_TO_V13.md # upgrade guide from v1.2
 │
-🏗️ v1.3+ Planning
-├── docs/RELEASE_HIGHLIGHTS_V13.md # v1.3.0 feature summary
-├── docs/RELEASE_v1.3.0.md    # release notes & changelog
+🔐 v1.3 Quick Reference
 ├── docs/V13_QUICKREF.md      # v1.3 quick reference
-├── docs/V14_ARCHITECTURE.md  # v1.4 roadmap & architecture
 │
-📋 Developer Guides
-├── docs/CONTRIBUTING.md      # contribution guidelines
-├── docs/PROJECT_STATUS.md    # release status & history
-├── docs/TESTING_V13.md       # comprehensive testing guide
-
 🧪 Tests & Benchmarks
 ├── test_a2a.py          # unit tests (30 core tests)
 ├── test_a2a_client.py   # Python client tests (17 tests)
@@ -184,8 +175,6 @@ Comprehensive guides for different use cases:
 - **[docs/V14_ARCHITECTURE.md](docs/V14_ARCHITECTURE.md)** — v1.4 roadmap: gRPC, WebSocket, Jaeger tracing, Prometheus
 - **[`.agents/skills/a2a/SKILL.md`](.agents/skills/a2a/SKILL.md)** — `/a2a` skill architecture and spawn protocol (canonical)
 - **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development
-- **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)** — Developer guidelines
-- **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)** — Release notes and roadmap
 - **[CHANGELOG.md](CHANGELOG.md)** — Complete release history and versioning
 
 ## CLI cheatsheet
