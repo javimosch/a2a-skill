@@ -90,6 +90,55 @@ python3 examples/task_coordinator_agent.py &
 4. Broadcasts final sprint status
 5. Marks `status=done`
 
+### 4. Spawn Coordinator (`spawn_coordinator.py`)
+
+An orchestrator harness that spawns worker agents as background AI CLI sessions
+via `a2a-spawn`, assigns tasks on the bus, and collects results.
+
+**Pattern demonstrated:**
+- Pattern 3 (auto-spawn) using `a2a-spawn`
+- Spawning agents as background processes via `subprocess`
+- Assigning tasks on the bus and collecting results
+- PID tracking and cleanup
+
+**Usage:**
+```bash
+python3 examples/spawn_coordinator.py --project mytest --cli claude
+```
+
+**Key behaviors:**
+1. Registers itself as coordinator plus two workers
+2. Writes kit prompts to temp files and spawns workers via `a2a-spawn`
+3. Sends task assignments to each worker via `a2a send`
+4. Collects results via `a2a recv --wait`
+5. Broadcasts a summary and cleans up spawned PIDs
+
+**Requires:** The chosen AI CLI (`claude`, `opencode`, or `pi`) installed and configured.
+
+### 5. Spawn Debate (`spawn_debate.py`)
+
+An adversarial debate harness that spawns proposer and critic agents as
+background AI CLI sessions via `a2a-spawn`, then monitors their exchange.
+
+**Pattern demonstrated:**
+- Pattern 3 (auto-spawn) with adversarial peers
+- Bus monitoring loop
+- Auto-detection when all agents complete
+
+**Usage:**
+```bash
+python3 examples/spawn_debate.py --project mydebate --cli claude
+```
+
+**Key behaviors:**
+1. Registers proposer, critic, and a bus-monitor agent
+2. Spawns both agents via `a2a-spawn`
+3. Monitors the bus in a polling loop, printing each new message
+4. Detects when both agents mark themselves done and exits
+5. Shows final bus state and cleans up spawned PIDs
+
+**Requires:** The chosen AI CLI (`claude`, `opencode`, or `pi`) installed and configured.
+
 ## Common Patterns
 
 ### Pattern 1: Request-Response (Async)

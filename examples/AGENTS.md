@@ -25,7 +25,9 @@ Do **not** put tests here. Tests live in `test_*.py` at the project root.
 | `collision_detector.py` | Work-collision detection via git+bus | `a2a_client.py` |
 | `compliance_archival_agent.py` | Audit + archival pattern | `a2a_audit.py` |
 | `secure_team_agent.py` | Encrypted peer messaging | `a2a_crypto.py` |
-| `nodejs_coordinator.js` | Coordinator in Node.js | `a2a_client.js` |
+|| `spawn_coordinator.py` | Orchestrator spawning workers via a2a-spawn | `subprocess` + `a2a-spawn` |
+|| `spawn_debate.py` | Adversarial debate via a2a-spawn | `subprocess` + `a2a-spawn` |
+|| `nodejs_coordinator.js` | Coordinator in Node.js | `a2a_client.js` |
 | `task_worker.rs` | Worker in Rust | `src/lib.rs` |
 | `v13_integrated_agent.py` | All v1.3 features together | async + all modules |
 
