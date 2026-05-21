@@ -154,6 +154,8 @@ def cmd_project(args) -> None:
 
 
 def cmd_register(args) -> None:
+    if not args.id or not args.id.strip():
+        die("agent id must not be empty")
     name, conn = _open(args, create=True)
     ts = now()
     try:
@@ -179,6 +181,8 @@ def cmd_register(args) -> None:
 
 
 def cmd_unregister(args) -> None:
+    if not args.id or not args.id.strip():
+        die("agent id must not be empty")
     _, conn = _open(args)
     cur = conn.execute("DELETE FROM agents WHERE id=?", (args.id,))
     conn.commit()

@@ -1465,6 +1465,40 @@ class TestEdgeCases(unittest.TestCase):
             sys.stdout = old_stdout
         self.assertIn("removed 0", output)
 
+    def test_cmd_register_empty_id_raises_error(self):
+        """Register with empty agent ID prints error and exits."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_register(
+                a2a.argparse.Namespace(
+                    project=self.project, id="", role="tester",
+                    prompt="", cli="", pid=0, upsert=False,
+                )
+            )
+
+    def test_cmd_register_whitespace_id_raises_error(self):
+        """Register with whitespace-only agent ID prints error and exits."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_register(
+                a2a.argparse.Namespace(
+                    project=self.project, id="   ", role="tester",
+                    prompt="", cli="", pid=0, upsert=False,
+                )
+            )
+
+    def test_cmd_unregister_empty_id_raises_error(self):
+        """Unregister with empty agent ID prints error and exits."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_unregister(
+                a2a.argparse.Namespace(project=self.project, id="")
+            )
+
+    def test_cmd_unregister_whitespace_id_raises_error(self):
+        """Unregister with whitespace-only agent ID prints error and exits."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_unregister(
+                a2a.argparse.Namespace(project=self.project, id="   ")
+            )
+
     def test_cmd_list_empty_bus(self):
         """List on a bus with no registered agents shows a notice."""
         import io
