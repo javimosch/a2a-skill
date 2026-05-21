@@ -222,11 +222,10 @@ def _touch(conn: sqlite3.Connection, agent_id: str):
 
 
 def cmd_send(args) -> None:
-    _, conn = _open(args)
     sender = getattr(args, "from_")
     if not sender:
-        conn.close()
         die("--from <agent-id> is required")
+    _, conn = _open(args)
     # verify sender exists
     if not conn.execute("SELECT 1 FROM agents WHERE id=?", (sender,)).fetchone():
         conn.close()
@@ -312,11 +311,10 @@ def _print_messages(rows, as_json):
 
 
 def cmd_recv(args) -> None:
-    _, conn = _open(args)
     agent = getattr(args, "as_")
     if not agent:
-        conn.close()
         die("--as <agent-id> is required")
+    _, conn = _open(args)
     if not conn.execute("SELECT 1 FROM agents WHERE id=?", (agent,)).fetchone():
         conn.close()
         die(f"unknown agent '{agent}' — register first")
@@ -515,8 +513,13 @@ def cmd_stats(args) -> None:
 
 def cmd_wait(args) -> None:
     """Block until N messages exist for agent, or timeout."""
-    _, conn = _open(args)
     agent = getattr(args, "as_")
+    if not agent:
+        die("--as <agent-id> is required")
+    _, conn = _open(args)
+    if not conn.execute("SELECT 1 FROM agents WHERE id=?", (agent,)).fetchone():
+        conn.close()
+        die(f"unknown agent '{agent}' — register first")
     deadline = now() + args.timeout
     while True:
         rows = _fetch_messages(conn, agent, unread_only=True, since=None,
