@@ -915,6 +915,63 @@ class TestPriorityClientWithDB(unittest.TestCase):
         self.assertEqual(msgs[0]["body"], "first low")
         self.assertEqual(msgs[1]["body"], "second critical")
 
+    def test_recv_marks_messages_as_read(self):
+        """recv() marks messages as read so subsequent recv(unread_only=True) skips them."""
+        self.alice.send("bob", "msg1", priority=Priority.NORMAL)
+        self.alice.send("bob", "msg2", priority=Priority.HIGH)
+        # First recv marks as read
+        msgs = self.bob.recv(wait=0, unread_only=False, priority_aware=True)
+        self.assertGreaterEqual(len(msgs), 2)
+        # Second recv with unread_only should return nothing
+        msgs2 = self.bob.recv(wait=0, unread_only=True)
+        self.assertEqual(msgs2, [])
+
+    def test_recv_by_priority_marks_messages_as_read(self):
+        """recv_by_priority() marks messages as read so subsequent recv(unread_only=True) skips them."""
+        self.alice.send("bob", "critical msg", priority=Priority.CRITICAL)
+        msgs = self.bob.recv_by_priority(Priority.CRITICAL, wait=0)
+        self.assertGreaterEqual(len(msgs), 1)
+        # Should not appear again
+        msgs2 = self.bob.recv(wait=0, unread_only=True)
+        self.assertEqual(msgs2, [])
+
+    def test_recv_above_priority_marks_messages_as_read(self):
+        """recv_above_priority() marks messages as read so subsequent recv(unread_only=True) skips them."""
+        self.alice.send("bob", "high msg", priority=Priority.HIGH)
+        msgs = self.bob.recv_above_priority(Priority.HIGH, wait=0)
+        self.assertGreaterEqual(len(msgs), 1)
+        # Should not appear again
+        msgs2 = self.bob.recv(wait=0, unread_only=True)
+        self.assertEqual(msgs2, [])
+
+    def test_recv_cleanup_expired_before_query(self):
+        """recv() calls _cleanup_expired so TTL-expired messages are not returned."""
+        self.alice.send("bob", "expired msg", priority=Priority.NORMAL, ttl_seconds=-1)
+        # Force TTL cleanup by sending a second message to trigger _cleanup_expired
+        self.alice.send("bob", "fresh msg", priority=Priority.NORMAL)
+        msgs = self.bob.recv(wait=0, unread_only=False, priority_aware=True)
+        bodies = [m["body"] for m in msgs]
+        self.assertNotIn("expired msg", bodies)
+        self.assertIn("fresh msg", bodies)
+
+    def test_recv_by_priority_cleanup_expired_before_query(self):
+        """recv_by_priority() calls _cleanup_expired so TTL-expired messages are not returned."""
+        self.alice.send("bob", "expired high", priority=Priority.HIGH, ttl_seconds=-1)
+        self.alice.send("bob", "fresh high", priority=Priority.HIGH)
+        msgs = self.bob.recv_by_priority(Priority.HIGH, wait=0)
+        bodies = [m["body"] for m in msgs]
+        self.assertNotIn("expired high", bodies)
+        self.assertIn("fresh high", bodies)
+
+    def test_recv_above_priority_cleanup_expired_before_query(self):
+        """recv_above_priority() calls _cleanup_expired so TTL-expired messages are not returned."""
+        self.alice.send("bob", "expired critical", priority=Priority.CRITICAL, ttl_seconds=-1)
+        self.alice.send("bob", "fresh critical", priority=Priority.CRITICAL)
+        msgs = self.bob.recv_above_priority(Priority.CRITICAL, wait=0)
+        bodies = [m["body"] for m in msgs]
+        self.assertNotIn("expired critical", bodies)
+        self.assertIn("fresh critical", bodies)
+
 
 class TestRoutingClientWithDB(unittest.TestCase):
     """Real-database tests for RoutingClient DB-backed methods."""

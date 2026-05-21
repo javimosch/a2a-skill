@@ -138,6 +138,7 @@ class PriorityClient(A2AClient):
             poll_interval = 0.1
 
             while True:
+                self._cleanup_expired(conn)
                 # Build query
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
@@ -171,6 +172,13 @@ class PriorityClient(A2AClient):
                 messages = [dict(row) for row in cursor.fetchall()]
 
                 if messages:
+                    # Mark as read
+                    ts = time.time()
+                    conn.executemany(
+                        "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?,?,?)",
+                        [(self.agent_id, m["id"], ts) for m in messages],
+                    )
+                    conn.commit()
                     return messages
 
                 if wait <= 0:
@@ -209,6 +217,7 @@ class PriorityClient(A2AClient):
             poll_interval = 0.1
 
             while True:
+                self._cleanup_expired(conn)
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
                     "m.priority, m.created_at FROM messages m "
@@ -238,6 +247,13 @@ class PriorityClient(A2AClient):
                 messages = [dict(row) for row in cursor.fetchall()]
 
                 if messages:
+                    # Mark as read
+                    ts = time.time()
+                    conn.executemany(
+                        "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?,?,?)",
+                        [(self.agent_id, m["id"], ts) for m in messages],
+                    )
+                    conn.commit()
                     return messages
 
                 if wait <= 0:
@@ -276,6 +292,7 @@ class PriorityClient(A2AClient):
             poll_interval = 0.1
 
             while True:
+                self._cleanup_expired(conn)
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
                     "m.priority, m.created_at FROM messages m "
@@ -305,6 +322,13 @@ class PriorityClient(A2AClient):
                 messages = [dict(row) for row in cursor.fetchall()]
 
                 if messages:
+                    # Mark as read
+                    ts = time.time()
+                    conn.executemany(
+                        "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?,?,?)",
+                        [(self.agent_id, m["id"], ts) for m in messages],
+                    )
+                    conn.commit()
                     return messages
 
                 if wait <= 0:
