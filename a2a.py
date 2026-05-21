@@ -218,7 +218,7 @@ def cmd_status(args) -> None:
     n = cur.rowcount
     conn.close()
     if n == 0:
-        die(f"no such agent: '{agent_id}'")
+        die(f"unknown agent '{agent_id}'")
     if getattr(args, "json", False):
         print(json.dumps({
             "agent": agent_id,
