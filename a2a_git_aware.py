@@ -9,7 +9,6 @@ potential work collisions and duplicated efforts.
 
 import subprocess
 import json
-import hashlib
 from typing import Optional, Dict, List, Any
 from pathlib import Path
 from datetime import datetime
