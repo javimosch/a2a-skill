@@ -27,58 +27,49 @@ class AuditClient:
         self.db_path = Path.home() / ".a2a" / project / "database.db"
 
     def _connect(self) -> sqlite3.Connection:
-        """Connect to database."""
+        """Connect to database and ensure audit_log table exists."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(self.db_path), timeout=10.0)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA busy_timeout=5000")
+        # Auto-create audit_log table so log_operation() works without
+        # a separate init_audit_table() call.
+        conn.execute(
+            """CREATE TABLE IF NOT EXISTS audit_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp REAL NOT NULL,
+                agent_id TEXT NOT NULL,
+                operation TEXT NOT NULL,
+                message_id INTEGER,
+                details TEXT,
+                result TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )"""
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_agent ON audit_log(agent_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_operation ON audit_log(operation)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_message ON audit_log(message_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp)")
+        conn.commit()
         return conn
 
     def init_audit_table(self) -> bool:
         """Initialize audit log table.
 
+        Note: The table is now auto-created on every _connect(), so this
+        method is mainly kept for backward compatibility. Safe to call.
+
         Returns:
             True if successful, False on error
         """
-        conn = self._connect()
         try:
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS audit_log (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp REAL NOT NULL,
-                    agent_id TEXT NOT NULL,
-                    operation TEXT NOT NULL,
-                    message_id INTEGER,
-                    details TEXT,
-                    result TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """
-            )
-
-            # Create indexes for common queries
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_audit_agent ON audit_log(agent_id)"
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_audit_operation ON audit_log(operation)"
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_audit_message ON audit_log(message_id)"
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp)"
-            )
-
-            conn.commit()
+            conn = self._connect()
+            conn.close()
             return True
         except Exception as e:
             print(f"Error initializing audit table: {e}")
             return False
-        finally:
-            conn.close()
 
     def log_operation(
         self,
