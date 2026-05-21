@@ -283,7 +283,15 @@ class A2AClientAsync:
 
         Args:
             status: Status (active, idle, done, blocked, etc.)
+
+        Raises:
+            ValueError: If status is not a valid value
         """
+        valid_statuses = ("active", "idle", "done", "blocked")
+        if status not in valid_statuses:
+            raise ValueError(
+                f"invalid status '{status}'. Must be one of {valid_statuses}"
+            )
         conn = await self._connect()
         await conn.execute(
             "UPDATE agents SET status = ?, last_seen = ? WHERE id = ?",

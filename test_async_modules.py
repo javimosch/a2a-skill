@@ -190,6 +190,33 @@ class TestA2AClientAsync(unittest.TestCase):
         status = run_async(self.alice.get_status())
         self.assertEqual(status, "idle")
 
+    def test_set_status_invalid_raises_error(self):
+        """set_status() with invalid status raises ValueError (async)."""
+        from a2a_client_async import A2AClientAsync
+        # Register a separate agent using sync client for status tests
+        import sqlite3
+        conn = sqlite3.connect(str(self.alice.db_path))
+        conn.execute(
+            "INSERT OR IGNORE INTO agents(id, role, status, created_at, last_seen) "
+            "VALUES (?,?,?,?,?)",
+            ("status-test-agent", "tester", "active", time.time(), time.time())
+        )
+        conn.commit()
+        conn.close()
+        client = A2AClientAsync(self.project, "status-test-agent")
+        try:
+            with self.assertRaises(ValueError):
+                run_async(client.set_status("invalid"))
+            with self.assertRaises(ValueError):
+                run_async(client.set_status(""))
+            # Valid statuses should still work
+            run_async(client.set_status("idle"))
+            status = run_async(client.get_status())
+            self.assertEqual(status, "idle")
+            run_async(client.set_status("done"))
+        finally:
+            run_async(client.close())
+
     def test_get_status_other_agent(self):
         """get_status() for another agent."""
         status = run_async(self.alice.get_status("bob"))

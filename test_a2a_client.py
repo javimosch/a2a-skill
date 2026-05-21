@@ -226,6 +226,19 @@ class TestA2AClient(unittest.TestCase):
         status = alice.get_status("bob")
         self.assertEqual(status, "active")
 
+    def test_set_status_invalid_raises_error(self):
+        """set_status() with invalid status raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.set_status("invalid_status")
+        with self.assertRaises(ValueError):
+            alice.set_status("")
+        # Valid statuses should still work
+        alice.set_status("active")
+        alice.set_status("idle")
+        alice.set_status("done")
+        alice.set_status("blocked")
+
     def test_wait_for_messages(self):
         """Test waiting for messages."""
         alice = A2AClient(self.project, "alice")

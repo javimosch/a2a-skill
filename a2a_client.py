@@ -249,7 +249,15 @@ class A2AClient:
 
         Args:
             status: One of 'active', 'idle', 'done', 'blocked'
+
+        Raises:
+            ValueError: If status is not a valid value
         """
+        valid_statuses = ("active", "idle", "done", "blocked")
+        if status not in valid_statuses:
+            raise ValueError(
+                f"invalid status '{status}'. Must be one of {valid_statuses}"
+            )
         conn = self._connect()
         try:
             conn.execute(
