@@ -328,6 +328,9 @@ def _print_messages(rows: list[sqlite3.Row], as_json: bool) -> None:
 
 def cmd_recv(args) -> None:
     agent, conn = _resolve_agent(args)
+    limit = args.limit
+    if limit is not None and limit < 0:
+        limit = 0
 
     deadline = now() + args.wait if args.wait else None
     poll_interval = 0.5
@@ -337,7 +340,7 @@ def cmd_recv(args) -> None:
             conn, agent,
             unread_only=not args.all,
             since=args.since,
-            limit=args.limit,
+            limit=limit,
             mark_read=not args.peek,
             include_self=args.include_self,
         )
@@ -361,10 +364,11 @@ def cmd_peek(args) -> None:
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
+    limit = max(0, args.limit)
     rows = conn.execute(
         f"SELECT {MSG_COLS} FROM messages "
         "ORDER BY created_at DESC LIMIT ?",
-        (args.limit,),
+        (limit,),
     ).fetchall()
     conn.close()
     rows = list(reversed(rows))
@@ -449,6 +453,7 @@ def cmd_search(args) -> None:
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
+    limit = max(0, args.limit or 50)
     fts_ready = _init_fts(conn)
     use_fts = args.fts or fts_ready
     if use_fts:
@@ -457,7 +462,7 @@ def cmd_search(args) -> None:
                 f"SELECT {MSG_COLS_M} "
                 "FROM messages_fts JOIN messages m ON messages_fts.rowid = m.rowid "
                 "WHERE messages_fts MATCH ? ORDER BY rank LIMIT ?",
-                (args.query, args.limit or 50),
+                (args.query, limit),
             ).fetchall()
         except sqlite3.OperationalError:
             use_fts = False
@@ -465,7 +470,7 @@ def cmd_search(args) -> None:
         rows = conn.execute(
             f"SELECT {MSG_COLS} FROM messages "
             "WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
-            (f"%{args.query.lower()}%", args.limit or 50),
+            (f"%{args.query.lower()}%", limit),
         ).fetchall()
     conn.close()
     if not rows:
