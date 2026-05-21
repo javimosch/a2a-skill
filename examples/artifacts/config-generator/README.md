@@ -35,26 +35,28 @@ cd /root/projects/a2a-skill
 python3 examples/artifacts/config-generator/build.py --cli opencode
 ```
 
-## Output quality
+## Output quality (from opencode build)
 
-- `docker-compose.yml` — 1,485 bytes: 4 services (nginx, app, db, redis), networks, volumes, healthchecks
-- `nginx.conf` — 2,507 bytes: SSL termination, rate limiting, gzip, reverse proxy to app
-- `.env.example` — 1,254 bytes: database, session, CORS, and Redis environment vars
+- `docker-compose.yml` — 1,548 bytes: 3 services (nginx, app, db), networks, healthchecks, named volumes
+- `nginx.conf` — 3,790 bytes: SSL termination, rate limiting, gzip, reverse proxy to app, health endpoint
+- `.env.example` — 1,618 bytes: database, session, CORS, Redis env vars with comments
 
-## Bus transcript
+## Bus transcript (from opencode build)
 
 ```
 STATS:
-  Messages: 5 total (2 direct + 3 broadcast)
+  Messages: 4 total (1 direct + 3 broadcast)
   Agents: 1 collector + 2 worker agents
-  Top senders: implementer (3), collector (1), architect (1)
+  Top senders: implementer (3), collector (1)
 
 CONVERSATION:
-  #1 collector -> architect: Task: Describe server topology for Node.js/Express API
-  #2 architect -> implementer: Spec: Nginx → App (:3000) → PostgreSQL + Redis
-  #3 implementer -> ALL: FILE:docker-compose.yml (4 services, networks, volumes)
-  #4 implementer -> ALL: FILE:nginx.conf (SSL, rate limiting, reverse proxy)
-  #5 implementer -> ALL: FILE:.env.example (DB, session, CORS env vars)
+  #1 collector -> architect: Task: Describe topology for Node.js/Express — PostgreSQL — Nginx
+  #2 architect -> implementer: Spec: 3 containers (nginx, app:3000, db:5432), bridge network, healthchecks, volumes
+  #3 implementer -> ALL: FILE:docker-compose.yml (3 services with healthcheck conditions)
+  #4 implementer -> ALL: FILE:nginx.conf (SSL proxy, rate limiting, gzip, /health passthrough)
+  #5 implementer -> ALL: FILE:.env.example (DB, session, CORS, Redis env vars)
+
+Note: implementer sent all 3 files as broadcasts; architect sent a single spec message.
 ```
 
 ## Requirements
