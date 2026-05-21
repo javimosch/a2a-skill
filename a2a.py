@@ -57,6 +57,10 @@ CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
 
 # ---------- paths & db ----------
 
+# Column list used in all message queries (avoids repetition and drift)
+MSG_COLS = "id, sender, recipient, body, thread_id, created_at"
+MSG_COLS_M = "m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at"
+
 def project_name(explicit: str | None) -> str:
     if explicit:
         return explicit
@@ -259,7 +263,7 @@ def cmd_send(args):
 def _fetch_messages(conn, agent_id, unread_only, since, limit, mark_read, include_self=False):
     # messages addressed to agent OR broadcast (recipient IS NULL)
     base = (
-        "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at "
+        f"SELECT m.{MSG_COLS} "
         "FROM messages m "
         "WHERE (m.recipient = ? OR m.recipient IS NULL) "
     )
@@ -351,7 +355,7 @@ def cmd_peek(args):
     cleanup_expired(conn)
     conn.commit()
     rows = conn.execute(
-        "SELECT id, sender, recipient, body, thread_id, created_at FROM messages "
+        f"SELECT {MSG_COLS} FROM messages "
         "ORDER BY created_at DESC LIMIT ?",
         (args.limit,),
     ).fetchall()
@@ -365,7 +369,7 @@ def cmd_thread(args):
     name = project_name(args.project)
     conn = connect(name)
     rows = conn.execute(
-        "SELECT id, sender, recipient, body, thread_id, created_at FROM messages "
+        f"SELECT {MSG_COLS} FROM messages "
         "WHERE thread_id = ? ORDER BY created_at ASC",
         (args.id,),
     ).fetchall()
@@ -441,7 +445,7 @@ def cmd_search(args):
     if use_fts:
         try:
             rows = conn.execute(
-                "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at "
+                f"SELECT {MSG_COLS_M} "
                 "FROM messages_fts JOIN messages m ON messages_fts.rowid = m.rowid "
                 "WHERE messages_fts MATCH ? ORDER BY rank LIMIT ?",
                 (args.query, args.limit or 50),
@@ -450,7 +454,7 @@ def cmd_search(args):
             use_fts = False
     if not use_fts:
         rows = conn.execute(
-            "SELECT id, sender, recipient, body, thread_id, created_at FROM messages "
+            f"SELECT {MSG_COLS} FROM messages "
             "WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
             (f"%{args.query.lower()}%", args.limit or 50),
         ).fetchall()
