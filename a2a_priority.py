@@ -509,6 +509,7 @@ class PriorityQueue:
         """
         conn = self.client._connect()
         try:
+            self.client._cleanup_expired(conn)
             cursor = conn.execute(
                 """
                 SELECT m.id, m.sender, m.recipient, m.body, m.thread_id,
