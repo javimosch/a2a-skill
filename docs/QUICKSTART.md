@@ -453,7 +453,8 @@ a2a recv --as alice --wait 5
 - **[`.agents/skills/a2a/SKILL.md`](../.agents/skills/a2a/SKILL.md)** — Technical deep dive (architecture, schema, protocol, spawn flow)
 - **[CLIENT_API.md](docs/CLIENT_API.md)** — Python client library reference
 - **[examples/](../examples/)** — Agent pattern examples (researcher, reviewer, coordinator)
-- **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** — Developer guide for extending a2a
+- **[AGENTS.md](../AGENTS.md)** — Guide for extending a2a
+- **[test_a2a.py](../test_a2a.py)** — Unit tests with coverage of all features
 
 ## Questions?
 
