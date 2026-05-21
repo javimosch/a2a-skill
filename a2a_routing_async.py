@@ -8,12 +8,9 @@ Full API parity with a2a_routing.RoutingClient.
 """
 
 import asyncio
-import json
-import re
 import time
-from typing import Optional, List, Dict, Any, Callable
+from typing import List, Dict, Any
 from pathlib import Path
-from enum import Enum
 
 try:
     import aiosqlite
