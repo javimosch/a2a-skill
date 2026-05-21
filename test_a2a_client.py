@@ -637,5 +637,67 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(len(messages), 0)
         self.assertLess(elapsed, 2, "recv with negative wait should not block")
 
+    def test_cross_project_isolation(self):
+        """Messages in project A do not leak into project B."""
+        import shutil
+        # Create a second project
+        project_b = f"client-proj-b-{id(self)}"
+        proj_dir_b = Path.home() / ".a2a" / project_b
+        proj_dir_b.mkdir(parents=True, exist_ok=True)
+
+        # Set up second project's database (same schema, different db file)
+        db_path_b = proj_dir_b / "database.db"
+        conn_b = sqlite3.connect(str(db_path_b))
+        conn_b.executescript("""
+            CREATE TABLE IF NOT EXISTS agents (
+                id          TEXT PRIMARY KEY,
+                role        TEXT,
+                prompt      TEXT,
+                cli         TEXT,
+                status      TEXT NOT NULL DEFAULT 'active',
+                pid         INTEGER,
+                created_at  REAL NOT NULL,
+                last_seen   REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS messages (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender      TEXT NOT NULL,
+                recipient   TEXT,
+                body        TEXT NOT NULL,
+                thread_id   TEXT,
+                ttl_seconds INTEGER,
+                created_at  REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS reads (
+                agent_id    TEXT NOT NULL,
+                message_id  INTEGER NOT NULL,
+                read_at     REAL NOT NULL,
+                PRIMARY KEY (agent_id, message_id)
+            );
+        """)
+        ts = time.time()
+        conn_b.execute(
+            "INSERT INTO agents(id, role, status, created_at, last_seen) VALUES (?,?,?,?,?)",
+            ("alice", "tester", "active", ts, ts),
+        )
+        conn_b.commit()
+        conn_b.close()
+
+        # Project A alice sends a message
+        alice_a = A2AClient(self.project, "alice")
+        alice_a.send("bob", "secret from A")
+
+        # Project B alice should not see it
+        alice_b = A2AClient(project_b, "alice")
+        msgs_b = alice_b.recv(wait=0)
+        bodies_b = [m["body"] for m in msgs_b]
+        self.assertNotIn("secret from A", bodies_b, "messages should not cross projects")
+
+        # Clean up project B
+        if db_path_b.exists():
+            db_path_b.unlink()
+        if proj_dir_b.exists():
+            shutil.rmtree(proj_dir_b)
+
 if __name__ == "__main__":
     unittest.main()
