@@ -1263,6 +1263,68 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(data["project"], self.project)
         self.assertIsInstance(data["exists"], bool)
 
+    def test_cross_project_recv_isolation(self):
+        """Recv in project A should not see messages from project B, even if both have same agent name."""
+        project_a = f"{self.project}-a"
+        project_b = f"{self.project}-b"
+        a2a.connect(project_a, create=True).close()
+        a2a.connect(project_b, create=True).close()
+
+        def register_in_project(p, agent_id):
+            conn = a2a.connect(p)
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+            conn.commit()
+            conn.close()
+
+        # Register two agents in each project
+        register_in_project(project_a, "alice")
+        register_in_project(project_a, "bob")
+        register_in_project(project_b, "alice")
+        register_in_project(project_b, "bob")
+
+        # Send a message from bob to alice in project_a
+        args_send = a2a.argparse.Namespace(
+            project=project_a, to="alice", body="secret-project-a",
+            **{"from_": "bob", "thread": None}
+        )
+        a2a.cmd_send(args_send)
+
+        # Recv in project_a should get it
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_recv(a2a.argparse.Namespace(
+            project=project_a, as_="alice", wait=0, all=True,
+            peek=False, limit=None, since=None, json=True, include_self=False
+        ))
+        output_a = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+
+        # Recv in project_b should NOT get it
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_recv(a2a.argparse.Namespace(
+            project=project_b, as_="alice", wait=0, all=True,
+            peek=False, limit=None, since=None, json=True, include_self=False
+        ))
+        output_b = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+
+        data_a = json.loads(output_a) if output_a.strip() else []
+        data_b = json.loads(output_b) if output_b.strip() else []
+        bodies_a = [m["body"] for m in data_a]
+        bodies_b = [m["body"] for m in data_b]
+        self.assertIn("secret-project-a", bodies_a, "project A should have the message")
+        self.assertNotIn("secret-project-a", bodies_b, "project B should NOT see project A's messages")
+
+        # Cleanup
+        for p in (a2a.db_path(project_a), a2a.db_path(project_b)):
+            if p.exists():
+                p.unlink()
+
     def test_cmd_send_stdin_body(self):
         """cmd_send with '-' body reads from stdin."""
         self._register("alice")
