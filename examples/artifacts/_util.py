@@ -179,6 +179,26 @@ class SpawnManager:
         self.cleanup(signum, frame)
 
 
+def strip_html_preamble(body: str) -> str:
+    """Strip any preamble text before the HTML doctype or <html tag.
+
+    AI agents often prepend explanatory text before the actual HTML output.
+    This function finds the start of the HTML content and slices from there.
+    """
+    lowered = body.lower()
+    doc_start = lowered.find("<!doctype")
+    if doc_start == -1:
+        doc_start = lowered.find("<html")
+    if doc_start > 0:
+        body = body[doc_start:]
+    elif doc_start == -1:
+        # Try more specific matches
+        alt = lowered.find("<!doctype html")
+        if alt >= 0:
+            body = body[alt:]
+    return body
+
+
 def wait_for_messages(a2a_bin: str, project: str, agent_id: str,
                      expected_senders: set, timeout: int = 120) -> dict:
     """Wait for messages from expected senders. Returns {sender: body}."""

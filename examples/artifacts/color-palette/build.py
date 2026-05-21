@@ -19,7 +19,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, SpawnManager, strip_html_preamble  # noqa: E402
 
 ARTIFACT = "color-palette"
 PROMPT_COLORIST = (
@@ -98,13 +98,7 @@ def main():
             sender = msg.get("sender", "")
             body = msg.get("body", "")
             if sender == "generator" and ("<html" in body.lower() or "<!DOCTYPE" in body):
-                # Strip preamble
-                lowered = body.lower()
-                doc_start = lowered.find("<!doctype")
-                if doc_start == -1:
-                    doc_start = lowered.find("<html")
-                if doc_start > 0:
-                    body = body[doc_start:]
+                body = strip_html_preamble(body)
                 final_html = body
                 print(f"[{ARTIFACT}] ← Received final HTML from generator ({len(body)} chars)")
                 break

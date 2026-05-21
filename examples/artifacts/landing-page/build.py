@@ -21,7 +21,7 @@ from pathlib import Path
 
 # Add parent dir for _util import
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, SpawnManager, wait_for_messages  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, SpawnManager, strip_html_preamble  # noqa: E402
 
 ARTIFACT = "landing-page"
 AGENTS = [
@@ -109,14 +109,7 @@ def main():
             sender = msg.get("sender", "")
             body = msg.get("body", "")
             if sender == "integrator" and ("<html" in body.lower() or "<!DOCTYPE" in body):
-                # Strip any preamble text before the DOCTYPE or <html tag
-                # Case-insensitive: find <!doctype or <html in the lowered body
-                lowered = body.lower()
-                doc_start = lowered.find("<!doctype")
-                if doc_start == -1:
-                    doc_start = lowered.find("<html")
-                if doc_start > 0:
-                    body = body[doc_start:]
+                body = strip_html_preamble(body)
                 final_html = body
                 print(f"[{ARTIFACT}] ← Received final HTML from integrator ({len(body)} chars)")
                 break
