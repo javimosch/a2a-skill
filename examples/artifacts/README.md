@@ -28,6 +28,7 @@ output to `output/`.
 | `mini-cli/` | architect, implementer | `output/tasky.py` | 2 agents spec and implement a Python CLI tool |
 | `config-generator/` | architect, implementer | `output/docker-compose.yml`, `output/nginx.conf`, `output/.env.example` | 2 agents produce a full server deployment configuration |
 | `color-palette/` | colorist, generator | `output/index.html` | 2 agents propose a color palette and render an HTML preview |
+| `quiz-generator/` | researcher, checker, formatter | `output/index.html` | 3 agents collaborate to produce an interactive HTML quiz page |
 
 ## Requirements
 
