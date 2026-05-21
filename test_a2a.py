@@ -1116,6 +1116,42 @@ class TestEdgeCases(unittest.TestCase):
         sys.stdout = old_stdout2
         self.assertIn("underscore_var_name", output2)
 
+    def test_cmd_recv_since_filters_old_messages(self):
+        """recv --since filters out messages older than the timestamp."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        # Insert old message
+        old_ts = a2a.now() - 100
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", "bob", "old message", old_ts)
+        )
+        # Insert recent message
+        new_ts = a2a.now()
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", "bob", "recent message", new_ts)
+        )
+        conn.commit()
+        conn.close()
+
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_recv(a2a.argparse.Namespace(
+            project=self.project, as_="bob", wait=0, all=False,
+            peek=False, limit=0, since=old_ts + 50, json=False, include_self=False
+        ))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        self.assertIn("recent message", output)
+        self.assertNotIn("old message", output)
+
+
 
 
 
