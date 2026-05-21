@@ -374,6 +374,8 @@ def cmd_peek(args) -> None:
 def cmd_thread(args) -> None:
     """Show all messages in a thread."""
     _, conn = _open(args)
+    cleanup_expired(conn)
+    conn.commit()
     rows = conn.execute(
         f"SELECT {MSG_COLS} FROM messages "
         "WHERE thread_id = ? ORDER BY created_at ASC",
@@ -445,6 +447,8 @@ def _init_fts(conn: sqlite3.Connection) -> bool:
 def cmd_search(args) -> None:
     """Search messages by content."""
     _, conn = _open(args)
+    cleanup_expired(conn)
+    conn.commit()
     fts_ready = _init_fts(conn)
     use_fts = args.fts or fts_ready
     if use_fts:
@@ -476,6 +480,8 @@ def cmd_search(args) -> None:
 def cmd_stats(args) -> None:
     """Show bus statistics."""
     name, conn = _open(args)
+    cleanup_expired(conn)
+    conn.commit()
 
     # Count messages and threads
     msg_count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
