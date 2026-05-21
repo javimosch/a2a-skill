@@ -96,7 +96,7 @@ def connect(name: str, create: bool = False) -> sqlite3.Connection:
     return conn
 
 
-def die(msg: str, code: int = 1):
+def die(msg: str, code: int = 1) -> None:
     print(f"a2a: {msg}", file=sys.stderr)
     sys.exit(code)
 
@@ -217,7 +217,7 @@ def cmd_status(args) -> None:
         print(f"agent '{agent_id}' status -> {args.state}")
 
 
-def _touch(conn: sqlite3.Connection, agent_id: str):
+def _touch(conn: sqlite3.Connection, agent_id: str) -> None:
     conn.execute("UPDATE agents SET last_seen=? WHERE id=?", (now(), agent_id))
 
 
@@ -260,7 +260,7 @@ def cmd_send(args) -> None:
         print(f"#{mid} {sender} -> {target}")
 
 
-def _fetch_messages(conn, agent_id, unread_only, since, limit, mark_read, include_self=False) -> list:
+def _fetch_messages(conn: sqlite3.Connection, agent_id: str, unread_only: bool, since: float | None, limit: int | None, mark_read: bool, include_self: bool = False) -> list[sqlite3.Row]:
     # messages addressed to agent OR broadcast (recipient IS NULL)
     base = (
         f"SELECT {MSG_COLS_M} "
@@ -294,7 +294,7 @@ def _fetch_messages(conn, agent_id, unread_only, since, limit, mark_read, includ
     return rows
 
 
-def _print_messages(rows, as_json):
+def _print_messages(rows: list[sqlite3.Row], as_json: bool) -> None:
     if as_json:
         print(json.dumps([dict(r) for r in rows], indent=2))
         return
