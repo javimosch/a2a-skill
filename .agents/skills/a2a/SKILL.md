@@ -39,7 +39,7 @@ If the user wants a strict orchestrator → workers pattern, prefer the standard
 
 ## Three usage patterns
 
-This skill implements **Pattern 3** below. See [docs/QUICKSTART.md](QUICKSTART.md)
+This skill implements **Pattern 3** below. See [docs/QUICKSTART.md](../docs/QUICKSTART.md)
 for Patterns 1 and 2.
 
 | # | Pattern | Who drives | Documented in |
@@ -257,7 +257,8 @@ Database survives between sessions — useful for resuming.
 
 ## Related Documentation
 
-- [CLI_REFERENCE.md](CLI_REFERENCE.md) — Full CLI command reference (Python & Go binaries)
-- [SMOKE_TEST.md](SMOKE_TEST.md) — Canonical end-to-end smoke test recipe
-- [HONESTY_RULES.md](HONESTY_RULES.md) — Agent honesty guidelines
-- [PITFALLS.md](PITFALLS.md) — Common pitfalls and how to avoid them
+- [docs/GO_CLI_REFERENCE.md](../docs/GO_CLI_REFERENCE.md) — Full Go binary CLI command reference
+- [docs/QUICKSTART.md](../docs/QUICKSTART.md) — Installation and first-run guide
+- [docs/CLIENT_API.md](../docs/CLIENT_API.md) — Python client library API reference
+- [docs/ADVANCED_PATTERNS.md](../docs/ADVANCED_PATTERNS.md) — Advanced usage patterns and artifact smoke tests
+- [docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md) — Common issues and solutions
