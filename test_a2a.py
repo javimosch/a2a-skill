@@ -1237,6 +1237,44 @@ class TestEdgeCases(unittest.TestCase):
                 project=self.project, as_="phantom", timeout=0, count=0
             ))
 
+    def test_cmd_wait_timeout_no_messages(self):
+        """cmd_wait with no unread messages and zero timeout exits with error."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.commit()
+        conn.close()
+        with self.assertRaises(SystemExit) as cm:
+            a2a.cmd_wait(a2a.argparse.Namespace(
+                project=self.project, as_="alice", timeout=0, count=1
+            ))
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_cmd_wait_immediate_success(self):
+        """cmd_wait returns immediately if count is already met."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("bob", "alice", "ready message", a2a.now())
+        )
+        conn.commit()
+        conn.close()
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_wait(a2a.argparse.Namespace(
+            project=self.project, as_="alice", timeout=0, count=1
+        ))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        self.assertIn("ok: 1 unread", output)
+
     def test_cmd_send_empty_body(self):
         """Send with empty body works at CLI level (creates message with empty content)."""
         self._register("alice")
