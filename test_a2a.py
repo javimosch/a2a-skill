@@ -1719,6 +1719,16 @@ class TestEdgeCases(unittest.TestCase):
         data = json.loads(output) if output.strip() else []
         self.assertEqual(len(data), 0, "peek with limit=0 should return empty list")
 
+    def test_send_without_from_raises_error(self):
+        """send without --from raises SystemExit."""
+        self._register("bob")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="missing sender",
+            **{"from_": None, "thread": None}
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(args)
+
     def test_search_invalid_fts_falls_back(self):
         """Search with invalid FTS syntax falls back gracefully to LIKE."""
         self._register("alice")
