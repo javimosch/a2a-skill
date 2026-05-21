@@ -70,7 +70,7 @@ python3 examples/artifacts/config-generator/build.py --cli opencode --project ar
    `strip_html_preamble()` for cleaning up raw HTML output from agents
 3. Write a kit prompt with `make_kit()` following the standard pattern
 4. Agents communicate via `a2a send` / `a2a recv` — no side channels
-5. Output goes to `examples/artifacts/<name>/output/` (gitignored)
+5. Output goes to `examples/artifacts/<name>/output/` (checked in: artifacts are committed as reproducible build evidence)
 
 See `examples/artifacts/README.md` for full documentation.
 
