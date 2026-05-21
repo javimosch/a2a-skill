@@ -29,11 +29,12 @@ python3 examples/artifacts/landing-page/build.py --cli opencode
 
 ## Output
 
-- `output/index.html` — 13,274 bytes, valid HTML5 with inline CSS
+- `output/index.html` — 6,507 bytes, valid HTML5 with inline CSS
 - Uses `<!DOCTYPE html>`, responsive design, blue/indigo color scheme
-- Sections: nav, hero with CTA, feature cards (3 items), CTA, footer
+- Sections: nav with CTA, hero with headline + subheadline, feature cards (Kanban, Gantt, Chat), footer with 4-column grid
+- Copywriter sends structured text spec, designer sends HTML structure, integrator combines both
 
-## Bus transcript
+## Bus transcript (from opencode build)
 
 ```
 STATS:
@@ -42,12 +43,12 @@ STATS:
   Top senders: collector (3), integrator (1), designer (1), copywriter (1)
 
 CONVERSATION:
-  #1 collector -> designer: Your task: Propose a complete HTML+CSS structure
-  #2 collector -> copywriter: Your task: Write compelling marketing copy
-  #3 collector -> integrator: Your task: Wait for both, combine into HTML
-  #4 copywriter -> integrator: MARKETING COPY — FlowForge (hero, features, CTA)
-  #5 designer -> integrator: <!DOCTYPE html>... (HTML structure + CSS)
-  #6 integrator -> ALL: <!DOCTYPE html>... (FINAL HTML complete page)
+  #1 collector -> designer: Your task: Propose HTML+CSS structure (nav, hero, features, footer)
+  #2 collector -> copywriter: Your task: Write marketing copy (headline, 3 features, CTA)
+  #3 collector -> integrator: Your task: Wait for both, combine into complete HTML
+  #4 designer -> integrator: <html>... HTML structure + CSS for nav, hero, features, footer
+  #5 copywriter -> integrator: MARKETING COPY — "Build Without the Chaos." hero, 3 feature descriptions, CTA
+  #6 integrator -> ALL: <!DOCTYPE html>... (complete landing page combining structure + copy)
 ```
 
 ## What demonstrates a2a
