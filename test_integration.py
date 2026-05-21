@@ -742,6 +742,46 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(bob_msgs[0]["body"], "hello team")
         self.assertEqual(charlie_msgs[0]["body"], "hello team")
 
+    def test_peek_on_empty_bus_returns_no_messages(self):
+        """peek on a bus with no messages returns empty list."""
+        result = a2a("peek", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(msgs, [])
+
+    def test_register_upsert_via_cli(self):
+        """Register --upsert updates existing agent without error."""
+        a2a("register", "worker", "--role", "dev", "--cli", "claude", project=self.project)
+        # Upsert with different role — should not fail
+        a2a("register", "worker", "--role", "lead", "--cli", "claude",
+            "--upsert", project=self.project)
+        result = a2a("list", "--json", project=self.project)
+        agents = json.loads(result.stdout)
+        self.assertEqual(len(agents), 1)
+        self.assertEqual(agents[0]["role"], "lead")
+
+    def test_unregister_twice_is_noop(self):
+        """Unregistering an already-unregistered agent does not error."""
+        a2a("register", "ghost", project=self.project)
+        a2a("unregister", "ghost", project=self.project)
+        self.assertEqual(count_agents(self.project), 0)
+        # Second unregister should not fail
+        result = a2a("unregister", "ghost", project=self.project)
+        self.assertEqual(result.returncode, 0)
+
+    def test_recv_peek_flag_does_not_mark_read(self):
+        """recv --peek returns messages without marking them read."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "peek-dont-read", "--from", "alice", project=self.project)
+        # Peek recv should show the message
+        result_peek = a2a("recv", "--as", "bob", "--peek", "--json", project=self.project)
+        peek_msgs = json.loads(result_peek.stdout)
+        self.assertEqual(len(peek_msgs), 1)
+        # Subsequent recv should still see it as unread
+        result_recv = a2a("recv", "--as", "bob", "--json", project=self.project)
+        recv_msgs = json.loads(result_recv.stdout)
+        self.assertEqual(len(recv_msgs), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
