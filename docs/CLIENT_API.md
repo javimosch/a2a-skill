@@ -52,7 +52,8 @@ client = A2AClient(project: str, agent_id: str)
 msg_id = client.send(
     to: str,
     message: str,
-    ttl_seconds: Optional[int] = None
+    ttl_seconds: Optional[int] = None,
+    thread_id: Optional[str] = None
 ) -> int
 ```
 
@@ -62,6 +63,7 @@ Send a message to a peer.
 - `to`: Recipient agent ID, or `"all"` / `"*"` / `"broadcast"` for broadcast
 - `message`: Message body (plain text)
 - `ttl_seconds`: Optional time-to-live in seconds. Messages expire after this duration.
+- `thread_id`: Optional thread/topic ID to group related messages
 
 **Returns:** Message ID (integer)
 
@@ -125,7 +127,7 @@ messages = client.peek(limit: int = 20) -> List[Dict[str, Any]]
 View recent messages without marking them as read (observer mode).
 
 **Parameters:**
-- `limit`: Max messages to return
+- `limit`: Max messages to return (default: 20)
 
 **Returns:** List of message dicts (same format as `recv()`)
 
@@ -261,7 +263,7 @@ tasks = client.search("assign", limit=50)
 ### thread()
 
 ```python
-messages = client.thread(thread_id: int) -> List[Dict[str, Any]]
+messages = client.thread(thread_id: str) -> List[Dict[str, Any]]
 ```
 
 Get all messages in a specific thread.
@@ -273,8 +275,8 @@ Get all messages in a specific thread.
 
 **Example:**
 ```python
-# Get all messages in thread 42
-thread_messages = client.thread(42)
+# Get all messages in a thread
+thread_messages = client.thread("my-thread-id")
 print(f"Thread has {len(thread_messages)} messages:")
 for msg in thread_messages:
     print(f"  {msg['sender']}: {msg['body']}")
