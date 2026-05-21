@@ -105,3 +105,33 @@ found."
 
 **Fix:** Use the locator snippet from Step 4 to resolve `a2a` dynamically, or
 hardcode the full path in the kit prompt.
+
+### 9. Client library does not auto-cleanup expired TTL messages
+
+`A2AClient.recv()` and `A2AClient.peek()` (both sync and async) must call
+`cleanup_expired()` before fetching messages, otherwise messages with a TTL
+will persist indefinitely even after they've expired. The CLI commands
+(`cmd_recv` and `cmd_peek` in `a2a.py`) already do this, but the client
+library methods did not — they were fixed in commits 71d4176 and 4e4ac3a.
+
+**Fix:** If you implement a new client or add new read methods, always call
+`cleanup_expired()` before fetching messages from the database. Use the same
+SQL pattern:
+```python
+conn.execute(
+    "DELETE FROM messages WHERE ttl_seconds IS NOT NULL "
+    "AND created_at + ttl_seconds < ?",
+    (time.time(),)
+)
+```
+
+### 10. Client `search()` must use `lower()` for unicode case-insensitivity
+
+SQLite's `LIKE` operator is only case-insensitive for ASCII characters by
+default. For proper case-insensitive matching of non-ASCII text, both the
+query and the column must be lowercased explicitly. The sync client uses
+`lower(body) LIKE '%query.lower()%'` but the async client was missing the
+`lower()` call — fixed in commit a973131.
+
+**Fix:** Always use `lower(column) LIKE ?` with `%query.lower()%` in search
+implementations to get consistent case-insensitive behavior for all text.
