@@ -80,6 +80,16 @@ class TestAgentRegistry(unittest.TestCase):
         self.assertEqual(row[2], "claude")
         conn.close()
 
+    def test_register_duplicate_fails_without_upsert(self):
+        """Registering same agent twice without --upsert raises SystemExit."""
+        args = a2a.argparse.Namespace(
+            project=self.project, id="dup", role="role1",
+            prompt="p1", cli="claude", pid=None, upsert=False
+        )
+        a2a.cmd_register(args)
+        with self.assertRaises(SystemExit):
+            a2a.cmd_register(args)
+
     def test_register_upsert(self):
         """Upsert updates existing agent without error."""
         args = a2a.argparse.Namespace(
@@ -327,6 +337,17 @@ class TestLifecycle(unittest.TestCase):
         """Project command prints resolved project info."""
         args = a2a.argparse.Namespace(project=self.project)
         a2a.cmd_project(args)  # Should not crash
+
+    def test_cmd_list_no_database(self):
+        """List on non-initialized project raises SystemExit (connect fails)."""
+        project = f"list-nonex-{os.getpid()}"
+        with self.assertRaises(SystemExit):
+            a2a.cmd_list(a2a.argparse.Namespace(project=project, json=False))
+
+    def test_cmd_clear_no_database(self):
+        """Clear on a project with no database prints notice and does not crash."""
+        project = f"clear-nonex-{os.getpid()}"
+        a2a.cmd_clear(a2a.argparse.Namespace(project=project, yes=True))
 
 
 class TestEdgeCases(unittest.TestCase):
@@ -865,6 +886,33 @@ class TestEdgeCases(unittest.TestCase):
         self._seed_fts_messages(self.project)
         out = self._search_output(self.project, "pipeline", fts=False)
         self.assertIn("deployment pipeline complete", out)
+
+    def test_peek_limit_caps_output(self):
+        """Peek with --limit N caps the number of messages shown."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice",):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+        for i in range(5):
+            conn.execute(
+                "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+                ("alice", None, f"msg-{i}", a2a.now() + i)
+            )
+        conn.commit()
+        conn.close()
+
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_peek(a2a.argparse.Namespace(project=self.project, limit=2, json=False))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        # Peek orders by newest first; limit=2 should show at most 2 message blocks
+        lines = [l for l in output.split('\n') if l.strip().startswith('#')]
+        self.assertLessEqual(len(lines), 2)
 
     def test_stats(self):
         """Stats command reports correct counts."""
