@@ -107,6 +107,22 @@ class TestA2AClientAsync(unittest.TestCase):
         run_async(self.alice.close())
         run_async(self.bob.close())
 
+    def test_constructor_empty_agent_id_raises_error(self):
+        """A2AClientAsync with empty agent_id raises ValueError."""
+        from a2a_client_async import A2AClientAsync
+        with self.assertRaises(ValueError):
+            A2AClientAsync(self.project, "")
+        with self.assertRaises(ValueError):
+            A2AClientAsync(self.project, "   ")
+
+    def test_constructor_empty_project_raises_error(self):
+        """A2AClientAsync with empty project raises ValueError."""
+        from a2a_client_async import A2AClientAsync
+        with self.assertRaises(ValueError):
+            A2AClientAsync("", "alice")
+        with self.assertRaises(ValueError):
+            A2AClientAsync("   ", "alice")
+
     def test_send_direct_returns_id(self):
         """send() returns a positive message ID."""
         msg_id = run_async(self.alice.send("bob", "Hello Bob"))

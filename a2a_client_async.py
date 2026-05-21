@@ -22,7 +22,14 @@ class A2AClientAsync:
         Args:
             project: Project name
             agent_id: This agent's ID
+
+        Raises:
+            ValueError: If project or agent_id is empty
         """
+        if not project or not project.strip():
+            raise ValueError("project must not be empty")
+        if not agent_id or not agent_id.strip():
+            raise ValueError("agent_id must not be empty")
         self.project = project
         self.agent_id = agent_id
         self.db_path = Path.home() / ".a2a" / project / "database.db"

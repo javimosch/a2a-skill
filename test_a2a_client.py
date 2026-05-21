@@ -90,6 +90,20 @@ class TestA2AClient(unittest.TestCase):
         if self.project_dir.exists():
             shutil.rmtree(self.project_dir)
 
+    def test_constructor_empty_agent_id_raises_error(self):
+        """A2AClient with empty agent_id raises ValueError."""
+        with self.assertRaises(ValueError):
+            A2AClient(self.project, "")
+        with self.assertRaises(ValueError):
+            A2AClient(self.project, "   ")
+
+    def test_constructor_empty_project_raises_error(self):
+        """A2AClient with empty project raises ValueError."""
+        with self.assertRaises(ValueError):
+            A2AClient("", "alice")
+        with self.assertRaises(ValueError):
+            A2AClient("   ", "alice")
+
     def test_send_direct(self):
         """Test sending a direct message."""
         alice = A2AClient(self.project, "alice")
