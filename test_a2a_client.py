@@ -617,15 +617,12 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(messages, [])
 
     def test_send_to_empty_string(self):
-        """send() with empty recipient string creates message with empty recipient."""
+        """send() with empty or whitespace-only recipient raises ValueError."""
         alice = A2AClient(self.project, "alice")
-        bob = A2AClient(self.project, "bob")
-        # Empty string is not "all"/"*"/"broadcast", so recipient stays as empty string
-        msg_id = alice.send("", "to nobody")
-        self.assertGreater(msg_id, 0)
-        # Bob should NOT receive this
-        messages = bob.recv(wait=0)
-        self.assertNotIn("to nobody", [m["body"] for m in messages])
+        with self.assertRaises(ValueError):
+            alice.send("", "empty recipient")
+        with self.assertRaises(ValueError):
+            alice.send("   ", "whitespace only")
 
     def test_recv_negative_wait_returns_immediately(self):
         """recv() with negative wait returns immediately (no block)."""
