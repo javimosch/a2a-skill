@@ -123,6 +123,18 @@ def cleanup_expired(conn: sqlite3.Connection) -> int:
     return cur.rowcount
 
 
+def _resolve_agent(args) -> tuple[str, sqlite3.Connection]:
+    """Resolve --as agent from args and verify it's registered. Returns (agent_id, conn)."""
+    agent = getattr(args, "as_")
+    if not agent:
+        die("--as <agent-id> is required")
+    _, conn = _open(args)
+    if not conn.execute("SELECT 1 FROM agents WHERE id=?", (agent,)).fetchone():
+        conn.close()
+        die(f"unknown agent '{agent}' — register first")
+    return agent, conn
+
+
 # ---------- commands ----------
 
 def cmd_init(args) -> None:
@@ -311,13 +323,7 @@ def _print_messages(rows: list[sqlite3.Row], as_json: bool) -> None:
 
 
 def cmd_recv(args) -> None:
-    agent = getattr(args, "as_")
-    if not agent:
-        die("--as <agent-id> is required")
-    _, conn = _open(args)
-    if not conn.execute("SELECT 1 FROM agents WHERE id=?", (agent,)).fetchone():
-        conn.close()
-        die(f"unknown agent '{agent}' — register first")
+    agent, conn = _resolve_agent(args)
 
     deadline = now() + args.wait if args.wait else None
     poll_interval = 0.5
@@ -513,13 +519,7 @@ def cmd_stats(args) -> None:
 
 def cmd_wait(args) -> None:
     """Block until N messages exist for agent, or timeout."""
-    agent = getattr(args, "as_")
-    if not agent:
-        die("--as <agent-id> is required")
-    _, conn = _open(args)
-    if not conn.execute("SELECT 1 FROM agents WHERE id=?", (agent,)).fetchone():
-        conn.close()
-        die(f"unknown agent '{agent}' — register first")
+    agent, conn = _resolve_agent(args)
     deadline = now() + args.timeout
     while True:
         rows = _fetch_messages(conn, agent, unread_only=True, since=None,
