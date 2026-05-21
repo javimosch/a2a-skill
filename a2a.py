@@ -406,9 +406,9 @@ def _init_fts(conn: sqlite3.Connection) -> bool:
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name='messages_fts'"
         ).fetchone() is not None
         conn.execute(
-            "CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5("
-            "id, sender, recipient, body, thread_id, created_at,"
-            "content=messages, content_rowid=id)"
+            f"CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5("
+            f"{MSG_COLS},"
+            f"content=messages, content_rowid=id)"
         )
         conn.execute(
             "CREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages BEGIN"
