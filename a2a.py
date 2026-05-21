@@ -260,10 +260,10 @@ def cmd_send(args):
         print(f"#{mid} {sender} -> {target}")
 
 
-def _fetch_messages(conn, agent_id, unread_only, since, limit, mark_read, include_self=False):
+def _fetch_messages(conn, agent_id, unread_only, since, limit, mark_read, include_self=False) -> list:
     # messages addressed to agent OR broadcast (recipient IS NULL)
     base = (
-        f"SELECT m.{MSG_COLS} "
+        f"SELECT {MSG_COLS_M} "
         "FROM messages m "
         "WHERE (m.recipient = ? OR m.recipient IS NULL) "
     )
@@ -538,7 +538,7 @@ def cmd_wait(args):
 
 # ---------- arg parsing ----------
 
-def build_parser():
+def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="a2a",
         description="agent-to-agent peer messaging over SQLite",
