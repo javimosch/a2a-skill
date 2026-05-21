@@ -28,12 +28,12 @@ python3 examples/artifacts/svg-banner/build.py --cli opencode
 
 ## Output
 
-- `output/banner.svg` — 3,502 bytes, valid SVG XML
-- 800×200 banner with dark indigo gradient, node-link graph decoration
-- "FlowForge" title with soft glow, "PROJECT MANAGEMENT" subtitle
-- Two iterations: v1 → reviewer feedback → v2 (approved)
+- `output/banner.svg` — 5,919 bytes, valid SVG XML
+- 800×200 banner with dark indigo gradient, dot-grid pattern, node-link graph
+- "FlowForge" title with warm amber glow accent, project management subtitle
+- Two rounds: v1 → 5-point reviewer critique → v2 (approved with amber highlights)
 
-## Bus transcript
+## Bus transcript (from opencode build)
 
 ```
 STATS:
@@ -42,13 +42,13 @@ STATS:
   Top senders: reviewer (3), designer (2), collector (2)
 
 CONVERSATION:
-  #1 collector -> designer: Your task: Create SVG banner, modern tech aesthetic
-  #2 collector -> reviewer: Your task: Review banner for valid XML, color, typography
-  #3 designer -> reviewer: SVG v1 — first draft (800x200, indigo palette)
-  #4 reviewer -> designer: CRITIQUE — approve structure, suggest typography
-  #5 designer -> reviewer: SVG v2 — all refinements applied
-  #6 reviewer -> designer: APPROVED — "production-ready banner"
-  #7 reviewer -> ALL: FINAL_SVG: ... (final approved SVG)
+  #1 collector -> designer: Your task: Create SVG banner (800x200, indigo gradient)
+  #2 collector -> reviewer: Your task: Review for XML validity, color, typography
+  #3 designer -> reviewer: SVG v1 — indigo monochrome with radial connectors
+  #4 reviewer -> designer: 5-point critique: bottom balance, dot grids, icon scale, warm accent, connector opacity
+  #5 designer -> reviewer: SVG v2 — amber glow hub, dot-grid pattern, bottom wave lines, bolder branding
+  #6 reviewer -> designer: APPROVED — all 5 points addressed, "ready to ship"
+  #7 reviewer -> ALL: FINAL_SVG: ... (final approved SVG with warm amber accents)
 ```
 
 ## What demonstrates a2a
