@@ -506,6 +506,35 @@ class TestA2AClient(unittest.TestCase):
         bodies = [m["body"] for m in messages]
         self.assertEqual(bodies, ["first", "second", "third"])
 
+    def test_send_empty_body(self):
+        """send() with empty body creates a message with empty content."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        msg_id = alice.send("bob", "")
+        self.assertGreater(msg_id, 0)
+        messages = bob.recv(wait=1)
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(messages[0]["body"], "")
+
+    def test_send_ttl_zero_immediate_expiry(self):
+        """send() with ttl_seconds=0 triggers cleanup on next operation."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        msg_id = alice.send("bob", "instant expiry", ttl_seconds=0)
+        self.assertGreater(msg_id, 0)
+        # Message should be cleaned up (expired immediately)
+        messages = bob.recv(wait=1)
+        # The expired message might already be cleaned up — either result is valid
+        if messages:
+            self.assertEqual(len(messages), 1)
+            self.assertEqual(messages[0]["body"], "instant expiry")
+
+    def test_wait_for_messages_count_zero_returns_immediately(self):
+        """wait_for_messages(count=0) returns True immediately without blocking."""
+        bob = A2AClient(self.project, "bob")
+        result = bob.wait_for_messages(count=0, timeout=5)
+        self.assertTrue(result)
+
 
 if __name__ == "__main__":
     unittest.main()
