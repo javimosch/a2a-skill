@@ -1,120 +1,791 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlowForge — Project Management SaaS</title>
+  <title>FlowForge — Project Management, Reimagined</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; color: #1e293b; line-height: 1.6; }
-    nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 5%; background: #fff; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 10; }
-    nav .logo { font-size: 1.5rem; font-weight: 800; color: #4f46e5; letter-spacing: -0.02em; }
-    nav .logo span { color: #6366f1; }
-    nav .nav-links { display: flex; gap: 2rem; list-style: none; }
-    nav .nav-links a { text-decoration: none; color: #475569; font-weight: 500; font-size: 0.95rem; transition: color 0.2s; }
-    nav .nav-links a:hover { color: #4f46e5; }
-    nav .nav-cta { background: #4f46e5; color: #fff; padding: 0.5rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; }
-    nav .nav-cta:hover { background: #4338ca; }
-    .hero { display: flex; align-items: center; justify-content: space-between; padding: 5rem 5%; background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); }
-    .hero-text { flex: 1; max-width: 560px; }
-    .hero-text .badge { display: inline-block; background: #e0e7ff; color: #4f46e5; font-weight: 600; font-size: 0.8rem; padding: 0.3rem 0.8rem; border-radius: 20px; margin-bottom: 1rem; }
-    .hero-text h1 { font-size: 3rem; font-weight: 800; line-height: 1.15; color: #1e1b4b; letter-spacing: -0.03em; margin-bottom: 1rem; }
-    .hero-text h1 span { color: #4f46e5; }
-    .hero-text p { font-size: 1.15rem; color: #475569; margin-bottom: 2rem; }
-    .hero-buttons { display: flex; gap: 1rem; }
-    .hero-buttons .btn-primary { background: #4f46e5; color: #fff; padding: 0.8rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600; transition: background 0.2s; }
-    .hero-buttons .btn-primary:hover { background: #4338ca; }
-    .hero-buttons .btn-secondary { background: #fff; color: #4f46e5; padding: 0.8rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid #c7d2fe; transition: background 0.2s; }
-    .hero-buttons .btn-secondary:hover { background: #eef2ff; }
-    .hero-visual { flex: 1; display: flex; justify-content: center; align-items: center; }
-    .hero-visual .mock-dashboard { width: 480px; height: 320px; background: linear-gradient(145deg, #4f46e5, #6366f1); border-radius: 16px; box-shadow: 0 20px 60px rgba(79,70,229,0.25); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 1.1rem; position: relative; overflow: hidden; }
-    .hero-visual .mock-dashboard::before { content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.1) 0%, transparent 60%); }
-    .features { padding: 5rem 5%; text-align: center; }
-    .features h2 { font-size: 2.25rem; font-weight: 800; color: #1e1b4b; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
-    .features > p { color: #64748b; font-size: 1.1rem; margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
-    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; max-width: 900px; margin: 0 auto; }
-    .feature-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem 1.5rem; text-align: left; transition: box-shadow 0.2s, transform 0.2s; }
-    .feature-card:hover { box-shadow: 0 8px 30px rgba(79,70,229,0.1); transform: translateY(-2px); }
-    .feature-card .icon { width: 48px; height: 48px; background: #eef2ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem; }
-    .feature-card h3 { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; }
-    .feature-card p { font-size: 0.95rem; color: #64748b; }
-    .cta-section { padding: 5rem 5%; text-align: center; background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); }
-    .cta-section h2 { font-size: 2.25rem; font-weight: 800; color: #1e1b4b; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
-    .cta-section p { color: #64748b; font-size: 1.1rem; margin-bottom: 2rem; }
-    .cta-section .btn-primary { background: #4f46e5; color: #fff; padding: 0.8rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1.1rem; transition: background 0.2s; display: inline-block; }
-    .cta-section .btn-primary:hover { background: #4338ca; }
-    footer { background: #1e1b4b; color: #c7d2fe; padding: 3rem 5% 2rem; }
-    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 2rem; max-width: 1100px; margin: 0 auto; }
-    .footer-brand h3 { color: #fff; font-size: 1.3rem; font-weight: 800; margin-bottom: 0.5rem; }
-    .footer-brand p { color: #a5b4fc; max-width: 280px; }
-    .footer-col h4 { color: #fff; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
-    .footer-col ul { list-style: none; }
-    .footer-col ul li { margin-bottom: 0.5rem; }
-    .footer-col ul li a { color: #a5b4fc; text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
-    .footer-col ul li a:hover { color: #fff; }
-    .footer-bottom { border-top: 1px solid #312e81; margin-top: 2rem; padding-top: 1.5rem; text-align: center; font-size: 0.85rem; color: #818cf8; }
-    @media (max-width: 768px) {
-      .hero { flex-direction: column; text-align: center; gap: 2rem; }
-      .hero-text h1 { font-size: 2.25rem; }
-      .hero-buttons { justify-content: center; }
-      .hero-visual .mock-dashboard { width: 100%; height: 240px; }
-      .features-grid { grid-template-columns: 1fr; }
-      .footer-grid { grid-template-columns: 1fr 1fr; }
-      nav .nav-links { display: none; }
+    /* ===== RESET & BASE ===== */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:"Satoshi",sans-serif;
+      background:#07070f;
+      color:#e8e8f0;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      overflow-x:hidden
     }
+    img{max-width:100%;display:block}
+    a{color:inherit;text-decoration:none}
+    ul{list-style:none}
+
+    /* ===== GLOBAL NOISE OVERLAY ===== */
+    body::after{
+      content:"";
+      position:fixed;inset:0;z-index:9999;
+      pointer-events:none;
+      opacity:0.025;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-size:256px 256px
+    }
+
+    /* ===== BACKGROUND ORBS (Ethereal Glass Vibe) ===== */
+    .bg-orbs{
+      position:fixed;inset:0;z-index:0;
+      overflow:hidden;
+      pointer-events:none
+    }
+    .bg-orbs .orb{
+      position:absolute;
+      border-radius:50%;
+      filter:blur(120px);
+      opacity:0.3
+    }
+    .bg-orbs .orb:nth-child(1){
+      width:700px;height:700px;
+      top:-200px;right:-100px;
+      background:radial-gradient(circle,#6366f1,#4f46e5);
+      animation:orbFloat 30s ease-in-out infinite alternate
+    }
+    .bg-orbs .orb:nth-child(2){
+      width:500px;height:500px;
+      bottom:-150px;left:-100px;
+      background:radial-gradient(circle,#8b5cf6,#6366f1);
+      animation:orbFloat 25s ease-in-out infinite alternate-reverse
+    }
+    .bg-orbs .orb:nth-child(3){
+      width:400px;height:400px;
+      top:40%;left:50%;
+      background:radial-gradient(circle,#3b82f6,#2563eb);
+      animation:orbFloat 35s ease-in-out infinite alternate
+    }
+    @keyframes orbFloat{
+      0%{transform:translate(0,0) scale(1)}
+      33%{transform:translate(60px,-40px) scale(1.1)}
+      66%{transform:translate(-30px,30px) scale(0.9)}
+      100%{transform:translate(40px,20px) scale(1.05)}
+    }
+
+    /* ===== UTILITY ===== */
+    .container{
+      max-width:1280px;
+      margin:0 auto;
+      padding:0 24px
+    }
+
+    /* ============================================================ */
+    /* ===== 1. NAVIGATION — FLUID ISLAND ===== */
+    /* ============================================================ */
+    .nav-island{
+      position:fixed;
+      top:24px;left:50%;transform:translateX(-50%);
+      z-index:100;
+      width:max-content;
+      max-width:calc(100vw - 48px);
+      background:rgba(7,7,15,0.65);
+      backdrop-filter:blur(24px) saturate(1.4);
+      -webkit-backdrop-filter:blur(24px) saturate(1.4);
+      border:1px solid rgba(99,102,241,0.12);
+      border-radius:9999px;
+      padding:10px 18px;
+      display:flex;
+      align-items:center;
+      gap:32px;
+      transition:all 0.6s cubic-bezier(0.32,0.72,0,1);
+      box-shadow:0 8px 40px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.04)
+    }
+    .nav-island .logo{
+      font-family:"Clash Display",sans-serif;
+      font-weight:600;
+      font-size:1.15rem;
+      letter-spacing:-0.02em;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      gap:8px
+    }
+    .nav-island .logo-icon{
+      width:28px;height:28px;
+      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+      border-radius:8px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:14px
+    }
+    .nav-island .nav-links{
+      display:flex;
+      gap:24px;
+      font-size:0.875rem;
+      font-weight:450;
+      color:rgba(255,255,255,0.6);
+      transition:color 0.3s
+    }
+    .nav-island .nav-links a{
+      padding:4px 0;
+      position:relative;
+      transition:color 0.4s cubic-bezier(0.32,0.72,0,1)
+    }
+    .nav-island .nav-links a::after{
+      content:"";
+      position:absolute;bottom:-2px;left:0;
+      width:0;height:1.5px;
+      background:#6366f1;
+      border-radius:1px;
+      transition:width 0.5s cubic-bezier(0.32,0.72,0,1)
+    }
+    .nav-island .nav-links a:hover{
+      color:#fff
+    }
+    .nav-island .nav-links a:hover::after{width:100%}
+    .nav-island .nav-cta{
+      background:linear-gradient(135deg,#6366f1,#4f46e5);
+      color:#fff;
+      border:none;
+      border-radius:9999px;
+      padding:8px 20px 8px 24px;
+      font-family:"Satoshi",sans-serif;
+      font-weight:500;
+      font-size:0.85rem;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      transition:all 0.5s cubic-bezier(0.32,0.72,0,1);
+      box-shadow:0 4px 16px rgba(99,102,241,0.25)
+    }
+    .nav-island .nav-cta:hover{
+      transform:scale(1.02);
+      box-shadow:0 8px 28px rgba(99,102,241,0.35)
+    }
+    .nav-island .nav-cta:active{
+      transform:scale(0.97)
+    }
+    .nav-island .nav-cta .icon-wrap{
+      width:22px;height:22px;
+      border-radius:9999px;
+      background:rgba(255,255,255,0.15);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:transform 0.5s cubic-bezier(0.32,0.72,0,1)
+    }
+    .nav-island .nav-cta:hover .icon-wrap{
+      transform:translateX(2px) translateY(-1px)
+    }
+
+    /* Hamburger (mobile only) */
+    .hamburger{display:none;cursor:pointer}
+    .hamburger span{
+      display:block;width:22px;height:2px;
+      background:#fff;border-radius:2px;
+      transition:all 0.5s cubic-bezier(0.32,0.72,0,1)
+    }
+    .hamburger span+span{margin-top:5px;width:16px}
+    .hamburger span+span+span{width:10px}
+
+    /* Mobile overlay */
+    .mobile-overlay{
+      position:fixed;inset:0;z-index:99;
+      background:rgba(7,7,15,0.88);
+      backdrop-filter:blur(48px) saturate(1.6);
+      -webkit-backdrop-filter:blur(48px) saturate(1.6);
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      gap:32px;
+      opacity:0;pointer-events:none;
+      transition:all 0.6s cubic-bezier(0.32,0.72,0,1)
+    }
+    .mobile-overlay.open{opacity:1;pointer-events:all}
+    .mobile-overlay a{
+      font-family:"Clash Display",sans-serif;
+      font-size:2rem;font-weight:500;
+      color:rgba(255,255,255,0.6);
+      transform:translateY(24px);
+      transition:all 0.6s cubic-bezier(0.32,0.72,0,1);
+      opacity:0
+    }
+    .mobile-overlay.open a{transform:translateY(0);opacity:1}
+    .mobile-overlay.open a:nth-child(1){transition-delay:0.1s}
+    .mobile-overlay.open a:nth-child(2){transition-delay:0.18s}
+    .mobile-overlay.open a:nth-child(3){transition-delay:0.26s}
+    .mobile-overlay.open a:nth-child(4){transition-delay:0.34s}
+    .mobile-overlay.open a:nth-child(5){transition-delay:0.42s}
+    .mobile-overlay a:hover{color:#fff}
+
+    @media(max-width:768px){
+      .nav-island{
+        top:16px;
+        padding:10px 16px;
+        width:calc(100% - 32px);
+        justify-content:space-between
+      }
+      .nav-island .nav-links{display:none}
+      .nav-island .nav-cta{display:none}
+      .hamburger{display:block}
+    }
+
+    /* ============================================================ */
+    /* ===== 2. HERO SECTION ===== */
+    /* ============================================================ */
+    .hero{
+      position:relative;z-index:1;
+      min-height:100dvh;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      text-align:center;
+      padding:140px 24px 80px;
+      gap:40px
+    }
+    .hero .eyebrow{
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(99,102,241,0.08);
+      border:1px solid rgba(99,102,241,0.15);
+      border-radius:9999px;
+      padding:6px 16px 6px 8px;
+      font-size:0.75rem;
+      font-weight:500;
+      text-transform:uppercase;
+      letter-spacing:0.15em;
+      color:rgba(255,255,255,0.6);
+      animation:fadeUp 0.8s cubic-bezier(0.32,0.72,0,1) forwards
+    }
+    .hero .eyebrow .dot{
+      width:6px;height:6px;
+      border-radius:9999px;
+      background:#6366f1;
+      animation:pulse 2s ease-in-out infinite
+    }
+    @keyframes pulse{
+      0%,100%{opacity:0.5;transform:scale(1)}
+      50%{opacity:1;transform:scale(1.3)}
+    }
+    .hero h1{
+      font-family:"Clash Display",sans-serif;
+      font-weight:600;
+      font-size:clamp(2.8rem,8vw,5.5rem);
+      line-height:1.06;
+      letter-spacing:-0.035em;
+      color:#fff;
+      max-width:900px;
+      animation:fadeUp 0.8s cubic-bezier(0.32,0.72,0,1) 0.1s forwards;
+      opacity:0
+    }
+    .hero h1 .highlight{
+      background:linear-gradient(135deg,#818cf8,#6366f1,#a78bfa);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text
+    }
+    .hero p{
+      font-size:clamp(1rem,2vw,1.2rem);
+      line-height:1.7;
+      color:rgba(255,255,255,0.45);
+      max-width:580px;
+      animation:fadeUp 0.8s cubic-bezier(0.32,0.72,0,1) 0.2s forwards;
+      opacity:0
+    }
+    .hero .hero-cta-group{
+      display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
+      animation:fadeUp 0.8s cubic-bezier(0.32,0.72,0,1) 0.3s forwards;
+      opacity:0
+    }
+    .hero .btn-primary{
+      background:linear-gradient(135deg,#6366f1,#4f46e5);
+      color:#fff;
+      border:none;
+      border-radius:9999px;
+      padding:14px 32px 14px 36px;
+      font-family:"Satoshi",sans-serif;
+      font-weight:500;
+      font-size:1rem;
+      cursor:pointer;
+      display:flex;align-items:center;gap:12px;
+      transition:all 0.5s cubic-bezier(0.32,0.72,0,1);
+      box-shadow:0 8px 32px rgba(99,102,241,0.3)
+    }
+    .hero .btn-primary:hover{
+      transform:scale(1.03);
+      box-shadow:0 12px 44px rgba(99,102,241,0.45)
+    }
+    .hero .btn-primary:active{transform:scale(0.97)}
+    .hero .btn-primary .icon-wrap{
+      width:28px;height:28px;
+      border-radius:9999px;
+      background:rgba(255,255,255,0.15);
+      display:flex;align-items:center;justify-content:center;
+      font-size:0.85rem;
+      transition:transform 0.5s cubic-bezier(0.32,0.72,0,1)
+    }
+    .hero .btn-primary:hover .icon-wrap{
+      transform:translateX(3px) translateY(-1px) scale(1.05)
+    }
+    .hero .btn-secondary{
+      background:rgba(255,255,255,0.04);
+      color:rgba(255,255,255,0.75);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:9999px;
+      padding:14px 32px;
+      font-family:"Satoshi",sans-serif;
+      font-weight:500;
+      font-size:1rem;
+      cursor:pointer;
+      transition:all 0.5s cubic-bezier(0.32,0.72,0,1)
+    }
+    .hero .btn-secondary:hover{
+      background:rgba(255,255,255,0.08);
+      border-color:rgba(99,102,241,0.25);
+      color:#fff
+    }
+
+    /* Hero stats bar */
+    .hero-stats{
+      display:flex;gap:48px;flex-wrap:wrap;justify-content:center;
+      margin-top:24px;
+      animation:fadeUp 0.8s cubic-bezier(0.32,0.72,0,1) 0.4s forwards;
+      opacity:0
+    }
+    .hero-stats .stat{
+      text-align:center
+    }
+    .hero-stats .stat .num{
+      font-family:"Clash Display",sans-serif;
+      font-size:1.8rem;
+      font-weight:600;
+      background:linear-gradient(180deg,#fff 40%,rgba(255,255,255,0.4));
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text
+    }
+    .hero-stats .stat .label{
+      font-size:0.8rem;
+      color:rgba(255,255,255,0.35);
+      letter-spacing:0.05em
+    }
+
+    @keyframes fadeUp{
+      0%{opacity:0;transform:translateY(24px) scale(0.98)}
+      100%{opacity:1;transform:translateY(0) scale(1)}
+    }
+
+    @media(max-width:768px){
+      .hero{padding:120px 20px 60px;gap:32px}
+      .hero-stats{gap:32px}
+    }
+
+    /* ============================================================ */
+    /* ===== 3. FEATURES SECTION — Asymmetrical Bento ===== */
+    /* ============================================================ */
+    .features{
+      position:relative;z-index:1;
+      padding:140px 24px
+    }
+    .features .section-label{
+      text-align:center;
+      font-size:0.75rem;
+      text-transform:uppercase;
+      letter-spacing:0.2em;
+      color:rgba(99,102,241,0.6);
+      font-weight:500;
+      margin-bottom:12px
+    }
+    .features h2{
+      font-family:"Clash Display",sans-serif;
+      font-weight:600;
+      font-size:clamp(2rem,5vw,3.2rem);
+      text-align:center;
+      color:#fff;
+      letter-spacing:-0.03em;
+      line-height:1.1;
+      max-width:650px;
+      margin:0 auto 60px
+    }
+    .features h2 .highlight{
+      background:linear-gradient(135deg,#818cf8,#6366f1);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text
+    }
+    .bento-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:20px;
+      max-width:1200px;margin:0 auto
+    }
+    .bento-grid .card{
+      border-radius:24px;
+      padding:1.5px;
+      background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.03),rgba(7,7,15,0.5));
+      transition:all 0.6s cubic-bezier(0.32,0.72,0,1)
+    }
+    .bento-grid .card:hover{
+      transform:translateY(-4px);
+      background:linear-gradient(135deg,rgba(99,102,241,0.25),rgba(99,102,241,0.05),rgba(99,102,241,0.02))
+    }
+    .bento-grid .card-inner{
+      background:#0a0a18;
+      border-radius:calc(24px - 1.5px);
+      padding:32px;
+      height:100%;
+      display:flex;flex-direction:column;
+      transition:all 0.6s cubic-bezier(0.32,0.72,0,1);
+      box-shadow:inset 0 1px 1px rgba(255,255,255,0.04)
+    }
+    .bento-grid .card:hover .card-inner{
+      background:#0d0d22
+    }
+    .bento-grid .card .icon{
+      width:44px;height:44px;
+      border-radius:14px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.3rem;
+      margin-bottom:20px;
+      background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));
+      border:1px solid rgba(99,102,241,0.08);
+      transition:all 0.5s cubic-bezier(0.32,0.72,0,1)
+    }
+    .bento-grid .card:hover .icon{
+      background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(139,92,246,0.12));
+      border-color:rgba(99,102,241,0.15);
+      transform:scale(1.05)
+    }
+    .bento-grid .card h3{
+      font-family:"Clash Display",sans-serif;
+      font-weight:500;
+      font-size:1.15rem;
+      color:#fff;
+      margin-bottom:8px;
+      letter-spacing:-0.02em
+    }
+    .bento-grid .card p{
+      font-size:0.85rem;
+      line-height:1.6;
+      color:rgba(255,255,255,0.45);
+      flex:1
+    }
+
+    /* Bento spans */
+    .bento-grid .card:nth-child(1){grid-column:span 2;grid-row:span 2}
+    .bento-grid .card:nth-child(1) .card-inner{padding:40px 36px}
+    .bento-grid .card:nth-child(1) h3{font-size:1.4rem}
+    .bento-grid .card:nth-child(1) p{font-size:0.9rem}
+    .bento-grid .card:nth-child(2){grid-column:span 2}
+    .bento-grid .card:nth-child(3){grid-column:span 1;grid-row:span 1}
+    .bento-grid .card:nth-child(4){grid-column:span 1;grid-row:span 1}
+    .bento-grid .card:nth-child(5){grid-column:span 2;grid-row:span 1}
+    .bento-grid .card:nth-child(6){grid-column:span 4}
+
+    @media(max-width:1024px){
+      .bento-grid{grid-template-columns:repeat(2,1fr)}
+      .bento-grid .card:nth-child(1){grid-column:span 2;grid-row:span 1}
+      .bento-grid .card:nth-child(2){grid-column:span 2}
+      .bento-grid .card:nth-child(3){grid-column:span 1}
+      .bento-grid .card:nth-child(4){grid-column:span 1}
+      .bento-grid .card:nth-child(5){grid-column:span 2}
+      .bento-grid .card:nth-child(6){grid-column:span 2}
+    }
+    @media(max-width:768px){
+      .features{padding:80px 16px}
+      .bento-grid{grid-template-columns:1fr;gap:16px}
+      .bento-grid .card:nth-child(1),
+      .bento-grid .card:nth-child(2),
+      .bento-grid .card:nth-child(3),
+      .bento-grid .card:nth-child(4),
+      .bento-grid .card:nth-child(5),
+      .bento-grid .card:nth-child(6){
+        grid-column:span 1
+      }
+      .bento-grid .card:nth-child(1) .card-inner{padding:28px}
+      .bento-grid .card:nth-child(1) h3{font-size:1.15rem}
+    }
+
+    /* ============================================================ */
+    /* ===== 4. FOOTER ===== */
+    /* ============================================================ */
+    .footer{
+      position:relative;z-index:1;
+      border-top:1px solid rgba(99,102,241,0.06);
+      padding:64px 24px 40px;
+      background:rgba(7,7,15,0.5)
+    }
+    .footer-grid{
+      max-width:1200px;margin:0 auto;
+      display:grid;
+      grid-template-columns:2fr 1fr 1fr 1fr;
+      gap:48px
+    }
+    .footer-brand .logo{
+      font-family:"Clash Display",sans-serif;
+      font-weight:600;font-size:1.2rem;
+      color:#fff;
+      display:flex;align-items:center;gap:10px;
+      margin-bottom:16px
+    }
+    .footer-brand .logo .logo-icon{
+      width:30px;height:30px;
+      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+      border-radius:8px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px
+    }
+    .footer-brand p{
+      font-size:0.85rem;
+      line-height:1.7;
+      color:rgba(255,255,255,0.35);
+      max-width:280px
+    }
+    .footer-col h4{
+      font-size:0.75rem;
+      text-transform:uppercase;
+      letter-spacing:0.15em;
+      color:rgba(255,255,255,0.35);
+      font-weight:500;
+      margin-bottom:20px
+    }
+    .footer-col a{
+      display:block;
+      font-size:0.85rem;
+      color:rgba(255,255,255,0.45);
+      padding:4px 0;
+      transition:color 0.4s cubic-bezier(0.32,0.72,0,1)
+    }
+    .footer-col a:hover{color:#818cf8}
+    .footer-bottom{
+      max-width:1200px;margin:48px auto 0;
+      padding-top:24px;
+      border-top:1px solid rgba(255,255,255,0.04);
+      display:flex;justify-content:space-between;align-items:center;
+      font-size:0.8rem;color:rgba(255,255,255,0.25)
+    }
+    @media(max-width:768px){
+      .footer{padding:48px 20px 32px}
+      .footer-grid{grid-template-columns:1fr 1fr;gap:40px 24px}
+      .footer-brand{grid-column:span 2}
+      .footer-bottom{flex-direction:column;gap:12px;text-align:center}
+    }
+
+    /* ============================================================ */
+    /* ===== SCROLL REVEAL ===== */
+    /* ============================================================ */
+    .reveal{
+      opacity:0;
+      transform:translateY(48px) scale(0.97);
+      transition:all 0.9s cubic-bezier(0.32,0.72,0,1)
+    }
+    .reveal.visible{
+      opacity:1;
+      transform:translateY(0) scale(1)
+    }
+
+    /* ============================================================ */
+    /* ===== SELECTION ===== */
+    /* ============================================================ */
+    ::selection{background:rgba(99,102,241,0.3);color:#fff}
   </style>
 </head>
 <body>
-  <nav>
-    <div class="logo">Flow<span>Forge</span></div>
-    <ul class="nav-links">
-      <li><a href="#">Features</a></li>
-      <li><a href="#">Pricing</a></li>
-      <li><a href="#">About</a></li>
-      <li><a href="#">Contact</a></li>
-    </ul>
-    <a href="#" class="nav-cta">Get Started</a>
+
+  <!-- Background Orbs -->
+  <div class="bg-orbs">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
+
+  <!-- ===== NAV ===== -->
+  <nav class="nav-island" role="navigation">
+    <div class="logo">
+      <span class="logo-icon">&#x26D3;</span>
+      FlowForge
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#">Pricing</a>
+      <a href="#">Integrations</a>
+      <a href="#">Docs</a>
+    </div>
+    <button class="nav-cta">
+      Start Forging Free
+      <span class="icon-wrap">&rarr;</span>
+    </button>
+    <div class="hamburger" onclick="document.getElementById('mobileMenu').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </div>
   </nav>
 
+  <!-- Mobile Menu -->
+  <div class="mobile-overlay" id="mobileMenu">
+    <a href="#features" onclick="document.getElementById('mobileMenu').classList.remove('open')">Features</a>
+    <a href="#" onclick="document.getElementById('mobileMenu').classList.remove('open')">Pricing</a>
+    <a href="#" onclick="document.getElementById('mobileMenu').classList.remove('open')">Integrations</a>
+    <a href="#" onclick="document.getElementById('mobileMenu').classList.remove('open')">Docs</a>
+    <button class="nav-cta" style="margin-top:16px" onclick="document.getElementById('mobileMenu').classList.remove('open')">
+      Start Forging Free
+      <span class="icon-wrap">&rarr;</span>
+    </button>
+  </div>
+
+  <!-- ===== HERO ===== -->
   <section class="hero">
-    <div class="hero-text">
-      <span class="badge">Now in Beta</span>
-      <h1>Shape Your Workflow. <span>Ship Your Vision.</span></h1>
-      <p>FlowForge brings Kanban boards, Gantt charts, and team chat into one seamless forge — so your team can plan, build, and deliver without switching tools.</p>
-      <div class="hero-buttons">
-        <a href="#" class="btn-primary">Start Forging →</a>
-        <a href="#" class="btn-secondary">Watch Demo</a>
+    <div class="eyebrow">
+      <span class="dot"></span>
+      Now in Public Beta
+    </div>
+    <h1>
+      <span class="highlight">Forge Your Team&rsquo;s Flow</span>
+    </h1>
+    <p>
+      From first brainstorm to final launch, FlowForge gives your team the power to plan, track, and communicate &mdash; all in one seamless platform. No more juggling a dozen tools. Just pure, focused momentum.
+    </p>
+    <div class="hero-cta-group">
+      <button class="btn-primary">
+        Start Forging Free
+        <span class="icon-wrap">&rarr;</span>
+      </button>
+      <button class="btn-secondary">
+        Watch Demo &rarr;
+      </button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="num">12k+</div>
+        <div class="label">Teams onboard</div>
+      </div>
+      <div class="stat">
+        <div class="num">99.9%</div>
+        <div class="label">Uptime SLA</div>
+      </div>
+      <div class="stat">
+        <div class="num">4.9&star;</div>
+        <div class="label">Avg. Rating</div>
       </div>
     </div>
-    <div class="hero-visual">
-      <div class="mock-dashboard">Interactive Dashboard Preview</div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section class="features" id="features">
+    <div class="section-label">Platform Capabilities</div>
+    <h2>
+      Everything you need to<br>
+      <span class="highlight">forge ahead</span>
+    </h2>
+    <div class="bento-grid">
+
+      <!-- Card 1 -- Kanban (large, col-span-2 row-span-2) -->
+      <div class="card reveal">
+        <div class="card-inner">
+          <div class="icon">&#x1F4CB;</div>
+          <h3>Kanban Boards &mdash; Move Work Forward</h3>
+          <p>Visualize every stage of your workflow, from &ldquo;Backlog&rdquo; to &ldquo;Done&rdquo;. Drag and drop cards to update status in a glance. Customize columns, add labels, set WIP limits &mdash; your board, your rules. Whether you are sprinting in agile or tracking a content calendar, FlowForge keeps the work flowing.</p>
+        </div>
+      </div>
+
+      <!-- Card 2 -- Gantt Charts (wide, col-span-2) -->
+      <div class="card reveal">
+        <div class="card-inner">
+          <div class="icon">&#x1F4C5;</div>
+          <h3>Gantt Charts &mdash; Own Your Timeline</h3>
+          <p>Zoom out and see the big picture. Map tasks across a timeline, link dependencies, and spot bottlenecks before they happen. Drag to adjust dates, shift milestones, and keep every deliverable on schedule. With FlowForge, your project plan is always live and always clear.</p>
+        </div>
+      </div>
+
+      <!-- Card 3 -- Team Chat -->
+      <div class="card reveal">
+        <div class="card-inner">
+          <div class="icon">&#x1F4AC;</div>
+          <h3>Team Chat &mdash; Context Where It Belongs</h3>
+          <p>Stop hunting for updates across Slack, email, and DMs. FlowForge Chat lives inside every project &mdash; discuss tasks, share files, and make decisions right next to the work they affect. Every message is tied to a card, a milestone, or a deadline.</p>
+        </div>
+      </div>
+
+      <!-- Card 4 -- Integrations -->
+      <div class="card reveal">
+        <div class="card-inner">
+          <div class="icon">&#x1F9E9;</div>
+          <h3>200+ Integrations</h3>
+          <p>Connect Slack, GitHub, Linear, Jira, Figma, and more. FlowForge syncs bidirectionally so nothing falls through the cracks.</p>
+        </div>
+      </div>
+
+      <!-- Card 5 -- AI-Powered (wide, col-span-2) -->
+      <div class="card reveal">
+        <div class="card-inner">
+          <div class="icon">&#x1F9E0;</div>
+          <h3>AI-Powered Task Intelligence</h3>
+          <p>Let AI auto-assign tickets, suggest deadlines, and surface blocked work. Your team spends less time organizing and more time building.</p>
+        </div>
+      </div>
+
+      <!-- Card 6 -- Full-width CTA / Stats -->
+      <div class="card reveal">
+        <div class="card-inner" style="flex-direction:row;align-items:center;gap:24px;flex-wrap:wrap">
+          <div style="flex:1;min-width:160px">
+            <div class="icon">&#x1F310;</div>
+            <h3>Start Forging Free</h3>
+            <p style="margin:0">No credit card required. Get your team on FlowForge today.</p>
+          </div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <div><div class="num" style="font-family:'Clash Display',sans-serif;font-size:1.4rem;font-weight:600;background:linear-gradient(180deg,#fff 40%,rgba(255,255,255,0.4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">98%</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.35)">Adoption rate</div></div>
+            <div><div class="num" style="font-family:'Clash Display',sans-serif;font-size:1.4rem;font-weight:600;background:linear-gradient(180deg,#fff 40%,rgba(255,255,255,0.4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">3.2x</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.35)">Faster delivery</div></div>
+            <div><div class="num" style="font-family:'Clash Display',sans-serif;font-size:1.4rem;font-weight:600;background:linear-gradient(180deg,#fff 40%,rgba(255,255,255,0.4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">72%</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.35)">Less context-switching</div></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
-  <section class="features">
-    <h2>Everything your team needs</h2>
-    <p>From task tracking to roadmaps — FlowForge gives your team a single source of truth.</p>
-    <div class="features-grid">
-      <div class="feature-card"><div class="icon">📋</div><h3>Kanban Boards</h3><p>Visualize your pipeline. Drag cards across swimlanes, set WIP limits, and watch work flow from idea to done — at a glance.</p></div>
-      <div class="feature-card"><div class="icon">📊</div><h3>Gantt Charts</h3><p>Plot the big picture. Map dependencies, adjust timelines on the fly, and keep every milestone in clear view, from kickoff to launch.</p></div>
-      <div class="feature-card"><div class="icon">🤝</div><h3>Team Chat</h3><p>Talk where the work lives. Every card, every chart, every conversation — threaded and attached to the tasks that matter, not lost in a sidebar.</p></div>
-    </div>
-  </section>
-
-  <section class="cta-section">
-    <h2>Ready to forge your workflow?</h2>
-    <p>Free 14-day trial. No credit card required.</p>
-    <a href="#" class="btn-primary">Start Forging →</a>
-  </section>
-
-  <footer>
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
     <div class="footer-grid">
-      <div class="footer-brand"><h3>FlowForge</h3><p>Project management built for modern teams. Forge your workflow, ship faster.</p></div>
-      <div class="footer-col"><h4>Product</h4><ul><li><a href="#">Features</a></li><li><a href="#">Pricing</a></li><li><a href="#">Changelog</a></li><li><a href="#">Roadmap</a></li></ul></div>
-      <div class="footer-col"><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Careers</a></li><li><a href="#">Contact</a></li></ul></div>
-      <div class="footer-col"><h4>Legal</h4><ul><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li><li><a href="#">Security</a></li><li><a href="#">GDPR</a></li></ul></div>
+      <div class="footer-brand">
+        <div class="logo">
+          <span class="logo-icon">&#x26D3;</span>
+          FlowForge
+        </div>
+        <p>Project management that bends to your workflow &mdash; not the other way around.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#">Features</a>
+        <a href="#">Pricing</a>
+        <a href="#">Integrations</a>
+        <a href="#">Changelog</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Blog</a>
+        <a href="#">Careers</a>
+        <a href="#">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Security</a>
+        <a href="#">GDPR</a>
+      </div>
     </div>
-    <div class="footer-bottom">&copy; 2026 FlowForge. All rights reserved.</div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 FlowForge, Inc. All rights reserved.</span>
+      <span>Made with &#x26D3; by teams who ship.</span>
+    </div>
   </footer>
+
+  <!-- ===== SCROLL REVEAL (minimal JS) ===== -->
+  <script>
+    (function(){
+      var reveals = document.querySelectorAll(".reveal");
+      if(!reveals.length) return;
+      var observer = new IntersectionObserver(
+        function(entries){entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add("visible")})},
+        {threshold:0.12,rootMargin:"0px 0px -80px 0px"}
+      );
+      reveals.forEach(function(el){observer.observe(el)});
+    })();
+  </script>
+
 </body>
 </html>
