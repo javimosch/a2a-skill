@@ -129,9 +129,9 @@ conn.execute(
 
 SQLite's `LIKE` operator is only case-insensitive for ASCII characters by
 default. For proper case-insensitive matching of non-ASCII text, both the
-query and the column must be lowercased explicitly. The sync client uses
-`lower(body) LIKE '%query.lower()%'` but the async client was missing the
-`lower()` call — fixed in commit a973131.
+query and the column must be lowercased explicitly. The async client uses
+`lower(body) LIKE '%query.lower()%'` but the sync client was missing the
+`lower()` call — fixed in this session.
 
 **Fix:** Always use `lower(column) LIKE ?` with `%query.lower()%` in search
 implementations to get consistent case-insensitive behavior for all text.

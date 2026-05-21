@@ -301,7 +301,7 @@ class A2AClient:
         try:
             rows = conn.execute(
                 "SELECT id, sender, recipient, body, thread_id, created_at "
-                "FROM messages WHERE body LIKE ? ORDER BY created_at DESC LIMIT ?",
+                "FROM messages WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
                 (f"%{query.lower()}%", limit),
             ).fetchall()
             return [dict(r) for r in rows]
