@@ -155,7 +155,7 @@ def cmd_project(args) -> None:
 
 def cmd_register(args) -> None:
     if not args.id or not args.id.strip():
-        die("agent id must not be empty")
+        die("agent id must not be empty — pass a valid registered agent id")
     name, conn = _open(args, create=True)
     ts = now()
     try:
@@ -182,7 +182,7 @@ def cmd_register(args) -> None:
 
 def cmd_unregister(args) -> None:
     if not args.id or not args.id.strip():
-        die("agent id must not be empty")
+        die("agent id must not be empty — pass a valid registered agent id")
     _, conn = _open(args)
     cur = conn.execute("DELETE FROM agents WHERE id=?", (args.id,))
     conn.commit()
@@ -395,7 +395,7 @@ def cmd_clear(args) -> None:
         print("(nothing to clear)")
         return
     if not args.yes:
-        die("refusing without --yes")
+        die("refusing without --yes: this deletes the entire project database and all messages. pass --yes to confirm")
     # Remove the database and any WAL-related files
     for suffix in ("", "-wal", "-shm"):
         p = path.with_suffix(path.suffix + suffix)
