@@ -43,6 +43,7 @@ Each artifact build script:
 python3 examples/artifacts/landing-page/build.py --cli opencode
 python3 examples/artifacts/svg-banner/build.py --cli claude --model haiku
 python3 examples/artifacts/mini-cli/build.py --cli pi
+python3 examples/artifacts/config-generator/build.py --cli opencode --project artifact-config
 ```
 
 ### Key patterns demonstrated
