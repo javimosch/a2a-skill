@@ -139,6 +139,33 @@ class TestAgentRegistry(unittest.TestCase):
         self.assertEqual(row[1], "p2")
         conn.close()
 
+    def test_register_with_pid(self):
+        """Register with --pid stores the pid in the database."""
+        args = a2a.argparse.Namespace(
+            project=self.project, id="pid-agent", role="worker",
+            prompt="", cli="opencode", pid=12345, upsert=False
+        )
+        a2a.cmd_register(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT pid FROM agents WHERE id=?", ("pid-agent",)).fetchone()
+        conn.close()
+        self.assertEqual(row["pid"], 12345)
+
+    def test_register_upsert_updates_pid(self):
+        """Upsert with explicit pid updates the stored pid."""
+        args = a2a.argparse.Namespace(
+            project=self.project, id="pid-update", role="worker",
+            prompt="", cli="opencode", pid=100, upsert=False
+        )
+        a2a.cmd_register(args)
+        args.pid = 200
+        args.upsert = True
+        a2a.cmd_register(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT pid FROM agents WHERE id=?", ("pid-update",)).fetchone()
+        conn.close()
+        self.assertEqual(row["pid"], 200)
+
 
 class TestMessaging(unittest.TestCase):
     """Send, receive, read-tracking."""
