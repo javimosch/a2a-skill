@@ -34,6 +34,7 @@ Each artifact build script:
 | `landing-page/` | designer, copywriter, integrator | `index.html` | Divide-and-conquer (3 peers) |
 | `svg-banner/` | designer, reviewer | `banner.svg` | Adversarial review loop |
 | `mini-cli/` | architect, implementer | `tasky.py` | Spec-then-implement |
+| `config-generator/` | architect, implementer | `docker-compose.yml`, `nginx.conf`, `.env.example` | Infrastructure-as-code generation |
 
 ### Running an artifact
 
