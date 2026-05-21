@@ -1008,6 +1008,52 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(row["ttl_seconds"], 3600)
         conn.close()
 
+    def test_cmd_thread_with_messages(self):
+        """cmd_thread retrieves all messages in a thread in chronological order."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, thread_id, created_at) VALUES (?,?,?,?,?)",
+            ("alice", "bob", "first", "thread-1", a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, thread_id, created_at) VALUES (?,?,?,?,?)",
+            ("bob", "alice", "second", "thread-1", a2a.now() + 1)
+        )
+        conn.commit()
+        conn.close()
+
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_thread(a2a.argparse.Namespace(
+            project=self.project, id="thread-1", json=False
+        ))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        self.assertIn("first", output)
+        self.assertIn("second", output)
+        # Chronological order: first should appear before second
+        self.assertLess(output.index("first"), output.index("second"))
+
+    def test_cmd_thread_empty(self):
+        """cmd_thread with unknown thread ID prints a notice."""
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_thread(a2a.argparse.Namespace(
+            project=self.project, id="nonexistent", json=False
+        ))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        self.assertIn("no messages in thread", output)
+
+
+
 
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
