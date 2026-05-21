@@ -170,7 +170,6 @@ Comprehensive guides for different use cases:
 - **[docs/ADVANCED_PATTERNS.md](docs/ADVANCED_PATTERNS.md)** — Performance optimization, monitoring, error recovery
 - **[docs/GIT_AWARE.md](docs/GIT_AWARE.md)** — Work-collision prevention with git state tracking
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — Docker, Kubernetes, systemd, and security
-- **[docs/V14_ARCHITECTURE.md](docs/V14_ARCHITECTURE.md)** — v1.4 roadmap: gRPC, WebSocket, Jaeger tracing, Prometheus
 - **[`.agents/skills/a2a/SKILL.md`](.agents/skills/a2a/SKILL.md)** — `/a2a` skill architecture and spawn protocol (canonical)
 - **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development
 - **[CHANGELOG.md](CHANGELOG.md)** — Complete release history and versioning
