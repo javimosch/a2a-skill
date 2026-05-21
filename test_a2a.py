@@ -1167,6 +1167,14 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(data["agents_active"], 0)
         self.assertEqual(data["agents_done"], 0)
 
+    def test_cmd_wait_unknown_agent(self):
+        """cmd_wait with unknown agent exits with error."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_wait(a2a.argparse.Namespace(
+                project=self.project, as_="phantom", timeout=0, count=0
+            ))
+
+
 
 
 
