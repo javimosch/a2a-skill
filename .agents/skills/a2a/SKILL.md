@@ -166,12 +166,11 @@ when to ask, when to answer, when to stop. Coordinate with your peers.
 
 == How to find the a2a CLI ==
 Run the bash snippet below ONCE at the start to pick a working `a2a` binary
-and store it in $A2A. Try in this order:
-  1. Whatever `command -v a2a` resolves to
-  2. ~/.agents/skills/a2a/a2a    (cross-CLI global skills path)
-  3. ~/.claude/skills/a2a/a2a    (Claude Code skills path)
+and store it in $A2A. Check $A2A_BIN first (if set), then try PATH, then
+common skill installation paths:
 
-  A2A="$(command -v a2a 2>/dev/null)"
+  A2A="${A2A_BIN:-}"
+  [ -z "$A2A" ] && A2A="$(command -v a2a 2>/dev/null)"
   [ -z "$A2A" ] && [ -x "$HOME/.agents/skills/a2a/a2a" ] && A2A="$HOME/.agents/skills/a2a/a2a"
   [ -z "$A2A" ] && [ -x "$HOME/.claude/skills/a2a/a2a" ] && A2A="$HOME/.claude/skills/a2a/a2a"
   echo "using a2a at: $A2A"
