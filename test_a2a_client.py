@@ -571,5 +571,26 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(len(msgs[0]["body"]), 10000)
         self.assertEqual(msgs[0]["body"], long_body)
 
+    def test_thread_empty_string_id(self):
+        """thread() returns [] when thread_id is an empty string."""
+        alice = A2AClient(self.project, "alice")
+        result = alice.thread("")
+        self.assertEqual(result, [])
+
+    def test_search_special_chars_query(self):
+        """search() handles special LIKE characters in the query string."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        alice.send("bob", "testing 100% complete")
+        alice.send("bob", "under_score_value")
+        alice.send("bob", "normal query")
+        # % and _ should not be treated as wildcards in FTS search
+        result_pct = alice.search("100%")
+        bodies = [m["body"] for m in result_pct]
+        self.assertIn("testing 100% complete", bodies)
+        result_underscore = alice.search("under_score")
+        bodies2 = [m["body"] for m in result_underscore]
+        self.assertIn("under_score_value", bodies2)
+
 if __name__ == "__main__":
     unittest.main()
