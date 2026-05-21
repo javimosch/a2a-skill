@@ -81,7 +81,7 @@ def db_path(name: str) -> Path:
 def connect(name: str, create: bool = False) -> sqlite3.Connection:
     path = db_path(name)
     if not path.exists() and not create:
-        die(f"no a2a project at {path}. run: a2a init --project {name}")
+        die(f"no a2a project at '{path}'. run: a2a init --project '{name}'")
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, timeout=10.0)
     conn.execute("PRAGMA journal_mode=WAL")
@@ -206,7 +206,7 @@ def cmd_status(args) -> None:
     n = cur.rowcount
     conn.close()
     if n == 0:
-        die(f"no such agent: {agent_id}")
+        die(f"no such agent: '{agent_id}'")
     if getattr(args, "json", False):
         print(json.dumps({
             "agent": agent_id,
