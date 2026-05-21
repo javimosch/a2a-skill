@@ -27,6 +27,7 @@ output to `output/`.
 | `svg-banner/` | designer, reviewer | `output/banner.svg` | 2 agents iterate on an SVG banner through critique rounds |
 | `mini-cli/` | architect, implementer | `output/tasky.py` | 2 agents spec and implement a Python CLI tool |
 | `config-generator/` | architect, implementer | `output/docker-compose.yml`, `output/nginx.conf`, `output/.env.example` | 2 agents produce a full server deployment configuration |
+| `color-palette/` | colorist, generator | `output/index.html` | 2 agents propose a color palette and render an HTML preview |
 
 ## Requirements
 
