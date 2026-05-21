@@ -10,6 +10,63 @@ This guide covers advanced usage patterns, optimization techniques, and real-wor
 4. [Advanced Search](#advanced-search)
 5. [Monitoring & Observability](#monitoring--observability)
 6. [Performance Tuning](#performance-tuning)
+7. [Collaborative Artifact Smoke Tests](#collaborative-artifact-smoke-tests)
+
+## Collaborative Artifact Smoke Tests
+
+The `examples/artifacts/` directory contains self-contained build scripts that
+demonstrate a2a's peer-to-peer messaging by having teams of AI agents produce
+real output files (HTML pages, SVG images, Python tools).
+
+Each artifact build script:
+
+1. **Initializes an a2a bus** for a dedicated project
+2. **Registers agents** with role-specific metadata
+3. **Spawns agents** via `a2a-spawn` with kit prompts
+4. **Coordinates** via the bus (send tasks, collect results)
+5. **Writes output** to `examples/artifacts/<name>/output/`
+6. **Cleans up** spawned agent processes
+
+### Available artifacts
+
+| Artifact | Agents | Output | Pattern |
+|----------|--------|--------|---------|
+| `landing-page/` | designer, copywriter, integrator | `index.html` | Divide-and-conquer (3 peers) |
+| `svg-banner/` | designer, reviewer | `banner.svg` | Adversarial review loop |
+| `mini-cli/` | architect, implementer | `tasky.py` | Spec-then-implement |
+
+### Running an artifact
+
+```bash
+# From the repo root:
+python3 examples/artifacts/landing-page/build.py --cli opencode
+python3 examples/artifacts/svg-banner/build.py --cli claude --model haiku
+python3 examples/artifacts/mini-cli/build.py --cli pi
+```
+
+### Key patterns demonstrated
+
+- **Peer-to-peer coordination**: agents communicate directly without a central
+  orchestrator. The build script only sends initial tasks and reads results.
+- **Iterative refinement**: svg-banner uses multiple send/recv rounds between
+  designer and reviewer for structured critique.
+- **Dependency ordering**: mini-cli's implementer waits for the architect's
+  spec before starting implementation.
+- **Result delivery via broadcast**: agents broadcast their outputs with
+  prefixed markers (FINAL_SVG:, FINAL_CODE:) so the build script can
+  capture them from the bus.
+- **Role-specific kit prompts**: each agent's kit prompt describes its role
+  and task, using `make_kit()` from `examples/artifacts/_util.py`.
+
+### Creating a new artifact
+
+1. Create `examples/artifacts/<name>/build.py` (keep under 200 lines)
+2. Use `examples/artifacts/_util.py` for shared utilities
+3. Write a kit prompt with `make_kit()` following the standard pattern
+4. Agents communicate via `a2a send` / `a2a recv` — no side channels
+5. Output goes to `examples/artifacts/<name>/output/` (gitignored)
+
+See `examples/artifacts/README.md` for full documentation.
 
 ## High-Performance Messaging
 
