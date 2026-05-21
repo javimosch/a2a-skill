@@ -522,12 +522,19 @@ class TestA2AClient(unittest.TestCase):
         bob = A2AClient(self.project, "bob")
         msg_id = alice.send("bob", "instant expiry", ttl_seconds=0)
         self.assertGreater(msg_id, 0)
-        # Message should be cleaned up (expired immediately)
+        # Message should be cleaned up (expired immediately) — recv triggers cleanup
         messages = bob.recv(wait=1)
-        # The expired message might already be cleaned up — either result is valid
-        if messages:
-            self.assertEqual(len(messages), 1)
-            self.assertEqual(messages[0]["body"], "instant expiry")
+        self.assertEqual(len(messages), 0, "TTL=0 message should be cleaned up before recv")
+
+    def test_peek_cleans_up_expired_messages(self):
+        """peek() triggers TTL cleanup so expired messages don't appear."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        alice.send("bob", "ttl will expire", ttl_seconds=0)
+        # peek should clean up the expired message
+        messages = bob.peek(limit=10)
+        bodies = [m["body"] for m in messages]
+        self.assertNotIn("ttl will expire", bodies)
 
     def test_wait_for_messages_count_zero_returns_immediately(self):
         """wait_for_messages(count=0) returns True immediately without blocking."""

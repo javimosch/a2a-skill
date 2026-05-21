@@ -35,6 +35,17 @@ class A2AClient:
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
+    @staticmethod
+    def _cleanup_expired(conn: sqlite3.Connection) -> int:
+        """Delete messages past their TTL. Return count deleted."""
+        ts = time.time()
+        cur = conn.execute(
+            "DELETE FROM messages WHERE ttl_seconds IS NOT NULL "
+            "AND created_at + ttl_seconds < ?",
+            (ts,)
+        )
+        return cur.rowcount
+
     def send(
         self,
         to: str,
@@ -141,6 +152,7 @@ class A2AClient:
             poll_interval = 0.1
 
             while True:
+                self._cleanup_expired(conn)
                 # Build query
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
@@ -195,6 +207,7 @@ class A2AClient:
         """
         conn = self._connect()
         try:
+            self._cleanup_expired(conn)
             rows = conn.execute(
                 "SELECT id, sender, recipient, body, thread_id, created_at "
                 "FROM messages ORDER BY created_at DESC LIMIT ?",
