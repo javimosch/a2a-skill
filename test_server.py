@@ -229,6 +229,21 @@ class TestA2ARestServer(unittest.TestCase):
         received_bodies = [m["body"] for m in body["messages"]]
         self.assertIn(unique_msg, received_bodies)
 
+    def test_recv_limit_caps_messages(self):
+        """POST /recv with limit returns at most N messages."""
+        for i in range(3):
+            self._post("/send", {"to": "dave", "message": f"limit-msg-{i}"})
+        _, body = self._post("/recv", {"agent": "dave", "limit": 2})
+        self.assertLessEqual(len(body["messages"]), 2)
+
+    def test_search_with_limit(self):
+        """GET /search with limit caps results."""
+        prefix = f"limit-search-{int(time.time())}"
+        for i in range(3):
+            self._post("/send", {"to": "all", "message": f"{prefix}-{i}"})
+        _, body = self._get(f"/search?q={prefix}&limit=2")
+        self.assertLessEqual(len(body.get("results", [])), 2)
+
     # --- GET /search ---
 
     def test_search_returns_200(self):
