@@ -535,6 +535,41 @@ class TestA2AClient(unittest.TestCase):
         result = bob.wait_for_messages(count=0, timeout=5)
         self.assertTrue(result)
 
+    def test_list_peers_empty(self):
+        """list_peers() returns all registered agents on the bus."""
+        # setUp registers alice and bob
+        alice = A2AClient(self.project, "alice")
+        peers = alice.list_peers()
+        self.assertIsInstance(peers, list)
+        # At minimum alice and bob should be present
+        ids = [p["id"] for p in peers]
+        self.assertIn("alice", ids)
+        self.assertIn("bob", ids)
+
+    def test_send_to_self_with_include_self(self):
+        """send() to own ID and recv with include_self shows the message."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        msg_id = alice.send("alice", "hello self")
+        self.assertGreater(msg_id, 0)
+        # Normal recv should not include self-messages
+        msgs = alice.recv(wait=1, unread_only=False)
+        self.assertNotIn("hello self", [m["body"] for m in msgs])
+        # With include_self=True, it should be visible
+        msgs_with_self = alice.recv(wait=0, unread_only=True, include_self=True)
+        self.assertIn("hello self", [m["body"] for m in msgs_with_self])
+
+    def test_send_very_long_body(self):
+        """Send with a very long message body."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        long_body = "A" * 10000
+        msg_id = alice.send("bob", long_body)
+        self.assertGreater(msg_id, 0)
+        msgs = bob.recv(wait=1)
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(len(msgs[0]["body"]), 10000)
+        self.assertEqual(msgs[0]["body"], long_body)
 
 if __name__ == "__main__":
     unittest.main()
