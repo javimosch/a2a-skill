@@ -7,10 +7,8 @@ Enables priority levels (critical, high, normal, low) with automatic queue order
 Supports priority-based recv() and filtering by importance.
 """
 
-import sqlite3
 import time
 from typing import Optional, List, Dict, Any
-from pathlib import Path
 from enum import IntEnum
 
 from a2a_client import A2AClient
