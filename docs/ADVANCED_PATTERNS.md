@@ -65,7 +65,8 @@ python3 examples/artifacts/config-generator/build.py --cli opencode --project ar
 ### Creating a new artifact
 
 1. Create `examples/artifacts/<name>/build.py` (keep under 200 lines)
-2. Use `examples/artifacts/_util.py` for shared utilities
+2. Use `examples/artifacts/_util.py` for shared utilities including
+   `strip_html_preamble()` for cleaning up raw HTML output from agents
 3. Write a kit prompt with `make_kit()` following the standard pattern
 4. Agents communicate via `a2a send` / `a2a recv` — no side channels
 5. Output goes to `examples/artifacts/<name>/output/` (gitignored)

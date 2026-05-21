@@ -64,6 +64,7 @@ All build scripts use shared utility code from `examples/artifacts/_util.py`:
 - `run_a2a()` / `run_a2a_json()` — CLI wrappers
 - `spawn_agent()` — launches AI agents via `a2a-spawn`
 - `make_kit()` — builds kit prompts following the standard pattern
+- `strip_html_preamble()` — strips agent preamble text from HTML output
 - `SpawnManager` — tracks PIDs and cleans up on exit
 - `wait_for_messages()` — collects results from the bus
 
