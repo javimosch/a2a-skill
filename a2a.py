@@ -535,6 +535,7 @@ def cmd_wait(args) -> None:
     agent, conn = _resolve_agent(args)
     deadline = now() + args.timeout
     while True:
+        cleanup_expired(conn)
         rows = _fetch_messages(conn, agent, unread_only=True, since=None,
                                limit=None, mark_read=False)
         if len(rows) >= args.count:
