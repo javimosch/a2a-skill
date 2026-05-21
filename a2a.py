@@ -364,7 +364,8 @@ def cmd_peek(args) -> None:
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
-    limit = max(0, args.limit)
+    raw_limit = args.limit
+    limit = raw_limit if raw_limit >= 0 else 20
     rows = conn.execute(
         f"SELECT {MSG_COLS} FROM messages "
         "ORDER BY created_at DESC LIMIT ?",
@@ -453,7 +454,8 @@ def cmd_search(args) -> None:
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
-    limit = max(0, args.limit or 50)
+    raw_limit = args.limit
+    limit = raw_limit if raw_limit is not None and raw_limit >= 0 else 50
     fts_ready = _init_fts(conn)
     use_fts = args.fts or fts_ready
     if use_fts:

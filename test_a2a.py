@@ -1441,6 +1441,60 @@ class TestEdgeCases(unittest.TestCase):
         self.assertIsNotNone(row)
         self.assertEqual(row["body"], "stdin body content")
 
+    def test_cmd_peek_negative_limit_clamped(self):
+        """Negative --limit is clamped to default (20)."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "msg-1", a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "msg-2", a2a.now() + 1)
+        )
+        conn.commit()
+        conn.close()
+
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_peek(a2a.argparse.Namespace(
+                project=self.project, limit=-1, json=True
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertGreaterEqual(len(data), 2, "negative limit should clamp to default 20 (show all messages)")
+
+    def test_cmd_wait_ignores_expired_messages(self):
+        """cmd_wait does not count TTL-expired messages as unread."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        # Insert an already-expired message
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("bob", "alice", "expired msg", 1, a2a.now() - 10)
+        )
+        conn.commit()
+        conn.close()
+
+        with self.assertRaises(SystemExit) as cm:
+            a2a.cmd_wait(a2a.argparse.Namespace(
+                project=self.project, as_="alice", timeout=0, count=1
+            ))
+        self.assertEqual(cm.exception.code, 2,
+                         "expired messages should not count toward wait")
+
     def test_cmd_stats_json_empty(self):
         """cmd_stats --json on empty bus returns valid JSON with zero counts."""
         import io, sys, json
