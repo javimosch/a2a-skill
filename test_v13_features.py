@@ -790,6 +790,45 @@ class TestAuditClientWithDB(unittest.TestCase):
         results = self.audit.search_audit_logs(operation="send", result="failure")
         self.assertTrue(len(results) > 0)
 
+    def test_log_operation_auto_creates_table(self):
+        """log_operation works without calling init_audit_table() first.
+
+        Regression test: _connect() now auto-creates the audit_log table,
+        so log_operation() succeeds even if init_audit_table() was never
+        called explicitly.
+        """
+        import os
+        import sys
+        import a2a as _a2a
+
+        # Create a fresh AuditClient without calling init_audit_table
+        proj = f"audit-auto-test-{os.getpid()}-{id(self)}"
+        conn = _a2a.connect(proj, create=True)
+        conn.commit()
+        conn.close()
+
+        audit = AuditClient(proj)
+        # No init_audit_table() call!
+        ok = audit.log_operation("alice", "send", details={"test": "auto-create"})
+        self.assertTrue(ok)
+
+        # Verify the entry is actually in the database
+        trail = audit.get_agent_audit_trail("alice")
+        self.assertGreaterEqual(len(trail), 1)
+        self.assertEqual(trail[0]["operation"], "send")
+
+        # Cleanup
+        try:
+            conn = _a2a.connect(proj)
+            conn.execute("DROP TABLE IF EXISTS audit_log")
+            conn.execute("DROP TABLE IF EXISTS messages")
+            conn.execute("DROP TABLE IF EXISTS agents")
+            conn.execute("DROP TABLE IF EXISTS reads")
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
 
 class TestPriorityClientWithDB(unittest.TestCase):
     """Real-database tests for PriorityClient send/recv."""
