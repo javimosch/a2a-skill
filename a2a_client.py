@@ -308,7 +308,7 @@ class A2AClient:
         finally:
             conn.close()
 
-    def thread(self, thread_id: int) -> List[Dict[str, Any]]:
+    def thread(self, thread_id: str) -> List[Dict[str, Any]]:
         """Get all messages in a thread.
 
         Args:
