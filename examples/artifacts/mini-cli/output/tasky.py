@@ -1,109 +1,122 @@
+#!/usr/bin/env python3
+"""tasky - A single-file Python CLI task tracker."""
+
 import json
-import argparse
+import os
 import sys
+import argparse
+import shutil
 from pathlib import Path
-from datetime import datetime
+
+DATA_DIR = Path.home() / ".tasky"
+DATA_FILE = DATA_DIR / "tasks.json"
 
 
-TASKS_FILE = Path.home() / ".tasky" / "tasks.json"
-
-
-def load_tasks() -> list:
-    if not TASKS_FILE.exists():
-        return []
+def load_tasks() -> dict:
+    """Load and return the tasks dict from JSON file."""
+    if not DATA_FILE.exists():
+        return {"next_id": 1, "tasks": []}
     try:
-        with open(TASKS_FILE) as f:
-            data = json.load(f)
-        if not isinstance(data, list):
-            return []
-        return data
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
     except (json.JSONDecodeError, OSError):
-        return []
+        print("Warning: corrupted data file, resetting.", file=sys.stderr)
+        return {"next_id": 1, "tasks": []}
 
 
-def save_tasks(tasks: list) -> None:
-    TASKS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(TASKS_FILE, "w") as f:
-        json.dump(tasks, f, indent=2)
+def save_tasks(data: dict) -> None:
+    """Write the tasks dict to JSON file (pretty-printed, indent=2)."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=2, sort_keys=False)
         f.write("\n")
 
 
-def add_task(tasks: list, description: str) -> dict:
-    max_id = max((t["id"] for t in tasks), default=0)
-    task = {
-        "id": max_id + 1,
-        "desc": description,
-        "done": False,
-        "created_at": datetime.now().isoformat(timespec="seconds"),
-    }
-    tasks.append(task)
-    return task
+def cmd_add(args: argparse.Namespace) -> None:
+    """Handle `tasky add <task>`."""
+    description = " ".join(args.task)
+    data = load_tasks()
+    task_id = data["next_id"]
+    data["tasks"].append({"id": task_id, "description": description, "done": False})
+    data["next_id"] = task_id + 1
+    save_tasks(data)
+    print(f"Added task {task_id}: {description}")
 
 
-def list_tasks(tasks: list) -> None:
-    if not tasks:
+def cmd_list(args: argparse.Namespace) -> None:
+    """Handle `tasky list`."""
+    data = load_tasks()
+    if not data["tasks"]:
         print("No tasks.")
         return
-    for t in tasks:
-        status = "[x]" if t["done"] else "[ ]"
-        print(f"{t['id']}. {status} {t['desc']}")
+    for task in data["tasks"]:
+        status = "[X]" if task["done"] else "[ ]"
+        print(f"{task['id']}. {status} {task['description']}")
 
 
-def done_task(tasks: list, task_id: int) -> bool:
-    for t in tasks:
-        if t["id"] == task_id:
-            t["done"] = True
-            return True
-    return False
+def cmd_done(args: argparse.Namespace) -> None:
+    """Handle `tasky done <id>`."""
+    data = load_tasks()
+    for task in data["tasks"]:
+        if task["id"] == args.id:
+            task["done"] = True
+            save_tasks(data)
+            print(f"Task {args.id} marked as done.")
+            return
+    print(f"Error: no task with id {args.id}")
+    sys.exit(1)
 
 
-def clear_tasks(tasks: list) -> list:
-    return []
+def cmd_clear(args: argparse.Namespace) -> None:
+    """Handle `tasky clear`. Prompts confirm unless --force is given."""
+    if not args.force:
+        print("Clear all tasks? [y/N] ", end="", file=sys.stderr)
+        answer = sys.stdin.readline().strip().lower()
+        if answer not in ("y", "yes"):
+            return
+    save_tasks({"next_id": 1, "tasks": []})
+    print("All tasks cleared.")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Build and return the ArgumentParser with subcommands."""
+    parser = argparse.ArgumentParser(prog="tasky")
+    subparsers = parser.add_subparsers(title="Commands", dest="command")
+
+    # add
+    add_parser = subparsers.add_parser("add", help="Add a new task")
+    add_parser.add_argument("task", nargs="+", help="Task description")
+
+    # list
+    subparsers.add_parser("list", help="List all tasks")
+
+    # done
+    done_parser = subparsers.add_parser("done", help="Mark a task as done")
+    done_parser.add_argument("id", type=int, help="Task ID")
+
+    # clear
+    clear_parser = subparsers.add_parser("clear", help="Clear all tasks")
+    clear_parser.add_argument("--force", action="store_true", help="Skip confirmation prompt")
+
+    return parser
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Minimal JSON task tracker")
-    parser.add_argument("command", choices=["add", "list", "done", "clear"])
-    parser.add_argument("args", nargs=argparse.REMAINDER)
-    parsed = parser.parse_args()
-
-    cmd = parsed.command
-    args = parsed.args
-
-    if cmd == "add":
-        if not args:
-            print("Error: task description cannot be empty.", file=sys.stderr)
-            sys.exit(1)
-        description = " ".join(args)
-        tasks = load_tasks()
-        task = add_task(tasks, description)
-        save_tasks(tasks)
-        print(f"Added task {task['id']}: {description}")
-
-    elif cmd == "list":
-        tasks = load_tasks()
-        list_tasks(tasks)
-
-    elif cmd == "done":
-        if not args:
-            print("Error: missing task id.", file=sys.stderr)
-            sys.exit(1)
-        try:
-            task_id = int(args[0])
-        except ValueError:
-            print(f"Error: invalid task id '{args[0]}'.", file=sys.stderr)
-            sys.exit(1)
-        tasks = load_tasks()
-        if not done_task(tasks, task_id):
-            print(f"Task {task_id} not found.", file=sys.stderr)
-            sys.exit(1)
-        save_tasks(tasks)
-        print(f"Task {task_id} marked as done.")
-
-    elif cmd == "clear":
-        tasks = clear_tasks(load_tasks())
-        save_tasks(tasks)
-        print("All tasks cleared.")
+    """Entry point: parse args, dispatch to cmd_* function."""
+    parser = build_parser()
+    args = parser.parse_args()
+    if args.command == "add":
+        cmd_add(args)
+    elif args.command == "list":
+        cmd_list(args)
+    elif args.command == "done":
+        cmd_done(args)
+    elif args.command == "clear":
+        cmd_clear(args)
+    else:
+        parser.print_usage()
+        print(f"{parser.prog}: error: missing command", file=sys.stderr)
+        sys.exit(2)
 
 
 if __name__ == "__main__":
