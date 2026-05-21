@@ -18,9 +18,8 @@ except ImportError:
     HAS_AIOSQLITE = False
 
 from pathlib import Path
-from enum import IntEnum
 
-from a2a_priority import Priority, PriorityClient
+from a2a_priority import Priority
 
 
 class PriorityClientAsync:
