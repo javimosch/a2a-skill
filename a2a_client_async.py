@@ -216,7 +216,7 @@ class A2AClientAsync:
         rows = await cursor.fetchall()
         return [dict(row) for row in reversed(rows)]
 
-    async def search(self, query: str, limit: int = 100) -> List[Dict[str, Any]]:
+    async def search(self, query: str, limit: int = 50) -> List[Dict[str, Any]]:
         """Search messages.
 
         Args:
@@ -229,8 +229,8 @@ class A2AClientAsync:
         conn = await self._connect()
         cursor = await conn.execute(
             "SELECT id, sender, recipient, body, thread_id, created_at "
-            "FROM messages WHERE body LIKE ? ORDER BY created_at DESC LIMIT ?",
-            (f"%{query}%", limit),
+            "FROM messages WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
+            (f"%{query.lower()}%", limit),
         )
         rows = await cursor.fetchall()
         return [dict(row) for row in rows]

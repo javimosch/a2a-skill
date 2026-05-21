@@ -199,6 +199,13 @@ class TestA2AClientAsync(unittest.TestCase):
         self.assertGreater(len(results), 0)
         self.assertIn("unique-keyword-xyz", results[0]["body"])
 
+    def test_search_case_insensitive(self):
+        """search() is case-insensitive."""
+        run_async(self.alice.send("bob", "Test MESSAGE With Case"))
+        results = run_async(self.alice.search("message"))
+        self.assertGreater(len(results), 0)
+        self.assertIn("Test MESSAGE With Case", results[0]["body"])
+
     def test_recv_cleans_up_expired_messages(self):
         """recv() triggers TTL cleanup so expired messages are not returned."""
         run_async(self.alice.send("bob", "will expire", ttl_seconds=0))
