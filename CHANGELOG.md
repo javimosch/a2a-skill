@@ -79,8 +79,7 @@ All notable changes to a2a-skill are documented here.
 - **Production Guides** — Comprehensive operational documentation
   - [SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md) — Enterprise security setup
   - [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — 30+ common issues and solutions
-  - [MIGRATION_V12_TO_V13.md](docs/MIGRATION_V12_TO_V13.md) — Zero-downtime upgrade
-  - [TESTING_V13.md](docs/TESTING_V13.md) — Comprehensive testing strategy
+  - [DEPLOYMENT.md](docs/DEPLOYMENT.md) — Production deployment guide
 
 - **Example Agents** — Demonstration implementations
   - `secure_team_agent.py` — Encryption + routing + audit
