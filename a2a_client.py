@@ -200,7 +200,7 @@ class A2AClient:
         """Peek at recent messages without marking read.
 
         Args:
-            limit: Max messages to return
+            limit: Max messages to return (default: 20)
 
         Returns:
             List of message dicts

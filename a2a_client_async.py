@@ -130,7 +130,7 @@ class A2AClientAsync:
 
     async def recv(
         self,
-        wait: int = 0,
+        wait: float = 0,
         unread_only: bool = True,
         include_self: bool = False,
         limit: Optional[int] = None,
@@ -138,7 +138,7 @@ class A2AClientAsync:
         """Receive messages.
 
         Args:
-            wait: Max seconds to wait for messages
+            wait: Max seconds to wait for messages (supports fractional)
             unread_only: Only return unread messages
             include_self: Include messages from self
             limit: Max number of messages to return
@@ -197,11 +197,11 @@ class A2AClientAsync:
 
             await asyncio.sleep(0.1)
 
-    async def peek(self, limit: int = 10) -> List[Dict[str, Any]]:
+    async def peek(self, limit: int = 20) -> List[Dict[str, Any]]:
         """Peek at recent messages without marking read.
 
         Args:
-            limit: Max number of messages to return
+            limit: Max number of messages to return (default: 20)
 
         Returns:
             List of message dicts
@@ -353,13 +353,13 @@ class A2AClientAsync:
         }
 
     async def wait_for_messages(
-        self, count: int = 1, timeout: int = 30
+        self, count: int = 1, timeout: float = 60
     ) -> List[Dict[str, Any]]:
         """Wait for a specific number of messages.
 
         Args:
             count: Number of messages to wait for
-            timeout: Max seconds to wait
+            timeout: Max seconds to wait (default: 60)
 
         Returns:
             List of message dicts
