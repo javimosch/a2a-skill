@@ -214,7 +214,6 @@ All notable changes to a2a-skill are documented here.
   - SKILL.md — Claude Code skill specification
   - AGENTS.md — guide for AI agents working on the repo
   - CLIENT_API.md — Python client library reference
-  - CONTRIBUTING.md — development guidelines
 
 - **Tools**
   - dashboard.py — real-time bus visualization
