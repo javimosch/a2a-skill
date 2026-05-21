@@ -343,21 +343,37 @@ class TestLifecycle(unittest.TestCase):
         a2a.cmd_unregister(args)  # Should not crash
 
     def test_list_agents_json(self):
-        """List agents outputs valid JSON."""
+        """List agents outputs valid JSON with correct agent data."""
         self._register("agent-a", role="dev")
         self._register("agent-b", role="critic")
-        args = a2a.argparse.Namespace(project=self.project, json=True)
-        with patch("sys.stdout"):  # suppress print
-            a2a.cmd_list(args)
-        # Verify agents are in DB
-        conn = a2a.connect(self.project)
-        rows = conn.execute(
-            "SELECT id, role FROM agents ORDER BY id"
-        ).fetchall()
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]["id"], "agent-a")
-        self.assertEqual(rows[1]["id"], "agent-b")
-        conn.close()
+        import io, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_list(a2a.argparse.Namespace(project=self.project, json=True))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 2)
+        ids = {d["id"] for d in data}
+        self.assertIn("agent-a", ids)
+        self.assertIn("agent-b", ids)
+
+    def test_list_agents_json_empty(self):
+        """List --json on empty bus returns valid JSON empty array."""
+        import io, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_list(a2a.argparse.Namespace(project=self.project, json=True))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 0)
 
     def test_list_agents_empty(self):
         """List on empty bus prints '(no agents registered)'."""
@@ -379,6 +395,22 @@ class TestLifecycle(unittest.TestCase):
         """Clear on a project with no database prints notice and does not crash."""
         project = f"clear-nonex-{os.getpid()}"
         a2a.cmd_clear(a2a.argparse.Namespace(project=project, yes=True))
+
+    def test_cmd_clear_refuses_without_yes(self):
+        """Clear without --yes exits with error."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_clear(
+                a2a.argparse.Namespace(project=self.project, yes=False)
+            )
+
+    def test_cmd_clear_with_yes_removes_database(self):
+        """Clear --yes removes the database file."""
+        project = f"clear-test-{os.getpid()}"
+        a2a.connect(project, create=True).close()
+        db = a2a.db_path(project)
+        self.assertTrue(db.exists(), "DB should exist before clear")
+        a2a.cmd_clear(a2a.argparse.Namespace(project=project, yes=True))
+        self.assertFalse(db.exists(), "DB should be removed after clear")
 
 
 class TestEdgeCases(unittest.TestCase):
@@ -1381,6 +1413,22 @@ class TestEdgeCases(unittest.TestCase):
         self.assertIn("body", data[0])
         self.assertIn("sender", data[0])
         self.assertEqual(data[0]["body"], "peek me")
+
+    def test_cmd_peek_json_empty_bus(self):
+        """cmd_peek --json on empty bus returns empty JSON array."""
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_peek(a2a.argparse.Namespace(
+                project=self.project, limit=10, json=True
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 0)
 
     def test_cmd_search_fts_force(self):
         """cmd_search --fts --json produces valid JSON results."""
