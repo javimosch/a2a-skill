@@ -259,7 +259,7 @@ See [V14_ARCHITECTURE.md](docs/V14_ARCHITECTURE.md) for v1.4 planning:
 - Distributed tracing (Jaeger integration)
 - Prometheus metrics
 
-See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for complete roadmap.
+See [CHANGELOG.md](CHANGELOG.md) for release history and roadmap.
 
 ---
 
