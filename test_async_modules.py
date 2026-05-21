@@ -187,6 +187,10 @@ class TestA2AClientAsync(unittest.TestCase):
         self.assertGreaterEqual(stats["messages"], 2)
         self.assertGreaterEqual(stats["broadcasts"], 1)
         self.assertIn("agents_active", stats)
+        # top_senders keys should match sync client format
+        if stats["top_senders"]:
+            self.assertIn("agent", stats["top_senders"][0])
+            self.assertIn("count", stats["top_senders"][0])
 
     def test_search(self):
         """search() finds messages by keyword."""

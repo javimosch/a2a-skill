@@ -337,7 +337,10 @@ class A2AClientAsync:
             "SELECT sender, COUNT(*) as count FROM messages "
             "GROUP BY sender ORDER BY count DESC LIMIT 5"
         )
-        top_senders = [dict(row) for row in await cursor.fetchall()]
+        top_senders = [
+            {"agent": row["sender"], "count": row["count"]}
+            for row in await cursor.fetchall()
+        ]
 
         return {
             "messages": messages,
