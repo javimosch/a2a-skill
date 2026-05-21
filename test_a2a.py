@@ -1174,7 +1174,47 @@ class TestEdgeCases(unittest.TestCase):
                 project=self.project, as_="phantom", timeout=0, count=0
             ))
 
+    def test_cmd_send_empty_body(self):
+        """Send with empty body works at CLI level (creates message with empty content)."""
+        self._register("alice")
+        self._register("bob")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT body FROM messages WHERE sender='alice'").fetchone()
+        conn.close()
+        self.assertIsNotNone(row)
+        self.assertEqual(row["body"], "")
 
+    def test_cmd_recv_since_and_limit(self):
+        """recv with both --since and --limit filters by time then caps results."""
+        self._register("alice")
+        self._register("bob")
+        conn = a2a.connect(self.project)
+        # Send 3 messages at different timestamps (id is INTEGER PK)
+        for i, body in enumerate(["first", "second", "third"]):
+            conn.execute(
+                "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+                ("bob", "alice", body, float(1000 + i)),
+            )
+        conn.commit()
+        conn.close()
+        # recv with since=1000.5 and limit=1 should return only "second"
+        args = a2a.argparse.Namespace(
+            project=self.project, **{"as_": "alice", "wait": 0, "limit": 1,
+                                     "since": 1000.5, "all": True, "peek": False,
+                                     "json": False, "include_self": False}
+        )
+        a2a.cmd_recv(args)
+        # Verify by querying the reads table — only 1 message should have been returned
+        conn = a2a.connect(self.project)
+        read_ids = [r["message_id"] for r in
+                    conn.execute("SELECT message_id FROM reads WHERE agent_id='alice' ORDER BY message_id").fetchall()]
+        conn.close()
+        self.assertEqual(len(read_ids), 1)
 
 
 
