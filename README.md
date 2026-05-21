@@ -82,9 +82,9 @@ a2a-skill/
 ├── docs/V13_QUICKREF.md      # v1.3 quick reference
 │
 🧪 Tests & Benchmarks
-├── test_a2a.py          # unit tests (62 tests)
+├── test_a2a.py          # unit tests (72 tests)
 ├── test_a2a_client.py   # Python client tests (42 tests)
-├── test_integration.py  # integration tests (56 tests)
+├── test_integration.py  # integration tests (65 tests)
 ├── test_a2a_client.js   # Node.js client tests (23 tests)
 ├── stress_test.sh       # 10-agent concurrent stress test
 ├── high_volume_stress_test.sh  # 20-agent, 1000+ message test
@@ -106,6 +106,9 @@ a2a-skill/
 │   ├── v13_integrated_agent.py       # All v1.3 features in action
 │   ├── secure_team_agent.py          # Asymmetric encryption + routing + audit
 │   ├── compliance_archival_agent.py  # Full-text search + audit + archival
+│   ├── spawn_coordinator.py          # Auto-spawn coordinator (Pattern 3)
+│   ├── spawn_debate.py               # Adversarial debate via a2a-spawn
+│   ├── nodejs_coordinator.js         # Coordinator in Node.js
 │   └── task_worker.rs                # Rust agent example
 ├── smoke_test.sh            # 2-claude haiku peer dialog
 ├── smoke_test_multi.sh      # cross-CLI peer dialog (claude + opencode + pi)
@@ -237,7 +240,7 @@ agents drive themselves. See `.agents/skills/a2a/SKILL.md` for the exact kit pro
 
 ## Tests
 
-### Unit tests (62 tests, stdlib only)
+### Unit tests (72 tests, stdlib only)
 
 ```bash
 python3 test_a2a.py -v
@@ -246,7 +249,8 @@ python3 test_a2a.py -v
 Covers: schema init, WAL mode, agent registration & upsert, send/recv,
 read-tracking, broadcast, self-message filtering, `--include-self`,
 message TTL expiry & cleanup, thread IDs, status transitions,
-project info, unknown-agent errors, concurrent writes.
+project info, unknown-agent errors, concurrent writes, FTS5 search,
+cross-project isolation, special character handling.
 
 ### Smoke tests
 
@@ -261,14 +265,15 @@ project info, unknown-agent errors, concurrent writes.
 Both clear the bus at start and assert each peer sent messages and ended
 with `status='done'`.
 
-### Integration tests
+### Integration tests (65 tests)
 
 ```bash
 python3 test_integration.py -v
 ```
 
 Shells out to the `a2a` binary and exercises full workflows: register→send→recv,
-TTL expiry, broadcast, cross-project isolation, concurrent agents.
+TTL expiry, broadcast, cross-project isolation, concurrent agents,
+JSON output, and edge cases.
 
 ### Performance benchmarks
 
@@ -316,7 +321,7 @@ See `examples/README.md` for detailed walkthroughs of each pattern:
 GitHub Actions automatically runs tests on every push:
 
 - **Unit tests**: `test_a2a.py` on Python 3.10, 3.11, 3.12
-- **Integration tests**: `test_integration.py` (56 CLI-level workflows)
+- **Integration tests**: `test_integration.py` (65 CLI-level workflows)
 - **Smoke tests**: Single-CLI and cross-CLI peer collaboration
 - **Performance benchmarks**: Latency, throughput, TTL overhead
 - **Code validation**: Python syntax, shell script validation, docs checks
