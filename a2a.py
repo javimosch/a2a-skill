@@ -461,7 +461,10 @@ def cmd_search(args) -> None:
         ).fetchall()
     conn.close()
     if not rows:
-        print(f"(no messages matching '{args.query}')")
+        if args.json:
+            print("[]")
+        else:
+            print(f"(no messages matching '{args.query}')")
     else:
         _print_messages(rows, args.json)
 

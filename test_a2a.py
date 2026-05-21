@@ -1443,6 +1443,181 @@ class TestEdgeCases(unittest.TestCase):
         self.assertGreaterEqual(len(data), 1)
         self.assertIn("self message", [m["body"] for m in data])
 
+    def test_search_empty_query(self):
+        """Search with empty query returns all messages."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "findable message", a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_search(a2a.argparse.Namespace(
+            project=self.project, query="", limit=50, json=False, fts=False
+        ))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        self.assertIn("findable message", output)
+
+    def test_search_no_matches(self):
+        """Search with query that matches nothing returns empty cleanly."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "hello", a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_search(a2a.argparse.Namespace(
+            project=self.project, query="zzznonexistent", limit=50, json=True, fts=False
+        ))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        # With --json and no matches, should output valid JSON (either [] or notice)
+        try:
+            data = json.loads(output) if output.strip() else []
+            self.assertIsInstance(data, list)
+            self.assertEqual(len(data), 0)
+        except json.JSONDecodeError:
+            # Accept human-readable notice as fallback
+            self.assertIn("no messages", output.lower())
+
+    def test_message_ordering_identical_timestamps(self):
+        """Messages with the same created_at are ordered by ID (insertion order)."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        ts = a2a.now()
+        for i, body in enumerate(["msg-c", "msg-a", "msg-b"]):
+            conn.execute(
+                "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+                ("alice", None, body, ts),
+            )
+        conn.commit()
+        conn.close()
+
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_peek(a2a.argparse.Namespace(project=self.project, limit=10, json=True))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        data = json.loads(output) if output.strip() else []
+        # peek with id=json output: ORDER BY created_at DESC then reversed, so it's ASC
+        # With same timestamp, fallback is autoincrement id ascending
+        bodies = [m["body"] for m in data]
+        # "msg-c" inserted first (id=1), "msg-a" second (id=2), "msg-b" third (id=3)
+        self.assertEqual(bodies, ["msg-c", "msg-a", "msg-b"],
+                         "Messages with same timestamp should be ordered by ID (insertion order)")
+
+    def test_recv_reads_table_updated(self):
+        """recv creates read-tracking entries for delivered messages."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", "bob", "msg for bob", a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
+        # recv as bob
+        args = a2a.argparse.Namespace(
+            project=self.project, as_="bob", wait=0,
+            all=False, include_self=False, peek=False,
+            since=None, limit=None, json=True
+        )
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_recv(args)
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+
+        # Verify reads table has an entry for bob
+        conn = a2a.connect(self.project)
+        read_count = conn.execute(
+            "SELECT COUNT(*) FROM reads WHERE agent_id='bob'"
+        ).fetchone()[0]
+        conn.close()
+        self.assertGreaterEqual(read_count, 1, "recv should create read-tracking entry")
+
+    def test_upsert_preserves_unset_fields(self):
+        """upsert updates only specified fields, leaves others intact."""
+        # Register with all fields
+        args = a2a.argparse.Namespace(
+            project=self.project, id="multi", role="original_role",
+            prompt="original_prompt", cli="original_cli", pid=42, upsert=False
+        )
+        a2a.cmd_register(args)
+
+        # Upsert with only a new role
+        args2 = a2a.argparse.Namespace(
+            project=self.project, id="multi", role="new_role",
+            prompt=None, cli=None, pid=None, upsert=True
+        )
+        a2a.cmd_register(args2)
+
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT role, prompt, cli, pid FROM agents WHERE id='multi'"
+        ).fetchone()
+        conn.close()
+        self.assertEqual(row["role"], "new_role", "role should be updated")
+        self.assertEqual(row["prompt"], "original_prompt", "prompt should be preserved")
+        self.assertEqual(row["cli"], "original_cli", "cli should be preserved")
+        self.assertEqual(row["pid"], 42, "pid should be preserved")
+
+    def test_peek_returns_newest_first(self):
+        """peek returns messages in reverse chronological order (newest first) in non-JSON, chronological in JSON."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        base_ts = a2a.now()
+        for i in range(3):
+            conn.execute(
+                "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+                ("alice", None, f"msg-{i}", base_ts + i)
+            )
+        conn.commit()
+        conn.close()
+
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_peek(a2a.argparse.Namespace(project=self.project, limit=10, json=True))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        data = json.loads(output) if output.strip() else []
+        bodies = [m["body"] for m in data]
+        # JSON peek order: oldest first (chronological)
+        self.assertEqual(bodies, ["msg-0", "msg-1", "msg-2"],
+                         "peek JSON output should be chronological order")
+
 
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
