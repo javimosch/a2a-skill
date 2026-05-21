@@ -1358,6 +1358,60 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(row["prompt"], "initial")
         self.assertEqual(row["cli"], "claude")
 
+    def test_cmd_unregister_nonexistent_agent(self):
+        """Unregistering a non-existent agent prints removed 0 and does not crash."""
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_unregister(
+                a2a.argparse.Namespace(project=self.project, id="phantom")
+            )
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("removed 0", output)
+
+    def test_cmd_list_empty_bus(self):
+        """List on a bus with no registered agents shows a notice."""
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_list(
+                a2a.argparse.Namespace(project=self.project, json=False)
+            )
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("no agents registered", output.lower())
+
+    def test_cmd_recv_include_self(self):
+        """recv --include-self returns own messages."""
+        self._register("alice")
+        self._register("bob")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="alice", body="self message",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+        import io, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, **{"as_": "alice", "wait": 0,
+                                         "all": True, "peek": False,
+                                         "limit": 0, "since": None,
+                                         "json": True, "include_self": True}
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output) if output.strip() else []
+        self.assertGreaterEqual(len(data), 1)
+        self.assertIn("self message", [m["body"] for m in data])
+
 
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
