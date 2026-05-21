@@ -105,6 +105,13 @@ def now() -> float:
     return time.time()
 
 
+def _open(args, *, create: bool = False) -> tuple[str, sqlite3.Connection]:
+    """Resolve project name and open database connection."""
+    name = project_name(args.project)
+    conn = connect(name, create=create)
+    return name, conn
+
+
 def cleanup_expired(conn: sqlite3.Connection) -> int:
     """Delete messages past their TTL. Return count deleted."""
     ts = now()
@@ -119,8 +126,7 @@ def cleanup_expired(conn: sqlite3.Connection) -> int:
 # ---------- commands ----------
 
 def cmd_init(args) -> None:
-    name = project_name(args.project)
-    conn = connect(name, create=True)
+    name, conn = _open(args, create=True)
     conn.close()
     print(f"a2a project '{name}' ready at {db_path(name)}")
 
@@ -136,8 +142,7 @@ def cmd_project(args) -> None:
 
 
 def cmd_register(args) -> None:
-    name = project_name(args.project)
-    conn = connect(name, create=True)
+    name, conn = _open(args, create=True)
     ts = now()
     try:
         conn.execute(
@@ -162,8 +167,7 @@ def cmd_register(args) -> None:
 
 
 def cmd_unregister(args) -> None:
-    name = project_name(args.project)
-    conn = connect(name)
+    _, conn = _open(args)
     cur = conn.execute("DELETE FROM agents WHERE id=?", (args.id,))
     conn.commit()
     n = cur.rowcount
@@ -172,8 +176,7 @@ def cmd_unregister(args) -> None:
 
 
 def cmd_list(args) -> None:
-    name = project_name(args.project)
-    conn = connect(name)
+    _, conn = _open(args)
     rows = conn.execute(
         "SELECT id, role, cli, status, pid, created_at, last_seen FROM agents "
         "ORDER BY created_at"
@@ -192,8 +195,7 @@ def cmd_list(args) -> None:
 
 
 def cmd_status(args) -> None:
-    name = project_name(args.project)
-    conn = connect(name)
+    _, conn = _open(args)
     agent_id = getattr(args, "as_")
     ts = now()
     cur = conn.execute(
@@ -220,8 +222,7 @@ def _touch(conn: sqlite3.Connection, agent_id: str):
 
 
 def cmd_send(args) -> None:
-    name = project_name(args.project)
-    conn = connect(name)
+    _, conn = _open(args)
     sender = getattr(args, "from_")
     if not sender:
         conn.close()
@@ -311,8 +312,7 @@ def _print_messages(rows, as_json):
 
 
 def cmd_recv(args) -> None:
-    name = project_name(args.project)
-    conn = connect(name)
+    _, conn = _open(args)
     agent = getattr(args, "as_")
     if not agent:
         conn.close()
@@ -350,8 +350,7 @@ def cmd_recv(args) -> None:
 
 def cmd_peek(args) -> None:
     """Show recent messages without marking them read; visible to all observers."""
-    name = project_name(args.project)
-    conn = connect(name)
+    _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
     rows = conn.execute(
@@ -366,8 +365,7 @@ def cmd_peek(args) -> None:
 
 def cmd_thread(args) -> None:
     """Show all messages in a thread."""
-    name = project_name(args.project)
-    conn = connect(name)
+    _, conn = _open(args)
     rows = conn.execute(
         f"SELECT {MSG_COLS} FROM messages "
         "WHERE thread_id = ? ORDER BY created_at ASC",
@@ -438,8 +436,7 @@ def _init_fts(conn: sqlite3.Connection) -> bool:
 
 def cmd_search(args) -> None:
     """Search messages by content."""
-    name = project_name(args.project)
-    conn = connect(name)
+    _, conn = _open(args)
     fts_ready = _init_fts(conn)
     use_fts = args.fts or fts_ready
     if use_fts:
@@ -467,8 +464,7 @@ def cmd_search(args) -> None:
 
 def cmd_stats(args) -> None:
     """Show bus statistics."""
-    name = project_name(args.project)
-    conn = connect(name)
+    name, conn = _open(args)
 
     # Count messages and threads
     msg_count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
@@ -519,8 +515,7 @@ def cmd_stats(args) -> None:
 
 def cmd_wait(args) -> None:
     """Block until N messages exist for agent, or timeout."""
-    name = project_name(args.project)
-    conn = connect(name)
+    _, conn = _open(args)
     agent = getattr(args, "as_")
     deadline = now() + args.timeout
     while True:
