@@ -27,12 +27,13 @@ python3 examples/artifacts/color-palette/build.py --cli opencode
 
 ## Output
 
-- `output/index.html` — Self-contained HTML page with palette preview
-- Color swatches with hex codes and descriptions
-- Mock UI card showing colors applied to a real interface
-- Responsive layout, inline CSS, valid HTML5
+- `output/index.html` — 6,029 bytes, self-contained HTML5 page
+- Color swatches with hex codes and descriptions for 5 colors
+- Night-sky dark theme (#0F172A background) with indigo, sky blue, amber palette
+- Mock UI card showing colors applied to a real pipeline-build interface
+- Responsive grid layout, inline CSS, valid HTML5
 
-## Bus transcript
+## Bus transcript (from opencode build)
 
 ```
 STATS:
@@ -41,10 +42,10 @@ STATS:
   Top senders: collector (2), generator (1), colorist (1)
 
 CONVERSATION:
-  #1 collector -> colorist: Propose a harmonious 5-color palette for FlowForge
-  #2 collector -> generator: Wait for palette spec, then create HTML preview
-  #3 colorist -> generator: Palette spec (5 colors with hex codes + descriptions)
-  #4 generator -> ALL: <!DOCTYPE html>... (complete HTML preview page)
+  #1 collector -> colorist: Propose a 5-color palette (primary, secondary, accent, bg, text)
+  #2 collector -> generator: Wait for palette, then create HTML preview page
+  #3 colorist -> generator: FlowForge Palette v1 — Indigo #6366F1, Sky Blue #0EA5E9, Amber #F59E0B, Slate 900 #0F172A, Slate 50 #F8FAFC
+  #4 generator -> ALL: <!DOCTYPE html>... (complete dark-mode HTML preview with swatches and mock card)
 ```
 
 ## What demonstrates a2a
