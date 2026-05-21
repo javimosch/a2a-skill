@@ -282,6 +282,15 @@ class TestA2AClientAsync(unittest.TestCase):
         self.assertEqual(len(messages), 0)
         self.assertLess(elapsed, 2, "recv with negative wait should not block")
 
+    def test_send_to_empty_string_raises_value_error(self):
+        """send() with empty recipient raises ValueError (async)."""
+        from a2a_client_async import A2AClientAsync
+        client = A2AClientAsync(self.project, "alice")
+        with self.assertRaises(ValueError):
+            run_async(client.send("", "empty"))
+        with self.assertRaises(ValueError):
+            run_async(client.send("   ", "whitespace"))
+
 
 @unittest.skipUnless(HAS_AIOSQLITE, SKIP_MSG)
 class TestPriorityClientAsync(unittest.TestCase):

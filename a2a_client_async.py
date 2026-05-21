@@ -71,8 +71,13 @@ class A2AClientAsync:
 
         Returns:
             Message ID
+
+        Raises:
+            ValueError: If recipient is empty
         """
         conn = await self._connect()
+        if not to or not to.strip():
+            raise ValueError("recipient must not be empty")
         recipient = None if to.lower() in ("all", "*", "broadcast") else to
         await conn.execute(
             "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
