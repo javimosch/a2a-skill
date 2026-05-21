@@ -957,6 +957,57 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(data["agents_active"], 1)
         self.assertEqual(data["agents_done"], 1)
 
+    def test_send_unicode_body(self):
+        """Send with Unicode characters in body stores correctly."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+        conn.close()
+
+        # Unicode body with emoji and accented characters
+        body = "Hello ✨ — ñoño méil 日本語"
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body=body,
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT body FROM messages WHERE sender=? AND recipient=?",
+            ("alice", "bob")
+        ).fetchone()
+        self.assertEqual(row["body"], body)
+        conn.close()
+
+    def test_send_with_thread_and_ttl(self):
+        """Send with both --thread and --ttl works together."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+        conn.close()
+
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="threaded ttl msg",
+            **{"from_": "alice", "thread": "topic-42", "ttl": 3600}
+        )
+        a2a.cmd_send(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT body, thread_id, ttl_seconds FROM messages WHERE body=?",
+            ("threaded ttl msg",)
+        ).fetchone()
+        self.assertEqual(row["thread_id"], "topic-42")
+        self.assertEqual(row["ttl_seconds"], 3600)
+        conn.close()
+
 
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
