@@ -26,6 +26,7 @@ output to `output/`.
 | `landing-page/` | designer, copywriter, integrator | `output/index.html` | 3 agents collaborate to produce a SaaS landing page |
 | `svg-banner/` | designer, reviewer | `output/banner.svg` | 2 agents iterate on an SVG banner through critique rounds |
 | `mini-cli/` | architect, implementer | `output/tasky.py` | 2 agents spec and implement a Python CLI tool |
+| `config-generator/` | architect, implementer | `output/docker-compose.yml`, `output/nginx.conf`, `output/.env.example` | 2 agents produce a full server deployment configuration |
 
 ## Requirements
 
