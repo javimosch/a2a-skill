@@ -477,6 +477,35 @@ class TestA2AClient(unittest.TestCase):
         peer = next(p for p in peers if p["id"] == "alice")
         self.assertEqual(peer["role"], "planner")
 
+    def test_register_duplicate_raises_without_upsert(self):
+        """register() without upsert on existing agent raises IntegrityError."""
+        alice = A2AClient(self.project, "alice")
+        import sqlite3
+        with self.assertRaises(sqlite3.IntegrityError):
+            alice.register("tester", upsert=False)
+
+    def test_peek_respects_limit(self):
+        """peek() returns at most limit messages."""
+        alice = A2AClient(self.project, "alice")
+        for i in range(10):
+            alice.send("bob", f"peek-limit-msg-{i}")
+        messages = alice.peek(limit=3)
+        self.assertLessEqual(len(messages), 3)
+
+    def test_recv_chronological_order(self):
+        """recv returns messages in chronological order."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        import time
+        alice.send("bob", "first")
+        time.sleep(0.01)
+        alice.send("bob", "second")
+        time.sleep(0.01)
+        alice.send("bob", "third")
+        messages = bob.recv(wait=1, limit=3)
+        bodies = [m["body"] for m in messages]
+        self.assertEqual(bodies, ["first", "second", "third"])
+
 
 if __name__ == "__main__":
     unittest.main()
