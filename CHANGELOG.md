@@ -165,7 +165,6 @@ All notable changes to a2a-skill are documented here.
   - ADVANCED_PATTERNS.md (404 LOC) — optimization techniques
   - QUICKSTART.md — 5-minute introduction
   - CLIENT_API.md — Python client reference
-  - CONTRIBUTING.md — development guidelines
 
 ---
 
