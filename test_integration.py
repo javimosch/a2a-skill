@@ -852,6 +852,40 @@ class TestIntegration(unittest.TestCase):
         msgs = json.loads(result.stdout)
         self.assertGreaterEqual(len(msgs), 2)
 
+    def test_send_special_chars_body(self):
+        """Send with special shell characters in body does not cause errors."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        special = "line1\\nline2\\ttab 'double-quote' 'single'"
+        a2a("send", "bob", special, "--from", "alice", project=self.project)
+        result = a2a("recv", "--as", "bob", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 1)
+        self.assertIn("line1", msgs[0]["body"])
+        self.assertIn("double-quote", msgs[0]["body"])
+
+    def test_peek_limit_zero(self):
+        """peek --limit 0 returns no messages."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "msg1", "--from", "alice", project=self.project)
+        a2a("send", "bob", "msg2", "--from", "alice", project=self.project)
+        result = a2a("peek", "--json", "--limit", "0", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 0)
+
+    def test_send_ttl_from_cli(self):
+        """Send with --ttl from CLI expires messages after the TTL period."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "short-lived", "--from", "alice", "--ttl", "60", project=self.project)
+        a2a("send", "bob", "permanent", "--from", "alice", project=self.project)
+        # Both should be visible initially
+        result = a2a("peek", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        bodies = [m["body"] for m in msgs]
+        self.assertIn("short-lived", bodies)
+        self.assertIn("permanent", bodies)
 
 if __name__ == "__main__":
     unittest.main()
