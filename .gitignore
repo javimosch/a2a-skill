@@ -49,3 +49,4 @@ package-lock.json
 .devin/
 
 # Collaborative artifact build outputs (checked in: build scripts + artifacts)
+palette_preview.html
