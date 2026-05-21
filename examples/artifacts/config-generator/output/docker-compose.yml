@@ -1,0 +1,69 @@
+version: "3.9"
+
+networks:
+  appnet:
+    driver: bridge
+
+volumes:
+  pgdata:
+  certs:
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: db
+    restart: unless-stopped
+    networks: [appnet]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./data/pg/init:/docker-entrypoint-initdb.d
+    env_file: .env.production
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-myapp_user} -d ${DB_NAME:-myapp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: ./app
+    container_name: app
+    restart: unless-stopped
+    networks: [appnet]
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000"
+    volumes:
+      - ./app:/usr/src/app
+    env_file: .env.production
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode===200?0:1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    networks: [appnet]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - certs:/etc/letsencrypt
+      - ./nginx/html:/var/www/html
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

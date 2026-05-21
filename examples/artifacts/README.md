@@ -51,7 +51,7 @@ python3 examples/artifacts/svg-banner/build.py --cli claude --model haiku
 python3 examples/artifacts/mini-cli/build.py --cli pi --model sonnet
 ```
 
-Output goes to `examples/artifacts/<name>/output/` (gitignored).
+Output goes to `examples/artifacts/<name>/output/` (checked in).
 
 ## Architecture
 

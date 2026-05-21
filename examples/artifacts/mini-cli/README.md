@@ -14,15 +14,15 @@ Two AI agents collaborate to design and implement a small Python CLI tool
 
 `tasky` is a minimal task tracker with zero external dependencies:
 
-```
+```bash
 python3 tasky.py add "Write docs"
 python3 tasky.py list
 python3 tasky.py done 1
-python3 tasky.py clear
+python3 tasky.py clear --yes
 ```
 
-Tasks are stored in a JSON file. Uses only Python stdlib (`json`, `argparse`,
-`sys`, `pathlib`).
+Tasks are stored in `~/.tasky/tasks.json`. Uses only Python stdlib (`json`,
+`argparse`, `sys`, `pathlib`).
 
 ## Workflow
 
@@ -38,9 +38,30 @@ cd /root/projects/a2a-skill
 python3 examples/artifacts/mini-cli/build.py --cli opencode
 ```
 
+## Output
+
+- `output/tasky.py` — 2,577 bytes, single-file Python CLI
+- Valid Python (compiles clean), executable with `#!/usr/bin/env python3`
+- Commands: `add`, `list`, `done`, `clear` with `--yes` confirmation
+
+## Bus transcript
+
+```
+STATS:
+  Messages: 4 total (3 direct + 1 broadcast)
+  Agents: 1 collector + 2 worker agents
+  Top senders: collector (2), implementer (1), architect (1)
+
+CONVERSATION:
+  #1 collector -> architect: Task: Design tasky CLI spec
+  #2 collector -> implementer: Task: Wait for spec, then implement
+  #3 architect -> implementer: Spec: tasky — single-file Python, 4 commands
+  #4 implementer -> ALL: FINAL_CODE: ... (complete Python implementation)
+```
+
 ## What demonstrates a2a
 
 - **Divided labor**: architect handles design, implementer handles code
 - **Dependency ordering**: implementer waits for architect's spec before starting
-- **Structured delivery**: FINAL_CODE: prefix on the bus marks the deliverable
+- **Structured delivery**: `FINAL_CODE:` prefix on the bus marks the deliverable
 - **a2a-spawn integration**: agents launched with role-specific kit prompts

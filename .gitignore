@@ -48,5 +48,4 @@ package-lock.json
 # Devin / AI platform artifacts
 .devin/
 
-# Collaborative artifact build outputs (checked in: build.py + README only)
-examples/artifacts/*/output/
+# Collaborative artifact build outputs (checked in: build scripts + artifacts)

@@ -25,14 +25,16 @@ ARTIFACT = "mini-cli"
 PROMPT_ARCHITECT = (
     "You are the architect. Design a simple Python CLI tool called 'tasky' "
     "— a minimal task tracker that stores tasks in a JSON file (no external deps). "
+    "It must be a single-file Python script (no shell wrapper, no multi-file structure). "
     "It must support these commands: add <task>, list, done <id>, and clear. "
     "Send the complete spec to the implementer. The spec must include: "
-    "file structure, function signatures, JSON format, and usage examples."
+    "function signatures, JSON format, and usage examples."
 )
 PROMPT_IMPLEMENTER = (
     "You are the implementer. Wait for the architect to send you the spec for 'tasky'. "
-    "Once received, write the complete Python implementation as a single file CLI "
-    "script using argparse. It must use only stdlib (json, argparse, sys, pathlib). "
+    "Once received, write the complete Python implementation as a single-file CLI "
+    "script using argparse. Send ONLY the Python source code — no shell wrapper scripts. "
+    "It must use only stdlib (json, argparse, sys, pathlib). "
     "Broadcast the final source code to 'all' "
     "with the prefix 'FINAL_CODE:' so the build script can capture it. "
     "Wrap the code in ```python ... ``` markers."
@@ -103,7 +105,7 @@ def main():
                 if "```" in body:
                     parts = body.split("```")
                     for p in parts:
-                        if "import" in p and ("def " in p or "class " in p or "argparse" in p):
+                        if "import" in p and ("def " in p or "class " in p or "argparse" in p or '"""' in p or "#!/usr/bin/env python" in p):
                             # Strip language tag if present
                             code = p.strip()
                             if code.startswith("python"):
@@ -112,6 +114,12 @@ def main():
                                 code = code[2:].strip()
                             elif code.startswith("bash"):
                                 code = code[4:].strip()
+                            # Strip any shell wrapper preamble — find the python shebang or first import
+                            py_start = code.find("#!/usr/bin/env python")
+                            if py_start == -1:
+                                py_start = code.find("import ")
+                            if py_start > 0:
+                                code = code[py_start:]
                             final_code = code
                             print(f"[{ARTIFACT}] ← Final code from {sender} ({len(final_code)} chars)")
                             break
