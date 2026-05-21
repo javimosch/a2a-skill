@@ -5,237 +5,242 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FlowForge Color Palette</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background: #FAFAF9;
     color: #1C1917;
-    padding: 48px 24px;
+    line-height: 1.6;
+    padding: 2rem 1rem;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
-  .container { max-width: 800px; width: 100%; }
-  h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: #1C1917;
+  .container { max-width: 960px; width: 100%; }
+
+  /* ---------- Header ---------- */
+  header {
+    text-align: center;
+    padding: 3rem 1.5rem 2.5rem;
+    border-bottom: 2px solid #64748B;
+    margin-bottom: 2.5rem;
   }
-  .subtitle {
+  header h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #1C1917;
+    margin-bottom: 0.35rem;
+  }
+  header h1 span { color: #2563EB; }
+  header p {
     font-size: 1.1rem;
-    color: #1C1917;
-    opacity: 0.7;
-    margin-bottom: 40px;
+    color: #64748B;
+    font-weight: 400;
   }
-  .swatch-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
-    margin-bottom: 48px;
-  }
+
+  /* ---------- Swatches ---------- */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
   .swatch {
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    transition: transform 0.2s ease;
   }
+  .swatch:hover { transform: translateY(-4px); }
   .swatch-color {
-    height: 140px;
+    height: 180px;
     display: flex;
     align-items: flex-end;
-    padding: 12px;
+    padding: 1rem;
   }
-  .swatch-hex {
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 0.85rem;
-    font-weight: 600;
+  .swatch-color .hex {
     background: rgba(255,255,255,0.9);
-    padding: 4px 10px;
-    border-radius: 6px;
     backdrop-filter: blur(4px);
-  }
-  .swatch-info {
-    padding: 14px 16px;
-  }
-  .swatch-name {
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
     font-weight: 700;
-    font-size: 1rem;
-    margin-bottom: 2px;
-  }
-  .swatch-role {
-    font-size: 0.85rem;
-    opacity: 0.65;
-  }
-  h2 {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
+    font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+    letter-spacing: 0.02em;
     color: #1C1917;
   }
-  .card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 32px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    border: 1px solid rgba(28,25,23,0.08);
-    margin-bottom: 48px;
+  .swatch-info { padding: 1.2rem 1.2rem 1.5rem; }
+  .swatch-info h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1C1917;
+    margin-bottom: 0.35rem;
   }
-  .card-badge {
+  .swatch-info .role {
     display: inline-block;
-    background: #14B8A6;
-    color: #fff;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 4px 10px;
-    border-radius: 20px;
-    margin-bottom: 12px;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    margin-bottom: 0.6rem;
   }
-  .card h3 {
-    font-size: 1.4rem;
-    margin-bottom: 8px;
+  .swatch-info p {
+    font-size: 0.9rem;
+    color: #64748B;
+    line-height: 1.5;
+  }
+
+  /* ---------- Sample UI Card ---------- */
+  .sample-section { margin-top: 1rem; }
+  .sample-section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
     color: #1C1917;
+    margin-bottom: 1.25rem;
   }
-  .card p {
+  .mock-card {
+    background: #fff;
+    border: 1px solid #64748B;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  .mock-card-header {
+    background: #2563EB;
+    padding: 1.25rem 1.5rem;
+  }
+  .mock-card-header h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .mock-card-body { padding: 1.5rem; }
+  .mock-card-body p {
     font-size: 0.95rem;
-    line-height: 1.6;
     color: #1C1917;
-    opacity: 0.8;
-    margin-bottom: 20px;
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
   }
-  .card-actions {
-    display: flex;
-    gap: 10px;
-  }
-  .btn-primary {
-    background: #3B82F6;
-    color: #fff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-primary:hover { background: #2563EB; }
-  .btn-secondary {
-    background: transparent;
-    color: #3B82F6;
-    border: 1.5px solid #3B82F6;
-    padding: 10px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-secondary:hover { background: rgba(59,130,246,0.08); }
-  .btn-cta {
-    background: #F97316;
-    color: #fff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-cta:hover { background: #EA580C; }
-  .nav-demo {
-    display: flex;
+  .mock-card-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex;
     align-items: center;
-    gap: 20px;
-    padding: 14px 24px;
-    background: #3B82F6;
-    border-radius: 12px;
-    color: #fff;
-    margin-bottom: 32px;
+    justify-content: center;
+    padding: 0.65rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    cursor: default;
+    transition: box-shadow 0.15s ease;
   }
-  .nav-demo .brand { font-weight: 700; font-size: 1.1rem; }
-  .nav-demo .spacer { flex: 1; }
-  .nav-demo .nav-link { opacity: 0.85; font-size: 0.9rem; cursor: default; }
-  .nav-demo .nav-link.active { opacity: 1; font-weight: 600; }
-  .footer { font-size: 0.8rem; opacity: 0.5; text-align: center; }
+  .btn-primary { background: #2563EB; color: #fff; }
+  .btn-secondary { background: transparent; color: #64748B; border: 1.5px solid #64748B; }
+  .btn-accent { background: #F59E0B; color: #1C1917; }
+  .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.25rem 0.8rem;
+    border-radius: 999px;
+    background: #F59E0B;
+    color: #1C1917;
+    margin-bottom: 0.75rem;
+  }
+  footer {
+    margin-top: 3rem;
+    padding: 1.5rem 0;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #64748B;
+    border-top: 1px solid #64748B;
+  }
+  @media (max-width: 600px) {
+    header h1 { font-size: 2rem; }
+    .swatches { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>FlowForge</h1>
-  <div class="subtitle">Color Palette — v1.0</div>
 
-  <div class="swatch-grid">
+  <header>
+    <h1><span>Flow</span>Forge</h1>
+    <p>Color Palette Specification</p>
+  </header>
+
+  <div class="swatches">
     <div class="swatch">
-      <div class="swatch-color" style="background:#3B82F6">
-        <span class="swatch-hex" style="color:#1C1917">#3B82F6</span>
-      </div>
+      <div class="swatch-color" style="background:#2563EB;"><span class="hex">#2563EB</span></div>
       <div class="swatch-info">
-        <div class="swatch-name">Flow Blue</div>
-        <div class="swatch-role">Primary — Buttons, nav, links, brand</div>
+        <h3>Flow</h3>
+        <span class="role" style="background:#2563EB;color:#fff;">Primary</span>
+        <p>A deep vibrant blue used for navigation bars, primary buttons, links, and main action elements. Conveys trust and fluid motion.</p>
       </div>
     </div>
+
     <div class="swatch">
-      <div class="swatch-color" style="background:#14B8A6">
-        <span class="swatch-hex" style="color:#1C1917">#14B8A6</span>
-      </div>
+      <div class="swatch-color" style="background:#64748B;"><span class="hex">#64748B</span></div>
       <div class="swatch-info">
-        <div class="swatch-name">Stream Teal</div>
-        <div class="swatch-role">Secondary — Badges, tabs, support</div>
+        <h3>Anvil</h3>
+        <span class="role" style="background:#64748B;color:#fff;">Secondary</span>
+        <p>A warm slate used for secondary buttons, borders, cards, and supporting UI elements. Grounds the interface with stability.</p>
       </div>
     </div>
+
     <div class="swatch">
-      <div class="swatch-color" style="background:#F97316">
-        <span class="swatch-hex" style="color:#1C1917">#F97316</span>
-      </div>
+      <div class="swatch-color" style="background:#F59E0B;"><span class="hex">#F59E0B</span></div>
       <div class="swatch-info">
-        <div class="swatch-name">Forge Ember</div>
-        <div class="swatch-role">Accent — CTA, highlights, hover</div>
+        <h3>Ember</h3>
+        <span class="role" style="background:#F59E0B;color:#1C1917;">Accent</span>
+        <p>A warm amber/gold used for CTAs, highlights, badges, and interactive hover states. Injects the forge heat and energy.</p>
       </div>
     </div>
+
     <div class="swatch">
-      <div class="swatch-color" style="background:#FAFAF9">
-        <span class="swatch-hex" style="color:#1C1917">#FAFAF9</span>
-      </div>
+      <div class="swatch-color" style="background:#FAFAF9;"><span class="hex" style="color:#64748B;">#FAFAF9</span></div>
       <div class="swatch-info">
-        <div class="swatch-name">Anvil White</div>
-        <div class="swatch-role">Background — Pages, cards, fills</div>
+        <h3>Canvas</h3>
+        <span class="role" style="background:#FAFAF9;color:#1C1917;border:1px solid #64748B;">Background</span>
+        <p>A warm off-white used for page backgrounds, content areas, and modal surfaces. Soft and inviting without being stark.</p>
       </div>
     </div>
+
     <div class="swatch">
-      <div class="swatch-color" style="background:#1C1917">
-        <span class="swatch-hex" style="color:#fff">#1C1917</span>
-      </div>
+      <div class="swatch-color" style="background:#1C1917;"><span class="hex">#1C1917</span></div>
       <div class="swatch-info">
-        <div class="swatch-name">Iron Gray</div>
-        <div class="swatch-role">Text — Body, headings, captions</div>
+        <h3>Ink</h3>
+        <span class="role" style="background:#1C1917;color:#fff;">Text</span>
+        <p>A deep warm charcoal used for headings, body text, and readable content. High contrast while remaining gentle on the eyes.</p>
       </div>
     </div>
   </div>
 
-  <h2>Sample UI</h2>
-
-  <div class="nav-demo">
-    <span class="brand">FlowForge</span>
-    <span class="spacer"></span>
-    <span class="nav-link active">Dashboard</span>
-    <span class="nav-link">Projects</span>
-    <span class="nav-link">Settings</span>
-  </div>
-
-  <div class="card">
-    <span class="card-badge">Stream Teal</span>
-    <h3>Project Forge</h3>
-    <p>FlowForge combines cool aquatic tones with warm metallic accents to create a balanced, modern interface. The blue-teal gradient handles most UI duties while orange provides controlled contrast where action is needed.</p>
-    <div class="card-actions">
-      <button class="btn-primary">Flow Blue</button>
-      <button class="btn-secondary">Outline</button>
-      <button class="btn-cta">Forge Ember</button>
+  <div class="sample-section">
+    <h2>Sample UI</h2>
+    <div class="mock-card">
+      <div class="mock-card-header">
+        <h3>FlowForge Design System</h3>
+      </div>
+      <div class="mock-card-body">
+        <span class="badge">✨ New</span>
+        <p>This mock card demonstrates how the palette colors work together in a real interface. The primary blue creates a strong header, the warm ink ensures readability, slate borders define the container, and the amber badge draws attention to key information.</p>
+        <div class="mock-card-actions">
+          <span class="btn btn-primary">Get Started</span>
+          <span class="btn btn-secondary">Learn More</span>
+          <span class="btn btn-accent">Try for Free</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="footer">FlowForge Color Palette · Designed for FlowForge App</div>
+  <footer>
+    FlowForge &mdash; Built with warmth. Forged with purpose.
+  </footer>
+
 </div>
 </body>
 </html>
