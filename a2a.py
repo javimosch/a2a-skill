@@ -512,7 +512,7 @@ def cmd_stats(args):
         print(f"  Threads: {thread_count}")
         print(f"  Agents: {active_count} active, {done_count} done")
         if top_senders:
-            print(f"  Top senders:")
+            print("  Top senders:")
             for sender, count in top_senders:
                 print(f"    {sender}: {count} messages")
 
