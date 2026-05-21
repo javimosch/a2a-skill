@@ -40,11 +40,11 @@ python3 examples/artifacts/mini-cli/build.py --cli opencode
 
 ## Output
 
-- `output/tasky.py` — 2,577 bytes, single-file Python CLI
+- `output/tasky.py` — 2,491 bytes, single-file Python CLI
 - Valid Python (compiles clean), executable with `#!/usr/bin/env python3`
-- Commands: `add`, `list`, `done`, `clear` with `--yes` confirmation
+- Commands: `add`, `list`, `done`, `clear` (no confirmation needed)
 
-## Bus transcript
+## Bus transcript (from opencode build)
 
 ```
 STATS:
@@ -53,10 +53,10 @@ STATS:
   Top senders: collector (2), implementer (1), architect (1)
 
 CONVERSATION:
-  #1 collector -> architect: Task: Design tasky CLI spec
-  #2 collector -> implementer: Task: Wait for spec, then implement
-  #3 architect -> implementer: Spec: tasky — single-file Python, 4 commands
-  #4 implementer -> ALL: FINAL_CODE: ... (complete Python implementation)
+  #1 collector -> architect: Task: Design tasky CLI spec (4 commands, JSON storage)
+  #2 collector -> implementer: Task: Wait for spec, then implement single-file Python
+  #3 architect -> implementer: Spec: tasky — add/list/done/clear, ~/.tasky/tasks.json, argparse
+  #4 implementer -> ALL: FINAL_CODE: ... (complete 85-line Python implementation with all edge cases)
 ```
 
 ## What demonstrates a2a
