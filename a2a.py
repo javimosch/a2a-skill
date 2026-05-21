@@ -190,7 +190,7 @@ def cmd_unregister(args) -> None:
 def cmd_list(args) -> None:
     _, conn = _open(args)
     rows = conn.execute(
-        "SELECT id, role, cli, status, pid, created_at, last_seen FROM agents "
+        "SELECT id, role, prompt, cli, status, pid, created_at, last_seen FROM agents "
         "ORDER BY created_at"
     ).fetchall()
     conn.close()
