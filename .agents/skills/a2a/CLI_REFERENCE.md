@@ -24,12 +24,13 @@ cd a2a-skill && go build -tags fts5 -o a2a ./cmd/a2a/
 
 ```
 a2a init                                       # create ~/.a2a/{project}/database.db
-a2a register <id> [--role R] [--prompt P]      # register an agent
+a2a register <id> [--role R] [--prompt P] [--cli C]  # register an agent
 a2a register <id> --upsert                     # update existing agent
+a2a unregister <id>                            # remove an agent
 a2a list [--json]                              # list agents
 a2a send <to> "<body>" --from <id>             # to: agent-id, or 'all' for broadcast
 a2a send <to> "<body>" --from <id> --ttl 300   # message expires in 5 minutes
-a2a recv --as <id> [--wait 30]                 # unread inbox (blocks up to 30s)
+a2a recv --as <id> [--wait 30] [--limit N]     # unread inbox (blocks up to 30s, cap at N)
 a2a recv --as <id> --all                       # include already-read messages
 a2a recv --as <id> --peek                      # look without marking read
 a2a recv --as <id> --include-self              # include own messages
