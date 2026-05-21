@@ -1078,6 +1078,45 @@ class TestEdgeCases(unittest.TestCase):
         data = json.loads(output)
         self.assertLessEqual(len(data), 2, "search --limit 2 should return at most 2 messages")
 
+    def test_cmd_search_special_like_chars(self):
+        """Search handles special LIKE characters like % and _ in message bodies."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "progress: 90% done", a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "underscore_var_name", a2a.now() + 1)
+        )
+        conn.commit()
+        conn.close()
+
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_search(a2a.argparse.Namespace(
+            project=self.project, query="90%", limit=50, json=False, fts=False
+        ))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        self.assertIn("90% done", output)
+
+        # Search for a term containing underscore
+        old_stdout2 = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_search(a2a.argparse.Namespace(
+            project=self.project, query="underscore", limit=50, json=False, fts=False
+        ))
+        output2 = sys.stdout.getvalue()
+        sys.stdout = old_stdout2
+        self.assertIn("underscore_var_name", output2)
+
+
 
 
 
