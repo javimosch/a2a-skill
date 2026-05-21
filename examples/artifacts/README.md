@@ -52,6 +52,9 @@ python3 examples/artifacts/svg-banner/build.py --cli claude --model haiku
 
 # Custom project name:
 python3 examples/artifacts/mini-cli/build.py --cli pi --model sonnet
+
+# Recommended: opencode with opencode-go/deepseek-v4-flash:
+python3 examples/artifacts/quiz-generator/build.py --cli opencode --model opencode-go/deepseek-v4-flash
 ```
 
 Output goes to `examples/artifacts/<name>/output/` (checked in).
