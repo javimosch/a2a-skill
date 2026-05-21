@@ -257,9 +257,15 @@ class TestFTSClientWithDB(unittest.TestCase):
         self.assertEqual(results, [])
 
     def test_get_search_suggestions_partial_match(self):
-        """get_search_suggestions returns list (may be empty if FTS word list unsupported)."""
+        """get_search_suggestions returns matching body snippets for a partial query."""
         results = self.fts.get_search_suggestions("auth")
         self.assertIsInstance(results, list)
+        # At least one result should contain "authentication"
+        self.assertGreaterEqual(len(results), 1)
+        self.assertTrue(
+            any("authentication" in r.lower() for r in results),
+            f"expected 'authentication' in suggestions, got {results}",
+        )
 
     def test_get_search_suggestions_empty_on_no_match(self):
         """get_search_suggestions returns [] for unlikely prefix."""

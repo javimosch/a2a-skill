@@ -212,17 +212,27 @@ class FTSClient:
         """
         conn = self._connect()
         try:
-            # Get unique words in messages that start with partial
+            # Use LIKE on message bodies to find matching content snippets
             sql = """
-                SELECT DISTINCT word
-                FROM messages_fts(messages_fts)
-                WHERE word LIKE ?
+                SELECT DISTINCT substr(body, 1, 100) as snippet
+                FROM messages
+                WHERE lower(body) LIKE ?
                 LIMIT 10
             """
-            cursor = conn.execute(sql, (f"{partial_query}%",))
-            return [row[0] for row in cursor.fetchall()]
-        except Exception as e:
-            # Fallback: simple substring search if FTS word list unavailable
+            cursor = conn.execute(sql, (f"%{partial_query.lower()}%",))
+            results = [row[0] for row in cursor.fetchall()]
+            # Try FTS5 word-level completion via rank-based matching
+            if not results:
+                try:
+                    cursor = conn.execute(
+                        "SELECT substr(body, 1, 100) FROM messages WHERE body MATCH ? LIMIT 5",
+                        (f"\"{partial_query}\"*",),
+                    )
+                    results = [row[0] for row in cursor.fetchall()]
+                except Exception:
+                    pass
+            return results
+        except Exception:
             return []
         finally:
             conn.close()
