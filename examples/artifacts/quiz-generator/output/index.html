@@ -3,209 +3,267 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ancient Egypt Quiz</title>
+<title>Quiz: Space Exploration</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 2rem;
+    padding: 40px 20px;
   }
   .container {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    padding: 2.5rem;
-    max-width: 700px;
+    max-width: 720px;
     width: 100%;
   }
   h1 {
-    font-size: 2rem;
-    color: #333;
-    margin-bottom: 0.5rem;
+    color: #e0d8ff;
+    font-size: 2.4rem;
+    font-weight: 700;
     text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
   }
   .subtitle {
+    color: #9890c8;
     text-align: center;
-    color: #888;
-    margin-bottom: 2rem;
-    font-size: 0.9rem;
+    margin-bottom: 36px;
+    font-size: 1rem;
   }
-  .question {
-    background: #f8f9fa;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    padding: 1.25rem;
-    margin-bottom: 1rem;
-    transition: all 0.3s ease;
+  .card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    transition: border-color 0.3s, box-shadow 0.3s;
   }
-  .question.correct { border-color: #28a745; background: #eaffea; }
-  .question.wrong { border-color: #dc3545; background: #ffeaea; }
-  .q-text { font-weight: 600; color: #333; margin-bottom: 0.75rem; }
-  .options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .card.correct { border-color: #34d399; box-shadow: 0 0 20px rgba(52,211,153,0.15); }
+  .card.wrong   { border-color: #f87171; box-shadow: 0 0 20px rgba(248,113,113,0.15); }
+  .q-number {
+    display: inline-block;
+    background: rgba(255,255,255,0.08);
+    color: #a7a0d4;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+  .q-text {
+    color: #f0edff;
+    font-size: 1.1rem;
+    font-weight: 500;
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+  .options { display: flex; flex-direction: column; gap: 10px; }
   .options label {
-    flex: 1 1 calc(50% - 0.5rem);
-    padding: 0.6rem 1rem;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.95rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    color: #d8d4f0;
+    font-size: 0.95rem;
   }
-  .options label:hover { border-color: #667eea; background: #f0f0ff; }
-  .options input[type="radio"] { accent-color: #667eea; }
-  .options label.selected { border-color: #667eea; background: #eef0ff; }
-  .btn {
-    display: block;
-    width: 100%;
-    padding: 1rem;
-    font-size: 1.1rem;
+  .options label:hover { background: rgba(255,255,255,0.08); }
+  .options input[type="radio"] {
+    appearance: none;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .options input[type="radio"]:checked {
+    border-color: #818cf8;
+    background: #818cf8;
+    box-shadow: inset 0 0 0 4px #302b63;
+  }
+  .options .option-letter {
     font-weight: 600;
+    color: #9890c8;
+    min-width: 22px;
+  }
+  .btn-row { text-align: center; margin-top: 12px; }
+  button {
+    background: #818cf8;
+    color: #fff;
     border: none;
+    padding: 14px 48px;
+    font-size: 1.05rem;
+    font-weight: 600;
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 1.5rem;
+    transition: background 0.2s, transform 0.15s;
+    letter-spacing: 0.01em;
   }
-  .btn-check { background: #667eea; color: white; }
-  .btn-check:hover { background: #5a6fd6; transform: translateY(-1px); }
-  .btn-reset { background: #6c757d; color: white; margin-top: 0.5rem; }
-  .btn-reset:hover { background: #5a6268; }
-  .result-banner {
-    text-align: center;
-    font-size: 1.2rem;
-    font-weight: 600;
-    padding: 0.75rem;
-    border-radius: 10px;
-    margin-top: 1rem;
+  button:hover { background: #6d78f0; transform: translateY(-1px); }
+  button:active { transform: translateY(0); }
+  .result {
     display: none;
+    text-align: center;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 1.1rem;
   }
-  .result-banner.show { display: block; }
-  .result-banner.perfect { background: #d4edda; color: #155724; }
-  .result-banner.partial { background: #fff3cd; color: #856404; }
+  .result.show { display: block; }
+  .result.pass { background: rgba(52,211,153,0.15); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.3); }
+  .result.fail { background: rgba(248,113,113,0.15); color: #fca5a5; border: 1px solid rgba(248,113,113,0.3); }
+  .feedback {
+    display: none;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct { color: #34d399; }
+  .feedback.wrong   { color: #f87171; }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>🏛️ Ancient Egypt</h1>
-  <p class="subtitle">Test your knowledge of ancient Egyptian civilization</p>
+  <h1>🚀 Space Exploration</h1>
+  <p class="subtitle">Test your knowledge of humanity&#39;s journey beyond Earth</p>
 
-  <div class="question" id="q1">
-    <div class="q-text">1. What material were the Egyptian pyramids primarily built from?</div>
-    <div class="options">
-      <label><input type="radio" name="q1" value="A"> Granite</label>
-      <label><input type="radio" name="q1" value="B"> Limestone</label>
-      <label><input type="radio" name="q1" value="C"> Sandstone</label>
-      <label><input type="radio" name="q1" value="D"> Marble</label>
-    </div>
-    <div class="answer-hint" style="display:none;margin-top:0.5rem;color:#28a745;font-weight:600;">✓ Correct answer: Limestone</div>
+  <div id="resultBox" class="result"></div>
+
+  <div id="quiz"></div>
+
+  <div class="btn-row">
+    <button id="checkBtn">Check Answers</button>
   </div>
-
-  <div class="question" id="q2">
-    <div class="q-text">2. Who was the last active pharaoh of Egypt?</div>
-    <div class="options">
-      <label><input type="radio" name="q2" value="A"> Hatshepsut</label>
-      <label><input type="radio" name="q2" value="B"> Ramesses II</label>
-      <label><input type="radio" name="q2" value="C"> Cleopatra VII</label>
-      <label><input type="radio" name="q2" value="D"> Nefertiti</label>
-    </div>
-    <div class="answer-hint" style="display:none;margin-top:0.5rem;color:#28a745;font-weight:600;">✓ Correct answer: Cleopatra VII</div>
-  </div>
-
-  <div class="question" id="q3">
-    <div class="q-text">3. What was the name of the ancient Egyptian writing system?</div>
-    <div class="options">
-      <label><input type="radio" name="q3" value="A"> Cuneiform</label>
-      <label><input type="radio" name="q3" value="B"> Hieroglyphics</label>
-      <label><input type="radio" name="q3" value="C"> Sanskrit</label>
-      <label><input type="radio" name="q3" value="D"> Linear A</label>
-    </div>
-    <div class="answer-hint" style="display:none;margin-top:0.5rem;color:#28a745;font-weight:600;">✓ Correct answer: Hieroglyphics</div>
-  </div>
-
-  <div class="question" id="q4">
-    <div class="q-text">4. Which Egyptian god was associated with mummification and the afterlife?</div>
-    <div class="options">
-      <label><input type="radio" name="q4" value="A"> Ra</label>
-      <label><input type="radio" name="q4" value="B"> Anubis</label>
-      <label><input type="radio" name="q4" value="C"> Horus</label>
-      <label><input type="radio" name="q4" value="D"> Osiris</label>
-    </div>
-    <div class="answer-hint" style="display:none;margin-top:0.5rem;color:#28a745;font-weight:600;">✓ Correct answer: Anubis</div>
-  </div>
-
-  <div class="question" id="q5">
-    <div class="q-text">5. The Rosetta Stone bore the same text in three scripts. Which of these was NOT one of them?</div>
-    <div class="options">
-      <label><input type="radio" name="q5" value="A"> Greek</label>
-      <label><input type="radio" name="q5" value="B"> Egyptian hieroglyphs</label>
-      <label><input type="radio" name="q5" value="C"> Demotic</label>
-      <label><input type="radio" name="q5" value="D"> Latin</label>
-    </div>
-    <div class="answer-hint" style="display:none;margin-top:0.5rem;color:#28a745;font-weight:600;">✓ Correct answer: Latin</div>
-  </div>
-
-  <button class="btn btn-check" onclick="checkAnswers()">Check Answers</button>
-  <button class="btn btn-reset" onclick="resetQuiz()">Reset</button>
-
-  <div class="result-banner" id="resultBanner"></div>
 </div>
 
 <script>
-  const answers = { q1: 'B', q2: 'C', q3: 'B', q4: 'B', q5: 'D' };
+const quizData = [
+  {
+    question: "What was the name of the first human-made satellite to successfully orbit Earth?",
+    options: ["Sputnik 1", "Explorer 1", "Vanguard 1", "Luna 1"],
+    answer: 0
+  },
+  {
+    question: "Which Apollo mission successfully landed the first humans on the Moon in July 1969?",
+    options: ["Apollo 10", "Apollo 11", "Apollo 12", "Apollo 13"],
+    answer: 1
+  },
+  {
+    question: "What is the largest planet in our solar system?",
+    options: ["Saturn", "Neptune", "Jupiter", "Uranus"],
+    answer: 2
+  },
+  {
+    question: "Which space telescope, launched in 1990, has provided iconic deep-space images and made countless discoveries?",
+    options: ["Chandra", "Hubble", "James Webb", "Spitzer"],
+    answer: 1
+  },
+  {
+    question: "What is the name of the boundary at 100 km altitude that is internationally recognized as the edge of outer space?",
+    options: ["Kármán line", "Van Allen belt", "Oort cloud", "Roche limit"],
+    answer: 0
+  }
+];
 
-  function checkAnswers() {
-    let correct = 0;
-    const total = Object.keys(answers).length;
+const letters = ["A", "B", "C", "D"];
+const quizEl = document.getElementById("quiz");
+const resultBox = document.getElementById("resultBox");
 
-    for (const [qid, ans] of Object.entries(answers)) {
-      const questionEl = document.getElementById(qid);
-      const selected = document.querySelector(`input[name="${qid}"]:checked`);
-      const hint = questionEl.querySelector('.answer-hint');
-      questionEl.classList.remove('correct', 'wrong');
+quizData.forEach((q, i) => {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.id = "card" + i;
 
-      if (selected) {
-        if (selected.value === ans) {
-          questionEl.classList.add('correct');
-          correct++;
-        } else {
-          questionEl.classList.add('wrong');
-        }
+  const num = document.createElement("div");
+  num.className = "q-number";
+  num.textContent = "Question " + (i + 1);
+  card.appendChild(num);
+
+  const text = document.createElement("div");
+  text.className = "q-text";
+  text.textContent = q.question;
+  card.appendChild(text);
+
+  const opts = document.createElement("div");
+  opts.className = "options";
+
+  q.options.forEach((opt, j) => {
+    const label = document.createElement("label");
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "q" + i;
+    radio.value = j;
+
+    const letterSpan = document.createElement("span");
+    letterSpan.className = "option-letter";
+    letterSpan.textContent = letters[j] + ")";
+
+    label.appendChild(radio);
+    label.appendChild(letterSpan);
+    label.appendChild(document.createTextNode(" " + opt));
+    opts.appendChild(label);
+  });
+
+  card.appendChild(opts);
+
+  const feedback = document.createElement("div");
+  feedback.className = "feedback";
+  feedback.id = "fb" + i;
+  card.appendChild(feedback);
+
+  quizEl.appendChild(card);
+});
+
+document.getElementById("checkBtn").addEventListener("click", function() {
+  let correct = 0;
+  const total = quizData.length;
+
+  quizData.forEach((q, i) => {
+    const selected = document.querySelector(input[name=q' + i + ']:checked);
+    const card = document.getElementById("card" + i);
+    const fb = document.getElementById("fb" + i);
+
+    card.classList.remove("correct", "wrong");
+    fb.classList.remove("show", "correct", "wrong");
+
+    if (selected) {
+      const val = parseInt(selected.value);
+      const allRadios = document.querySelectorAll(input[name=q' + i + ']);
+      allRadios.forEach(r => r.disabled = true);
+
+      if (val === q.answer) {
+        card.classList.add("correct");
+        correct++;
       } else {
-        questionEl.classList.add('wrong');
+        card.classList.add("wrong");
+        fb.textContent = "✗ The correct answer is " + letters[q.answer] + ") " + q.options[q.answer];
+        fb.className = "feedback show wrong";
+        selected.parentElement.style.borderColor = "#f87171";
       }
-      hint.style.display = 'block';
-    }
-
-    document.querySelectorAll('.options input[type="radio"]').forEach(r => r.disabled = true);
-
-    const banner = document.getElementById('resultBanner');
-    banner.classList.add('show');
-    if (correct === total) {
-      banner.className = 'result-banner show perfect';
-      banner.textContent = '🎉 Perfect! You got all ' + total + ' questions correct!';
-    } else if (correct >= total / 2) {
-      banner.className = 'result-banner show partial';
-      banner.textContent = '👍 Good job! You got ' + correct + '/' + total + ' correct.';
     } else {
-      banner.className = 'result-banner show partial';
-      banner.textContent = '📚 You got ' + correct + '/' + total + ' correct. Keep learning!';
+      card.classList.add("wrong");
+      fb.textContent = "✗ No answer selected. The correct answer is " + letters[q.answer] + ") " + q.options[q.answer];
+      fb.className = "feedback show wrong";
     }
-  }
+  });
 
-  function resetQuiz() {
-    document.querySelectorAll('input[type="radio"]').forEach(r => { r.checked = false; r.disabled = false; });
-    document.querySelectorAll('.question').forEach(q => q.classList.remove('correct', 'wrong'));
-    document.querySelectorAll('.answer-hint').forEach(h => h.style.display = 'none');
-    document.getElementById('resultBanner').classList.remove('show');
-  }
+  resultBox.className = "result show " + (correct === total ? "pass" : "fail");
+  resultBox.textContent = correct === total
+    ? "🎉 Perfect! You got all " + total + " questions correct!"
+    : "You got " + correct + " of " + total + " correct. Keep exploring!";
+});
 </script>
 </body>
 </html>
