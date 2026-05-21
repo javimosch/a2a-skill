@@ -50,6 +50,37 @@ class TestA2ADB(unittest.TestCase):
         self.assertEqual(mode, "wal")
         conn.close()
 
+    def test_init_idempotent(self):
+        """Calling init on an already-initialized project does not drop tables or error."""
+        conn1 = a2a.connect(self.project, create=True)
+        conn1.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn1.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "data before re-init", a2a.now())
+        )
+        conn1.commit()
+        conn1.close()
+
+        # Call init again via connect(create=True) — should not drop data
+        conn2 = a2a.connect(self.project, create=True)
+        tables = conn2.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        ).fetchall()
+        names = [t[0] for t in tables]
+        self.assertIn("agents", names)
+        self.assertIn("messages", names)
+
+        # Data should still be there
+        row = conn2.execute(
+            "SELECT body FROM messages WHERE body='data before re-init'"
+        ).fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row["body"], "data before re-init")
+        conn2.close()
+
 
 class TestAgentRegistry(unittest.TestCase):
     """Agent registration and listing."""
