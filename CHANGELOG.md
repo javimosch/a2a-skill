@@ -247,7 +247,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 - **From v1.0 to v1.1**: No breaking changes, opt-in to new features
 - **From v1.1 to v1.2**: Multi-language clients are additive
-- **From v1.2 to v1.3**: Zero-downtime migration, see [MIGRATION_V12_TO_V13.md](docs/MIGRATION_V12_TO_V13.md)
+- **From v1.2 to v1.3**: Schema changes are additive and backward-compatible
 
 ---
 
