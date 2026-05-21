@@ -258,4 +258,4 @@ pip install cryptography
 
 - [README.md](../README.md) — Project overview
 - [CLIENT_API.md](docs/CLIENT_API.md) — Python client
-- [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) — v1.3 roadmap
+- [CHANGELOG.md](CHANGELOG.md) — Release history and roadmap

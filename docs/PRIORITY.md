@@ -404,4 +404,4 @@ priority_client.send("bob", "Hello")  # priority=2
 - [CLIENT_API.md](docs/CLIENT_API.md) — Base client reference
 - [AUDIT.md](docs/AUDIT.md) — Audit logging for compliance
 - [FTS_SEARCH.md](docs/FTS_SEARCH.md) — Full-text search
-- [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) — v1.3 roadmap
+- [CHANGELOG.md](CHANGELOG.md) — Release history and roadmap

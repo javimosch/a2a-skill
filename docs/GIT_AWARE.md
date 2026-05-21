@@ -306,4 +306,4 @@ Git state is announced every 30 seconds. Allow time for propagation.
 
 - [README.md](../README.md) — Project overview
 - [INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md) — Multi-interface coordination
-- [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) — Release notes
+- [CHANGELOG.md](CHANGELOG.md) — Release history and roadmap

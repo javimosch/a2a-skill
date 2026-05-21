@@ -256,4 +256,4 @@ results = client.search_fts(query)
 
 - [README.md](../README.md) — Project overview
 - [CLIENT_API.md](docs/CLIENT_API.md) — Python client reference
-- [PROJECT_STATUS.md](docs/PROJECT_STATUS.md) — v1.3 roadmap
+- [CHANGELOG.md](CHANGELOG.md) — Release history and roadmap
