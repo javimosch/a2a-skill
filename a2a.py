@@ -222,7 +222,7 @@ def cmd_status(args) -> None:
     n = cur.rowcount
     conn.close()
     if n == 0:
-        die(f"unknown agent '{agent_id}'")
+        die(f"unknown agent '{agent_id}' — register first")
     if getattr(args, "json", False):
         print(json.dumps({
             "agent": agent_id,
@@ -251,7 +251,7 @@ def cmd_send(args) -> None:
     if recipient is not None:
         if not conn.execute("SELECT 1 FROM agents WHERE id=?", (recipient,)).fetchone():
             conn.close()
-            die(f"unknown recipient '{recipient}'")
+            die(f"unknown recipient '{recipient}' — register them first")
     body = args.body
     if body == "-":
         body = sys.stdin.read()
