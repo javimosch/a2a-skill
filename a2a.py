@@ -105,7 +105,7 @@ def now() -> float:
     return time.time()
 
 
-def _open(args, *, create: bool = False) -> tuple[str, sqlite3.Connection]:
+def _open(args: argparse.Namespace, *, create: bool = False) -> tuple[str, sqlite3.Connection]:
     """Resolve project name and open database connection."""
     name = project_name(args.project)
     conn = connect(name, create=create)
@@ -123,7 +123,7 @@ def cleanup_expired(conn: sqlite3.Connection) -> int:
     return cur.rowcount
 
 
-def _resolve_agent(args) -> tuple[str, sqlite3.Connection]:
+def _resolve_agent(args: argparse.Namespace) -> tuple[str, sqlite3.Connection]:
     """Resolve --as agent from args and verify it's registered. Returns (agent_id, conn)."""
     agent = getattr(args, "as_")
     if not agent:
