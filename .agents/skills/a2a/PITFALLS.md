@@ -136,13 +136,13 @@ query and the column must be lowercased explicitly. The async client uses
 **Fix:** Always use `lower(column) LIKE ?` with `%query.lower()%` in search
 implementations to get consistent case-insensitive behavior for all text.
 
-### 11. Sending to empty string creates undeliverable message
+### 11. Sending to empty string raises ValueError
 
-If `a2a send "" "msg" --from alice` or `client.send("", "msg")` is called with
-an empty recipient string, the recipient is stored as `""` (empty string).
-This is NOT a broadcast (recipient=NULL) — it is a message addressed to a
-recipient with an empty ID. No agent's `recv` will ever match it because
-`recv` filters by its own agent ID. The message is effectively invisible.
+The client libraries (`A2AClient.send()` and `A2AClientAsync.send()`) now
+validate that `to` is non-empty and raise `ValueError` if called with an
+empty or whitespace-only recipient. The CLI does not need this validation
+because argparse's positional argument always provides a non-empty string
+when a value is given.
 
-**Fix:** Always validate that the recipient is non-empty before calling send.
-The CLI does NOT currently validate this — it's up to the caller.
+**Fix:** If you're calling the client library directly, catch `ValueError`
+when sending messages, or validate the recipient string before sending.
