@@ -118,7 +118,7 @@ def cleanup_expired(conn: sqlite3.Connection) -> int:
 
 # ---------- commands ----------
 
-def cmd_init(args):
+def cmd_init(args) -> None:
     name = project_name(args.project)
     conn = connect(name, create=True)
     conn.close()
