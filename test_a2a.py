@@ -1052,6 +1052,33 @@ class TestEdgeCases(unittest.TestCase):
         sys.stdout = old_stdout
         self.assertIn("no messages in thread", output)
 
+    def test_cmd_search_limit(self):
+        """Search with --limit caps results to at most N messages."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        for i in range(5):
+            conn.execute(
+                "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+                ("alice", None, f"limit test msg {i}", a2a.now() + i)
+            )
+        conn.commit()
+        conn.close()
+
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_search(a2a.argparse.Namespace(
+            project=self.project, query="limit", limit=2, json=True, fts=False
+        ))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertLessEqual(len(data), 2, "search --limit 2 should return at most 2 messages")
+
+
 
 
 
