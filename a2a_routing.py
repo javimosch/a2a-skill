@@ -7,12 +7,9 @@ Enable agents to define routing rules for automatic message filtering,
 forwarding, and delivery based on sender, content, priority, and thread.
 """
 
-import sqlite3
-import json
 import re
 import time
 from typing import Optional, List, Dict, Any, Callable
-from pathlib import Path
 from enum import Enum
 
 from a2a_client import A2AClient
