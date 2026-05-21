@@ -887,5 +887,24 @@ class TestIntegration(unittest.TestCase):
         self.assertIn("short-lived", bodies)
         self.assertIn("permanent", bodies)
 
+    def test_recv_from_self_without_flag_filters(self):
+        """Send to self, recv without --include-self filters own messages."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "alice", "secret self-message", "--from", "alice",
+            project=self.project)
+        # Alice recv without --include-self should NOT return self-sent
+        result = a2a("recv", "--as", "alice", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        for m in msgs:
+            self.assertNotEqual(m.get("sender"), "alice",
+                                "self-sent message should be filtered without --include-self")
+        # With --include-self it should appear
+        result2 = a2a("recv", "--as", "alice", "--json", "--include-self",
+                      project=self.project)
+        msgs2 = json.loads(result2.stdout)
+        bodies = [m["body"] for m in msgs2]
+        self.assertIn("secret self-message", bodies)
+
 if __name__ == "__main__":
     unittest.main()
