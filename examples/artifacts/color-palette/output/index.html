@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flowforge Color Palette</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #FAFAFA; color: #1E293B; padding: 40px 24px; }
+  .container { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .subtitle { font-size: 1.1rem; color: #64748B; margin-bottom: 40px; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-bottom: 48px; }
+  .swatch { border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .swatch-color { height: 180px; position: relative; }
+  .swatch-info { padding: 16px; background: #fff; }
+  .swatch-name { font-weight: 700; font-size: 1rem; }
+  .swatch-hex { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.85rem; color: #64748B; margin: 4px 0; }
+  .swatch-use { font-size: 0.85rem; color: #94A3B8; }
+  .card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); padding: 32px; max-width: 400px; }
+  .card-badge { display: inline-block; background: #14B8A6; color: #fff; font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; margin-bottom: 12px; }
+  .card h2 { font-size: 1.5rem; margin-bottom: 12px; }
+  .card p { color: #64748B; line-height: 1.6; margin-bottom: 24px; }
+  .card-btn { display: inline-block; background: #6366F1; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+  .card-btn:hover { background: #4F46E5; }
+  .section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; }
+  .harmony { background: #fff; border-left: 4px solid #F59E0B; border-radius: 8px; padding: 16px 20px; margin-top: 32px; font-size: 0.9rem; color: #475569; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Flowforge Color Palette</h1>
+  <p class="subtitle">A curated palette by the Colorist</p>
+
+  <div class="swatches">
+    <div class="swatch">
+      <div class="swatch-color" style="background:#6366F1"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Indigo Stream</div>
+        <div class="swatch-hex">#6366F1</div>
+        <div class="swatch-use">Primary — Buttons, links, nav bars, active states</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#14B8A6"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Teal Current</div>
+        <div class="swatch-hex">#14B8A6</div>
+        <div class="swatch-use">Secondary — Badges, tags, info cards, illustrations</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#F59E0B"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Amber Spark</div>
+        <div class="swatch-hex">#F59E0B</div>
+        <div class="swatch-use">Accent — CTA highlights, notifications, warning banners</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#FAFAFA; border:1px solid #E2E8F0"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Ivory Mist</div>
+        <div class="swatch-hex">#FAFAFA</div>
+        <div class="swatch-use">Background — Page bg, card surfaces, modals, inputs</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#1E293B"></div>
+      <div class="swatch-info" style="background:#1E293B; color:#FAFAFA">
+        <div class="swatch-name">Slate Forge</div>
+        <div class="swatch-hex" style="color:#94A3B8">#1E293B</div>
+        <div class="swatch-use" style="color:#94A3B8">Text — Body copy, headings, labels, code, footer</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Sample UI — Mock Card</div>
+  <div class="card">
+    <span class="card-badge">New</span>
+    <h2>Flowforge Dashboard</h2>
+    <p>Your projects, teams, and workflows unified in one place. Get real-time insights and stay in flow.</p>
+    <a href="#" class="card-btn">Launch Dashboard</a>
+  </div>
+
+  <div class="harmony">
+    <strong>Harmony Notes:</strong> Indigo + Teal creates a cool, trustworthy base. Amber adds warmth and energy as a deliberate contrast. High contrast between #FAFAFA bg and #1E293B text ensures WCAG AAA readability.
+  </div>
+</div>
+</body>
+</html>
