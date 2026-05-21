@@ -709,6 +709,39 @@ class TestIntegration(unittest.TestCase):
         recv_msgs = json.loads(result_recv.stdout)
         self.assertEqual(len(recv_msgs), 1)
 
+    def test_send_empty_body(self):
+        """Send with empty body works (creates a message with empty content)."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "", "--from", "alice", project=self.project)
+        result = a2a("recv", "--as", "bob", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(msgs[0]["body"], "")
+
+    def test_peek_json_with_limit(self):
+        """peek --json --limit N returns at most N messages as JSON."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        for i in range(5):
+            a2a("send", "bob", f"json-peek-{i}", "--from", "alice", project=self.project)
+        result = a2a("peek", "--json", "--limit", "2", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertLessEqual(len(msgs), 2)
+
+    def test_send_broadcast_then_recv_all_agents(self):
+        """Broadcast from one agent reaches all other registered agents."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("register", "charlie", project=self.project)
+        a2a("send", "all", "hello team", "--from", "alice", project=self.project)
+        bob_msgs = json.loads(a2a("recv", "--as", "bob", "--json", project=self.project).stdout)
+        charlie_msgs = json.loads(a2a("recv", "--as", "charlie", "--json", project=self.project).stdout)
+        self.assertEqual(len(bob_msgs), 1)
+        self.assertEqual(len(charlie_msgs), 1)
+        self.assertEqual(bob_msgs[0]["body"], "hello team")
+        self.assertEqual(charlie_msgs[0]["body"], "hello team")
+
 
 if __name__ == "__main__":
     unittest.main()
