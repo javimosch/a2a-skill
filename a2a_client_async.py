@@ -10,7 +10,7 @@ import aiosqlite
 import asyncio
 import time
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Callable
 
 
 class A2AClientAsync:
@@ -371,7 +371,7 @@ class A2AClientAsync:
 
 
 # Helper function for concurrent agent patterns
-async def run_agent(agent_id: str, project: str, handler):
+async def run_agent(agent_id: str, project: str, handler: Callable[..., Any]) -> None:
     """Run an async agent with automatic cleanup.
 
     Args:
@@ -388,7 +388,7 @@ async def run_agent(agent_id: str, project: str, handler):
 
 
 # Helper for running multiple agents concurrently
-async def run_agents(agents: List[tuple], handler):
+async def run_agents(agents: List[tuple], handler: Callable[..., Any]) -> None:
     """Run multiple agents concurrently.
 
     Args:
