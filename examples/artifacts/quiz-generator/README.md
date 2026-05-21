@@ -26,31 +26,26 @@ on the a2a bus.
 python3 examples/artifacts/quiz-generator/build.py --cli opencode
 ```
 
-## Sample output
+## Output (from opencode build)
 
-When run with `opencode-go/deepseek-v4-flash`, the agents produced an
-interactive quiz on **Deep Sea Biology** with 5 questions covering the
-Mariana Trench, anglerfish, piezolytes, hydrothermal vents, and the
-Greenland Shark.
+- `output/index.html` — 5,954 bytes, interactive HTML5 quiz page
+- Topic: **Space Exploration** — 5 questions covering orbital periods, Sputnik 1, James Webb, Titan, Apollo 11
+- JavaScript scoring with Check Answers / Reset buttons, correct (green) / wrong (red) highlighting
+- All answers verified correct by the checker agent before formatting
 
-## Bus state
-
-```
-collector            build-script     python     active
-researcher           topic researcher opencode   active
-checker              answer checker   opencode   done
-formatter            html formatter   opencode   active
-```
-
-Key bus messages:
+## Bus state (from opencode build)
 
 ```
-#1  collector -> researcher    Your task: You are the topic researcher...
-#2  collector -> checker       Your task: You are the answer checker...
-#3  collector -> formatter     Your task: You are the HTML formatter...
-#4  researcher -> checker      TOPIC: Deep Sea Biology\nQ1: What is the deepest part...
-#5  checker -> formatter       VERIFIED_QUIZ: TOPIC: Deep Sea Biology\nQ1: ...
-#6  formatter -> ALL           <!DOCTYPE html>\n<html lang="en">...
-```
+STATS:
+  Messages: 6 total (5 direct + 1 broadcast)
+  Agents: 1 collector + 3 worker agents
+  Top senders: collector (3), researcher (1), checker (1), formatter (1)
 
-The full pipeline completed in ~40 seconds with three opencode agents.
+TIMELINE:
+  t+0s   collector -> researcher: "Create 5 MCQ quiz on an educational topic"
+  t+0s   collector -> checker: "Verify each answer is correct, then forward"
+  t+0s   collector -> formatter: "Wait for verified quiz, then render HTML"
+  t+11s  researcher -> checker: "TOPIC: Space Exploration\nQ1: Mercury (shortest orbit)... Q5: Apollo 11"
+  t+18s  checker -> formatter: "VERIFIED_QUIZ: TOPIC: Space Exploration\n(all 5 answers correct ✓)"
+  t+28s  formatter -> ALL: <!DOCTYPE html>... (interactive quiz with radio buttons + JS scoring)
+```

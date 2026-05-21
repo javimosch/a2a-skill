@@ -3,267 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quiz: Space Exploration</title>
+<title>Space Exploration Quiz</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    padding: 40px 20px;
-  }
-  .container {
-    max-width: 720px;
-    width: 100%;
-  }
-  h1 {
-    color: #e0d8ff;
-    font-size: 2.4rem;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 8px;
-    letter-spacing: -0.02em;
-  }
-  .subtitle {
-    color: #9890c8;
-    text-align: center;
-    margin-bottom: 36px;
-    font-size: 1rem;
-  }
-  .card {
-    background: rgba(255,255,255,0.06);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 16px;
-    padding: 28px 32px;
-    margin-bottom: 20px;
-    transition: border-color 0.3s, box-shadow 0.3s;
-  }
-  .card.correct { border-color: #34d399; box-shadow: 0 0 20px rgba(52,211,153,0.15); }
-  .card.wrong   { border-color: #f87171; box-shadow: 0 0 20px rgba(248,113,113,0.15); }
-  .q-number {
-    display: inline-block;
-    background: rgba(255,255,255,0.08);
-    color: #a7a0d4;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 2px 12px;
-    border-radius: 20px;
-    margin-bottom: 12px;
-  }
-  .q-text {
-    color: #f0edff;
-    font-size: 1.1rem;
-    font-weight: 500;
-    line-height: 1.5;
-    margin-bottom: 18px;
-  }
-  .options { display: flex; flex-direction: column; gap: 10px; }
-  .options label {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.07);
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
-    color: #d8d4f0;
-    font-size: 0.95rem;
-  }
-  .options label:hover { background: rgba(255,255,255,0.08); }
-  .options input[type="radio"] {
-    appearance: none;
-    width: 18px; height: 18px;
-    border: 2px solid rgba(255,255,255,0.25);
-    border-radius: 50%;
-    flex-shrink: 0;
-    transition: border-color 0.2s, background 0.2s;
-    position: relative;
-  }
-  .options input[type="radio"]:checked {
-    border-color: #818cf8;
-    background: #818cf8;
-    box-shadow: inset 0 0 0 4px #302b63;
-  }
-  .options .option-letter {
-    font-weight: 600;
-    color: #9890c8;
-    min-width: 22px;
-  }
-  .btn-row { text-align: center; margin-top: 12px; }
-  button {
-    background: #818cf8;
-    color: #fff;
-    border: none;
-    padding: 14px 48px;
-    font-size: 1.05rem;
-    font-weight: 600;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.15s;
-    letter-spacing: 0.01em;
-  }
-  button:hover { background: #6d78f0; transform: translateY(-1px); }
-  button:active { transform: translateY(0); }
-  .result {
-    display: none;
-    text-align: center;
-    padding: 16px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    font-weight: 600;
-    font-size: 1.1rem;
-  }
-  .result.show { display: block; }
-  .result.pass { background: rgba(52,211,153,0.15); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.3); }
-  .result.fail { background: rgba(248,113,113,0.15); color: #fca5a5; border: 1px solid rgba(248,113,113,0.3); }
-  .feedback {
-    display: none;
-    margin-top: 6px;
-    font-size: 0.85rem;
-    font-weight: 500;
-  }
-  .feedback.show { display: block; }
-  .feedback.correct { color: #34d399; }
-  .feedback.wrong   { color: #f87171; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;display:flex;justify-content:center;padding:40px 20px}
+  .container{max-width:720px;width:100%;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:40px}
+  h1{font-size:28px;margin-bottom:8px;color:#1a1a2e}
+  .subtitle{font-size:14px;color:#666;margin-bottom:32px}
+  .question{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #eee}
+  .question:last-child{border-bottom:none;margin-bottom:0}
+  .q-text{font-size:16px;font-weight:600;margin-bottom:12px;line-height:1.5}
+  .options{display:flex;flex-direction:column;gap:8px}
+  .options label{display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid #e0e0e0;border-radius:10px;cursor:pointer;transition:.2s;font-size:15px}
+  .options label:hover{border-color:#4a6cf7;background:#f8f9ff}
+  .options input[type=radio]{accent-color:#4a6cf7;width:18px;height:18px;cursor:pointer}
+  .correct{background:#d4edda!important;border-color:#28a745!important;color:#155724}
+  .wrong{background:#f8d7da!important;border-color:#dc3545!important;color:#721c24}
+  .btn{padding:14px 32px;font-size:16px;font-weight:600;border:none;border-radius:10px;cursor:pointer;transition:.2s;margin-top:8px}
+  .btn-check{background:#4a6cf7;color:#fff}
+  .btn-check:hover{background:#3a5bd7}
+  .btn-reset{background:#6c757d;color:#fff;margin-left:12px}
+  .btn-reset:hover{background:#5a6268}
+  .actions{display:flex;justify-content:center;margin-top:32px}
+  .score{text-align:center;font-size:18px;font-weight:600;margin-top:20px;padding:14px;border-radius:10px;display:none}
 </style>
 </head>
 <body>
 <div class="container">
   <h1>🚀 Space Exploration</h1>
-  <p class="subtitle">Test your knowledge of humanity&#39;s journey beyond Earth</p>
-
-  <div id="resultBox" class="result"></div>
-
-  <div id="quiz"></div>
-
-  <div class="btn-row">
-    <button id="checkBtn">Check Answers</button>
+  <p class="subtitle">Test your knowledge of space exploration history and our solar system</p>
+  <form id="quizForm">
+    <div class="question">
+      <div class="q-text">1. Which planet in our solar system has the shortest orbital period?</div>
+      <div class="options">
+        <label><input type="radio" name="q1" value="A"> Mercury</label>
+        <label><input type="radio" name="q1" value="B"> Venus</label>
+        <label><input type="radio" name="q1" value="C"> Mars</label>
+        <label><input type="radio" name="q1" value="D"> Jupiter</label>
+      </div>
+    </div>
+    <div class="question">
+      <div class="q-text">2. What was the name of the first artificial satellite launched into space?</div>
+      <div class="options">
+        <label><input type="radio" name="q2" value="A"> Explorer 1</label>
+        <label><input type="radio" name="q2" value="B"> Sputnik 1</label>
+        <label><input type="radio" name="q2" value="C"> Vanguard 1</label>
+        <label><input type="radio" name="q2" value="D"> Apollo 1</label>
+      </div>
+    </div>
+    <div class="question">
+      <div class="q-text">3. Which space telescope is the successor to the Hubble Space Telescope, launched in December 2021?</div>
+      <div class="options">
+        <label><input type="radio" name="q3" value="A"> Chandra</label>
+        <label><input type="radio" name="q3" value="B"> Kepler</label>
+        <label><input type="radio" name="q3" value="C"> James Webb</label>
+        <label><input type="radio" name="q3" value="D"> Spitzer</label>
+      </div>
+    </div>
+    <div class="question">
+      <div class="q-text">4. What is the largest moon of Saturn?</div>
+      <div class="options">
+        <label><input type="radio" name="q4" value="A"> Europa</label>
+        <label><input type="radio" name="q4" value="B"> Titan</label>
+        <label><input type="radio" name="q4" value="C"> Ganymede</label>
+        <label><input type="radio" name="q4" value="D"> Io</label>
+      </div>
+    </div>
+    <div class="question">
+      <div class="q-text">5. Which Apollo mission was the first to land humans on the Moon?</div>
+      <div class="options">
+        <label><input type="radio" name="q5" value="A"> Apollo 11</label>
+        <label><input type="radio" name="q5" value="B"> Apollo 13</label>
+        <label><input type="radio" name="q5" value="C"> Apollo 8</label>
+        <label><input type="radio" name="q5" value="D"> Apollo 1</label>
+      </div>
+    </div>
+  </form>
+  <div class="actions">
+    <button class="btn btn-check" onclick="checkAnswers()">Check Answers</button>
+    <button class="btn btn-reset" onclick="resetQuiz()">Reset</button>
   </div>
+  <div id="score" class="score"></div>
 </div>
-
 <script>
-const quizData = [
-  {
-    question: "What was the name of the first human-made satellite to successfully orbit Earth?",
-    options: ["Sputnik 1", "Explorer 1", "Vanguard 1", "Luna 1"],
-    answer: 0
-  },
-  {
-    question: "Which Apollo mission successfully landed the first humans on the Moon in July 1969?",
-    options: ["Apollo 10", "Apollo 11", "Apollo 12", "Apollo 13"],
-    answer: 1
-  },
-  {
-    question: "What is the largest planet in our solar system?",
-    options: ["Saturn", "Neptune", "Jupiter", "Uranus"],
-    answer: 2
-  },
-  {
-    question: "Which space telescope, launched in 1990, has provided iconic deep-space images and made countless discoveries?",
-    options: ["Chandra", "Hubble", "James Webb", "Spitzer"],
-    answer: 1
-  },
-  {
-    question: "What is the name of the boundary at 100 km altitude that is internationally recognized as the edge of outer space?",
-    options: ["Kármán line", "Van Allen belt", "Oort cloud", "Roche limit"],
-    answer: 0
-  }
-];
-
-const letters = ["A", "B", "C", "D"];
-const quizEl = document.getElementById("quiz");
-const resultBox = document.getElementById("resultBox");
-
-quizData.forEach((q, i) => {
-  const card = document.createElement("div");
-  card.className = "card";
-  card.id = "card" + i;
-
-  const num = document.createElement("div");
-  num.className = "q-number";
-  num.textContent = "Question " + (i + 1);
-  card.appendChild(num);
-
-  const text = document.createElement("div");
-  text.className = "q-text";
-  text.textContent = q.question;
-  card.appendChild(text);
-
-  const opts = document.createElement("div");
-  opts.className = "options";
-
-  q.options.forEach((opt, j) => {
-    const label = document.createElement("label");
-    const radio = document.createElement("input");
-    radio.type = "radio";
-    radio.name = "q" + i;
-    radio.value = j;
-
-    const letterSpan = document.createElement("span");
-    letterSpan.className = "option-letter";
-    letterSpan.textContent = letters[j] + ")";
-
-    label.appendChild(radio);
-    label.appendChild(letterSpan);
-    label.appendChild(document.createTextNode(" " + opt));
-    opts.appendChild(label);
-  });
-
-  card.appendChild(opts);
-
-  const feedback = document.createElement("div");
-  feedback.className = "feedback";
-  feedback.id = "fb" + i;
-  card.appendChild(feedback);
-
-  quizEl.appendChild(card);
-});
-
-document.getElementById("checkBtn").addEventListener("click", function() {
-  let correct = 0;
-  const total = quizData.length;
-
-  quizData.forEach((q, i) => {
-    const selected = document.querySelector(input[name=q' + i + ']:checked);
-    const card = document.getElementById("card" + i);
-    const fb = document.getElementById("fb" + i);
-
-    card.classList.remove("correct", "wrong");
-    fb.classList.remove("show", "correct", "wrong");
-
-    if (selected) {
-      const val = parseInt(selected.value);
-      const allRadios = document.querySelectorAll(input[name=q' + i + ']);
-      allRadios.forEach(r => r.disabled = true);
-
-      if (val === q.answer) {
-        card.classList.add("correct");
-        correct++;
-      } else {
-        card.classList.add("wrong");
-        fb.textContent = "✗ The correct answer is " + letters[q.answer] + ") " + q.options[q.answer];
-        fb.className = "feedback show wrong";
-        selected.parentElement.style.borderColor = "#f87171";
-      }
-    } else {
-      card.classList.add("wrong");
-      fb.textContent = "✗ No answer selected. The correct answer is " + letters[q.answer] + ") " + q.options[q.answer];
-      fb.className = "feedback show wrong";
+  const answers = {q1:"A",q2:"B",q3:"C",q4:"B",q5:"A"};
+  function checkAnswers(){
+    let score = 0, total = 5;
+    for(let q in answers){
+      const sel = document.querySelector(`input[name="${q}"]:checked`);
+      const labels = document.querySelectorAll(`input[name="${q}"]`);
+      labels.forEach(l => {
+        const lb = l.closest("label");
+        lb.classList.remove("correct","wrong");
+        if(l.value === answers[q]) lb.classList.add("correct");
+      });
+      if(sel && sel.value === answers[q]){score++; sel.closest("label").classList.add("correct");}
+      else if(sel) sel.closest("label").classList.add("wrong");
     }
-  });
-
-  resultBox.className = "result show " + (correct === total ? "pass" : "fail");
-  resultBox.textContent = correct === total
-    ? "🎉 Perfect! You got all " + total + " questions correct!"
-    : "You got " + correct + " of " + total + " correct. Keep exploring!";
-});
+    const scoreDiv = document.getElementById("score");
+    const pct = Math.round(score/total*100);
+    scoreDiv.style.display="block";
+    scoreDiv.style.background=pct===100?"#d4edda":"#fff3cd";
+    scoreDiv.style.color=pct===100?"#155724":"#856404";
+    scoreDiv.innerHTML = `You scored ${score}/${total} (${pct}%)`;
+  }
+  function resetQuiz(){
+    document.querySelectorAll("input[type=radio]").forEach(r=>r.checked=false);
+    document.querySelectorAll("label").forEach(l=>l.classList.remove("correct","wrong"));
+    document.getElementById("score").style.display="none";
+  }
 </script>
 </body>
 </html>
