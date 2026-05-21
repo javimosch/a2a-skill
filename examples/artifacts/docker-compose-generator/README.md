@@ -36,21 +36,25 @@ The generated stack includes:
 - **cache** — Redis 7 (port 6379)
 - **worker** — Celery worker for async tasks
 
-## Bus state (from latest run)
+## Output sizes (from opencode build)
+
+- `output/docker-compose.yml` — 2,575 bytes: 5 services (frontend, backend, db, cache, worker), 2 named volumes, custom bridge network
+- `output/README.md` — 1,642 bytes: service descriptions, how to start, env vars table, networking details
+
+## Bus transcript (from opencode build)
 
 ```
-$ a2a list
-ID                   ROLE                 CLI        STATUS
-collector            build-script         python     active
-specifier            stack specifier      opencode   done
-writer               docker-compose writer opencode   active
+STATS:
+  Messages: 5 total (3 direct + 2 broadcast)
+  Agents: 1 collector + 2 worker agents
+  Top senders: writer (2), collector (2), specifier (1)
 
-$ a2a peek --limit 10
-#1 collector -> specifier     "Your task: You are the stack specifier..."
-#2 collector -> writer        "Your task: You are the docker-compose writer..."
-#3 specifier -> writer        "DOCKER STACK SPEC\n\n== OVERVIEW ==..."
-#4 writer -> ALL              "FILE:docker-compose.yml\n```yaml\nversion: '3.8'..."
-#5 writer -> ALL              "FILE:README.md\n```markdown\n# Multi-Service..."
+CONVERSATION:
+  #1 collector -> specifier: Design 5-service Docker stack (React, FastAPI, PostgreSQL, Redis, Celery)
+  #2 collector -> writer: Wait for spec, then generate docker-compose.yml + README
+  #3 specifier -> writer: DOCKER STACK SPEC — 5 services, bridge network, healthchecks, env vars
+  #4 writer -> ALL: FILE:docker-compose.yml (5 services with depends_on conditions)
+  #5 writer -> ALL: FILE:README.md (stack overview, run instructions, env var reference)
 ```
 
 ## Running

@@ -1,49 +1,34 @@
-# Multi-Service Docker Stack
+# Multi-Service Web App Stack
 
-A 5-service Docker Compose stack for a modern web application: React/Vite frontend served by Nginx, Python FastAPI backend, PostgreSQL 16 database, Redis 7 cache, and a Celery worker for async task processing.
+A complete multi-service web application stack running on Docker Compose (v3.8 format).
 
-## Services Overview
+## Services
 
-### 1. frontend — React (Vite) + Nginx
+### db — PostgreSQL 16 (Alpine)
+Persistent relational database for application data. Exposes port `5432`. Uses a named volume `pgdata` for data persistence. Health-checked via `pg_isready`.
 
-- **Role**: Serves the built React/Vite SPA via Nginx with SPA fallback routing, gzip compression, and security headers.
-- **Build**: Multi-stage Dockerfile — `node:20-alpine` builds the app; `nginx:1.25-alpine` serves the static assets.
-- **Access**: `http://localhost:80`
-- **Health Endpoint**: `http://localhost:80/healthz`
+### cache — Redis 7 (Alpine)
+In-memory data store used for caching and Celery task broker (two separate Redis logical databases: `0` and `1`). Exposes port `6379`. Uses a named volume `redisdata` for persistence.
 
-### 2. backend — Python FastAPI
+### backend — FastAPI (Python 3.12)
+Async web API built with FastAPI, served via Uvicorn on port `8000` with hot-reload enabled. Depends on `db` (healthy) and `cache` (started). Requires a `Dockerfile.backend` to build.
 
-- **Role**: REST API server handling business logic, authentication, and data access.
-- **Build**: `python:3.12-slim` with uvicorn ASGI server on port 8000.
-- **Access**: `http://localhost:8000` — FastAPI auto-docs at `http://localhost:8000/docs`
-- **Health Endpoint**: `http://localhost:8000/health`
+### worker — Celery Worker (Python 3.12)
+Background task processor using Celery, consuming from the Redis broker at `redis://cache:6379/1`. Shares the same `Dockerfile.backend` as the backend service. No exposed ports.
 
-### 3. db — PostgreSQL 16
-
-- **Role**: Primary relational database for persistent application data.
-- **Image**: Official `postgres:16-alpine`
-- **Port**: `5432` (exposed for admin tools like pgAdmin or DBeaver)
-- **Initialization**: SQL scripts in `./db/init/` are run automatically on first start.
-
-### 4. cache — Redis 7
-
-- **Role**: In-memory cache for session storage, API response caching, and Celery message broker.
-- **Image**: Official `redis:7-alpine`
-- **Port**: `6379`
-- **Persistence**: RDB/AOF snapshots stored in the `redis-data` named volume.
-
-### 5. worker — Celery Worker
-
-- **Role**: Executes background/async tasks (email sending, report generation, data processing).
-- **Build**: Reuses the same `backend` Docker image with an overridden command.
-- **Concurrency**: 4 worker processes by default.
-- **No exposed ports** — communicates internally via Redis broker.
+### frontend — Vite + Nginx (two-stage build)
+Static frontend built with Vite (Node 20) and served via Nginx on port `80`. Uses build-time arg `VITE_API_URL` to point to the backend API. Requires a `Dockerfile.frontend` for the multi-stage build.
 
 ## Getting Started
 
 ### Prerequisites
+- Docker Engine 19.03+
+- Docker Compose 1.27+
 
-- Docker Engine 20.10+ and Docker Compose (v2 recommended)
-- Git (for cloning the project repository)
+### Startup order (automated via depends_on)
+1. **db** + **cache** start in parallel (no dependencies)
+2. **backend** starts after `db` is healthy and `cache` is started
+3. **worker** starts after `db` is healthy and `cache` is started (parallel with backend)
+4. **frontend** starts after `backend` is started
 
-### Start the Stack
+### Start the stack
