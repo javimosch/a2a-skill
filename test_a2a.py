@@ -1680,6 +1680,70 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(bodies, ["msg-0", "msg-1", "msg-2"],
                          "peek JSON output should be chronological order")
 
+    def test_recv_negative_wait_returns_immediately(self):
+        """recv with negative --wait returns immediately (no block)."""
+        self._register("alice")
+        self._register("bob")
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, as_="bob", wait=-5, all=True,
+                peek=False, limit=None, since=None, json=True, include_self=False
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        # Should not crash; negative wait means deadline is already in the past
+        data = json.loads(output) if output.strip() else []
+        self.assertIsInstance(data, list)
+
+    def test_peek_limit_zero_returns_empty(self):
+        """peek with --limit 0 returns no messages."""
+        self._register("alice")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="alice", body="visible?",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_peek(a2a.argparse.Namespace(
+                project=self.project, limit=0, json=True))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output) if output.strip() else []
+        self.assertEqual(len(data), 0, "peek with limit=0 should return empty list")
+
+    def test_search_invalid_fts_falls_back(self):
+        """Search with invalid FTS syntax falls back gracefully to LIKE."""
+        self._register("alice")
+        conn = a2a.connect(self.project)
+        # Create a message
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "test content here", a2a.now())
+        )
+        conn.commit()
+        conn.close()
+        # Use NEAR() which has bad syntax — FTS5 should error and fall back to LIKE
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_search(a2a.argparse.Namespace(
+                project=self.project, query='NEAR(content)', limit=50,
+                json=False, fts=True
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("test content", output)
+
 
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
