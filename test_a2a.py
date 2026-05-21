@@ -1216,15 +1216,151 @@ class TestEdgeCases(unittest.TestCase):
         conn.close()
         self.assertEqual(len(read_ids), 1)
 
+    def test_cmd_project_json_output(self):
+        """cmd_project outputs valid JSON with expected structure."""
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        args = a2a.argparse.Namespace(project=self.project)
+        a2a.cmd_project(args)
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertIn("project", data)
+        self.assertIn("db", data)
+        self.assertIn("exists", data)
+        self.assertEqual(data["project"], self.project)
+        self.assertIsInstance(data["exists"], bool)
 
+    def test_cmd_send_stdin_body(self):
+        """cmd_send with '-' body reads from stdin."""
+        self._register("alice")
+        self._register("bob")
+        import io, sys
+        old_stdin = sys.stdin
+        sys.stdin = io.StringIO("stdin body content")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="-",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+        sys.stdin = old_stdin
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT body FROM messages WHERE sender='alice'").fetchone()
+        conn.close()
+        self.assertIsNotNone(row)
+        self.assertEqual(row["body"], "stdin body content")
 
+    def test_cmd_stats_json_empty(self):
+        """cmd_stats --json on empty bus returns valid JSON with zero counts."""
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        args = a2a.argparse.Namespace(project=self.project, json=True)
+        a2a.cmd_stats(args)
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertEqual(data["messages"], 0)
+        self.assertEqual(data["agents_active"], 0)
+        self.assertEqual(data["agents_done"], 0)
+        self.assertEqual(data["top_senders"], [])
 
+    def test_cmd_peek_json_output(self):
+        """cmd_peek --json outputs valid JSON array."""
+        self._register("alice")
+        self._register("bob")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="peek me",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        args = a2a.argparse.Namespace(project=self.project, limit=10, json=True)
+        a2a.cmd_peek(args)
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertIsInstance(data, list)
+        self.assertGreaterEqual(len(data), 1)
+        self.assertIn("body", data[0])
+        self.assertIn("sender", data[0])
+        self.assertEqual(data[0]["body"], "peek me")
 
+    def test_cmd_search_fts_force(self):
+        """cmd_search --fts --json produces valid JSON results."""
+        self._register("alice")
+        self._register("bob")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="unique-fts-search-term",
+            **{"from_": "alice", "thread": None}
+        )
+        a2a.cmd_send(args)
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        args = a2a.argparse.Namespace(
+            project=self.project, query="unique-fts-search-term",
+            limit=50, json=True, fts=True
+        )
+        a2a.cmd_search(args)
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertIsInstance(data, list)
+        self.assertGreaterEqual(len(data), 1)
+        self.assertIn("body", data[0])
+        self.assertEqual(data[0]["body"], "unique-fts-search-term")
+
+    def test_cmd_send_ttl_zero_cli(self):
+        """cmd_send with --ttl 0 through CLI creates immediately-expiring message."""
+        self._register("alice")
+        self._register("bob")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="ttl-zero-msg",
+            **{"from_": "alice", "thread": None, "ttl": 0}
+        )
+        a2a.cmd_send(args)
+        # Verify the message was stored with ttl_seconds=0
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT body, ttl_seconds FROM messages WHERE body='ttl-zero-msg'"
+        ).fetchone()
+        conn.close()
+        self.assertIsNotNone(row)
+        self.assertEqual(row["ttl_seconds"], 0)
+        # After cleanup, it should be removed
+        conn = a2a.connect(self.project)
+        a2a.cleanup_expired(conn)
+        conn.commit()
+        remaining = conn.execute(
+            "SELECT COUNT(*) FROM messages WHERE body='ttl-zero-msg'"
+        ).fetchone()[0]
+        conn.close()
+        self.assertEqual(remaining, 0)
+
+    def test_register_then_upsert_changes_role(self):
+        """Register agent then upsert with different role updates stored fields."""
+        self._register("morph")
+        args = a2a.argparse.Namespace(
+            project=self.project, id="morph", role="builder",
+            prompt="initial", cli="claude", pid=None, upsert=True
+        )
+        a2a.cmd_register(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute(
+            "SELECT role, prompt, cli FROM agents WHERE id='morph'"
+        ).fetchone()
+        conn.close()
+        self.assertEqual(row["role"], "builder")
+        self.assertEqual(row["prompt"], "initial")
+        self.assertEqual(row["cli"], "claude")
 
 
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
-
     def setUp(self):
         self.test_home = tempfile.mkdtemp()
         self.original_home = os.environ.get("HOME")
