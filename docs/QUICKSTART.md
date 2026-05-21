@@ -375,7 +375,7 @@ sqlite> SELECT sender, body FROM messages LIMIT 5;
 
 ## What's Next?
 
-1. **Write your own agent** — See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for development guide.
+1. **Write your own agent** — See the [examples/README.md](examples/README.md) for pattern guides and the [CLIENT_API.md](CLIENT_API.md) for Python client reference.
 2. **Run example agents** — Try `./smoke_test_examples.sh` to see patterns in action.
 3. **Use the Python client** — See [docs/CLIENT_API.md](docs/CLIENT_API.md) for direct API.
 4. **Use in Claude Code** — Type `/a2a` to spawn peer teams from Claude Code.
