@@ -125,7 +125,7 @@ def cmd_init(args) -> None:
     print(f"a2a project '{name}' ready at {db_path(name)}")
 
 
-def cmd_project(args):
+def cmd_project(args) -> None:
     name = project_name(args.project)
     path = db_path(name)
     print(json.dumps({
@@ -135,7 +135,7 @@ def cmd_project(args):
     }, indent=2))
 
 
-def cmd_register(args):
+def cmd_register(args) -> None:
     name = project_name(args.project)
     conn = connect(name, create=True)
     ts = now()
@@ -161,7 +161,7 @@ def cmd_register(args):
     print(f"registered agent '{args.id}' in project '{name}'")
 
 
-def cmd_unregister(args):
+def cmd_unregister(args) -> None:
     name = project_name(args.project)
     conn = connect(name)
     cur = conn.execute("DELETE FROM agents WHERE id=?", (args.id,))
@@ -171,7 +171,7 @@ def cmd_unregister(args):
     print(f"removed {n} agent(s)")
 
 
-def cmd_list(args):
+def cmd_list(args) -> None:
     name = project_name(args.project)
     conn = connect(name)
     rows = conn.execute(
@@ -191,7 +191,7 @@ def cmd_list(args):
               f"{r['status']:<10} {(r['pid'] or '-')!s:<8}")
 
 
-def cmd_status(args):
+def cmd_status(args) -> None:
     name = project_name(args.project)
     conn = connect(name)
     agent_id = getattr(args, "as_")
@@ -219,7 +219,7 @@ def _touch(conn: sqlite3.Connection, agent_id: str):
     conn.execute("UPDATE agents SET last_seen=? WHERE id=?", (now(), agent_id))
 
 
-def cmd_send(args):
+def cmd_send(args) -> None:
     name = project_name(args.project)
     conn = connect(name)
     sender = getattr(args, "from_")
@@ -310,7 +310,7 @@ def _print_messages(rows, as_json):
             print(f"    {line}")
 
 
-def cmd_recv(args):
+def cmd_recv(args) -> None:
     name = project_name(args.project)
     conn = connect(name)
     agent = getattr(args, "as_")
@@ -348,7 +348,7 @@ def cmd_recv(args):
         time.sleep(poll_interval)
 
 
-def cmd_peek(args):
+def cmd_peek(args) -> None:
     """Show recent messages without marking them read; visible to all observers."""
     name = project_name(args.project)
     conn = connect(name)
@@ -364,7 +364,7 @@ def cmd_peek(args):
     _print_messages(rows, args.json)
 
 
-def cmd_thread(args):
+def cmd_thread(args) -> None:
     """Show all messages in a thread."""
     name = project_name(args.project)
     conn = connect(name)
@@ -380,7 +380,7 @@ def cmd_thread(args):
         _print_messages(rows, args.json)
 
 
-def cmd_clear(args):
+def cmd_clear(args) -> None:
     name = project_name(args.project)
     path = db_path(name)
     if not path.exists():
@@ -436,7 +436,7 @@ def _init_fts(conn: sqlite3.Connection) -> bool:
         return False
 
 
-def cmd_search(args):
+def cmd_search(args) -> None:
     """Search messages by content."""
     name = project_name(args.project)
     conn = connect(name)
@@ -465,7 +465,7 @@ def cmd_search(args):
         _print_messages(rows, args.json)
 
 
-def cmd_stats(args):
+def cmd_stats(args) -> None:
     """Show bus statistics."""
     name = project_name(args.project)
     conn = connect(name)
@@ -517,7 +517,7 @@ def cmd_stats(args):
                 print(f"    {sender}: {count} messages")
 
 
-def cmd_wait(args):
+def cmd_wait(args) -> None:
     """Block until N messages exist for agent, or timeout."""
     name = project_name(args.project)
     conn = connect(name)
