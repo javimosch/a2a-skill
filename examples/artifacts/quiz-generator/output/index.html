@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deep Sea Biology Quiz</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%); min-height: 100vh; display: flex; justify-content: center; padding: 40px 20px; }
+  .container { max-width: 800px; width: 100%; }
+  h1 { color: #7ec8e3; font-size: 2.2rem; text-align: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 2px solid #2a4a6a; }
+  .question { background: rgba(255,255,255,0.05); border: 1px solid #2a4a6a; border-radius: 12px; padding: 24px; margin-bottom: 20px; backdrop-filter: blur(10px); }
+  .question h3 { color: #e0e8f0; font-size: 1.1rem; margin-bottom: 16px; line-height: 1.5; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .options label { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid #3a5a7a; border-radius: 8px; cursor: pointer; transition: all 0.2s; color: #b0c8e0; font-size: 0.95rem; }
+  .options label:hover { background: rgba(255,255,255,0.08); border-color: #5a8aaa; }
+  .options input[type="radio"] { accent-color: #7ec8e3; width: 18px; height: 18px; }
+  .correct { background: rgba(46, 160, 67, 0.2) !important; border-color: #2ea043 !important; color: #7ee787 !important; }
+  .wrong { background: rgba(248, 81, 73, 0.2) !important; border-color: #f85149 !important; color: #ffa198 !important; }
+  .revealed-correct { background: rgba(46, 160, 67, 0.12) !important; border-color: #2ea043 !important; }
+  .actions { text-align: center; margin-top: 32px; }
+  .actions button { background: #7ec8e3; color: #0a1628; border: none; padding: 14px 40px; font-size: 1.1rem; font-weight: 600; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+  .actions button:hover { background: #9dd8ef; transform: translateY(-1px); }
+  .actions button:disabled { opacity: 0.5; cursor: default; transform: none; }
+  .score { text-align: center; color: #7ec8e3; font-size: 1.3rem; font-weight: 600; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🌊 Deep Sea Biology</h1>
+
+  <div class="question" id="q1">
+    <h3>1. What is the deepest part of the ocean, reaching approximately 11,000 meters below sea level?</h3>
+    <div class="options">
+      <label><input type="radio" name="q1" value="A"> Mariana Trench</label>
+      <label><input type="radio" name="q1" value="B"> Tonga Trench</label>
+      <label><input type="radio" name="q1" value="C"> Puerto Rico Trench</label>
+      <label><input type="radio" name="q1" value="D"> Java Trench</label>
+    </div>
+  </div>
+
+  <div class="question" id="q2">
+    <h3>2. Which deep-sea creature is known for having a bioluminescent lure on its head to attract prey?</h3>
+    <div class="options">
+      <label><input type="radio" name="q2" value="A"> Giant Squid</label>
+      <label><input type="radio" name="q2" value="B"> Anglerfish</label>
+      <label><input type="radio" name="q2" value="C"> Viperfish</label>
+      <label><input type="radio" name="q2" value="D"> Gulper Eel</label>
+    </div>
+  </div>
+
+  <div class="question" id="q3">
+    <h3>3. What adaptation allows deep-sea fish to survive under immense pressure?</h3>
+    <div class="options">
+      <label><input type="radio" name="q3" value="A"> Gas-filled swim bladders</label>
+      <label><input type="radio" name="q3" value="B"> Flexible bones and proteins called piezolytes</label>
+      <label><input type="radio" name="q3" value="C"> Thick fur</label>
+      <label><input type="radio" name="q3" value="D"> Hollow bones</label>
+    </div>
+  </div>
+
+  <div class="question" id="q4">
+    <h3>4. Hydrothermal vents, first discovered in 1977, are found along:</h3>
+    <div class="options">
+      <label><input type="radio" name="q4" value="A"> Continental shelves</label>
+      <label><input type="radio" name="q4" value="B"> Mid-ocean ridges</label>
+      <label><input type="radio" name="q4" value="C"> Coral reefs</label>
+      <label><input type="radio" name="q4" value="D"> Polar ice caps</label>
+    </div>
+  </div>
+
+  <div class="question" id="q5">
+    <h3>5. Which deep-sea creature holds the record for the longest living vertebrate?</h3>
+    <div class="options">
+      <label><input type="radio" name="q5" value="A"> Whale Shark</label>
+      <label><input type="radio" name="q5" value="B"> Greenland Shark</label>
+      <label><input type="radio" name="q5" value="C"> Coelacanth</label>
+      <label><input type="radio" name="q5" value="D"> Frilled Shark</label>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="checkBtn" onclick="checkAnswers()">Check Answers</button>
+  </div>
+  <div class="score" id="score"></div>
+</div>
+
+<script>
+const answers = { q1: "A", q2: "B", q3: "B", q4: "B", q5: "B" };
+
+function checkAnswers() {
+  const btn = document.getElementById("checkBtn");
+  btn.disabled = true;
+  let correct = 0;
+  let total = 0;
+  for (const [qid, ans] of Object.entries(answers)) {
+    const qdiv = document.getElementById(qid);
+    const labels = qdiv.querySelectorAll("label");
+    const selected = qdiv.querySelector("input:checked");
+    const val = selected ? selected.value : null;
+    labels.forEach((label, i) => {
+      const input = label.querySelector("input");
+      const letter = String.fromCharCode(65 + i);
+      if (val !== null) label.classList.remove("revealed-correct");
+      if (input.value === ans) {
+        label.classList.add("correct");
+      } else if (input.checked && input.value !== ans) {
+        label.classList.add("wrong");
+      }
+    });
+    if (val === ans) correct++;
+    total++;
+  }
+  document.getElementById("score").textContent = `You got ${correct} out of ${total} correct!`;
+}
+</script>
+</body>
+</html>
