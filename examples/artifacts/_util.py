@@ -11,6 +11,7 @@ import json
 import time
 import atexit
 import signal
+import shlex
 import subprocess
 import tempfile
 from pathlib import Path
@@ -63,11 +64,18 @@ def find_spawn(script_dir: str) -> str | None:
 
 
 def run_a2a(cmd: str, a2a_bin: str, project: str) -> str:
-    """Run an a2a CLI command and return stdout."""
-    full_cmd = f'export A2A_PROJECT={project} && "{a2a_bin}" {cmd}'
-    result = subprocess.run(full_cmd, shell=True, capture_output=True, text=True)
+    """Run an a2a CLI command and return stdout.
+
+    Uses shlex.split() + subprocess.run() without shell=True to avoid
+    shell interpretation of backticks, $, and other special characters
+    that may appear in task prompts or message bodies.
+    """
+    env = os.environ.copy()
+    env["A2A_PROJECT"] = project
+    args = [a2a_bin] + shlex.split(cmd)
+    result = subprocess.run(args, capture_output=True, text=True, env=env)
     if result.returncode != 0:
-        print(f"[a2a] FAILED ({result.returncode}): {full_cmd}", file=sys.stderr)
+        print(f"[a2a] FAILED ({result.returncode}): {a2a_bin} {cmd}", file=sys.stderr)
         print(f"[a2a] stderr: {result.stderr}", file=sys.stderr)
     return result.stdout.strip()
 
@@ -141,7 +149,8 @@ A2A_PROJECT={project} is in your environment.
 == Ground rules ==
 1. If recv returns empty 3 times in a row, mark done and exit.
 2. Hard cap: 8 loop iterations, then mark done and stop.
-3. Use the locator snippet first, then recv and wait for instructions."""
+3. Use the locator snippet first, then recv and wait for instructions.
+4. Do NOT write any files to disk. Use the a2a bus (send/recv) to communicate — never create files, never edit files directly."""
 
 
 class SpawnManager:
