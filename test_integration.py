@@ -782,6 +782,76 @@ class TestIntegration(unittest.TestCase):
         recv_msgs = json.loads(result_recv.stdout)
         self.assertEqual(len(recv_msgs), 1)
 
+    def test_recv_all_includes_read_messages(self):
+        """recv --all returns already-read messages too."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "read-this", "--from", "alice", project=self.project)
+        # Read it once
+        a2a("recv", "--as", "bob", project=self.project)
+        # Second recv without --all should be empty
+        result_empty = a2a("recv", "--as", "bob", "--json", project=self.project)
+        self.assertEqual(result_empty.stdout.strip(), "[]")
+        # But with --all, it should still be visible
+        result_all = a2a("recv", "--as", "bob", "--all", "--json", project=self.project)
+        all_msgs = json.loads(result_all.stdout)
+        self.assertGreaterEqual(len(all_msgs), 1)
+        self.assertEqual(all_msgs[0]["body"], "read-this")
+
+    def test_stats_with_agents_no_messages(self):
+        """stats shows zero message counts when agents exist but no messages sent."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        result = a2a("stats", "--json", project=self.project)
+        data = json.loads(result.stdout)
+        self.assertEqual(data["messages"], 0)
+        self.assertGreaterEqual(data["agents_active"], 0)
+        self.assertEqual(data["direct_messages"], 0)
+        self.assertEqual(data["broadcasts"], 0)
+
+    def test_unregister_agent_keeps_other_agents_intact(self):
+        """Unregistering one agent does not affect other registered agents."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("register", "carol", project=self.project)
+        a2a("unregister", "bob", project=self.project)
+        result = a2a("list", "--json", project=self.project)
+        agents = json.loads(result.stdout)
+        ids = {a["id"] for a in agents}
+        self.assertIn("alice", ids)
+        self.assertNotIn("bob", ids)
+        self.assertIn("carol", ids)
+
+    def test_peek_json_with_limit_caps_output(self):
+        """peek --json --limit N returns at most N messages."""
+        a2a("register", "alice", project=self.project)
+        for i in range(5):
+            a2a("send", "all", f"msg-{i}", "--from", "alice", project=self.project)
+        result = a2a("peek", "--json", "--limit", "2", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertLessEqual(len(msgs), 2)
+
+    def test_list_json_valid_empty_after_clear(self):
+        """list --json on cleared bus returns empty array."""
+        a2a("register", "alice", project=self.project)
+        a2a("clear", "--yes", project=self.project)
+        a2a("init", project=self.project)
+        result = a2a("list", "--json", project=self.project)
+        agents = json.loads(result.stdout)
+        self.assertEqual(len(agents), 0)
+
+    def test_send_broadcast_then_unregister_recipient(self):
+        """Broadcast to an agent that unregisters itself mid-scenario (no crash)."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "all", "hello everyone", "--from", "alice", project=self.project)
+        a2a("unregister", "bob", project=self.project)
+        # Sending another broadcast should still work
+        a2a("send", "all", "second broadcast", "--from", "alice", project=self.project)
+        result = a2a("peek", "--json", "--limit", "10", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertGreaterEqual(len(msgs), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

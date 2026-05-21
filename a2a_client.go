@@ -291,7 +291,7 @@ func (c *Client) ListPeers() ([]Peer, error) {
 	}
 	defer rows.Close()
 
-	var peers []Peer
+	peers := []Peer{}
 	for rows.Next() {
 		var p Peer
 		err := rows.Scan(&p.ID, &p.Role, &p.CLI, &p.Status)
