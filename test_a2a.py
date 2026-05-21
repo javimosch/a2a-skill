@@ -1151,6 +1151,23 @@ class TestEdgeCases(unittest.TestCase):
         self.assertIn("recent message", output)
         self.assertNotIn("old message", output)
 
+    def test_cmd_stats_empty_bus(self):
+        """Stats on a bus with no messages returns zero counts."""
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_stats(a2a.argparse.Namespace(project=self.project, json=True))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertEqual(data["messages"], 0)
+        self.assertEqual(data["direct_messages"], 0)
+        self.assertEqual(data["broadcasts"], 0)
+        self.assertEqual(data["threads"], 0)
+        self.assertEqual(data["agents_active"], 0)
+        self.assertEqual(data["agents_done"], 0)
+
+
 
 
 
