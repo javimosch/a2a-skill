@@ -504,6 +504,32 @@ class TestA2AClient(unittest.TestCase):
         peer = next(p for p in peers if p["id"] == "alice")
         self.assertEqual(peer["role"], "planner")
 
+    def test_register_upsert_preserves_created_at(self):
+        """register() with upsert=True preserves original created_at timestamp."""
+        import time
+        alice = A2AClient(self.project, "alice")
+        # First registration
+        alice.register("critic", upsert=True)
+        # Read back the created_at
+        import sqlite3
+        conn = sqlite3.connect(str(alice.db_path))
+        row = conn.execute("SELECT created_at FROM agents WHERE id='alice'").fetchone()
+        original_created = row[0]
+        conn.close()
+        # Small delay to ensure different timestamps
+        time.sleep(0.01)
+        # Upsert with different role
+        alice.register("planner", upsert=True)
+        conn = sqlite3.connect(str(alice.db_path))
+        row = conn.execute("SELECT created_at, role, last_seen FROM agents WHERE id='alice'").fetchone()
+        conn.close()
+        # created_at must be preserved
+        self.assertEqual(row[0], original_created)
+        # role must be updated
+        self.assertEqual(row[1], "planner")
+        # last_seen must be updated (greater than original)
+        self.assertGreater(row[2], original_created)
+
     def test_register_duplicate_raises_without_upsert(self):
         """register() without upsert on existing agent raises IntegrityError."""
         alice = A2AClient(self.project, "alice")

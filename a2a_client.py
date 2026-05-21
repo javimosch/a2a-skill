@@ -105,22 +105,32 @@ class A2AClient:
             prompt: System prompt (optional)
             cli: CLI tool name (optional)
             pid: Process ID (optional)
-            upsert: Replace existing registration if True
+            upsert: Update existing registration if True (preserves created_at)
 
         Returns:
             True on success
         """
         conn = self._connect()
         try:
-            sql = (
-                "INSERT OR REPLACE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-                if upsert else
-                "INSERT INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-            )
             now = time.time()
-            conn.execute(sql, (self.agent_id, role, prompt, cli, "active", pid, now, now))
+            if upsert:
+                conn.execute(
+                    "INSERT OR IGNORE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (self.agent_id, role, prompt, cli, "active", pid, now, now),
+                )
+                conn.execute(
+                    "UPDATE agents SET role=COALESCE(?,role), prompt=COALESCE(?,prompt), "
+                    "cli=COALESCE(?,cli), pid=COALESCE(?,pid), status='active', last_seen=? "
+                    "WHERE id=?",
+                    (role, prompt, cli, pid, now, self.agent_id),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (self.agent_id, role, prompt, cli, "active", pid, now, now),
+                )
             conn.commit()
             return True
         finally:
