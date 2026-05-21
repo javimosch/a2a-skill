@@ -46,6 +46,34 @@ client = A2AClient(project: str, agent_id: str)
 
 **Note:** The database is expected to exist at `~/.a2a/{project}/database.db`.
 
+### register()
+
+```python
+success = client.register(
+    role: str,
+    prompt: str = "",
+    cli: str = "",
+    pid: int = 0,
+    upsert: bool = True
+) -> bool
+```
+
+Register this agent on the bus. Must be called before send/recv.
+
+**Parameters:**
+- `role`: Agent's role description (e.g., "developer", "critic")
+- `prompt`: Optional system prompt sent to peer agents
+- `cli`: CLI tool name (e.g., "claude", "opencode")
+- `pid`: Process ID (optional)
+- `upsert`: Update existing registration if True (default: True, preserves original created_at)
+
+**Returns:** True on success
+
+**Example:**
+```python
+client.register("researcher", cli="python", upsert=True)
+```
+
 ### send()
 
 ```python
@@ -363,9 +391,9 @@ except Exception as e:
 ```
 
 Common errors:
-- **FileNotFoundError**: Database doesn't exist (call `a2a init` first)
-- **sqlite3.OperationalError**: Database schema issue
-- **sqlite3.IntegrityError**: Agent not registered (call `a2a register <id>` first)
+- **ValueError**: Empty project or agent_id in constructor
+- **sqlite3.OperationalError**: Database schema issue (call `client.register()` or `a2a init` first)
+- **sqlite3.IntegrityError**: Agent not registered (call `client.register()` first)
 
 ## Performance
 
