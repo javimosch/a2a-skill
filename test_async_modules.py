@@ -195,6 +195,20 @@ class TestA2AClientAsync(unittest.TestCase):
         self.assertGreater(len(results), 0)
         self.assertIn("unique-keyword-xyz", results[0]["body"])
 
+    def test_recv_cleans_up_expired_messages(self):
+        """recv() triggers TTL cleanup so expired messages are not returned."""
+        run_async(self.alice.send("bob", "will expire", ttl_seconds=0))
+        messages = run_async(self.bob.recv(wait=1))
+        bodies = [m["body"] for m in messages]
+        self.assertNotIn("will expire", bodies)
+
+    def test_peek_cleans_up_expired_messages(self):
+        """peek() triggers TTL cleanup so expired messages don't appear."""
+        run_async(self.alice.send("bob", "ttl will vanish", ttl_seconds=0))
+        messages = run_async(self.bob.peek(limit=10))
+        bodies = [m["body"] for m in messages]
+        self.assertNotIn("ttl will vanish", bodies)
+
     def test_context_manager(self):
         """Async context manager closes connection on exit."""
         from a2a_client_async import A2AClientAsync

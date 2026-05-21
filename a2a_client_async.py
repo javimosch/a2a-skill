@@ -28,6 +28,16 @@ class A2AClientAsync:
         self.db_path = Path.home() / ".a2a" / project / "database.db"
         self._conn: Optional[aiosqlite.Connection] = None
 
+    async def _cleanup_expired(self, conn: aiosqlite.Connection) -> int:
+        """Delete messages past their TTL. Return count deleted."""
+        ts = time.time()
+        cursor = await conn.execute(
+            "DELETE FROM messages WHERE ttl_seconds IS NOT NULL "
+            "AND created_at + ttl_seconds < ?",
+            (ts,)
+        )
+        return cursor.rowcount
+
     async def _connect(self) -> aiosqlite.Connection:
         """Get database connection."""
         if self._conn is None:
@@ -140,6 +150,7 @@ class A2AClientAsync:
         deadline = time.time() + wait if wait > 0 else None
 
         while True:
+            await self._cleanup_expired(conn)
             query = (
                 "SELECT id, sender, recipient, body, thread_id, created_at "
                 "FROM messages WHERE (recipient = ? OR recipient IS NULL)"
@@ -196,6 +207,7 @@ class A2AClientAsync:
             List of message dicts
         """
         conn = await self._connect()
+        await self._cleanup_expired(conn)
         cursor = await conn.execute(
             "SELECT id, sender, recipient, body, thread_id, created_at "
             "FROM messages ORDER BY created_at DESC LIMIT ?",
