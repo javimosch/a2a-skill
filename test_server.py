@@ -383,7 +383,59 @@ class TestA2ARestServer(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("message_id", body)
 
-    # --- 404 ---
+    # --- Edge cases ---
+
+    def test_send_with_ttl(self):
+        """POST /send with ttl_seconds stores TTL on message."""
+        status, body = self._post("/send", {
+            "to": "alice",
+            "message": "ttl test",
+            "ttl_seconds": 3600,
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual(body["status"], "sent")
+
+    def test_recv_limit_zero_returns_empty(self):
+        """POST /recv with limit=0 returns empty messages list."""
+        self._post("/send", {"to": "limit-zero-agent", "message": "should not appear"})
+        status, body = self._post("/recv", {"agent": "limit-zero-agent", "limit": 0})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["messages"], [])
+
+    def test_peek_limit_zero_returns_empty(self):
+        """GET /messages with limit=0 returns empty messages list."""
+        _, body = self._get("/messages?limit=0")
+        self.assertEqual(body["messages"], [])
+
+    def test_stats_all_fields_present(self):
+        """GET /stats returns all five required fields."""
+        _, body = self._get("/stats")
+        self.assertIn("messages", body)
+        self.assertIn("broadcasts", body)
+        self.assertIn("direct", body)
+        self.assertIn("threads", body)
+        self.assertIn("agents", body)
+        # Counts should be non-negative integers
+        for field in ("messages", "broadcasts", "direct", "threads", "agents"):
+            self.assertIsInstance(body[field], int)
+            self.assertGreaterEqual(body[field], 0)
+
+    def test_recv_with_invalid_json_returns_400(self):
+        """POST /recv with invalid JSON body returns 400."""
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        conn.request("POST", "/recv", b"not valid json{{{",
+                     {"Content-Type": "application/json", "Content-Length": "16"})
+        resp = conn.getresponse()
+        body = json.loads(resp.read().decode())
+        conn.close()
+        self.assertEqual(resp.status, 400)
+        self.assertIn("error", body)
+
+    def test_send_with_empty_message_returns_400(self):
+        """POST /send with empty message string returns 400."""
+        status, body = self._post("/send", {"to": "bob", "message": ""})
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
 
     def test_unknown_get_route_returns_404(self):
         """GET to unknown path returns 404."""
