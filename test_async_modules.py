@@ -258,6 +258,30 @@ class TestA2AClientAsync(unittest.TestCase):
         db_path = Path(self.test_home) / ".a2a" / project / "database.db"
         self.assertTrue(db_path.parent.exists())
 
+    def test_recv_empty_wait_returns_immediately(self):
+        """recv(wait=0) returns immediately without blocking."""
+        import time
+        start = time.time()
+        messages = run_async(self.bob.recv(wait=0))
+        elapsed = time.time() - start
+        self.assertEqual(len(messages), 0)
+        self.assertLess(elapsed, 2, "recv with wait=0 should not block")
+
+    def test_peek_limit_zero_returns_empty(self):
+        """peek(limit=0) returns empty list."""
+        run_async(self.alice.send("bob", "test message"))
+        messages = run_async(self.alice.peek(limit=0))
+        self.assertEqual(messages, [])
+
+    def test_recv_negative_wait_returns_immediately(self):
+        """recv(wait=-1) returns immediately without blocking."""
+        import time
+        start = time.time()
+        messages = run_async(self.bob.recv(wait=-1))
+        elapsed = time.time() - start
+        self.assertEqual(len(messages), 0)
+        self.assertLess(elapsed, 2, "recv with negative wait should not block")
+
 
 @unittest.skipUnless(HAS_AIOSQLITE, SKIP_MSG)
 class TestPriorityClientAsync(unittest.TestCase):

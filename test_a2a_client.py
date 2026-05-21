@@ -599,5 +599,43 @@ class TestA2AClient(unittest.TestCase):
         bodies2 = [m["body"] for m in result_underscore]
         self.assertIn("under_score_value", bodies2)
 
+    def test_recv_empty_wait_returns_immediately(self):
+        """recv() with wait=0 returns immediately without blocking."""
+        bob = A2AClient(self.project, "bob")
+        import time
+        start = time.time()
+        messages = bob.recv(wait=0)
+        elapsed = time.time() - start
+        self.assertEqual(len(messages), 0)
+        self.assertLess(elapsed, 2, "recv with wait=0 should not block")
+
+    def test_peek_limit_zero_returns_empty(self):
+        """peek() with limit=0 returns empty list."""
+        alice = A2AClient(self.project, "alice")
+        alice.send("bob", "some message")
+        messages = alice.peek(limit=0)
+        self.assertEqual(messages, [])
+
+    def test_send_to_empty_string(self):
+        """send() with empty recipient string creates message with empty recipient."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        # Empty string is not "all"/"*"/"broadcast", so recipient stays as empty string
+        msg_id = alice.send("", "to nobody")
+        self.assertGreater(msg_id, 0)
+        # Bob should NOT receive this
+        messages = bob.recv(wait=0)
+        self.assertNotIn("to nobody", [m["body"] for m in messages])
+
+    def test_recv_negative_wait_returns_immediately(self):
+        """recv() with negative wait returns immediately (no block)."""
+        bob = A2AClient(self.project, "bob")
+        import time
+        start = time.time()
+        messages = bob.recv(wait=-1)
+        elapsed = time.time() - start
+        self.assertEqual(len(messages), 0)
+        self.assertLess(elapsed, 2, "recv with negative wait should not block")
+
 if __name__ == "__main__":
     unittest.main()
