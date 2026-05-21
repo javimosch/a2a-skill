@@ -1,76 +1,130 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" width="100%" height="100%">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#1e1b4b"/>
-      <stop offset="50%" stop-color="#312e81"/>
-      <stop offset="100%" stop-color="#1e40af"/>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0e2e"/>
+      <stop offset="40%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#312e81"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#818cf8"/>
-      <stop offset="50%" stop-color="#a5b4fc"/>
-      <stop offset="100%" stop-color="#60a5fa"/>
+    <linearGradient id="warmGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="glow" x1="0.5" y1="0" x2="0.5" y2="1">
-      <stop offset="0%" stop-color="#a5b4fc" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#a5b4fc" stop-opacity="0"/>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e0e7ff"/>
+      <stop offset="100%" stop-color="#c7d2fe"/>
     </linearGradient>
-    <filter id="softGlow">
-      <feGaussianBlur stdDeviation="2" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <radialGradient id="vignette" cx="50%" cy="40%" r="30%">
+      <stop offset="0%" stop-color="#4338ca" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#4338ca" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
+    <filter id="softGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="20" cy="20" r="0.5" fill="#818cf8" opacity="0.12"/>
+    </pattern>
   </defs>
-
-  <rect width="800" height="200" fill="url(#bg)" rx="16"/>
-
-  <rect x="0" y="0" width="800" height="100" fill="url(#glow)" rx="16"/>
-
-  <circle cx="680" cy="40" r="2.5" fill="#818cf8" opacity="0.8"/>
-  <circle cx="720" cy="80" r="2" fill="#60a5fa" opacity="0.6"/>
-  <circle cx="650" cy="90" r="2" fill="#a5b4fc" opacity="0.7"/>
-  <circle cx="700" cy="140" r="1.5" fill="#818cf8" opacity="0.5"/>
-  <circle cx="740" cy="30" r="2" fill="#60a5fa" opacity="0.7"/>
-  <circle cx="120" cy="150" r="2.5" fill="#818cf8" opacity="0.6"/>
-  <circle cx="80" cy="50" r="2" fill="#a5b4fc" opacity="0.5"/>
-  <circle cx="160" cy="30" r="1.5" fill="#60a5fa" opacity="0.7"/>
-  <circle cx="200" cy="160" r="2" fill="#818cf8" opacity="0.5"/>
-  <circle cx="300" cy="45" r="2" fill="#a5b4fc" opacity="0.6"/>
-  <circle cx="450" cy="160" r="2.5" fill="#818cf8" opacity="0.5"/>
-  <circle cx="500" cy="35" r="2" fill="#60a5fa" opacity="0.6"/>
-
-  <g stroke="#818cf8" stroke-width="0.5" fill="none" opacity="0.35">
-    <line x1="680" y1="40" x2="720" y2="80"/>
-    <line x1="680" y1="40" x2="650" y2="90"/>
-    <line x1="720" y1="80" x2="740" y2="30"/>
-    <line x1="650" y1="90" x2="700" y2="140"/>
-    <line x1="80" y1="50" x2="120" y2="150"/>
-    <line x1="80" y1="50" x2="160" y2="30"/>
-    <line x1="120" y1="150" x2="200" y2="160"/>
-    <line x1="160" y1="30" x2="300" y2="45"/>
-    <line x1="300" y1="45" x2="450" y2="160"/>
-    <line x1="450" y1="160" x2="500" y2="35"/>
+  <rect width="800" height="200" fill="url(#bgGrad)" rx="0"/>
+  <rect width="800" height="200" fill="url(#grid)" opacity="0.25"/>
+  <ellipse cx="400" cy="90" rx="250" ry="70" fill="url(#vignette)"/>
+  <rect x="0" y="0" width="800" height="2" fill="url(#warmGrad)"/>
+  <g stroke="#f59e0b" stroke-width="1" fill="none" opacity="0.15">
+    <path d="M0,195 Q40,185 80,188 Q120,191 160,186 Q200,181 240,187 Q280,193 320,189 Q360,185 400,188 Q440,191 480,186 Q520,181 560,187 Q600,193 640,189 Q680,185 720,188 Q760,191 800,186 L800,200 L0,200 Z" fill="#f59e0b" fill-opacity="0.04"/>
+    <path d="M0,192 Q60,182 120,186 Q180,190 240,184 Q300,178 360,184 Q420,190 480,184 Q540,178 600,184 Q660,190 720,186 Q780,182 800,188"/>
   </g>
-
-  <g stroke="#60a5fa" stroke-width="0.3" fill="none" opacity="0.25">
-    <rect x="640" y="25" width="40" height="24" rx="4"/>
-    <rect x="648" y="72" width="32" height="20" rx="3"/>
-    <rect x="70" y="25" width="30" height="18" rx="3"/>
-    <rect x="260" y="30" width="36" height="20" rx="3"/>
-    <rect x="430" y="145" width="44" height="24" rx="4"/>
+  <g stroke="#818cf8" stroke-width="1" opacity="0.18" fill="none">
+    <path d="M25,50 Q55,30 80,50 Q105,70 130,50 Q155,30 180,50"/>
+    <path d="M25,55 Q55,35 80,55 Q105,75 130,55 Q155,35 180,55"/>
+    <path d="M20,170 L50,140 L80,150 L110,120"/>
+    <path d="M30,175 L60,145 L90,155 L120,125"/>
   </g>
-
-  <text x="60" y="108" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="54" font-weight="650" fill="url(#accent)" letter-spacing="-0.025em" filter="url(#softGlow)">FlowForge</text>
-
-  <text x="62" y="143" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="500" fill="#a5b4fc" opacity="0.75" letter-spacing="0.12em">PROJECT MANAGEMENT</text>
-
-  <g transform="translate(420, 82)" filter="url(#softGlow)">
-    <rect x="0" y="0" width="7" height="7" rx="1.5" fill="#818cf8" opacity="0.85"/>
-    <rect x="12" y="7" width="5" height="5" rx="1" fill="#60a5fa" opacity="0.75"/>
-    <rect x="22" y="0" width="8" height="8" rx="1.5" fill="#a5b4fc" opacity="0.85"/>
-    <rect x="35" y="5" width="5" height="5" rx="1" fill="#818cf8" opacity="0.65"/>
-    <rect x="45" y="0" width="7" height="7" rx="1.5" fill="#60a5fa" opacity="0.85"/>
-    <rect x="0" y="16" width="5" height="5" rx="1" fill="#a5b4fc" opacity="0.55"/>
-    <rect x="12" y="18" width="7" height="7" rx="1.5" fill="#818cf8" opacity="0.75"/>
-    <rect x="24" y="15" width="4" height="4" rx="1" fill="#60a5fa" opacity="0.65"/>
-    <rect x="36" y="18" width="7" height="7" rx="1.5" fill="#a5b4fc" opacity="0.75"/>
+  <g stroke="#818cf8" stroke-width="1" opacity="0.18" fill="none">
+    <path d="M620,50 Q650,30 675,50 Q700,70 725,50 Q750,30 775,50"/>
+    <path d="M620,55 Q650,35 675,55 Q700,75 725,55 Q750,35 775,55"/>
+    <path d="M690,170 L720,140 L750,150 L780,120"/>
+    <path d="M700,175 L730,145 L760,155 L790,125"/>
+  </g>
+  <g stroke="#818cf8" stroke-width="0.5" opacity="0.12" fill="none">
+    <line x1="0" y1="60" x2="300" y2="60"/>
+    <line x1="500" y1="60" x2="800" y2="60"/>
+    <line x1="0" y1="140" x2="260" y2="140"/>
+    <line x1="540" y1="140" x2="800" y2="140"/>
+    <line x1="80" y1="40" x2="80" y2="160"/>
+    <line x1="220" y1="45" x2="220" y2="135"/>
+    <line x1="600" y1="40" x2="600" y2="170"/>
+    <line x1="720" y1="45" x2="720" y2="155"/>
+  </g>
+  <g filter="url(#glow)">
+    <circle cx="55" cy="55" r="4" fill="#a5b4fc" opacity="0.55"/>
+    <circle cx="130" cy="45" r="3" fill="#818cf8" opacity="0.45"/>
+    <circle cx="220" cy="60" r="3.5" fill="#a5b4fc" opacity="0.5"/>
+    <circle cx="80" cy="135" r="2.5" fill="#818cf8" opacity="0.35"/>
+    <circle cx="170" cy="130" r="2" fill="#a5b4fc" opacity="0.3"/>
+    <circle cx="260" cy="140" r="3" fill="#818cf8" opacity="0.4"/>
+    <circle cx="745" cy="55" r="4" fill="#a5b4fc" opacity="0.55"/>
+    <circle cx="670" cy="45" r="3" fill="#818cf8" opacity="0.45"/>
+    <circle cx="580" cy="60" r="3.5" fill="#a5b4fc" opacity="0.5"/>
+    <circle cx="720" cy="135" r="2.5" fill="#818cf8" opacity="0.35"/>
+    <circle cx="630" cy="130" r="2" fill="#a5b4fc" opacity="0.3"/>
+    <circle cx="540" cy="140" r="3" fill="#818cf8" opacity="0.4"/>
+  </g>
+  <g filter="url(#softGlow)">
+    <circle cx="110" cy="55" r="2" fill="#f59e0b" opacity="0.6"/>
+    <circle cx="200" cy="135" r="1.5" fill="#f59e0b" opacity="0.5"/>
+    <circle cx="690" cy="55" r="2" fill="#f59e0b" opacity="0.6"/>
+    <circle cx="600" cy="135" r="1.5" fill="#f59e0b" opacity="0.5"/>
+  </g>
+  <g filter="url(#softGlow)">
+    <circle cx="40" cy="100" r="1.5" fill="#e0e7ff" opacity="0.4"/>
+    <circle cx="150" cy="95" r="1.5" fill="#e0e7ff" opacity="0.35"/>
+    <circle cx="240" cy="100" r="1" fill="#e0e7ff" opacity="0.4"/>
+    <circle cx="760" cy="100" r="1.5" fill="#e0e7ff" opacity="0.4"/>
+    <circle cx="650" cy="95" r="1.5" fill="#e0e7ff" opacity="0.35"/>
+    <circle cx="560" cy="100" r="1" fill="#e0e7ff" opacity="0.4"/>
+  </g>
+  <g transform="translate(140, 165)" stroke="#818cf8" stroke-width="1" fill="none" opacity="0.2">
+    <polygon points="0,-10 8.7,-5 8.7,5 0,10 -8.7,5 -8.7,-5"/>
+  </g>
+  <g transform="translate(660, 165)" stroke="#818cf8" stroke-width="1" fill="none" opacity="0.2">
+    <polygon points="0,-10 8.7,-5 8.7,5 0,10 -8.7,5 -8.7,-5"/>
+  </g>
+  <g transform="translate(200, 55)" stroke="#f59e0b" stroke-width="0.8" fill="none" opacity="0.35">
+    <polygon points="0,-6 6,0 0,6 -6,0"/>
+  </g>
+  <g transform="translate(600, 55)" stroke="#f59e0b" stroke-width="0.8" fill="none" opacity="0.35">
+    <polygon points="0,-6 6,0 0,6 -6,0"/>
+  </g>
+  <text x="400" y="90" text-anchor="middle" font-family="'Space Grotesk', 'Plus Jakarta Sans', 'Inter', 'Segoe UI', system-ui, sans-serif" font-size="52" font-weight="700" fill="url(#textGrad)" letter-spacing="1.5">
+    FlowForge
+  </text>
+  <text x="400" y="126" text-anchor="middle" font-family="'Space Grotesk', 'Plus Jakarta Sans', 'Inter', 'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="500" fill="#a5b4fc" letter-spacing="4" opacity="0.85">
+    PROJECT MANAGEMENT · REIMAGINED
+  </text>
+  <g opacity="0.2">
+    <line x1="280" y1="146" x2="520" y2="146" stroke="#818cf8" stroke-width="1"/>
+    <circle cx="400" cy="146" r="2.5" fill="#f59e0b" opacity="0.4"/>
+    <line x1="320" y1="152" x2="480" y2="152" stroke="#818cf8" stroke-width="0.5"/>
+  </g>
+  <rect x="18" y="40" width="3" height="120" rx="1.5" fill="#6366f1" opacity="0.35"/>
+  <rect x="24" y="55" width="1.5" height="90" rx="1" fill="#f59e0b" opacity="0.15"/>
+  <rect x="779" y="40" width="3" height="120" rx="1.5" fill="#6366f1" opacity="0.35"/>
+  <rect x="775" y="55" width="1.5" height="90" rx="1" fill="#f59e0b" opacity="0.15"/>
+  <g stroke="#818cf8" stroke-width="1.5" opacity="0.25" fill="none">
+    <path d="M12,28 L12,12 L28,12"/>
+    <path d="M788,12 L772,12 L772,28"/>
+    <path d="M12,172 L12,188 L28,188"/>
+    <path d="M788,188 L772,188 L772,172"/>
   </g>
 </svg>
