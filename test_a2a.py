@@ -1264,6 +1264,22 @@ class TestEdgeCases(unittest.TestCase):
                 project=self.project, as_="phantom", timeout=0, count=0
             ))
 
+    def test_cmd_wait_zero_count(self):
+        """cmd_wait with --count 0 is rejected."""
+        self._register("alice")
+        with self.assertRaises(SystemExit):
+            a2a.cmd_wait(a2a.argparse.Namespace(
+                project=self.project, as_="alice", timeout=0, count=0
+            ))
+
+    def test_cmd_wait_negative_count(self):
+        """cmd_wait with negative --count is rejected."""
+        self._register("alice")
+        with self.assertRaises(SystemExit):
+            a2a.cmd_wait(a2a.argparse.Namespace(
+                project=self.project, as_="alice", timeout=0, count=-1
+            ))
+
     def test_cmd_wait_timeout_no_messages(self):
         """cmd_wait with no unread messages and zero timeout exits with error."""
         conn = a2a.connect(self.project)
