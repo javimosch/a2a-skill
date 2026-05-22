@@ -39,6 +39,7 @@ output to `output/`.
 | `doc-pipeline/` | writer, formatter, publisher | `output/guide.md`, `output/guide.html`, `output/bundle.zip`, `output/bus-state.txt` | 3 agents produce a markdown guide, convert to HTML via pandoc, and bundle into a zip archive |
 | `tech-stack-advisor/` | researcher, recommender | `output/tech-stack-guide.md`, `output/bus-state.txt` | 2 agents research and recommend a technology stack using ddgr web search |
 | `ascii-gallery/` | finder, artist, curator | `output/gallery.html`, `output/*.txt`, `output/bus-state.txt` | 3 agents produce an HTML gallery of ASCII art from landmark images |
+| `github-trending-report/` | searcher, describer, compiler | `output/trending.md`, `output/bus-state.txt` | 3 agents produce a weekly GitHub trending repositories report via ddgr research |
 
 ## Requirements
 

@@ -1,0 +1,15 @@
+[16:54:44] #1 collector -> searcher
+    Your task: You are the GitHub searcher. Search the web for trending GitHub repositories.
+    ...
+
+[16:54:44] #2 collector -> describer
+    Your task: You are the GitHub repository describer. Wait for the searcher to send you repository data.
+    ...
+
+[16:54:44] #3 collector -> compiler
+    Your task: You are the weekly report compiler. Wait for the describer to send you enriched data.
+    ...
+
+--- NOTE: Agent collaboration did not proceed beyond initial task dispatch ---
+--- OpenRouter API key limit exceeded for opencode-go/deepseek-v4-flash ---
+--- The output/trending.md was generated via direct ddgr web search fallback ---
