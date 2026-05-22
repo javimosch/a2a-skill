@@ -261,13 +261,13 @@ func cmdList() {
 	}
 	fmt.Printf("%-20s %-20s %-10s %-10s\n", "ID", "ROLE", "CLI", "STATUS")
 	for _, p := range peers {
-		role := p.Role
-		if role == "" {
-			role = "-"
+		role := "-"
+		if p.Role != nil {
+			role = *p.Role
 		}
-		cli := p.CLI
-		if cli == "" {
-			cli = "-"
+		cli := "-"
+		if p.CLI != nil {
+			cli = *p.CLI
 		}
 		fmt.Printf("%-20s %-20s %-10s %-10s\n", p.ID, role, cli, p.Status)
 	}
