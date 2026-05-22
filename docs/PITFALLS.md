@@ -181,3 +181,39 @@ The `_util.py` helper `strip_html_preamble()` searches for `<!DOCTYPE` or
 
 **Fix:** When adding a new artifact format, add a corresponding strip function
 to `_util.py` or handle extraction in the build script directly.
+
+## Cross-CLI validation parity
+
+### Python and Go CLIs must agree on invalid inputs
+
+The a2a ecosystem has two CLIs: `a2a.py` (Python) and `cmd/a2a/main.go` (Go
+binary compiled to `a2a`). They share the same database schema but handle
+input validation independently. Inconsistencies cause test failures when
+integration tests (which use the Go binary) exercise validation paths that
+the Python CLI tests cover.
+
+Known gaps (and fixes):
+- `--ttl`: Python rejects `<= 0`. Go used to silently ignore non-positive
+  values. **Fixed:** Go now parses `--ttl` strictly and rejects non-positive
+  values with the same error message.
+- `--limit` on `peek`/`search`: Python rejects `<= 0`. Go used to accept `0`
+  for some commands. **Fixed:** Go now rejects non-positive limits.
+- Empty agent IDs: Python rejects `""` and whitespace-only IDs for
+  `register` and `unregister`. Go used to pass them to SQLite, which would
+  either succeed (creating a DB entry with an empty ID) or fail with a
+  confusing SQL error. **Fixed:** Go now checks `strings.TrimSpace(id) == ""`
+  and prints the same error message.
+
+**Fix:** When adding a new validation check to `a2a.py`, add the equivalent
+check to `cmd/a2a/main.go` at the same time. Run both test suites before
+committing.
+
+### Integration tests use the Go binary, unit tests use Python
+
+`test_integration.py` shells out to the `a2a` binary (Go), while
+`test_a2a.py` imports `a2a.py` and calls functions directly. This means a
+validation bug in one CLI may pass the other's test suite. Always run both.
+
+**Fix:** When adding validation tests in `test_a2a.py`, add corresponding
+integration tests in `test_integration.py` that exercise the same path
+through the Go binary. Expected behavior must match.

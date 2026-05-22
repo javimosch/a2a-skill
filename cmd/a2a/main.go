@@ -278,7 +278,7 @@ func cmdStatus() {
 	jsonFlag := hasFlag("--json")
 	args := positionalArgs()
 
-	if len(args) < 1 || agentID == "" {
+	if len(args) < 1 || strings.TrimSpace(agentID) == "" {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a status <state> --as <id> [--json]")
 		os.Exit(1)
 	}
@@ -372,7 +372,7 @@ func cmdRecv() {
 	jsonFlag := hasFlag("--json")
 	sinceStr := getFlagValue("--since")
 
-	if agentID == "" {
+	if strings.TrimSpace(agentID) == "" {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a recv --as <id> [--wait N] [--limit N] [--all] [--include-self] [--peek] [--since TS] [--json]")
 		os.Exit(1)
 	}
@@ -576,7 +576,7 @@ func cmdWait() {
 		timeout = getFlagFloat("--timeout")
 	}
 
-	if agentID == "" {
+	if strings.TrimSpace(agentID) == "" {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a wait --as <id> [--count N] [--timeout N]")
 		os.Exit(1)
 	}
