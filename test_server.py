@@ -285,6 +285,12 @@ class TestA2ARestServer(unittest.TestCase):
         self.assertIn("messages", body)
         self.assertEqual(body["messages"], [])
 
+    def test_thread_returns_400_for_empty_id(self):
+        """GET /thread with empty id returns 400."""
+        status, body = self._get("/thread?id=")
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
     # --- GET /stats ---
 
     def test_stats_returns_200(self):
