@@ -1942,6 +1942,26 @@ class TestEdgeCases(unittest.TestCase):
             sys.stdout = old_stdout
         self.assertIn("test content", output)
 
+    def test_search_limit_non_positive_rejected(self):
+        """search with --limit 0 or negative is rejected."""
+        self._register("alice")
+        for bad_limit in (0, -1):
+            with self.assertRaises(SystemExit):
+                a2a.cmd_search(a2a.argparse.Namespace(
+                    project=self.project, query="test", limit=bad_limit,
+                    json=False, fts=False
+                ))
+
+    def test_recv_limit_negative_rejected(self):
+        """recv with negative --limit is rejected."""
+        self._register("alice")
+        with self.assertRaises(SystemExit):
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, **{"as_": "alice"},
+                wait=0, limit=-1, all=False, since=None,
+                include_self=False, peek=False, json=False
+            ))
+
 
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""

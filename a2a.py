@@ -332,7 +332,7 @@ def cmd_recv(args) -> None:
     agent, conn = _resolve_agent(args)
     limit = args.limit
     if limit is not None and limit < 0:
-        limit = 0
+        die("--limit must be a non-negative integer")
 
     deadline = now() + args.wait if args.wait else None
     poll_interval = 0.5
@@ -458,11 +458,13 @@ def cmd_search(args) -> None:
     query = args.query.strip() if args.query else ""
     if not query:
         die("search query is empty — provide a keyword to search for")
+    raw_limit = args.limit
+    if raw_limit is not None and raw_limit <= 0:
+        die("--limit must be a positive integer")
+    limit = raw_limit if raw_limit is not None else 50
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
-    raw_limit = args.limit
-    limit = raw_limit if raw_limit is not None and raw_limit >= 0 else 50
     fts_ready = _init_fts(conn)
     use_fts = args.fts or fts_ready
     if use_fts:

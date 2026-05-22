@@ -357,6 +357,10 @@ func cmdRecv() {
 		os.Exit(1)
 	}
 
+	if limit < 0 {
+		fmt.Fprintln(os.Stderr, "a2a: --limit must be a non-negative integer")
+		os.Exit(1)
+	}
 	if limit == 0 {
 		limit = 100 // Python default
 	}
@@ -433,6 +437,10 @@ func cmdPeek() {
 	if hasFlag("--limit") {
 		limit = getFlagInt("--limit")
 	}
+	if limit <= 0 {
+		fmt.Fprintln(os.Stderr, "a2a: --limit must be a positive integer")
+		os.Exit(1)
+	}
 	jsonFlag := hasFlag("--json")
 
 	c := newClient("")
@@ -476,6 +484,10 @@ func cmdSearch() {
 	limit := 50
 	if hasFlag("--limit") {
 		limit = getFlagInt("--limit")
+	}
+	if limit <= 0 {
+		fmt.Fprintln(os.Stderr, "a2a: --limit must be a positive integer")
+		os.Exit(1)
 	}
 	jsonFlag := hasFlag("--json")
 	args := positionalArgs()
