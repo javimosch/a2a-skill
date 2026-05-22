@@ -101,6 +101,9 @@ echo "$OUT" | grep -q "threaded msg" && pass "thread shows message" || fail "thr
 OUT=$("$A2A" thread test-thread --json 2>&1)
 echo "$OUT" | grep -q '"thread_id": "test-thread"' && pass "thread --json" || fail "thread --json"
 
+# 18b. thread rejects empty id
+"$A2A" thread "" 2>&1 | grep -qi "must not be empty" && pass "thread rejects empty id" || fail "thread rejects empty id"
+
 # 19. search
 OUT=$("$A2A" search hello 2>&1)
 echo "$OUT" | grep -q "hello" && pass "search finds 'hello'" || fail "search finds 'hello'"
