@@ -1723,7 +1723,7 @@ class TestEdgeCases(unittest.TestCase):
         self.assertIn("self message", [m["body"] for m in data])
 
     def test_search_empty_query(self):
-        """Search with empty query returns all messages."""
+        """Search with empty query is rejected."""
         conn = a2a.connect(self.project)
         conn.execute(
             "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
@@ -1736,15 +1736,17 @@ class TestEdgeCases(unittest.TestCase):
         conn.commit()
         conn.close()
 
-        import io, sys
-        old_stdout = sys.stdout
-        sys.stdout = io.StringIO()
-        a2a.cmd_search(a2a.argparse.Namespace(
-            project=self.project, query="", limit=50, json=False, fts=False
-        ))
-        output = sys.stdout.getvalue()
-        sys.stdout = old_stdout
-        self.assertIn("findable message", output)
+        with self.assertRaises(SystemExit):
+            a2a.cmd_search(a2a.argparse.Namespace(
+                project=self.project, query="", limit=50, json=False, fts=False
+            ))
+
+    def test_search_whitespace_query_rejected(self):
+        """Search with whitespace-only query is rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_search(a2a.argparse.Namespace(
+                project=self.project, query="   ", limit=50, json=False, fts=False
+            ))
 
     def test_search_no_matches(self):
         """Search with query that matches nothing returns empty cleanly."""

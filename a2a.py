@@ -378,6 +378,8 @@ def cmd_peek(args) -> None:
 
 def cmd_thread(args) -> None:
     """Show all messages in a thread."""
+    if not args.id or not args.id.strip():
+        die("thread id must not be empty")
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
@@ -451,6 +453,9 @@ def _init_fts(conn: sqlite3.Connection) -> bool:
 
 def cmd_search(args) -> None:
     """Search messages by content."""
+    query = args.query.strip() if args.query else ""
+    if not query:
+        die("search query is empty — provide a keyword to search for")
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
@@ -464,7 +469,7 @@ def cmd_search(args) -> None:
                 f"SELECT {MSG_COLS_M} "
                 "FROM messages_fts JOIN messages m ON messages_fts.rowid = m.rowid "
                 "WHERE messages_fts MATCH ? ORDER BY rank LIMIT ?",
-                (args.query, limit),
+                (query, limit),
             ).fetchall()
         except sqlite3.OperationalError:
             use_fts = False
@@ -472,14 +477,14 @@ def cmd_search(args) -> None:
         rows = conn.execute(
             f"SELECT {MSG_COLS} FROM messages "
             "WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
-            (f"%{args.query.lower()}%", limit),
+            (f"%{query.lower()}%", limit),
         ).fetchall()
     conn.close()
     if not rows:
         if args.json:
             print("[]")
         else:
-            print(f"(no messages matching '{args.query}')")
+            print(f"(no messages matching '{query}')")
     else:
         _print_messages(rows, args.json)
 
