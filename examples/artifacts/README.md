@@ -30,6 +30,7 @@ output to `output/`.
 | `color-palette/` | colorist, generator | `output/index.html` | 2 agents propose a color palette and render an HTML preview |
 | `quiz-generator/` | researcher, checker, formatter | `output/index.html` | 3 agents collaborate to produce an interactive HTML quiz page |
 | `docker-compose-generator/` | specifier, writer | `output/docker-compose.yml`, `output/README.md` | 2 agents spec and write a 5-service Docker stack with README |
+| `web-research-report/` | researcher, analyst, writer | `output/report.md`, `output/bus-state.txt` | 3 agents produce a research report using ddgr for live web search |
 
 ## Requirements
 
@@ -40,6 +41,7 @@ To run an artifact build script, you need:
   - `claude` (Anthropic)
   - `opencode` (Codex CLI)
   - `pi` (Pi)
+- Some artifacts require additional CLI tools (e.g., `ddgr` for `web-research-report/`)
 
 ## Running
 
