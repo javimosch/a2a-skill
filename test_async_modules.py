@@ -319,14 +319,11 @@ class TestA2AClientAsync(unittest.TestCase):
             with self.assertRaises(ValueError):
                 run_async(self.alice.peek(limit=bad_limit))
 
-    def test_recv_negative_wait_returns_immediately(self):
-        """recv(wait=-1) returns immediately without blocking."""
-        import time
-        start = time.time()
-        messages = run_async(self.bob.recv(wait=-1))
-        elapsed = time.time() - start
-        self.assertEqual(len(messages), 0)
-        self.assertLess(elapsed, 2, "recv with negative wait should not block")
+    def test_recv_negative_wait_raises_value_error(self):
+        """recv(wait=-1) raises ValueError (must match sync client)."""
+        with self.assertRaises(ValueError) as ctx:
+            run_async(self.bob.recv(wait=-1))
+        self.assertIn("non-negative", str(ctx.exception))
 
     def test_send_to_empty_string_raises_value_error(self):
         """send() with empty recipient raises ValueError (async)."""
