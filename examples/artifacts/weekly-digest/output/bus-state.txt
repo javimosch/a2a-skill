@@ -1,0 +1,98 @@
+[10:42:24] #1 collector -> scout
+    Your task: You are the news scout. Research the latest tech news across multiple topics.
+    
+    You have shell access. Use ddgr for web search — it returns JSON.
+    Example: ddgr --json -n 10 "your search query"
+    
+    Steps:
+    1. Run these searches (use the exact queries below):
+       ddgr --json -n 5 -t m "AI artificial intelligence latest news 2026"
+       ddgr --json -n 5 -t m "devops cloud infrastructure latest"
+       ddgr --json -n 5 -t m "cybersecurity latest threats news"
+       ddgr --json -n 5 -t m "tech startups funding innovation"
+    2. For each result, extract: title, URL, and a brief description
+    3. Send all findings to the curator:
+       a2a send curator SCOUT_DATA:<your structured findings with all topics and URLs> --from scout
+    
+    Important: Include the search results grouped by topic. Format each entry with a title and URL.
+[10:42:24] #2 collector -> curator
+    Your task: You are the news curator. Wait for the scout to send you search data.
+    
+    Steps:
+    1. Receive the scout's message:
+       a2a recv --as curator --wait 60
+    2. Review all the stories across the topics (AI, devops, security, startups)
+    3. Select the 8-10 most interesting and important stories overall
+    4. For each selected story:
+       - Identify which topic it belongs to
+       - Write a one-sentence summary of why it matters
+       - Note the source title and URL
+    5. Organize selections by topic, with the most important topic first
+    6. Send curated list to the editor:
+       a2a send editor CURATED:<your curated list with topic groupings, summaries, and source URLs> --from curator
+[10:42:24] #3 collector -> editor
+    Your task: You are the digest editor. Wait for the curator to send you the curated stories.
+    
+    Steps:
+    1. Receive the curator's message:
+       a2a recv --as editor --wait 60
+    2. Compile a well-formatted markdown weekly digest:
+       - Title: 'Tech Weekly Digest -- Latest'
+       - Brief intro paragraph (1-2 sentences)
+       - One section per topic with ### headings
+       - Each story: bullet point with title (bold), 1-2 sentence summary, source link
+       - A concluding 'Key Takeaways' section with 3-4 big-picture observations
+    3. Use proper markdown formatting: ###, **, -, [links](urls)
+    4. Broadcast the complete digest:
+       a2a send all DIGEST_START\n<your full markdown digest>\nDIGEST_END --from editor
+       The digest must be between DIGEST_START and DIGEST_END markers.
+[10:42:49] #4 curator -> editor
+    CURATED:
+    
+    == CYBERSECURITY (Top Priority) ==
+    
+    1. Microsoft warns of new Defender zero-days exploited in attacks
+       URL: https://www.bleepingcomputer.com/news/security/microsoft-warns-of-new-defender-zero-days-exploited-in-attacks/
+       Why it matters: Active exploitation of zero-day vulnerabilities in Microsoft Defender is being detected in the wild, representing a critical and immediate threat to enterprise security worldwide.
+    
+    2. Chinese hackers target telcos with new Linux, Windows malware
+       URL: https://www.bleepingcomputer.com/news/security/chinese-hackers-target-telcos-with-new-linux-windows-malware/
+       Why it matters: State-sponsored attackers are deploying new cross-platform malware against telecommunications providers, threatening critical global infrastructure and communications networks.
+    
+    3. US and Canada arrest and charge suspected Kimwolf botnet admin
+       URL: https://www.bleepingcomputer.com/news/security/us-and-canada-arrest-and-charge-suspected-kimwolf-botnet-admin/
+       Why it matters: International law enforcement successfully took down the suspected administrator of the Kimwolf botnet, marking a significant victory in the global fight against organized cybercrime.
+    
+    4. Max severity Cisco Secure Workload flaw gives Site Admin privileges
+       URL: https://www.bleepingcomputer.com/news/security/max-severity-cisco-secure-workload-flaw-gives-site-admin-privileges/
+       Why it matters: A critical vulnerability in Cisco Secure Workload allows privilege escalation to Site Admin, posing severe risks to enterprise network security and demanding immediate patching.
+    
+    == TECH STARTUPS / INNOVATION ==
+    
+    5. Waymo expands pause to four cities as robotaxis keep driving into floods
+       URL: https://techcrunch.com/2026/05/22/waymo-expands-pause-to-four-cities/
+       Why it matters: Waymo is halting operations in more cities after autonomous vehicles drove into flooded roads, raising serious safety questions about the readiness of self-driving technology for widespread deployment.
+    
+    6. Spotify and Universal Music strike deal allowing fan-made AI covers and remixes
+       URL: https://techcrunch.com/2026/05/22/spotify-universal-music-ai-covers-remixes-deal/
+       Why it matters: This landmark music industry deal is paving the way for legally sanctioned AI-generated fan remixes, potentially reshaping how music copyright and creativity work in the AI era.
+    
+    7. The Gulf's AI Boom Has an Undersea Cable Problem
+       URL: https://www.wired.com/story/the-gulfs-ai-boom-has-an-undersea-cable-problem/
+       Why it matters: Gulf states' rapid AI infrastructure expansion is being constrained by undersea cable capacity limitations, highlighting a critical infrastructure bottleneck that could slow global AI development.
+    
+    8. SpaceX scrubs first Starship V3 launch just before liftoff
+       URL: https://techcrunch.com/2026/05/22/spacex-scrubs-first-starship-v3-launch/
+       Why it matters: SpaceX aborted the inaugural launch of Starship V3 at the last moment, representing both the challenges of next-generation space exploration and the company's commitment to safety over speed.
+    
+    == ARTIFICIAL INTELLIGENCE ==
+    
+    9. MIT News - Building AI models that understand chemical principles
+       URL: https://news.mit.edu/topic/artificial-intelligence2
+       Why it matters: Connor Coley is working at the interface of chemistry and machine learning to discover new drug compounds, representing a promising breakthrough in AI-driven pharmaceutical research and drug discovery.
+    
+    == DEVOPS / CLOUD ==
+    
+    10. Why cloud migration needs a new approach
+        URL: https://www.infoworld.com/devops/
+        Why it matters: Cloud-native migration tools, infrastructure as code, and governance solutions have all failed to deliver promised infrastructure portability, signaling a need for fundamental rethinking of enterprise cloud migration strategies.
