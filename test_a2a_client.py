@@ -380,17 +380,16 @@ class TestA2AClient(unittest.TestCase):
         results = alice.search("zzznomatch")
         self.assertEqual(results, [])
 
-    def test_search_empty_query(self):
-        """search with empty string returns all messages."""
+    def test_search_empty_query_raises_value_error(self):
+        """search with empty string raises ValueError."""
         alice = A2AClient(self.project, "alice")
         bob = A2AClient(self.project, "bob")
         alice.send("bob", "Message one")
         alice.send("bob", "Message two")
-        # Empty query should match everything (or return empty — either is valid)
-        results = alice.search("", limit=10)
-        # At least one result, or empty list is acceptable
-        if results:
-            self.assertGreaterEqual(len(results), 1)
+        with self.assertRaises(ValueError):
+            alice.search("", limit=10)
+        with self.assertRaises(ValueError):
+            alice.search("   ", limit=10)
 
     def test_search_special_characters(self):
         """search handles special characters in query."""

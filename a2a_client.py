@@ -333,7 +333,12 @@ class A2AClient:
 
         Returns:
             List of matching message dicts
+
+        Raises:
+            ValueError: If query is empty
         """
+        if not query or not query.strip():
+            raise ValueError("search query must not be empty")
         conn = self._connect()
         try:
             rows = conn.execute(
