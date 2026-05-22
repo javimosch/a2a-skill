@@ -4,11 +4,25 @@ A curated roundup of the latest news across AI, DevOps, Cybersecurity, and Start
 
 ## AI & Machine Learning
 
-*No results found for this topic.*
+- **Artificial intelligence | MIT News | Massachusetts Institute of Technology** — Building AI models that understand chemical principles Connor Coley works at the interface of chemistry and machine learning, to discover and design new drug compounds. May 20, 2026 Read full story  
+  [https://news.mit.edu/topic/artificial-intelligence2](https://news.mit.edu/topic/artificial-intelligence2)
+
+- **Artificial Intelligence News -- ScienceDaily** — Artificial Intelligence News. Everything on AI including futuristic robots with artificial intelligence, computer models of human intelligence and more.  
+  [https://www.sciencedaily.com/news/computers_math/artificial_intelligence/](https://www.sciencedaily.com/news/computers_math/artificial_intelligence/)
+
+- **AI News | Latest Headlines and Developments | Reuters** — Explore the latest artificial intelligence news with Reuters - from AI breakthroughs and technology trends to regulation, ethics, business and global impact.  
+  [https://www.reuters.com/technology/artificial-intelligence/](https://www.reuters.com/technology/artificial-intelligence/)
 
 ## DevOps & Cloud
 
-*No results found for this topic.*
+- **DevOps - The Web's Largest Collection of DevOps Content** — DevOps.com has the largest collection of original content related to DevOps on the web and one of the top result for DevOps-related search terms.  
+  [https://devops.com/](https://devops.com/)
+
+- **Devops - InfoWorld** — Why cloud migration needs a new approach Cloud-native migration tools, infrastructure as code, and governance solutions have all failed to deliver the infrastructure portability we really need.  
+  [https://www.infoworld.com/devops/](https://www.infoworld.com/devops/)
+
+- **GeekOnCloud — DevOps, Cloud & Infrastructure** — Practical guides, deep dives and opinions on DevOps, Cloud, and Infrastructure engineering.  
+  [https://geekoncloud.vercel.app/](https://geekoncloud.vercel.app/)
 
 ## Cybersecurity
 
