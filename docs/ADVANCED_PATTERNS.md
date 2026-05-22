@@ -38,6 +38,20 @@ Each artifact build script:
 | `color-palette/` | colorist, generator | `index.html` | Spec-then-render (color palette → HTML preview) |
 | `quiz-generator/` | researcher, checker, formatter | `index.html` | Producer→checker→renderer pipeline (3 peers) |
 | `docker-compose-generator/` | specifier, writer | `docker-compose.yml`, `README.md` | 5-service Docker stack generation (spec→implement) |
+| `web-research-report/` | searcher, analyst, writer | `report.md`, `bus-state.txt` | Web research pipeline via ddgr (3 peers) |
+| `news-briefing/` | curator, narrator | `briefing.md`, `bus-state.txt` | Tech news curation pipeline |
+| `competitive-analysis/` | searcher, analyst, writer | `competitive-analysis.md`, `bus-state.txt` | Competitive research with comparison table |
+| `a2a-landscape/` | searcher, analyst, writer | `a2a-landscape.md`, `bus-state.txt` | Multi-agent framework positioning |
+| `weekly-digest/` | scout, curator, editor | `weekly-digest.md`, `bus-state.txt` | Multi-topic news digest |
+| `data-to-chart/` | fetcher, analyst, plotter | `charts.txt`, `analysis.md`, `bus-state.txt` | Data fetcher→analyst→plotter pipeline |
+| `doc-pipeline/` | writer, formatter, publisher | `guide.md`, `guide.html`, `bundle.zip`, `bus-state.txt` | Document writing→formatting→bundling pipeline |
+| `tech-stack-advisor/` | researcher, recommender | `tech-stack-guide.md`, `bus-state.txt` | Technology stack research and recommendation |
+| `ascii-gallery/` | finder, artist, curator | `gallery.html`, `*.txt`, `bus-state.txt` | Image search→ASCII→HTML gallery pipeline |
+| `brand-assets/` | designer, reviewer, converter | `brand/banner.svg`, `brand/palette.html`, `brand/logo.txt`, `bus-state.txt` | Brand identity design→review→asset generation pipeline |
+| `github-trending-report/` | searcher, describer, compiler | `trending.md`, `bus-state.txt` | GitHub trending repo research report |
+| `api-doc-generator/` | searcher, describer, docsmith | `api-docs.md`, `api-docs.html`, `bus-state.txt` | API documentation from web research |
+| `dependency-check/` | fetcher, reporter | `advisory.md`, `bus-state.txt` | Dependency CVE scanning pipeline |
+| `security-audit/` | scanner, reporter | `report.md`, `raw-findings.json`, `bus-state.txt` | Security posture assessment pipeline |
 
 ### Running an artifact
 
