@@ -1,0 +1,22 @@
+{
+  "severity_counts": {
+    "Critical": 0,
+    "High": 0,
+    "Medium": 0,
+    "Low": 0,
+    "Info": 0
+  },
+  "total_cves": 0,
+  "total_findings": 0,
+  "categorized": {
+    "critical web framework vulnerabilities 2026 CVE": [],
+    "AI ML supply chain security vulnerabilities 2026": [],
+    "critical Linux kernel vulnerability 2026 CVE": []
+  },
+  "system_checks": {
+    "disk_usage": "Filesystem                        Size  Used Avail Use% Mounted on\n/dev/mapper/pve-vm--100--disk--0   69G   26G   41G  39% /\nnone                              492K  4.0K  488K   1% /dev\nefivarfs                          192K  142K   46K  76% /sys/firmware/efi/efivars\ntmpfs                              16G  4.0K   16G   1% /dev/shm\ntmpfs                             6.3G  256K  6.3G   1% /run\ntmpfs                             5.0M     0  5.0M   0% /run/lock\ntmpfs                             3.2G   16K  3.2G   1% /run/user/0\noverlay                            69G   26G   41G  39% /var/lib/docker/rootfs/overlayfs/c631515621b48647ad30a16595926d38f38d5b14aa6f8306f1157ef41f280a02",
+    "listening_ports": "State  Recv-Q Send-Q              Local Address:Port  Peer Address:PortProcess                                   \nLISTEN 0      5                         0.0.0.0:8080       0.0.0.0:*    users:((\"python3\",pid=88633,fd=3))       \nLISTEN 0      4096                   127.0.0.54:53         0.0.0.0:*    users:((\"systemd-resolve\",pid=222,fd=17))\nLISTEN 0      4096                127.0.0.53%lo:53         0.0.0.0:*    users:((\"systemd-resolve\",pid=222,fd=15))\nLISTEN 0      4096                      0.0.0.0:3000       0.0.0.0:*    users:((\"docker-proxy\",pid=897,fd=8))    \nLISTEN 0      4096                      0.0.0.0:2222       0.0.0.0:*    users:((\"docker-proxy\",pid=878,fd=8))    \nLISTEN 0      4096                 100.114.4.57:43040      0.0.0.0:*    users:((\"tailscaled\",pid=236,fd=29))     \nLISTEN 0      100                     127.0.0.1:25         0.0.0.0:*    users:((\"master\",pid=612,fd=13))         \nLISTEN 0      4096   [fd7a:115c:a1e0::d03a:439]:62552         [::]:*    users:((\"tailscaled\",pid=236,fd=30))     \nLISTEN 0      100                         [::1]:25            [::]:*    users:((\"master\",pid=612,fd=14))         \nLISTEN 0      4096                         [::]:3000          [::]:*    users:((\"docker-proxy\",pid=904,fd=8))    \nLISTEN 0      4096                         [::]:2222          [::]:*    users:((\"docker-proxy\",pid=884,fd=8))    \nLISTEN 0      4096                            *:22               *:*    users:((\"sshd\",pid=267,fd=3),(\"systemd\",pid=1,fd=55))",
+    "uptime": "21:53:47 up  5:46,  1 user,  load average: 0.18, 0.15, 0.30",
+    "dmesg_errors": "No recent errors"
+  }
+}
