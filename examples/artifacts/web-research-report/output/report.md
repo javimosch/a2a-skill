@@ -1,84 +1,131 @@
-# Best Open Source AI Coding Assistants — 2026 Research Report
+# Open Source Vector Databases in 2026 — Research Report
 
-**Date:** May 22, 2026
-**Author:** Writer Agent (a2a peer bus)
+**Date**: May 22, 2026 | **Prepared by**: writer (report writer)
+
+---
 
 ## Executive Summary
 
-The open-source AI coding assistant landscape in 2026 has matured into a diverse ecosystem spanning IDE extensions, terminal-native tools, self-hosted privacy solutions, and fully autonomous agent platforms. The defining trend is a shift from code completion to autonomous code creation, with virtually all tools adopting bring-your-own-model (BYOM) architectures. This report analyzes 10+ open-source tools across five categories, comparing their capabilities, trade-offs, and ideal use cases.
+The open source vector database landscape in 2026 is mature and segmented, with distinct tools optimized for production workloads, rapid prototyping, and integration-first architectures. Qdrant and Milvus lead the production tier with GPU acceleration and hybrid search, while pgvector and Redis offer seamless paths for teams already invested in their ecosystems. ChromaDB and LanceDB serve the embedded/developer-friendly niche, and Faiss remains the foundational building block underlying most systems. The key trend is that **hybrid search (vector + scalar) is now table stakes**, and the choice between embedded simplicity and server-based scale dominates architectural decisions.
+
+---
 
 ## Detailed Findings
 
-### IDE Extensions
+### Category 1: Production-Grade Vector Databases
 
-**Continue** — The most flexible open-source extension for VS Code and JetBrains. Bring your own model (local or cloud). Supports autocomplete, chat, and inline editing. Active community and truly model-agnostic. Requires manual setup and is locked to supported IDEs.
+**Qdrant** — Rust-based vector DB with fast HNSW indexing and rich filtering capabilities. Series B funded in March 2026. Best for most production workloads requiring horizontal scaling and GPU acceleration.
 
-**Cody (Sourcegraph)** — Open-core with deep codebase context understanding. Excels at repository-aware chat and commands. Full feature set depends on Sourcegraph infrastructure.
+- **URL**: https://qdrant.tech
+- **Pros**: Fastest HNSW indexing, excellent filtering, active development, quantization support
+- **Cons**: Smaller ecosystem than Milvus; operational expertise needed for scale
 
-**Cline** — VS Code extension focused on autonomous coding. Can read/write files, run shell commands, and use a browser. Enables agentic workflows within the editor. VS Code only and can be unpredictable in complex tasks.
+**Milvus v2.5** — Cloud-native vector DB with GPU-accelerated indexing and hybrid vector+scalar search. Largest and most mature ecosystem of any open source vector database.
 
-**CodeGeeX** — Supports 100+ programming languages for code generation. Broader language coverage than most alternatives but the user experience is less polished.
+- **URL**: https://milvus.io
+- **Pros**: Mature ecosystem, hybrid search, broad multi-language SDK support
+- **Cons**: Heavy infrastructure footprint; significant operational complexity
 
-### Self-Hosted / Privacy-First
+**Weaviate** — Open-source vector DB that stores both objects and vectors, combining vector search with structured filtering. Cloud-native with built-in fault tolerance.
 
-**Tabby** — Self-hosted AI coding assistant with no external database needed. Exposes an OpenAPI-compatible interface and runs on consumer-grade GPUs. Ideal for teams requiring full data control. Trade-off: requires infrastructure setup and has a smaller curated model selection.
+- **URL**: https://weaviate.io
+- **Pros**: GraphQL API, good hybrid search, built-in fault tolerance, cloud-native
+- **Cons**: GraphQL learning curve; smaller ecosystem than Milvus
 
-**FauxPilot** — Self-hosted GitHub Copilot replacement targeting consumer hardware. Limited model support and a smaller community compared to Tabby.
+---
 
-### Terminal-Native / CLI Agents
+### Category 2: Embedded / Developer-Friendly
 
-**Aider** — Git-aware pair programming in the terminal using a map-and-edit architecture. Excellent git integration with automatic commit management and multi-model support. Best for developers who live in the terminal. Requires learning its workflow.
+**ChromaDB** — Lightweight, Python-native embedding database. The fastest path to prototype for small-to-medium RAG applications with zero ops overhead.
 
-**Codebuff** — Terminal-native tool that coordinates specialized sub-agents for precise file changes. Newer entry with a smaller ecosystem but innovative agent orchestration model.
+- **URL**: https://www.trychroma.com
+- **Pros**: Simple API, Python-native, easy setup, zero ops overhead
+- **Cons**: Limited scale; not designed for production at volume
 
-### Autonomous Agent Platforms
+**LanceDB** — Embedded vector database built on the Lance columnar format. Emerging as a strong option for multi-modal AI applications (text, image, code).
 
-**OpenHands** — Open-source platform for fully autonomous code generation and manipulation. Powerful for unattended coding tasks but requires heavier compute resources.
+- **URL**: https://lancedb.github.io/lancedb/
+- **Pros**: Excellent for multi-modal, zero-copy access, no server to manage
+- **Cons**: Younger project; smaller community than alternatives
 
-**Roo Code** — Agentic coding assistant that is self-hostable and supports multiple LLM backends. Flexible deployment model but still a relatively new project.
+---
 
-### Hybrid / Partially Open
+### Category 3: Integration-First
 
-**Cursor** — Best-in-class IDE experience with deep AI integration. Extremely polished UX. Components are open-source but the full product is not.
+**pgvector** — PostgreSQL extension for vector similarity search. Ideal for teams already using Postgres who want to add vector capabilities without new infrastructure.
+
+- **URL**: https://github.com/pgvector/pgvector
+- **Pros**: Zero new infra for Postgres users, battle-tested, HNSW/IVFFlat indexing
+- **Cons**: Performance ceiling vs dedicated vector DBs; not specialized
+
+**Redis (with vector search)** — Unifies vector search with caching and operational data in a single real-time, memory-first platform.
+
+- **URL**: https://redis.io
+- **Pros**: Sub-millisecond latency, single platform for cache + vectors, real-time
+- **Cons**: Memory-bound at scale; expensive for large vector datasets
+
+---
+
+### Category 4: Foundational Building Blocks
+
+**Faiss (Meta)** — Library for efficient similarity search and clustering of dense vectors. Not a full database, but the core building block many vector DBs build on or benchmark against.
+
+- **URL**: https://github.com/facebookresearch/faiss
+- **Pros**: Best-in-class raw ANN search performance, GPU support, quantization
+- **Cons**: Not a database (no persistence, no management); requires engineering effort to integrate
+
+---
 
 ## Comparison Table
 
-| Tool | Category | BYOM | Self-Hostable | Git-Aware | Autocomplete | Agentic | Primary Interface |
-|---|---|---|---|---|---|---|---|
-| Continue | IDE Extension | Yes | No | No | Yes | No | VS Code / JetBrains |
-| Cody | IDE Extension | No | No | Yes | Yes | No | VS Code |
-| Cline | IDE Extension | Yes | No | No | No | Yes | VS Code |
-| CodeGeeX | IDE Extension | No | No | No | Yes | No | VS Code |
-| Tabby | Self-Hosted | Yes | Yes | No | Yes | No | API / Plugin |
-| FauxPilot | Self-Hosted | Yes | Yes | No | Yes | No | API / Plugin |
-| Aider | CLI Agent | Yes | No | Yes | No | Yes | Terminal |
-| Codebuff | CLI Agent | Yes | No | No | No | Yes | Terminal |
-| OpenHands | Agent Platform | Yes | Yes | Yes | No | Yes | Web / API |
-| Roo Code | Agent Platform | Yes | Yes | No | No | Yes | Web / API |
-| Cursor | Hybrid | Yes | No | Yes | Yes | Yes | Built-in IDE |
+| Tool | Type | Language | Scaling | GPU Accel | Best For |
+|------|------|----------|---------|-----------|----------|
+| **Qdrant** | Full DB | Rust | Horizontal | Yes | Production workloads, rich filtering |
+| **Milvus v2.5** | Full DB | Go/C++ | Distributed | Yes | Large-scale hybrid search, mature ecosystem |
+| **Weaviate** | Full DB | Go | Cloud-native | Limited | Hybrid search, GraphQL APIs |
+| **ChromaDB** | Embedded | Python | Single-node | No | Rapid prototyping, small RAG |
+| **LanceDB** | Embedded | Rust/Python | Columnar | No | Multi-modal AI apps |
+| **pgvector** | Extension | C | Postgres-native | No | Postgres users, no-new-infra |
+| **Redis** | Multi-model | C | Memory-first | No | Real-time + caching + vectors |
+| **Faiss** | Library | C++/Python | N/A | Yes | Building custom search systems |
+
+---
+
+## Key Trends
+
+1. **Hybrid search is table stakes** — Every production-grade DB now combines vector + scalar filtering
+2. **Embedded vs serverless divide** — Chroma/LanceDB are embedded; Qdrant/Milvus/Weaviate are server-based
+3. **GPU acceleration expanding** — Milvus and Qdrant invest heavily in GPU-accelerated indexing
+4. **Multi-modal is rising** — LanceDB built for multi-modal; others are following
+5. **HNSW is the universal default** — All production options use HNSW as the primary index algorithm
+6. **Faiss as hidden backbone** — Underlies or benchmarks many vector DBs
 
 ## Recommendations
 
-1. **For IDE-centric developers:** Use **Continue** as your daily driver — model-agnostic, active community, and works in both VS Code and JetBrains. Pair with **Cline** for agentic tasks when needed.
+| Use Case | Recommended Tool |
+|---|---|
+| **Production RAG at scale** | **Qdrant** — best balance of performance, filtering, and active development |
+| **GPU-accelerated hybrid search** | **Milvus v2.5** — most mature ecosystem, GPU native |
+| **Quick prototype / small project** | **ChromaDB** — fastest setup, Python-native |
+| **Already on Postgres** | **pgvector** — zero infrastructure change |
+| **Multi-modal (text + image + code)** | **LanceDB** — built for this from the ground up |
+| **Real-time + caching + vectors** | **Redis** — single platform for all operational data |
+| **Building a custom search engine** | **Faiss** — maximum flexibility and performance |
 
-2. **For terminal-first developers:** **Aider** is the gold standard. Its git-aware workflow and map-and-edit architecture make it the most reliable CLI coding assistant available.
-
-3. **For privacy-conscious teams:** Deploy **Tabby** on your own infrastructure. It requires minimal setup (no DBMS), runs on consumer GPUs, and gives you full data sovereignty.
-
-4. **For autonomous / unattended coding:** **OpenHands** offers the most mature agent platform for hands-off code generation and manipulation.
-
-5. **For maximum flexibility:** Combine **Continue** (IDE autocomplete) + **Aider** (terminal pair programming) + **Tabby** (self-hosted inference backend) for a fully open-source, privacy-respecting, multi-paradigm workflow.
+---
 
 ## Sources
 
-- Continue: https://github.com/continuedev/continue
-- Cody: https://github.com/sourcegraph/cody
-- Cline: https://github.com/cline/cline
-- CodeGeeX: https://github.com/THUDM/CodeGeeX
-- Tabby: https://github.com/TabbyML/tabby
-- FauxPilot: https://github.com/fauxpilot/fauxpilot
-- Aider: https://github.com/paul-gauthier/aider
-- Codebuff: https://github.com/Codebuff-org/codebuff
-- OpenHands: https://github.com/All-Hands-AI/OpenHands
-- Roo Code: https://github.com/roocode/roocode
-- Cursor: https://github.com/getcursor/cursor
+- https://qdrant.tech
+- https://milvus.io
+- https://weaviate.io
+- https://www.trychroma.com
+- https://lancedb.github.io/lancedb/
+- https://github.com/pgvector/pgvector
+- https://github.com/facebookresearch/faiss
+- https://redis.io/blog/best-open-source-vector-databases-comparison/
+- https://encore.dev/articles/best-vector-databases
+- https://techsy.io/en/blog/best-vector-databases-2026
+- https://aimultiple.com/open-source-vector-databases
+- https://fonzi.ai/blog/open-source-vector-databases
+- https://github.com/topics/vector-database
