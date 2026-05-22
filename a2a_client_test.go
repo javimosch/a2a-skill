@@ -835,3 +835,64 @@ func TestBroadcastRecipientIsNil(t *testing.T) {
 		t.Fatalf("expected nil recipient for broadcast, got %v", *msgs[0].Recipient)
 	}
 }
+
+func TestSendEmptyRecipientFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("tester", "", "", 0, false)
+
+	_, err := c.Send("", "hello", "", nil)
+	if err == nil {
+		t.Fatal("expected error sending to empty recipient, got nil")
+	}
+	if !strings.Contains(err.Error(), "empty") {
+		t.Fatalf("expected error about empty recipient, got: %v", err)
+	}
+}
+
+func TestPeekNonPositiveLimitFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	_, err := c.Peek(0)
+	if err == nil {
+		t.Fatal("expected error for Peek(0), got nil")
+	}
+	_, err = c.Peek(-1)
+	if err == nil {
+		t.Fatal("expected error for Peek(-1), got nil")
+	}
+}
+
+func TestSearchEmptyQueryFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	_, err := c.Search("", 10)
+	if err == nil {
+		t.Fatal("expected error for empty search query, got nil")
+	}
+	_, err = c.Search("   ", 10)
+	if err == nil {
+		t.Fatal("expected error for whitespace-only search query, got nil")
+	}
+}
+
+func TestWaitNonPositiveCountFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "tester"
+	c.Register("waiting", "", "", 0, false)
+
+	_, err := c.Wait(0, 1)
+	if err == nil {
+		t.Fatal("expected error for Wait(0, 1), got nil")
+	}
+	_, err = c.Wait(-1, 1)
+	if err == nil {
+		t.Fatal("expected error for Wait(-1, 1), got nil")
+	}
+}
