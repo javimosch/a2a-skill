@@ -378,6 +378,26 @@ class TestLifecycle(unittest.TestCase):
             self.assertEqual(row["status"], state)
             conn.close()
 
+    def test_status_json_output(self):
+        """cmd_status --json returns valid JSON with expected fields."""
+        self._register("json-tester")
+        import io, sys, json
+        captured = io.StringIO()
+        old_stdout = sys.stdout
+        sys.stdout = captured
+        try:
+            a2a.cmd_status(a2a.argparse.Namespace(
+                project=self.project, state="done", **{"as_": "json-tester"},
+                json=True,
+            ))
+        finally:
+            sys.stdout = old_stdout
+        output = captured.getvalue()
+        data = json.loads(output)
+        self.assertEqual(data["agent"], "json-tester")
+        self.assertEqual(data["status"], "done")
+        self.assertIn("last_seen", data)
+
     def test_status_unknown_agent(self):
         """Status on unknown agent fails gracefully."""
         args = a2a.argparse.Namespace(
