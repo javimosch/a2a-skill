@@ -40,6 +40,7 @@ output to `output/`.
 | `tech-stack-advisor/` | researcher, recommender | `output/tech-stack-guide.md`, `output/bus-state.txt` | 2 agents research and recommend a technology stack using ddgr web search |
 | `ascii-gallery/` | finder, artist, curator | `output/gallery.html`, `output/*.txt`, `output/bus-state.txt` | 3 agents produce an HTML gallery of ASCII art from landmark images |
 | `github-trending-report/` | searcher, describer, compiler | `output/trending.md`, `output/bus-state.txt` | 3 agents produce a weekly GitHub trending repositories report via ddgr research |
+| `api-doc-generator/` | searcher, describer, docsmith | `output/api-docs.md`, `output/api-docs.html`, `output/bus-state.txt` | 3 agents produce a GitHub REST API reference guide with pandoc HTML conversion |
 
 ## Requirements
 
