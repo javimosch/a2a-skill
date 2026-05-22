@@ -88,6 +88,11 @@ impl Client {
 
     /// Send a message
     pub fn send(&self, to: &str, message: &str, ttl_seconds: Option<i64>) -> SqliteResult<i64> {
+        if to.trim().is_empty() {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "recipient must not be empty".to_string(),
+            ));
+        }
         let conn = self.connect()?;
         let recipient = match to {
             "all" | "*" | "broadcast" => None,
@@ -193,6 +198,11 @@ impl Client {
 
     /// Peek at recent messages without marking read
     pub fn peek(&self, limit: i64) -> SqliteResult<Vec<Message>> {
+        if limit <= 0 {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "limit must be a positive integer".to_string(),
+            ));
+        }
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             "SELECT id, sender, recipient, body, thread_id, created_at FROM messages \
@@ -257,6 +267,11 @@ impl Client {
 
     /// Search messages
     pub fn search(&self, query: &str, limit: i64) -> SqliteResult<Vec<Message>> {
+        if query.trim().is_empty() {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "search query must not be empty".to_string(),
+            ));
+        }
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             "SELECT id, sender, recipient, body, thread_id, created_at FROM messages \
