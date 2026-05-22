@@ -22,7 +22,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager  # noqa: E402
 
 ARTIFACT = "web-research-report"
 DEFAULT_TOPIC = "best open source LLM tools 2026"
@@ -130,17 +130,9 @@ def main():
         os.unlink(kit_path)
 
     time.sleep(3)
-
-    import subprocess
-    env = os.environ.copy()
+    # Send tasks via stdin to avoid shell quoting issues
     for ag in agents:
-        body = f"Your task: {ag['task']}"
-        proc = subprocess.run(
-            [a2a_bin, "send", ag["id"], "-", "--from", "collector"],
-            input=body.encode(), capture_output=True, timeout=30, env=env,
-        )
-        if proc.returncode != 0:
-            print(f"[{ARTIFACT}] WARNING: send to {ag['id']} failed: {proc.stderr.decode()}", file=sys.stderr)
+        send_task(a2a_bin, project, ag["id"], f"Your task: {ag['task']}")
         print(f"[{ARTIFACT}] → sent task to {ag['id']}")
 
     # Wait for the writer's report broadcast

@@ -19,7 +19,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager  # noqa: E402
 
 ARTIFACT = "news-briefing"
 
@@ -106,17 +106,9 @@ def main():
 
     time.sleep(3)
 
-    # Send tasks via stdin (avoids shell quoting issues with single quotes in instructions)
-    import subprocess
-    env = os.environ.copy()
+    # Send tasks via stdin to avoid shell quoting issues
     for ag in agents:
-        body = f"Your task: {ag['task']}"
-        proc = subprocess.run(
-            [a2a_bin, "send", ag["id"], "-", "--from", "collector"],
-            input=body.encode(), capture_output=True, timeout=30, env=env,
-        )
-        if proc.returncode != 0:
-            print(f"[{ARTIFACT}] WARNING: send to {ag['id']} failed: {proc.stderr.decode()}", file=sys.stderr)
+        send_task(a2a_bin, project, ag["id"], f"Your task: {ag['task']}")
         print(f"[{ARTIFACT}] → sent task to {ag['id']}")
 
     # Wait for the narrator's briefing broadcast

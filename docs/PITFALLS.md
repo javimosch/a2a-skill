@@ -149,6 +149,35 @@ catch it.
 directly — no markdown code blocks, no explanatory text. Start with
 <!DOCTYPE html>."
 
+### Shell quoting fails when task instructions contain single quotes
+
+When a build script uses `run_a2a(f'send {id} "Your task: {prompt}"')`, the
+prompt is embedded in a shell command via shlex. If the prompt contains shell
+metacharacters — particularly single quotes (`'`) or double quotes (`"`) —
+shlex.split() raises `ValueError: No closing quotation`.
+
+This happened in the web-research-report and news-briefing artifacts, whose
+agent kit prompts include a2a command examples like:
+
+```
+a2a send analyst 'FINDINGS: ...' --from researcher
+```
+
+The single quotes inside the prompt, when embedded in `"Your task: ..."`,
+are interpreted by shlex as starting new quote boundaries.
+
+**Fix:** Send task bodies via stdin instead of embedding in shell command args.
+Use subprocess directly:
+
+```python
+proc = subprocess.run(
+    [a2a_bin, "send", agent_id, "-", "--from", "collector"],
+    input=body.encode(), capture_output=True, timeout=30, env=env,
+)
+```
+
+The `-` body argument tells a2a to read the message body from stdin.
+
 ### wait_for_messages() drops subsequent peer messages
 
 The `wait_for_messages()` helper in `_util.py` returns on the first message
