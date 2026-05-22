@@ -168,6 +168,8 @@ def cmd_project(args) -> None:
 def cmd_register(args) -> None:
     if not args.id or not args.id.strip():
         die("agent id must not be empty — pass a valid registered agent id")
+    if args.pid is not None and args.pid <= 0:
+        die("--pid must be a positive integer")
     name, conn = _open(args, create=True)
     ts = now()
     try:
@@ -253,6 +255,8 @@ def cmd_send(args) -> None:
     sender = getattr(args, "from_")
     if not sender:
         die("--from <agent-id> is required")
+    if not args.to or not args.to.strip():
+        die("recipient must not be empty — use 'all' for broadcast")
     _, conn = _open(args)
     # verify sender exists
     if not conn.execute("SELECT 1 FROM agents WHERE id=?", (sender,)).fetchone():
@@ -270,10 +274,13 @@ def cmd_send(args) -> None:
     ttl = getattr(args, "ttl", None)
     if ttl is not None and ttl <= 0:
         die("--ttl must be a positive number of seconds")
+    thread_id = getattr(args, "thread", None)
+    if thread_id is not None and not thread_id.strip():
+        die("--thread must not be empty")
     cur = conn.execute(
         "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
         "VALUES (?,?,?,?,?,?)",
-        (sender, recipient, body, args.thread, ttl, now()),
+        (sender, recipient, body, thread_id, ttl, now()),
     )
     _touch(conn, sender)
     conn.commit()
@@ -345,6 +352,8 @@ def cmd_recv(args) -> None:
     limit = args.limit
     if limit is not None and limit < 0:
         die("--limit must be a non-negative integer")
+    if args.since is not None and args.since < 0:
+        die("--since must be a non-negative timestamp")
 
     deadline = now() + args.wait if args.wait else None
     poll_interval = 0.5

@@ -2023,6 +2023,54 @@ class TestEdgeCases(unittest.TestCase):
                 include_self=False, peek=False, json=False
             ))
 
+    def test_send_empty_recipient_rejected(self):
+        """send with empty recipient is rejected."""
+        args = a2a.argparse.Namespace(
+            project=self.project, to="", body="hi",
+            **{"from_": "alice", "thread": None}
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(args)
+
+    def test_send_whitespace_recipient_rejected(self):
+        """send with whitespace-only recipient is rejected."""
+        args = a2a.argparse.Namespace(
+            project=self.project, to="   ", body="hi",
+            **{"from_": "alice", "thread": None}
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(args)
+
+    def test_send_empty_thread_rejected(self):
+        """send with --thread '' is rejected."""
+        self._register("alice")
+        self._register("bob")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="msg",
+            **{"from_": "alice", "thread": ""}
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(args)
+
+    def test_recv_negative_since_rejected(self):
+        """recv with --since -1 is rejected."""
+        self._register("alice")
+        with self.assertRaises(SystemExit):
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, **{"as_": "alice"},
+                wait=0, limit=10, all=False, since=-1,
+                include_self=False, peek=False, json=False
+            ))
+
+    def test_register_negative_pid_rejected(self):
+        """register with --pid -1 is rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_register(a2a.argparse.Namespace(
+                project=self.project, id="test-agent",
+                role="test", prompt=None, cli=None,
+                pid=-1, upsert=False
+            ))
+
 
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
