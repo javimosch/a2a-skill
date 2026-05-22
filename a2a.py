@@ -225,6 +225,10 @@ def cmd_list(args) -> None:
 
 
 def cmd_status(args) -> None:
+    """Set agent status. Valid statuses: active, idle, blocked, done."""
+    VALID_STATUSES = {"active", "idle", "blocked", "done"}
+    if args.state not in VALID_STATUSES:
+        die(f"invalid status '{args.state}' — must be one of: {', '.join(sorted(VALID_STATUSES))}")
     _, conn = _open(args)
     agent_id = getattr(args, "as_")
     ts = now()

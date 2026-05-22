@@ -386,6 +386,16 @@ class TestLifecycle(unittest.TestCase):
         with self.assertRaises(SystemExit):
             a2a.cmd_status(args)
 
+    def test_status_invalid_value(self):
+        """Status with invalid value is rejected."""
+        self._register("tester")
+        for bad_state in ("invalid", "abc", "unknown", "running", ""):
+            args = a2a.argparse.Namespace(
+                project=self.project, state=bad_state, **{"as_": "tester"}
+            )
+            with self.assertRaises(SystemExit):
+                a2a.cmd_status(args)
+
     def test_unregister_agent(self):
         """Unregister removes an agent from the bus."""
         self._register("remove-me")
