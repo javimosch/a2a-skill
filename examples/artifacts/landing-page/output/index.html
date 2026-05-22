@@ -1,329 +1,328 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FlowForge — Ship Faster. Stress Less.</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowForge — Project Management SaaS</title>
   <style>
     :root {
       --indigo-50: #eef2ff;
       --indigo-100: #e0e7ff;
       --indigo-200: #c7d2fe;
-      --indigo-300: #a5b4fc;
       --indigo-400: #818cf8;
       --indigo-500: #6366f1;
       --indigo-600: #4f46e5;
       --indigo-700: #4338ca;
-      --indigo-800: #3730a3;
-      --indigo-900: #312e81;
-      --blue-50: #eff6ff;
-      --blue-100: #dbeafe;
-      --blue-400: #60a5fa;
-      --blue-500: #3b82f6;
-      --blue-600: #2563eb;
+      --indigo-900: #1e1b4b;
       --slate-50: #f8fafc;
       --slate-100: #f1f5f9;
       --slate-200: #e2e8f0;
-      --slate-300: #cbd5e1;
       --slate-400: #94a3b8;
-      --slate-500: #64748b;
       --slate-600: #475569;
-      --slate-700: #334155;
       --slate-800: #1e293b;
-      --slate-900: #0f172a;
       --white: #ffffff;
-      --gradient-hero: linear-gradient(135deg, var(--indigo-900) 0%, var(--blue-600) 100%);
-      --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
-      --shadow-md: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1);
-      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
-      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
-      --radius: 8px;
-      --radius-lg: 12px;
-      --radius-xl: 16px;
     }
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
       color: var(--slate-800);
       background: var(--white);
       line-height: 1.6;
     }
-    a { text-decoration: none; color: inherit; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-    .nav {
-      position: fixed; top: 0; left: 0; right: 0;
-      background: rgba(255,255,255,.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--white);
       border-bottom: 1px solid var(--slate-200);
-      z-index: 100;
     }
-    .nav-inner {
-      display: flex; align-items: center; justify-content: space-between;
-      height: 64px;
-    }
-    .logo {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 1.4rem; font-weight: 800;
+
+    .nav-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
       color: var(--indigo-600);
+      letter-spacing: -0.02em;
     }
-    .logo-icon {
-      width: 32px; height: 32px;
-      background: var(--gradient-hero);
-      border-radius: var(--radius);
-      display: flex; align-items: center; justify-content: center;
-      color: var(--white); font-size: 1rem; font-weight: 700;
+    .nav-logo span { color: var(--indigo-400); }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+      align-items: center;
     }
-    .nav-links { display: flex; align-items: center; gap: 32px; }
     .nav-links a {
-      font-size: .9rem; font-weight: 500; color: var(--slate-600);
-      transition: color .2s;
+      text-decoration: none;
+      color: var(--slate-600);
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.2s;
     }
     .nav-links a:hover { color: var(--indigo-600); }
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 10px 20px; border-radius: var(--radius);
-      font-weight: 600; font-size: .9rem;
-      cursor: pointer; border: none; transition: all .2s;
-    }
+
     .btn-primary {
-      background: var(--indigo-600); color: var(--white);
-    }
-    .btn-primary:hover { background: var(--indigo-700); transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn-outline {
-      background: transparent; color: var(--indigo-600);
-      border: 2px solid var(--indigo-200);
-    }
-    .btn-outline:hover { border-color: var(--indigo-400); background: var(--indigo-50); }
-    .btn-white {
-      background: var(--white); color: var(--indigo-700);
-    }
-    .btn-white:hover { background: var(--indigo-50); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
-    .btn-lg { padding: 14px 32px; font-size: 1rem; }
-    .hero {
-      padding: 140px 0 100px;
-      background: var(--gradient-hero);
+      background: var(--indigo-600);
       color: var(--white);
-      position: relative; overflow: hidden;
-    }
-    .hero::before {
-      content: "";
-      position: absolute; inset: 0;
-      background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Cpattern%20id%3D%22grid%22%20width%3D%2240%22%20height%3D%2240%22%20patternUnits%3D%22userSpaceOnUse%22%3E%3Cpath%20d%3D%22M%2040%200%20L%200%200%200%2040%22%20fill%3D%22none%22%20stroke%3D%22rgba(255,255,255,.08)%22%20stroke-width%3D%221%22%2F%3E%3C%2Fpattern%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23grid)%22%2F%3E%3C%2Fsvg%3E");
-      opacity: .1;
-    }
-    .hero-grid {
-      position: relative; z-index: 1;
-      display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
-      align-items: center; text-align: left;
-    }
-    .hero h1 {
-      font-size: 3.2rem; font-weight: 800; line-height: 1.15;
-      letter-spacing: -.02em; margin-bottom: 20px;
-    }
-    .hero h1 span { color: var(--indigo-300); }
-    .hero p {
-      font-size: 1.15rem; color: var(--indigo-200);
-      max-width: 520px; margin-bottom: 32px;
-    }
-    .hero-buttons { display: flex; gap: 16px; flex-wrap: wrap; }
-    .hero-visual {
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.15);
-      border-radius: var(--radius-xl);
-      padding: 40px; min-height: 340px;
-      display: flex; align-items: center; justify-content: center;
-      backdrop-filter: blur(4px);
-    }
-    .hero-visual-placeholder {
-      color: rgba(255,255,255,.4);
-      font-size: 1rem; text-align: center;
-    }
-    .features { padding: 100px 0; background: var(--slate-50); }
-    .section-tag {
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
       display: inline-block;
-      padding: 4px 14px; border-radius: 999px;
-      background: var(--indigo-100); color: var(--indigo-700);
-      font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
-      margin-bottom: 12px;
     }
-    .section-title {
-      font-size: 2.4rem; font-weight: 800; color: var(--slate-900);
-      margin-bottom: 12px;
+    .btn-primary:hover { background: var(--indigo-700); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--indigo-600);
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: 1.5px solid var(--indigo-400);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
     }
-    .section-subtitle {
-      font-size: 1.05rem; color: var(--slate-500);
-      max-width: 600px; margin-bottom: 48px;
+    .btn-outline:hover { background: var(--indigo-50); border-color: var(--indigo-500); }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+      gap: 3rem;
     }
+
+    .hero-content { flex: 1; }
+    .hero-content h1 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      line-height: 1.15;
+      color: var(--indigo-900);
+      letter-spacing: -0.03em;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero-content p {
+      font-size: 1.15rem;
+      color: var(--slate-600);
+      max-width: 520px;
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+
+    .hero-cta { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+
+    .hero-miccopy {
+      font-size: 0.85rem;
+      color: var(--slate-400);
+      margin-top: 0.5rem;
+    }
+
+    .hero-visual {
+      flex: 1;
+      background: linear-gradient(135deg, var(--indigo-50), var(--indigo-100));
+      border-radius: 20px;
+      padding: 3rem;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-visual::before {
+      content: "";
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, var(--indigo-400) 0%, transparent 70%);
+      opacity: 0.2;
+      top: -60px;
+      right: -60px;
+    }
+
+    .features {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+    .features-header h2 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--indigo-900);
+      margin-bottom: 0.75rem;
+    }
+
     .features-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
     }
+
     .feature-card {
-      background: var(--white); border-radius: var(--radius-lg);
-      padding: 32px; border: 1px solid var(--slate-200);
-      transition: all .3s;
+      background: var(--white);
+      border: 1px solid var(--slate-200);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: box-shadow 0.25s, transform 0.25s;
     }
     .feature-card:hover {
-      border-color: var(--indigo-200); box-shadow: var(--shadow-lg);
+      box-shadow: 0 8px 30px rgba(79, 70, 229, 0.1);
       transform: translateY(-4px);
     }
-    .feature-icon {
-      width: 48px; height: 48px; border-radius: var(--radius);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.4rem; margin-bottom: 16px;
+    .feature-card .icon {
+      width: 48px;
+      height: 48px;
+      background: var(--indigo-50);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      color: var(--indigo-600);
+      font-size: 1.5rem;
     }
-    .feature-icon.blue { background: var(--blue-100); color: var(--blue-600); }
-    .feature-icon.indigo { background: var(--indigo-100); color: var(--indigo-600); }
-    .feature-icon.purple { background: #ede9fe; color: #7c3aed; }
-    .feature-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; color: var(--slate-900); }
-    .feature-card p { font-size: .9rem; color: var(--slate-500); line-height: 1.7; }
-    .footer {
-      background: var(--slate-900); color: var(--slate-400);
-      padding: 60px 0 40px;
+    .feature-card h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+      color: var(--indigo-900);
     }
-    .footer-grid {
-      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px;
-      margin-bottom: 40px;
+    .feature-card p {
+      color: var(--slate-600);
+      font-size: 0.95rem;
+      line-height: 1.6;
     }
-    .footer-brand .logo { color: var(--white); margin-bottom: 12px; }
-    .footer-brand p { font-size: .85rem; line-height: 1.7; max-width: 300px; }
-    .footer-col h4 { color: var(--white); font-size: .85rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
-    .footer-col a {
-      display: block; padding: 4px 0;
-      font-size: .85rem; transition: color .2s;
+
+    footer {
+      background: var(--slate-50);
+      border-top: 1px solid var(--slate-200);
+      padding: 3rem 2rem 1.5rem;
     }
-    .footer-col a:hover { color: var(--indigo-300); }
-    .footer-bottom {
-      border-top: 1px solid var(--slate-700);
-      padding-top: 24px;
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: .8rem;
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
+    .footer-logo {
+      font-weight: 700;
+      color: var(--indigo-600);
+      font-size: 1.1rem;
+    }
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+    .footer-links a {
+      text-decoration: none;
+      color: var(--slate-400);
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--indigo-500); }
+    .footer-copy {
+      text-align: center;
+      color: var(--slate-400);
+      font-size: 0.85rem;
+      max-width: 1200px;
+      margin: 1.5rem auto 0;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--slate-200);
+    }
+
     @media (max-width: 768px) {
-      .hero-grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
-      .hero h1 { font-size: 2.2rem; }
-      .hero p { margin-left: auto; margin-right: auto; }
-      .hero-buttons { justify-content: center; }
+      .hero { flex-direction: column; padding: 3rem 1.5rem; }
+      .hero-content h1 { font-size: 2.2rem; }
       .features-grid { grid-template-columns: 1fr; }
-      .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
-      .nav-links { display: none; }
-      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+      nav { flex-wrap: wrap; gap: 1rem; }
+      .nav-links { gap: 1rem; flex-wrap: wrap; }
+      .footer-inner { flex-direction: column; text-align: center; }
     }
   </style>
 </head>
 <body>
-  <nav class="nav">
-    <div class="container nav-inner">
-      <div class="logo">
-        <div class="logo-icon">F</div>
-        FlowForge
-      </div>
-      <div class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#">Pricing</a>
-        <a href="#">Docs</a>
-        <a href="#">Login</a>
-        <a href="#" class="btn btn-primary">Get Started</a>
-      </div>
-    </div>
+  <nav>
+    <div class="nav-logo">Flow<span>Forge</span></div>
+    <ul class="nav-links">
+      <li><a href="#">Features</a></li>
+      <li><a href="#">Pricing</a></li>
+      <li><a href="#">About</a></li>
+      <li><a href="#" class="btn-primary">Get Started</a></li>
+    </ul>
   </nav>
+
   <section class="hero">
-    <div class="container">
-      <div class="hero-grid">
-        <div>
-          <h1>Ship Faster. <span>Stress Less.</span> FlowForge.</h1>
-          <p>The all-in-one project management platform that turns chaos into clarity. Kanban, Gantt, and team chat — unified in one seamless workspace.</p>
-          <div class="hero-buttons">
-            <a href="#" class="btn btn-white btn-lg">Start your free trial — no credit card required</a>
-            <a href="#" class="btn btn-outline btn-lg" style="border-color:rgba(255,255,255,.3);color:var(--white);">Watch Demo</a>
-          </div>
-        </div>
-        <div class="hero-visual">
-          <div class="hero-visual-placeholder">
-            <div style="font-size:3rem;margin-bottom:12px;">⬡</div>
-            Interactive Dashboard Preview
-          </div>
-        </div>
+    <div class="hero-content">
+      <h1>Ship Faster. Stress Less.</h1>
+      <p>FlowForge brings your kanban boards, Gantt charts, and team chat into one unified workspace — so you stop context-switching and start shipping.</p>
+      <div class="hero-cta">
+        <a href="#" class="btn-primary">Start your free trial</a>
+      </div>
+      <div class="hero-miccopy">No credit card required. 14 days. No strings attached.</div>
+    </div>
+    <div class="hero-visual"></div>
+  </section>
+
+  <section class="features">
+    <div class="features-header">
+      <h2>Everything your team needs</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="icon">⬡</div>
+        <h3>Move work, not mountains.</h3>
+        <p>Drag-and-drop kanban boards that adapt to how your team works. Custom columns, WIP limits, and swimlanes keep every task visible and every bottleneck obvious. No setup ceremony — just start moving cards.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">↗</div>
+        <h3>See the future. Plan for it.</h3>
+        <p>Timeline views that connect every dependency, milestone, and deadline in one place. Drag to reschedule, collapse sub-tasks, and let FlowForge alert you before a delay ripples downstream. Your roadmap, living and breathing.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">◇</div>
+        <h3>Talk where the work lives.</h3>
+        <p>Threaded chat embedded inside every task and project. No more digging through Slack DMs to find out why a deadline moved — context is pinned right next to the card. @mentions, file previews, and slash commands included.</p>
       </div>
     </div>
   </section>
-  <section class="features" id="features">
-    <div class="container">
-      <span class="section-tag">Features</span>
-      <h2 class="section-title">Everything you need to deliver</h2>
-      <p class="section-subtitle">From idea to shipped, without the friction. FlowForge gives your team a single source of truth.</p>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon blue">⊞</div>
-          <h3>Kanban Boards</h3>
-          <p>Visualize every stage of your workflow. Drag, drop, and ship with confidence. Custom columns, WIP limits, and automation rules keep your team moving without the noise.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon indigo">◷</div>
-          <h3>Gantt Charts</h3>
-          <p>Turn deadlines into a game plan. Map dependencies, spot bottlenecks before they happen, and keep every milestone on track — all with an interactive timeline that updates in real time.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon purple">⬡</div>
-          <h3>Team Chat</h3>
-          <p>Stop juggling tabs. Context-rich chat lives inside your projects — linked to tasks, boards, and timelines. Every conversation has a home, and nothing slips through the cracks.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon indigo">◎</div>
-          <h3>Team Collaboration</h3>
-          <p>Threaded comments, @mentions, and granular notifications that keep everyone in the loop.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon blue">⌗</div>
-          <h3>Goal Tracking</h3>
-          <p>Connect daily work to OKRs. Set quarterly goals and watch progress update in real time.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon purple">⟐</div>
-          <h3>Integrations</h3>
-          <p>Connect Slack, GitHub, Figma, and 200+ tools. Automate workflows with no-code triggers.</p>
-        </div>
-      </div>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">FlowForge</div>
+      <ul class="footer-links">
+        <li><a href="#">Product</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Docs</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Support</a></li>
+      </ul>
     </div>
-  </section>
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <div class="logo">
-            <div class="logo-icon">F</div>
-            FlowForge
-          </div>
-          <p>Project management for teams who build. Forged from experience, shipped with purpose.</p>
-        </div>
-        <div class="footer-col">
-          <h4>Product</h4>
-          <a href="#">Features</a>
-          <a href="#">Pricing</a>
-          <a href="#">Changelog</a>
-          <a href="#">API Docs</a>
-        </div>
-        <div class="footer-col">
-          <h4>Company</h4>
-          <a href="#">About</a>
-          <a href="#">Blog</a>
-          <a href="#">Careers</a>
-          <a href="#">Contact</a>
-        </div>
-        <div class="footer-col">
-          <h4>Legal</h4>
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Security</a>
-          <a href="#">Cookies</a>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <span>&copy; 2026 FlowForge. All rights reserved.</span>
-        <span>Built with ⚡ for modern teams</span>
-      </div>
-    </div>
+    <div class="footer-copy">&copy; 2026 FlowForge. All rights reserved.</div>
   </footer>
 </body>
 </html>
+```

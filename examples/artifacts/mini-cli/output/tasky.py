@@ -1,83 +1,90 @@
 #!/usr/bin/env python3
-import argparse, json, sys, pathlib
+"""tasky — minimal JSON-backed task tracker."""
+import argparse, json, os, sys
+from datetime import datetime, timezone
+from pathlib import Path
 
-TASKS_PATH = pathlib.Path.home() / ".tasky" / "tasks.json"
+DATA_DIR = Path.home() / ".tasky"
+DATA_FILE = DATA_DIR / "tasks.json"
 
-def load_tasks(path: str) -> list:
-    p = pathlib.Path(path)
-    if not p.exists():
-        return []
-    try:
-        with open(p) as f:
-            data = json.load(f)
-        return data if isinstance(data, list) else []
-    except (json.JSONDecodeError, OSError):
-        return []
+def load_tasks():
+    if not DATA_FILE.exists():
+        return {"next_id": 1, "tasks": []}
+    with open(DATA_FILE) as f:
+        return json.load(f)
 
-def save_tasks(path: str, tasks: list) -> None:
-    p = pathlib.Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    with open(p, "w") as f:
-        json.dump(tasks, f, indent=2)
+def save_tasks(data):
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=2)
         f.write("\n")
 
-def add_task(tasks: list, description: str) -> dict:
-    task_id = max((t["id"] for t in tasks), default=0) + 1
-    task = {"id": task_id, "description": description, "done": False}
-    tasks.append(task)
-    save_tasks(str(TASKS_PATH), tasks)
-    return task
+def cmd_add(description):
+    if not description or not description.strip():
+        print("Error: task description cannot be empty", file=sys.stderr)
+        sys.exit(1)
+    data = load_tasks()
+    task = {"id": data["next_id"], "description": description.strip(),
+            "done": False, "created_at": datetime.now(timezone.utc).isoformat()}
+    tid = data["next_id"]
+    data["tasks"].append(task)
+    data["next_id"] += 1
+    save_tasks(data)
+    print(f"Added task {tid}: {description.strip()}")
 
-def list_tasks(tasks: list) -> None:
-    print(f"{'ID':<4} {'Description':<30} {'Done'}")
-    print("-" * 44)
-    for t in tasks:
-        done = "yes" if t["done"] else "no"
-        desc = t["description"][:30]
-        print(f"{t['id']:<4} {desc:<30} {done}")
-
-def done_task(tasks: list, task_id: int) -> dict | None:
-    for t in tasks:
-        if t["id"] == task_id:
-            t["done"] = True
-            save_tasks(str(TASKS_PATH), tasks)
-            return t
-    return None
-
-def clear_tasks() -> list:
-    save_tasks(str(TASKS_PATH), [])
-    return []
-
-def parse_args(argv: list[str]) -> argparse.Namespace:
-    p = argparse.ArgumentParser(prog="tasky", description="Minimal task tracker.")
-    sub = p.add_subparsers(dest="command", required=True)
-    add_p = sub.add_parser("add", help="Add a new task")
-    add_p.add_argument("description", help="Task description")
-    done_p = sub.add_parser("done", help="Mark a task as done")
-    done_p.add_argument("task_id", type=int, help="Task ID to mark done")
-    sub.add_parser("list", help="List all tasks")
-    sub.add_parser("clear", help="Clear all tasks")
-    return p.parse_args(argv)
-
-def main() -> None:
-    args = parse_args(sys.argv[1:])
-    if args.command == "clear":
-        clear_tasks()
-        print("All tasks cleared")
+def cmd_list():
+    data = load_tasks()
+    if not data["tasks"]:
+        print("No tasks")
         return
-    tasks = load_tasks(str(TASKS_PATH))
-    if args.command == "add":
-        t = add_task(tasks, args.description)
-        print(f"Added task {t['id']}: {t['description']}")
-    elif args.command == "list":
-        list_tasks(tasks)
-    elif args.command == "done":
-        t = done_task(tasks, args.task_id)
-        if t:
-            print(f"Task {args.task_id} marked as done")
-        else:
-            print(f"Error: task {args.task_id} not found", file=sys.stderr)
+    for t in data["tasks"]:
+        status = "done" if t["done"] else "pending"
+        print(f"[{t['id']}] {t['description']} ({status})")
+
+def cmd_done(tid_str):
+    try:
+        tid = int(tid_str)
+    except (ValueError, TypeError):
+        print("Error: task id must be an integer", file=sys.stderr)
+        sys.exit(1)
+    data = load_tasks()
+    for t in data["tasks"]:
+        if t["id"] == tid:
+            t["done"] = True
+            save_tasks(data)
+            print(f"Task {tid} marked as done")
+            return
+    print(f"Error: task {tid} not found", file=sys.stderr)
+    sys.exit(1)
+
+def cmd_clear():
+    data = load_tasks()
+    count = len(data["tasks"])
+    data["tasks"] = []
+    data["next_id"] = 1
+    save_tasks(data)
+    print(f"Cleared {count} tasks")
+
+def main():
+    parser = argparse.ArgumentParser(description="tasky — JSON-backed task tracker")
+    parser.add_argument("command", choices=["add", "list", "done", "clear"],
+                        help="command to execute")
+    parser.add_argument("args", nargs=argparse.REMAINDER, help="command arguments")
+    parsed = parser.parse_args()
+    if parsed.command == "add":
+        if not parsed.args:
+            print("Error: task description required", file=sys.stderr)
             sys.exit(1)
+        cmd_add(" ".join(parsed.args))
+    elif parsed.command == "list":
+        cmd_list()
+    elif parsed.command == "done":
+        if not parsed.args:
+            print("Error: task id required", file=sys.stderr)
+            sys.exit(1)
+        cmd_done(parsed.args[0])
+    elif parsed.command == "clear":
+        cmd_clear()
 
 if __name__ == "__main__":
     main()

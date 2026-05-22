@@ -3,118 +3,143 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roman Empire Quiz</title>
+<title>Space Exploration Quiz</title>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f1f5f9;min-height:100vh;display:flex;justify-content:center;padding:2rem 1rem}
-  .container{max-width:720px;width:100%}
-  h1{font-size:2rem;color:#1e293b;margin-bottom:0.5rem}
-  .subtitle{color:#64748b;margin-bottom:2rem;font-size:0.95rem}
-  .question{background:#fff;border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.08);transition:box-shadow .2s}
-  .question-title{font-weight:600;color:#1e293b;margin-bottom:0.75rem;font-size:1.05rem}
-  .options{display:flex;flex-direction:column;gap:0.5rem}
-  .options label{display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:8px;border:1.5px solid #e2e8f0;cursor:pointer;transition:all .15s;font-size:0.95rem}
-  .options label:hover{border-color:#94a3b8;background:#f8fafc}
-  .options input[type="radio"]{accent-color:#6366f1;width:16px;height:16px;flex-shrink:0}
-  .correct{border-color:#22c55e!important;background:#f0fdf4!important}
-  .correct::after{content:" ✓";color:#22c55e;font-weight:700;margin-left:auto}
-  .wrong{border-color:#ef4444!important;background:#fef2f2!important}
-  .wrong::after{content:" ✗";color:#ef4444;font-weight:700;margin-left:auto}
-  .btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.5rem;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .15s}
-  .btn-primary{background:#6366f1;color:#fff}
-  .btn-primary:hover{background:#4f46e5}
-  .btn-secondary{background:#e2e8f0;color:#475569}
-  .btn-secondary:hover{background:#cbd5e1}
-  .actions{display:flex;gap:0.75rem;margin-top:1.5rem;flex-wrap:wrap}
-  .score{background:#fff;border-radius:12px;padding:1rem 1.5rem;margin-top:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,.08);text-align:center;font-size:1.1rem;font-weight:600;color:#1e293b;display:none}
-  .score .num{color:#6366f1}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}
+.card{max-width:720px;width:100%;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);border-radius:20px;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+h1{font-size:2rem;color:#1a1a2e;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+h1 span{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:0.7rem;padding:4px 12px;border-radius:20px;font-weight:500}
+.subtitle{color:#666;margin-bottom:28px;font-size:0.9rem}
+.question{background:#f8f9fe;border-radius:12px;padding:20px;margin-bottom:16px;border:2px solid transparent;transition:all .2s}
+.question.correct{border-color:#22c55e;background:#f0fdf4}
+.question.wrong{border-color:#ef4444;background:#fef2f2}
+.q-num{font-size:0.75rem;font-weight:600;color:#667eea;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.q-text{font-size:1.05rem;font-weight:600;color:#1a1a2e;margin-bottom:12px;line-height:1.4}
+.options{display:grid;gap:8px}
+.option{display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;border-radius:8px;border:2px solid #e0e0e0;transition:all .2s;font-size:0.95rem;color:#333}
+.option:hover{border-color:#667eea;background:#f0f0ff}
+.option input[type="radio"]{accent-color:#667eea;width:16px;height:16px;cursor:pointer;flex-shrink:0}
+.option.correct{background:#dcfce7;border-color:#22c55e;color:#166534}
+.option.wrong{background:#fee2e2;border-color:#ef4444;color:#991b1b}
+.option.reveal-correct{background:#dcfce7;border-color:#22c55e;color:#166534}
+.btn-row{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.btn{padding:12px 28px;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-check{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.btn-check:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(102,126,234,0.4)}
+.btn-reset{background:#e0e0e0;color:#333}
+.btn-reset:hover{background:#d0d0d0}
+.score{margin-top:20px;padding:16px;border-radius:10px;text-align:center;font-size:1.1rem;font-weight:600;display:none}
+.score.show{display:block}
+.score.good{background:#dcfce7;color:#166534;border:2px solid #22c55e}
+.score.bad{background:#fee2e2;color:#991b1b;border:2px solid #ef4444}
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>🏛️ The Roman Empire</h1>
-  <p class="subtitle">Test your knowledge of ancient Rome</p>
+<div class="card">
+<h1>🚀 Space Exploration <span>Quiz</span></h1>
+<p class="subtitle">Test your knowledge about space and astronomy</p>
 
-  <div class="question" data-answer="C">
-    <div class="question-title">1. What year did the Western Roman Empire officially fall?</div>
-    <div class="options">
-      <label><input type="radio" name="q1" value="A"> 376 AD</label>
-      <label><input type="radio" name="q1" value="B"> 410 AD</label>
-      <label><input type="radio" name="q1" value="C"> 476 AD</label>
-      <label><input type="radio" name="q1" value="D"> 500 AD</label>
-    </div>
-  </div>
+<div class="question" id="q1">
+<div class="q-num">Question 1</div>
+<div class="q-text">What is the primary reason Mars appears red?</div>
+<div class="options">
+<label class="option"><input type="radio" name="q1" value="A"> It is covered in red sand from iron oxide</label>
+<label class="option"><input type="radio" name="q1" value="B"> Its atmosphere scatters red light</label>
+<label class="option"><input type="radio" name="q1" value="C"> It has a molten iron core</label>
+<label class="option"><input type="radio" name="q1" value="D"> Red algae covers its surface</label>
+</div>
+</div>
 
-  <div class="question" data-answer="D">
-    <div class="question-title">2. Which emperor built the Colosseum in Rome?</div>
-    <div class="options">
-      <label><input type="radio" name="q2" value="A"> Julius Caesar</label>
-      <label><input type="radio" name="q2" value="B"> Nero</label>
-      <label><input type="radio" name="q2" value="C"> Augustus</label>
-      <label><input type="radio" name="q2" value="D"> Vespasian</label>
-    </div>
-  </div>
+<div class="question" id="q2">
+<div class="q-num">Question 2</div>
+<div class="q-text">Which spacecraft first carried humans to the Moon?</div>
+<div class="options">
+<label class="option"><input type="radio" name="q2" value="A"> Apollo 11</label>
+<label class="option"><input type="radio" name="q2" value="B"> Apollo 13</label>
+<label class="option"><input type="radio" name="q2" value="C"> Gemini 4</label>
+<label class="option"><input type="radio" name="q2" value="D"> Mercury 6</label>
+</div>
+</div>
 
-  <div class="question" data-answer="B">
-    <div class="question-title">3. What was the name of the elite Roman military unit that served as the emperor personal bodyguard?</div>
-    <div class="options">
-      <label><input type="radio" name="q3" value="A"> The Legionaries</label>
-      <label><input type="radio" name="q3" value="B"> The Praetorian Guard</label>
-      <label><input type="radio" name="q3" value="C"> The Equites</label>
-      <label><input type="radio" name="q3" value="D"> The Triarii</label>
-    </div>
-  </div>
+<div class="question" id="q3">
+<div class="q-num">Question 3</div>
+<div class="q-text">What is the largest moon of Saturn?</div>
+<div class="options">
+<label class="option"><input type="radio" name="q3" value="A"> Europa</label>
+<label class="option"><input type="radio" name="q3" value="B"> Ganymede</label>
+<label class="option"><input type="radio" name="q3" value="C"> Titan</label>
+<label class="option"><input type="radio" name="q3" value="D"> Io</label>
+</div>
+</div>
 
-  <div class="question" data-answer="C">
-    <div class="question-title">4. Which Punic War general famously crossed the Alps with war elephants to attack Rome?</div>
-    <div class="options">
-      <label><input type="radio" name="q4" value="A"> Spartacus</label>
-      <label><input type="radio" name="q4" value="B"> Attila the Hun</label>
-      <label><input type="radio" name="q4" value="C"> Hannibal</label>
-      <label><input type="radio" name="q4" value="D"> Scipio Africanus</label>
-    </div>
-  </div>
+<div class="question" id="q4">
+<div class="q-num">Question 4</div>
+<div class="q-text">Approximately how long does it take sunlight to reach Earth?</div>
+<div class="options">
+<label class="option"><input type="radio" name="q4" value="A"> 1 minute</label>
+<label class="option"><input type="radio" name="q4" value="B"> 8 minutes</label>
+<label class="option"><input type="radio" name="q4" value="C"> 30 minutes</label>
+<label class="option"><input type="radio" name="q4" value="D"> 4 hours</label>
+</div>
+</div>
 
-  <div class="question" data-answer="B">
-    <div class="question-title">5. What material did the Romans use to create their durable concrete?</div>
-    <div class="options">
-      <label><input type="radio" name="q5" value="A"> Marble dust</label>
-      <label><input type="radio" name="q5" value="B"> Volcanic ash</label>
-      <label><input type="radio" name="q5" value="C"> Limestone</label>
-      <label><input type="radio" name="q5" value="D"> Clay</label>
-    </div>
-  </div>
+<div class="question" id="q5">
+<div class="q-num">Question 5</div>
+<div class="q-text">Which space telescope was launched in 2021 to succeed the Hubble?</div>
+<div class="options">
+<label class="option"><input type="radio" name="q5" value="A"> Chandra</label>
+<label class="option"><input type="radio" name="q5" value="B"> Spitzer</label>
+<label class="option"><input type="radio" name="q5" value="C"> James Webb Space Telescope</label>
+<label class="option"><input type="radio" name="q5" value="D"> Kepler</label>
+</div>
+</div>
 
-  <div class="actions">
-    <button class="btn btn-primary" onclick="checkAnswers()">Check Answers</button>
-    <button class="btn btn-secondary" onclick="resetQuiz()">Reset</button>
-  </div>
-
-  <div class="score" id="score"></div>
+<div class="btn-row">
+<button class="btn btn-check" onclick="checkAnswers()">Check Answers</button>
+<button class="btn btn-reset" onclick="resetQuiz()">Reset</button>
+</div>
+<div class="score" id="score"></div>
 </div>
 
 <script>
+const answers={q1:"A",q2:"A",q3:"C",q4:"B",q5:"C"};
 function checkAnswers(){
-  let correct=0,total=document.querySelectorAll(".question").length;
-  document.querySelectorAll(".question").forEach(q=>{
-    let answer=q.dataset.answer;
-    let labels=q.querySelectorAll("label");
-    let selected=q.querySelector("input[type=radio]:checked");
-    labels.forEach(l=>{l.classList.remove("correct","wrong")});
+  let correct=0,total=5;
+  for(let i=1;i<=total;i++){
+    const qid="q"+i;
+    const qdiv=document.getElementById(qid);
+    const selected=qdiv.querySelector("input[type=radio]:checked");
+    const opts=qdiv.querySelectorAll(".option");
+    opts.forEach(o=>{o.classList.remove("correct","wrong","reveal-correct")});
+    const correctOpt=Array.from(opts).find(o=>o.querySelector("input").value===answers[qid]);
+    correctOpt.classList.add("reveal-correct");
     if(selected){
-      if(selected.value===answer){labels[["A","B","C","D"].indexOf(answer)].classList.add("correct");correct++}
-      else{selected.parentElement.classList.add("wrong");labels[["A","B","C","D"].indexOf(answer)].classList.add("correct")}
-    }else{labels[["A","B","C","D"].indexOf(answer)].classList.add("correct")}
-  });
-  let s=document.getElementById("score");
-  s.style.display="block";
-  s.innerHTML="You scored <span class=\"num\">"+correct+"/"+total+"</span> ("+Math.round(correct/total*100)+"%)";
+      if(selected.value===answers[qid]){
+        correct++;
+        qdiv.classList.add("correct");
+        selected.closest(".option").classList.add("correct");
+      }else{
+        qdiv.classList.add("wrong");
+        selected.closest(".option").classList.add("wrong");
+      }
+    }else{
+      qdiv.classList.remove("correct","wrong");
+    }
+  }
+  const scoreDiv=document.getElementById("score");
+  scoreDiv.classList.add("show");
+  const pct=Math.round(correct/total*100);
+  scoreDiv.textContent=correct+"/"+total+" correct ("+pct+"%)";
+  scoreDiv.className="score show "+(pct>=70?"good":"bad");
 }
 function resetQuiz(){
-  document.querySelectorAll("input[type=radio]").forEach(i=>i.checked=false);
-  document.querySelectorAll("label").forEach(l=>l.classList.remove("correct","wrong"));
-  document.getElementById("score").style.display="none";
+  document.querySelectorAll(input[type=radio]).forEach(r=>r.checked=false);
+  document.querySelectorAll(".option").forEach(o=>o.classList.remove("correct","wrong","reveal-correct"));
+  document.querySelectorAll(".question").forEach(q=>q.classList.remove("correct","wrong"));
+  document.getElementById("score").classList.remove("show","good","bad");
 }
 </script>
+</div>
 </body>
 </html>
