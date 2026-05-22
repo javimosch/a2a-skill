@@ -34,6 +34,7 @@ output to `output/`.
 | `news-briefing/` | curator, narrator | `output/briefing.md`, `output/bus-state.txt` | 2 agents produce a tech news briefing with real ddgr-sourced stories |
 | `competitive-analysis/` | searcher, analyst, writer | `output/competitive-analysis.md`, `output/bus-state.txt` | 3 agents produce a competitive analysis with comparison table and market positioning |
 | `a2a-landscape/` | searcher, analyst, writer | `output/a2a-landscape.md`, `output/bus-state.txt` | 3 agents research and position a2a-skill against 9 competing multi-agent frameworks |
+| `weekly-digest/` | scout, curator, editor | `output/weekly-digest.md`, `output/bus-state.txt` | 3 agents produce a formatted tech news digest via ddgr web research |
 
 ## Requirements
 
