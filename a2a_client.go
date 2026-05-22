@@ -38,24 +38,32 @@ type Message struct {
 
 // Peer represents an agent on the bus
 type Peer struct {
-	ID     string `json:"id"`
-	Role   string `json:"role"`
-	Status string `json:"status"`
-	CLI    string `json:"cli"`
+	ID        string  `json:"id"`
+	Role      *string `json:"role"`
+	Prompt    *string `json:"prompt"`
+	CLI       *string `json:"cli"`
+	Status    string  `json:"status"`
+	PID       *int    `json:"pid"`
+	CreatedAt float64 `json:"created_at"`
+	LastSeen  float64 `json:"last_seen"`
+}
+
+// TopSender represents one entry in the top senders stats list.
+type TopSender struct {
+	Agent string `json:"agent"`
+	Count int    `json:"count"`
 }
 
 // Stats represents bus statistics
 type Stats struct {
-	Messages       int `json:"messages"`
-	DirectMessages int `json:"direct_messages"`
-	Broadcasts     int `json:"broadcasts"`
-	Threads        int `json:"threads"`
-	AgentsActive   int `json:"agents_active"`
-	AgentsDone     int `json:"agents_done"`
-	TopSenders     []struct {
-		Agent string `json:"agent"`
-		Count int    `json:"count"`
-	} `json:"top_senders"`
+	Project        string      `json:"project"`
+	Messages       int         `json:"messages"`
+	DirectMessages int         `json:"direct_messages"`
+	Broadcasts     int         `json:"broadcasts"`
+	Threads        int         `json:"threads"`
+	AgentsActive   int         `json:"agents_active"`
+	AgentsDone     int         `json:"agents_done"`
+	TopSenders     []TopSender `json:"top_senders"`
 }
 
 // NewClient creates a new a2a client
@@ -291,7 +299,7 @@ func (c *Client) ListPeers() ([]Peer, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT id, role, cli, status FROM agents ORDER BY created_at")
+	rows, err := db.Query("SELECT id, role, prompt, cli, status, pid, created_at, last_seen FROM agents ORDER BY created_at")
 	if err != nil {
 		return nil, err
 	}
@@ -300,9 +308,24 @@ func (c *Client) ListPeers() ([]Peer, error) {
 	peers := []Peer{}
 	for rows.Next() {
 		var p Peer
-		err := rows.Scan(&p.ID, &p.Role, &p.CLI, &p.Status)
+		var role, prompt, cli sql.NullString
+		var pid sql.NullInt64
+		err := rows.Scan(&p.ID, &role, &prompt, &cli, &p.Status, &pid, &p.CreatedAt, &p.LastSeen)
 		if err != nil {
 			return nil, err
+		}
+		if role.Valid {
+			p.Role = &role.String
+		}
+		if prompt.Valid {
+			p.Prompt = &prompt.String
+		}
+		if cli.Valid {
+			p.CLI = &cli.String
+		}
+		if pid.Valid {
+			pidInt := int(pid.Int64)
+			p.PID = &pidInt
 		}
 		peers = append(peers, p)
 	}
@@ -489,7 +512,10 @@ func (c *Client) Stats() (*Stats, error) {
 	}
 	defer db.Close()
 
-	stats := &Stats{}
+	stats := &Stats{
+		Project:    c.Project,
+		TopSenders: []TopSender{},
+	}
 
 	// Message counts
 	db.QueryRow("SELECT COUNT(*) FROM messages").Scan(&stats.Messages)
@@ -512,10 +538,7 @@ func (c *Client) Stats() (*Stats, error) {
 			var sender string
 			var count int
 			if err := rows.Scan(&sender, &count); err == nil {
-				stats.TopSenders = append(stats.TopSenders, struct {
-					Agent string `json:"agent"`
-					Count int    `json:"count"`
-				}{sender, count})
+				stats.TopSenders = append(stats.TopSenders, TopSender{sender, count})
 			}
 		}
 	}
