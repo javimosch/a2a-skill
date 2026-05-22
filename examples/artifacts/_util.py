@@ -104,6 +104,8 @@ def spawn_agent(spawn_bin: str, cli: str, agent_id: str, kit_path: str,
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     if not proc.stdout:
         print(f"[spawn] No stdout for {agent_id}", file=sys.stderr)
+        # Log stderr to help debug spawn failures
+        _log_spawn_stderr(proc, agent_id)
         return None
     try:
         pid_str = proc.stdout.readline().decode().strip()
@@ -112,7 +114,20 @@ def spawn_agent(spawn_bin: str, cli: str, agent_id: str, kit_path: str,
         return pid
     except (ValueError, AttributeError):
         print(f"[spawn] Bad PID from {agent_id}", file=sys.stderr)
+        _log_spawn_stderr(proc, agent_id)
         return None
+
+
+def _log_spawn_stderr(proc: subprocess.Popen, agent_id: str) -> None:
+    """Log stderr from a failed spawn to help debug failures."""
+    try:
+        stderr_data = proc.stderr.read() if proc.stderr else b""
+        if stderr_data:
+            decoded = stderr_data.decode("utf-8", errors="replace")
+            for line in decoded.splitlines():
+                print(f"[spawn:{agent_id}] {line}", file=sys.stderr)
+    except Exception as exc:
+        print(f"[spawn:{agent_id}] Could not read stderr: {exc}", file=sys.stderr)
 
 
 def make_kit(agent_id: str, role: str, instructions: str, project: str) -> str:
@@ -197,6 +212,83 @@ def strip_html_preamble(body: str) -> str:
         if alt >= 0:
             body = body[alt:]
     return body
+
+
+def strip_code_fence(body: str) -> str:
+    """Strip outermost markdown code fence if present.
+
+    Agents often wrap output in ```lang\\n...\\n``` fences even when told not
+    to. This removes the outermost fence, if any, returning the inner content.
+
+    Handles:
+
+      ```html
+      <!DOCTYPE html>...
+      ```
+
+    and single-tick versions. Only strips matching opening/closing fences.
+    """
+    lines = body.splitlines()
+    if not lines:
+        return body
+    first = lines[0].strip()
+    # Match opening fence: ``` or ~~~ possibly followed by language name
+    fence_char = None
+    if first.startswith("```"):
+        fence_char = "```"
+    elif first.startswith("~~~"):
+        fence_char = "~~~"
+    if fence_char is None:
+        return body
+    # Find matching closing fence (first line that is just the fence)
+    for i in range(len(lines) - 1, 0, -1):
+        if lines[i].strip() == fence_char:
+            # Strip opening fence line and closing fence line
+            inner = lines[1:i]
+            # Strip trailing empty lines from inner content
+            while inner and inner[-1].strip() == "":
+                inner.pop()
+            return "\n".join(inner)
+    # No matching close — return as-is
+    return body
+
+
+def extract_first_code_block(body: str) -> str:
+    """Extract the first markdown code block from body, stripping preamble.
+
+    This is a higher-level helper that:
+    1. Strips preamble text before a code fence
+    2. Removes the code fence markers
+    3. Falls back to strip_code_fence() if no fence is found
+
+    Works for HTML, SVG, YAML, Python, and any fenced content.
+    """
+    if "```" not in body and "~~~" not in body:
+        return strip_code_fence(body)
+    # Find the first opening fence and its matching close
+    for fence in ["```", "~~~"]:
+        open_idx = body.find(fence)
+        if open_idx < 0:
+            continue
+        rest = body[open_idx + len(fence):]
+        # Strip language tag from the opening fence line
+        rest_lines = rest.splitlines()
+        if not rest_lines:
+            return strip_code_fence(body)
+        content_lines = []
+        found_close = False
+        for line in rest_lines[1:]:  # Start after the opening fence line
+            if line.strip() == fence:
+                found_close = True
+                break
+            content_lines.append(line)
+        if found_close:
+            # Strip trailing empty lines
+            while content_lines and content_lines[-1].strip() == "":
+                content_lines.pop()
+            return "\n".join(content_lines)
+        # No matching close — fall through to strip_code_fence
+    return strip_code_fence(body)
 
 
 def wait_for_messages(a2a_bin: str, project: str, agent_id: str,
