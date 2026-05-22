@@ -847,15 +847,12 @@ class TestIntegration(unittest.TestCase):
         bodies = [m["body"] for m in msgs]
         self.assertIn(body, bodies)
 
-    def test_peek_limit_zero(self):
-        """peek --limit 0 returns no messages."""
+    def test_peek_limit_zero_rejected(self):
+        """peek --limit 0 is rejected (must be positive)."""
         a2a("register", "alice", project=self.project)
-        a2a("register", "bob", project=self.project)
-        a2a("send", "bob", "some message", "--from", "alice",
-            project=self.project)
-        result = a2a("peek", "--json", "--limit", "0", project=self.project)
-        msgs = json.loads(result.stdout)
-        self.assertEqual(len(msgs), 0)
+        result = a2a("peek", "--json", "--limit", "0", project=self.project,
+                      expect_fail=True)
+        self.assertIn("must be a positive integer", result.stderr)
 
     def test_send_ttl_from_cli(self):
         """Send with --ttl from CLI expires messages after the TTL period."""
