@@ -27,185 +27,69 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager, ascii_chart, compute_analysis  # noqa: E402
 
 ARTIFACT = "data-to-chart"
 
 FETCHER_INSTRUCTIONS = (
-    "You are the data fetcher. Generate interesting sample CSV data.\\n\\n"
-    "Steps:\\n"
-    "1. Think of a real-world dataset to generate — examples:\\n"
-    "   - Server CPU temperature (°C) every 30 minutes over 48 hours\\n"
-    "   - Website response times (ms) over a 24-hour period\\n"
-    "   - Daily active users of an app over 30 days\\n"
-    "   - Stock price (USD) over 90 trading days\\n"
-    "2. Generate 20-30 data points as CSV with headers\\n"
-    "3. Add realistic variation — include trends, spikes, and noise\\n"
-    "4. Send the CSV data to the analyst:\\n"
-    '   a2a send analyst DATA_START\\\\n<your CSV data>\\\\nDATA_END --from fetcher\\n\\n'
-    "Example CSV format:\\n"
-    "timestamp,value\\n"
-    "0,35.2\\n"
-    "1,36.8\\n"
-    "...\\n\\n"
+    "You are the data fetcher. Generate interesting sample CSV data.\n\n"
+    "Steps:\n"
+    "1. Think of a real-world dataset to generate — examples:\n"
+    "   - Server CPU temperature (°C) every 30 minutes over 48 hours\n"
+    "   - Website response times (ms) over a 24-hour period\n"
+    "   - Daily active users of an app over 30 days\n"
+    "   - Stock price (USD) over 90 trading days\n"
+    "2. Generate 20-30 data points as CSV with headers\n"
+    "3. Add realistic variation — include trends, spikes, and noise\n"
+    "4. Send the CSV data to the analyst:\n"
+    '   a2a send analyst DATA_START\\n<your CSV data>\\nDATA_END --from fetcher\n\n'
+    "Example CSV format:\n"
+    "timestamp,value\n"
+    "0,35.2\n"
+    "1,36.8\n"
+    "...\n\n"
     "The DATA must be between DATA_START and DATA_END markers."
 )
 
 ANALYST_INSTRUCTIONS = (
-    "You are the data analyst. Wait for the fetcher to send you CSV data.\\n\\n"
-    "Steps:\\n"
-    "1. Receive the fetcher's message:\\n"
-    '   a2a recv --as analyst --wait 60\\n'
-    "2. Parse the CSV data (timestamp,value format)\\n"
-    "3. Compute these statistics:\\n"
-    "   - Number of data points\\n"
-    "   - Minimum, maximum, mean, median\\n"
-    "   - Trend direction (increasing, decreasing, or stable)\\n"
-    "   - Volatility (standard deviation of changes between consecutive points)\\n"
-    "4. Send the analysis + the raw values array to the plotter:\\n"
-    '   a2a send plotter ANALYSIS_START\\\\n<your analysis as markdown>\\\\nVALUES:[val1,val2,...]\\\\nANALYSIS_END --from analyst\\n\\n'
+    "You are the data analyst. Wait for the fetcher to send you CSV data.\n\n"
+    "Steps:\n"
+    "1. Receive the fetcher's message:\n"
+    '   a2a recv --as analyst --wait 60\n'
+    "2. Parse the CSV data (timestamp,value format)\n"
+    "3. Compute these statistics:\n"
+    "   - Number of data points\n"
+    "   - Minimum, maximum, mean, median\n"
+    "   - Trend direction (increasing, decreasing, or stable)\n"
+    "   - Volatility (standard deviation of changes between consecutive points)\n"
+    "4. Send the analysis + the raw values array to the plotter:\n"
+    '   a2a send plotter ANALYSIS_START\\n<your analysis as markdown>\\nVALUES:[val1,val2,...]\\nANALYSIS_END --from analyst\n\n'
     "The VALUES must be a JSON array of floats that the plotter can use."
 )
 
 PLOTTER_INSTRUCTIONS = (
-    "You are the chart plotter. Wait for the analyst to send you data.\\n\\n"
-    "Steps:\\n"
-    "1. Receive the analyst's message:\\n"
-    '   a2a recv --as plotter --wait 60\\n'
-    "2. Extract the VALUES array and the analysis from the message\\n"
-    "3. Generate an ASCII line chart from the values (use characters like ▁▂▃▄▅▆▇█ or |/-\\\\)\\n"
-    "4. Label the chart with min/max values and a title\\n"
-    "5. Broadcast the complete output:\\n"
-    '   a2a send all CHART_START\\\\n<your formatted chart with analysis>\\\\nCHART_END --from plotter\\n\\n'
+    "You are the chart plotter. Wait for the analyst to send you data.\n\n"
+    "Steps:\n"
+    "1. Receive the analyst's message:\n"
+    '   a2a recv --as plotter --wait 60\n'
+    "2. Extract the VALUES array and the analysis from the message\n"
+    "3. Generate an ASCII line chart from the values (use characters like |/-\\\)\n"
+    "4. Label the chart with min/max values and a title\n"
+    "5. Broadcast the complete output:\n"
+    '   a2a send all CHART_START\\n<your formatted chart with analysis>\\nCHART_END --from plotter\n\n'
     "The output must be between CHART_START and CHART_END markers."
 )
 
 
-def ascii_chart(values, width=50, height=10, title="Data Chart"):
-    """Generate a pure-Python ASCII line chart from a list of floats.
-
-    No external dependencies — uses only stdlib math.
-    Returns a string with the rendered chart.
-    """
-    if not values:
-        return "[empty data]"
-
-    min_v = min(values)
-    max_v = max(values)
-    range_v = max_v - min_v if max_v != min_v else 1
-
-    # Build the chart lines
-    lines = []
-    lines.append(f" {title}")
-    lines.append(f" Range: {min_v:.1f} to {max_v:.1f}")
-    lines.append("")
-
-    # Normalize values to chart height
-    def normalize(v):
-        return int((v - min_v) / range_v * (height - 1))
-
-    # Draw the Y axis and data line
-    for row in range(height - 1, -1, -1):
-        threshold = min_v + (range_v * row / (height - 1))
-        label = f"{threshold:8.1f} |"
-        chars = []
-        for v in values:
-            n = normalize(v)
-            chars.append("*" if n == row else " ")
-        lines.append(label + "".join(chars))
-
-    # X axis
-    x_label = "          " + "+" + "-" * (len(values) - 2) + "+"
-    lines.append(x_label)
-
-    # X axis labels
-    step = max(1, len(values) // 6)
-    x_ticks = ""
-    for i, v in enumerate(values):
-        if i % step == 0 or i == len(values) - 1:
-            x_ticks += str(i)
-        else:
-            x_ticks += " "
-    lines.append("           " + x_ticks)
-
-    # Data point label
-    lines.append(f"           Data points: 0 to {len(values)-1} (n={len(values)})")
-    lines.append("")
-
-    # Summary statistics bar
-    lines.append("  Statistics")
-    lines.append(f"    Min: {min_v:.2f}")
-    lines.append(f"    Max: {max_v:.2f}")
-    lines.append(f"    Mean: {sum(values)/len(values):.2f}")
-    lines.append(f"    Range: {range_v:.2f}")
-
-    # Direction
-    first_half = sum(values[:len(values)//2]) / max(len(values)//2, 1)
-    second_half = sum(values[len(values)//2:]) / max(len(values) - len(values)//2, 1)
-    diff = second_half - first_half
-    if diff > range_v * 0.05:
-        direction = "📈 Increasing"
-    elif diff < -range_v * 0.05:
-        direction = "📉 Decreasing"
-    else:
-        direction = "➡️  Stable"
-    lines.append(f"    Trend: {direction}")
-
-    return "\n".join(lines)
-
-
-def compute_analysis(values):
-    """Compute statistics from a list of values."""
-    n = len(values)
-    if n == 0:
-        return "No data"
-    sorted_v = sorted(values)
-    mean = sum(values) / n
-    median = sorted_v[n // 2] if n % 2 == 1 else (sorted_v[n // 2 - 1] + sorted_v[n // 2]) / 2
-    min_v = min(values)
-    max_v = max(values)
-    range_v = max_v - min_v
-
-    # Standard deviation
-    variance = sum((v - mean) ** 2 for v in values) / n
-    std_dev = math.sqrt(variance)
-
-    # Trend
-    first_half = sum(values[:n // 2]) / max(n // 2, 1)
-    second_half = sum(values[n // 2:]) / max(n - n // 2, 1)
-    if second_half - first_half > range_v * 0.05:
-        trend = "increasing"
-    elif first_half - second_half > range_v * 0.05:
-        trend = "decreasing"
-    else:
-        trend = "stable"
-
-    # Volatility (mean absolute change)
-    changes = [abs(values[i] - values[i - 1]) for i in range(1, n)]
-    volatility = sum(changes) / len(changes) if changes else 0
-
-    return {
-        "n": n,
-        "min": min_v,
-        "max": max_v,
-        "mean": mean,
-        "median": median,
-        "std_dev": std_dev,
-        "range": range_v,
-        "trend": trend,
-        "volatility": volatility,
-    }
-
-
 def generate_sample_data(kind="temperature"):
     """Generate realistic sample data."""
+    random.seed(42)  # Deterministic for reproducibility
     if kind == "temperature":
-        # CPU temperature over time — starts cool, warms up, cycles
         values = []
         for i in range(30):
-            base = 55 + 15 * math.sin(i / 6)  # Daily cycle
+            base = 55 + 15 * math.sin(i / 6)
             noise = random.gauss(0, 3)
-            spike = 20 if random.random() < 0.05 else 0  # Occasional spike
+            spike = 20 if random.random() < 0.05 else 0
             values.append(round(base + noise + spike, 1))
         return values, "cpu_temp", "CPU Temperature (°C) over 30 time points"
 
@@ -219,18 +103,16 @@ def generate_sample_data(kind="temperature"):
         return values, "response_ms", "Server Response Time (ms) over 25 samples"
 
     elif kind == "users":
-        # DAU — growing with weekly cycles
         values = []
         growth = 0
         for i in range(30):
-            growth += random.gauss(5, 3)  # Gradual growth
+            growth += random.gauss(5, 3)
             weekly = 50 * math.sin(i * 2 * math.pi / 7)
             noise = random.gauss(0, 10)
             values.append(round(1000 + growth + weekly + noise, 0))
         return values, "daily_users", "Daily Active Users over 30 days"
 
     else:
-        # Stock price — random walk
         price = 100.0
         values = []
         for i in range(25):
@@ -243,30 +125,20 @@ def generate_sample_data(kind="temperature"):
 def generate_fallback_output() -> tuple:
     """Generate data, analysis, and chart directly (fallback when agents fail)."""
     print(f"[{ARTIFACT}] Generating fallback data + analysis + charts...")
+    random.seed(42)
 
-    # Generate 3 datasets for a richer output
     all_sections = []
     for kind in ["temperature", "response_time", "users"]:
         values, name, title = generate_sample_data(kind)
         analysis = compute_analysis(values)
         chart = ascii_chart(values, width=50, height=8, title=title)
-
-        section = {
-            "name": name,
-            "title": title,
-            "values": values,
-            "analysis": analysis,
-            "chart": chart,
-        }
-        all_sections.append(section)
+        all_sections.append({"name": name, "title": title, "values": values, "analysis": analysis, "chart": chart})
 
     # Build charts.txt
     chart_lines = []
     for sec in all_sections:
         if chart_lines:
-            chart_lines.append("")
-            chart_lines.append("=" * 70)
-            chart_lines.append("")
+            chart_lines.extend(["", "=" * 70, ""])
         chart_lines.append(sec["chart"])
     charts_text = "\n".join(chart_lines)
 
@@ -284,8 +156,8 @@ def generate_fallback_output() -> tuple:
         md_lines.extend([
             f"### {sec['title']}",
             "",
-            f"| Metric | Value |",
-            f"|--------|-------|",
+            "| Metric | Value |",
+            "|--------|-------|",
             f"| Data Points | {a['n']} |",
             f"| Minimum | {a['min']:.2f} |",
             f"| Maximum | {a['max']:.2f} |",

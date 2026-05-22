@@ -398,3 +398,103 @@ def wait_for_messages(a2a_bin: str, project: str, agent_id: str,
                 results[sender] = body
                 print(f"[recv] ← from {sender}: {body[:100]}...")
     return results
+
+
+def ascii_chart(values: list, width: int = 50, height: int = 10, title: str = "Data Chart") -> str:
+    """Generate a pure-Python ASCII line chart from a list of floats.
+
+    No external dependencies — uses only stdlib math.
+    Returns a string with the rendered chart including axis labels and
+    summary statistics (min, max, mean, trend direction).
+    """
+    import math as _math
+    if not values:
+        return "[empty data]"
+
+    min_v = min(values)
+    max_v = max(values)
+    range_v = max_v - min_v if max_v != min_v else 1
+
+    lines = [f" {title}", f" Range: {min_v:.1f} to {max_v:.1f}", ""]
+
+    def _normalize(v):
+        return int((v - min_v) / range_v * (height - 1))
+
+    for row in range(height - 1, -1, -1):
+        threshold = min_v + (range_v * row / (height - 1))
+        label = f"{threshold:8.1f} |"
+        chars = ["*" if _normalize(v) == row else " " for v in values]
+        lines.append(label + "".join(chars))
+
+    x_label = "          +" + "-" * (len(values) - 2) + "+"
+    lines.append(x_label)
+
+    step = max(1, len(values) // 6)
+    x_ticks = "".join(str(i) if i % step == 0 or i == len(values) - 1 else " " for i in range(len(values)))
+    lines.append("           " + x_ticks)
+    lines.append(f"           Data points: 0 to {len(values)-1} (n={len(values)})")
+    lines.append("")
+
+    mean_v = sum(values) / len(values)
+    lines.extend([
+        "  Statistics",
+        f"    Min: {min_v:.2f}",
+        f"    Max: {max_v:.2f}",
+        f"    Mean: {mean_v:.2f}",
+        f"    Range: {range_v:.2f}",
+    ])
+
+    first_half = sum(values[:len(values)//2]) / max(len(values)//2, 1)
+    second_half = sum(values[len(values)//2:]) / max(len(values) - len(values)//2, 1)
+    diff = second_half - first_half
+    if diff > range_v * 0.05:
+        lines.append("    Trend: \U0001f4c8 Increasing")
+    elif diff < -range_v * 0.05:
+        lines.append("    Trend: \U0001f4c9 Decreasing")
+    else:
+        lines.append("    Trend: \u27a1\ufe0f  Stable")
+
+    return "\n".join(lines)
+
+
+def compute_analysis(values: list) -> dict:
+    """Compute statistics from a list of numeric values.
+
+    Returns a dict with keys: n, min, max, mean, median, std_dev,
+    range, trend, volatility.
+    """
+    import math as _math
+    n = len(values)
+    if n == 0:
+        return {}
+    sorted_v = sorted(values)
+    mean_v = sum(values) / n
+    median = sorted_v[n // 2] if n % 2 == 1 else (sorted_v[n // 2 - 1] + sorted_v[n // 2]) / 2
+    min_v = min(values)
+    max_v = max(values)
+    range_v = max_v - min_v
+    variance = sum((v - mean_v) ** 2 for v in values) / n
+
+    first_half = sum(values[:n // 2]) / max(n // 2, 1)
+    second_half = sum(values[n // 2:]) / max(n - n // 2, 1)
+    if second_half - first_half > range_v * 0.05:
+        trend = "increasing"
+    elif first_half - second_half > range_v * 0.05:
+        trend = "decreasing"
+    else:
+        trend = "stable"
+
+    changes = [abs(values[i] - values[i - 1]) for i in range(1, n)]
+    volatility = sum(changes) / len(changes) if changes else 0
+
+    return {
+        "n": n,
+        "min": min_v,
+        "max": max_v,
+        "mean": mean_v,
+        "median": median,
+        "std_dev": _math.sqrt(variance),
+        "range": range_v,
+        "trend": trend,
+        "volatility": volatility,
+    }

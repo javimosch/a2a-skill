@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Add artifacts dir to path
 sys.path.insert(0, str(Path(__file__).parent / "examples" / "artifacts"))
-from _util import strip_html_preamble, strip_code_fence, extract_first_code_block, make_kit, send_task
+from _util import strip_html_preamble, strip_code_fence, extract_first_code_block, make_kit, send_task, ascii_chart, compute_analysis
 
 
 class TestStripHtmlPreamble(unittest.TestCase):
@@ -223,6 +223,120 @@ class TestSendTask(unittest.TestCase):
         """send_task returns False when a2a binary doesn't exist."""
         result = send_task("/nonexistent/a2a", "test-proj", "test-agent", "hello world")
         self.assertFalse(result)
+
+
+class TestAsciiChart(unittest.TestCase):
+    """Test the ascii_chart() helper."""
+
+    def test_returns_string(self):
+        """ascii_chart returns a string."""
+        result = ascii_chart([1, 2, 3], width=10, height=5, title="Test")
+        self.assertIsInstance(result, str)
+
+    def test_contains_title(self):
+        """Chart output includes the title."""
+        result = ascii_chart([1, 2, 3], width=10, height=5, title="MyChart")
+        self.assertIn("MyChart", result)
+
+    def test_contains_min_max(self):
+        """Chart includes min and max values."""
+        result = ascii_chart([10, 20, 30, 25], width=10, height=5, title="Test")
+        self.assertIn("10.0", result)
+        self.assertIn("30.0", result)
+
+    def test_contains_statistics(self):
+        """Chart includes Statistics section."""
+        result = ascii_chart([5, 10, 15], width=10, height=5, title="Test")
+        self.assertIn("Statistics", result)
+
+    def test_contains_trend(self):
+        """Chart includes trend direction."""
+        result = ascii_chart([1, 2, 3, 4, 5], width=10, height=5, title="Test")
+        self.assertIn("Trend", result)
+        self.assertIn("Increasing", result)
+
+    def test_detects_decreasing_trend(self):
+        """Decreasing data shows Decreasing trend."""
+        result = ascii_chart([100, 90, 80, 70], width=10, height=5, title="Test")
+        # Allow either unicode emoji or ascii representation
+        self.assertTrue("Decreasing" in result or "decreasing" in result.lower())
+
+    def test_empty_data(self):
+        """Empty list returns placeholder."""
+        result = ascii_chart([], width=10, height=5, title="Test")
+        self.assertEqual(result, "[empty data]")
+
+    def test_contains_y_axis_labels(self):
+        """Chart includes Y-axis labels with pipeline separator."""
+        result = ascii_chart([10, 20, 30], width=10, height=5, title="Test")
+        self.assertIn("|", result)
+
+    def test_single_value(self):
+        """Single value chart still produces output."""
+        result = ascii_chart([42], width=10, height=5, title="Single")
+        self.assertIn("Single", result)
+        self.assertIn("42", result)
+
+
+class TestComputeAnalysis(unittest.TestCase):
+    """Test the compute_analysis() helper."""
+
+    def test_returns_dict(self):
+        """compute_analysis returns a dict."""
+        result = compute_analysis([1, 2, 3])
+        self.assertIsInstance(result, dict)
+
+    def test_has_required_keys(self):
+        """Result has all expected keys."""
+        result = compute_analysis([5, 10, 15])
+        expected_keys = {"n", "min", "max", "mean", "median", "std_dev", "range", "trend", "volatility"}
+        self.assertTrue(expected_keys.issubset(result.keys()))
+
+    def test_basic_stats(self):
+        """Mean, min, max, median are correct."""
+        result = compute_analysis([2, 4, 6, 8])
+        self.assertEqual(result["n"], 4)
+        self.assertEqual(result["min"], 2)
+        self.assertEqual(result["max"], 8)
+        self.assertEqual(result["mean"], 5)
+        self.assertEqual(result["median"], 5)
+
+    def test_empty_data(self):
+        """Empty list returns empty dict."""
+        result = compute_analysis([])
+        self.assertEqual(result, {})
+
+    def test_single_value(self):
+        """Single value has basic stats."""
+        result = compute_analysis([42])
+        self.assertEqual(result["n"], 1)
+        self.assertEqual(result["min"], 42)
+        self.assertEqual(result["max"], 42)
+
+    def test_increasing_trend(self):
+        """Upward trend is detected."""
+        result = compute_analysis([10, 20, 30, 40, 50])
+        self.assertEqual(result["trend"], "increasing")
+
+    def test_decreasing_trend(self):
+        """Downward trend is detected."""
+        result = compute_analysis([50, 40, 30, 20, 10])
+        self.assertEqual(result["trend"], "decreasing")
+
+    def test_std_dev_nonzero(self):
+        """Standard deviation is positive for varied data."""
+        result = compute_analysis([10, 20, 30, 40, 50])
+        self.assertGreater(result["std_dev"], 0)
+
+    def test_range_positive(self):
+        """Range is positive for min < max."""
+        result = compute_analysis([5, 10, 15])
+        self.assertEqual(result["range"], 10)
+
+    def test_volatility_nonzero(self):
+        """Volatility is positive for varying data."""
+        result = compute_analysis([10, 20, 10, 30, 10])
+        self.assertGreater(result["volatility"], 0)
 
 
 if __name__ == "__main__":
