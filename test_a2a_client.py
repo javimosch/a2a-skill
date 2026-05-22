@@ -569,21 +569,22 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(len(messages), 1)
         self.assertEqual(messages[0]["body"], "")
 
-    def test_send_ttl_zero_immediate_expiry(self):
-        """send() with ttl_seconds=0 triggers cleanup on next operation."""
+    def test_send_ttl_non_positive_rejected(self):
+        """send() with ttl_seconds <= 0 raises ValueError."""
         alice = A2AClient(self.project, "alice")
-        bob = A2AClient(self.project, "bob")
-        msg_id = alice.send("bob", "instant expiry", ttl_seconds=0)
-        self.assertGreater(msg_id, 0)
-        # Message should be cleaned up (expired immediately) — recv triggers cleanup
-        messages = bob.recv(wait=1)
-        self.assertEqual(len(messages), 0, "TTL=0 message should be cleaned up before recv")
+        for bad_ttl in (0, -1, -5):
+            with self.assertRaises(ValueError):
+                alice.send("bob", "bad ttl", ttl_seconds=bad_ttl)
+        # Verify no messages were stored
+        messages = alice.peek(limit=10)
+        self.assertEqual(len(messages), 0, "no messages with non-positive TTL should be stored")
 
     def test_peek_cleans_up_expired_messages(self):
         """peek() triggers TTL cleanup so expired messages don't appear."""
         alice = A2AClient(self.project, "alice")
         bob = A2AClient(self.project, "bob")
-        alice.send("bob", "ttl will expire", ttl_seconds=0)
+        alice.send("bob", "ttl will expire", ttl_seconds=1)
+        time.sleep(1.2)
         # peek should clean up the expired message
         messages = bob.peek(limit=10)
         bodies = [m["body"] for m in messages]
@@ -662,12 +663,12 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(len(messages), 0)
         self.assertLess(elapsed, 2, "recv with wait=0 should not block")
 
-    def test_peek_limit_zero_returns_empty(self):
-        """peek() with limit=0 returns empty list."""
+    def test_peek_limit_non_positive_rejected(self):
+        """peek() with limit <= 0 raises ValueError."""
         alice = A2AClient(self.project, "alice")
-        alice.send("bob", "some message")
-        messages = alice.peek(limit=0)
-        self.assertEqual(messages, [])
+        for bad_limit in (0, -1):
+            with self.assertRaises(ValueError):
+                alice.peek(limit=bad_limit)
 
     def test_send_to_empty_string(self):
         """send() with empty or whitespace-only recipient raises ValueError."""

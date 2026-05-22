@@ -1457,36 +1457,20 @@ class TestEdgeCases(unittest.TestCase):
         self.assertIsNotNone(row)
         self.assertEqual(row["body"], "stdin body content")
 
-    def test_cmd_peek_negative_limit_clamped(self):
-        """Negative --limit is clamped to default (20)."""
+    def test_cmd_peek_negative_limit_rejected(self):
+        """Negative --limit is rejected."""
         conn = a2a.connect(self.project)
         conn.execute(
             "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
             ("alice", "active", a2a.now(), a2a.now())
         )
-        conn.execute(
-            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
-            ("alice", None, "msg-1", a2a.now())
-        )
-        conn.execute(
-            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
-            ("alice", None, "msg-2", a2a.now() + 1)
-        )
         conn.commit()
         conn.close()
 
-        import io, sys, json
-        old_stdout = sys.stdout
-        sys.stdout = io.StringIO()
-        try:
+        with self.assertRaises(SystemExit):
             a2a.cmd_peek(a2a.argparse.Namespace(
                 project=self.project, limit=-1, json=True
             ))
-            output = sys.stdout.getvalue()
-        finally:
-            sys.stdout = old_stdout
-        data = json.loads(output)
-        self.assertGreaterEqual(len(data), 2, "negative limit should clamp to default 20 (show all messages)")
 
     def test_cmd_wait_ignores_expired_messages(self):
         """cmd_wait does not count TTL-expired messages as unread."""
@@ -1590,32 +1574,24 @@ class TestEdgeCases(unittest.TestCase):
         self.assertIn("body", data[0])
         self.assertEqual(data[0]["body"], "unique-fts-search-term")
 
-    def test_cmd_send_ttl_zero_cli(self):
-        """cmd_send with --ttl 0 through CLI creates immediately-expiring message."""
+    def test_cmd_send_ttl_non_positive_rejected(self):
+        """cmd_send with --ttl 0 or negative is rejected."""
         self._register("alice")
         self._register("bob")
-        args = a2a.argparse.Namespace(
-            project=self.project, to="bob", body="ttl-zero-msg",
-            **{"from_": "alice", "thread": None, "ttl": 0}
-        )
-        a2a.cmd_send(args)
-        # Verify the message was stored with ttl_seconds=0
+        for bad_ttl in (0, -1, -5):
+            args = a2a.argparse.Namespace(
+                project=self.project, to="bob", body=f"ttl-{bad_ttl}-msg",
+                **{"from_": "alice", "thread": None, "ttl": bad_ttl}
+            )
+            with self.assertRaises(SystemExit):
+                a2a.cmd_send(args)
+        # Verify no messages with non-positive TTL were stored
         conn = a2a.connect(self.project)
         row = conn.execute(
-            "SELECT body, ttl_seconds FROM messages WHERE body='ttl-zero-msg'"
-        ).fetchone()
-        conn.close()
-        self.assertIsNotNone(row)
-        self.assertEqual(row["ttl_seconds"], 0)
-        # After cleanup, it should be removed
-        conn = a2a.connect(self.project)
-        a2a.cleanup_expired(conn)
-        conn.commit()
-        remaining = conn.execute(
-            "SELECT COUNT(*) FROM messages WHERE body='ttl-zero-msg'"
+            "SELECT COUNT(*) FROM messages WHERE body LIKE 'ttl-%'"
         ).fetchone()[0]
         conn.close()
-        self.assertEqual(remaining, 0)
+        self.assertEqual(row, 0, "no messages with non-positive TTL should be stored")
 
     def test_register_then_upsert_changes_role(self):
         """Register agent then upsert with different role updates stored fields."""
@@ -1918,25 +1894,18 @@ class TestEdgeCases(unittest.TestCase):
         data = json.loads(output) if output.strip() else []
         self.assertIsInstance(data, list)
 
-    def test_peek_limit_zero_returns_empty(self):
-        """peek with --limit 0 returns no messages."""
+    def test_peek_limit_non_positive_rejected(self):
+        """peek with --limit 0 or negative is rejected."""
         self._register("alice")
         args = a2a.argparse.Namespace(
             project=self.project, to="alice", body="visible?",
             **{"from_": "alice", "thread": None}
         )
         a2a.cmd_send(args)
-        import io, sys, json
-        old_stdout = sys.stdout
-        sys.stdout = io.StringIO()
-        try:
-            a2a.cmd_peek(a2a.argparse.Namespace(
-                project=self.project, limit=0, json=True))
-            output = sys.stdout.getvalue()
-        finally:
-            sys.stdout = old_stdout
-        data = json.loads(output) if output.strip() else []
-        self.assertEqual(len(data), 0, "peek with limit=0 should return empty list")
+        for bad_limit in (0, -1):
+            with self.assertRaises(SystemExit):
+                a2a.cmd_peek(a2a.argparse.Namespace(
+                    project=self.project, limit=bad_limit, json=True))
 
     def test_send_without_from_raises_error(self):
         """send without --from raises SystemExit."""

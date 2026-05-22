@@ -251,14 +251,16 @@ class TestA2AClientAsync(unittest.TestCase):
 
     def test_recv_cleans_up_expired_messages(self):
         """recv() triggers TTL cleanup so expired messages are not returned."""
-        run_async(self.alice.send("bob", "will expire", ttl_seconds=0))
+        run_async(self.alice.send("bob", "will expire", ttl_seconds=1))
+        time.sleep(1.2)
         messages = run_async(self.bob.recv(wait=1))
         bodies = [m["body"] for m in messages]
         self.assertNotIn("will expire", bodies)
 
     def test_peek_cleans_up_expired_messages(self):
         """peek() triggers TTL cleanup so expired messages don't appear."""
-        run_async(self.alice.send("bob", "ttl will vanish", ttl_seconds=0))
+        run_async(self.alice.send("bob", "ttl will vanish", ttl_seconds=1))
+        time.sleep(1.2)
         messages = run_async(self.bob.peek(limit=10))
         bodies = [m["body"] for m in messages]
         self.assertNotIn("ttl will vanish", bodies)
@@ -310,11 +312,12 @@ class TestA2AClientAsync(unittest.TestCase):
         self.assertEqual(len(messages), 0)
         self.assertLess(elapsed, 2, "recv with wait=0 should not block")
 
-    def test_peek_limit_zero_returns_empty(self):
-        """peek(limit=0) returns empty list."""
+    def test_peek_limit_non_positive_rejected(self):
+        """peek(limit <= 0) raises ValueError."""
         run_async(self.alice.send("bob", "test message"))
-        messages = run_async(self.alice.peek(limit=0))
-        self.assertEqual(messages, [])
+        for bad_limit in (0, -1):
+            with self.assertRaises(ValueError):
+                run_async(self.alice.peek(limit=bad_limit))
 
     def test_recv_negative_wait_returns_immediately(self):
         """recv(wait=-1) returns immediately without blocking."""
