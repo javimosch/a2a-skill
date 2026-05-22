@@ -468,10 +468,10 @@ func TestWaitTimeout(t *testing.T) {
 	c.AgentID = "lonely"
 	c.Register("waiting", "", "", 0, false)
 
-	// Wait with 0 count should return immediately
-	n, err := c.Wait(0, 10)
+	// Wait with 1 count on an agent with no messages should timeout
+	n, err := c.Wait(1, 1)
 	if err != nil {
-		t.Fatalf("Wait(0, 10): %v", err)
+		t.Fatalf("Wait(1, 1): %v", err)
 	}
 	_ = n
 }

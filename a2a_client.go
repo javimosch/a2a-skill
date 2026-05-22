@@ -90,6 +90,9 @@ func (c *Client) connect() (*sql.DB, error) {
 // Send sends a message to a peer (or broadcast if recipient is "all"/"*"/"broadcast").
 // threadID may be empty string for no thread. ttlSeconds may be nil for no expiry.
 func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, error) {
+	if strings.TrimSpace(to) == "" {
+		return 0, fmt.Errorf("recipient must not be empty")
+	}
 	db, err := c.connect()
 	if err != nil {
 		return 0, err
@@ -242,6 +245,9 @@ func (c *Client) RecvSimple(wait int, unreadOnly, includeSelf bool, limit int) (
 
 // Peek views recent messages without marking read. Calls CleanupExpired first.
 func (c *Client) Peek(limit int) ([]Message, error) {
+	if limit <= 0 {
+		return nil, fmt.Errorf("limit must be a positive integer")
+	}
 	c.CleanupExpired()
 
 	db, err := c.connect()
@@ -361,6 +367,9 @@ func (c *Client) GetStatus(agentID string) (string, error) {
 
 // Search searches messages by content (LIKE-based substring search).
 func (c *Client) Search(query string, limit int) ([]Message, error) {
+	if strings.TrimSpace(query) == "" {
+		return nil, fmt.Errorf("search query must not be empty")
+	}
 	db, err := c.connect()
 	if err != nil {
 		return nil, err
@@ -670,6 +679,9 @@ func (c *Client) Clear() error {
 // Wait blocks until at least count unread messages exist for this agent,
 // or until timeout seconds elapse. Returns the number of unread messages found.
 func (c *Client) Wait(count int, timeoutSec float64) (int, error) {
+	if count <= 0 {
+		return 0, fmt.Errorf("count must be a positive integer")
+	}
 	deadline := time.Now().Add(time.Duration(timeoutSec * float64(time.Second)))
 	pollInterval := 500 * time.Millisecond
 	for {
