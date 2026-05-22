@@ -297,3 +297,36 @@ To prevent artifacts from silently failing, add a spawn-health check: after
 spawning, poll `a2a list --json` and verify the agent registered within 30s.
 If not, read the agent's log file and report the error.
 
+### ddgr / DuckDuckGo blocks automated requests (HTTP 202)
+
+ddgr (DuckDuckGo CLI search) returns `HTTP Error 202: Accepted` with empty
+results in environments where DuckDuckGo has flagged the IP for automated
+querying. This is a server-side block, not a client configuration issue:
+
+```
+$ ddgr --json -n 3 "test"
+[ERROR] HTTP Error 202: Accepted
+[]
+```
+
+All artifacts that use `ddgr` for web research (web-research-report,
+news-briefing, competitive-analysis, a2a-landscape, weekly-digest) will
+return empty results when ddgr is blocked. The agents attempt the search,
+get back empty JSON, and have nothing to work with.
+
+This typically happens in:
+- Cloud/VM environments with datacenter IP ranges
+- Environments behind VPNs or proxy services
+- CI/CD runners that share IPs
+
+**Diagnosis:** Run `ddgr --json -n 1 "test"` directly. If it returns
+`HTTP Error 202`, ddgr is blocked.
+
+**Mitigations (none guaranteed):**
+- Use `-t w` (past week) instead of `-t m` to reduce query scope
+- Increase `--num 3` to avoid hitting rate limits too fast
+- Run from a residential IP or use a different search tool
+- The build script should detect empty ddgr results and fall back gracefully
+  (as the weekly-digest build script does)
+
+### API key exhaustion silently kills agent spawns
