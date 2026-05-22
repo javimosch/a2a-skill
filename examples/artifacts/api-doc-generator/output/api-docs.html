@@ -1,0 +1,365 @@
+<h1 id="github-rest-api-reference-guide">GitHub REST API Reference
+Guide</h1>
+<blockquote>
+<p>A comprehensive reference for the GitHub REST API (v3). Generated:
+2026-05-22 19:30 UTC</p>
+</blockquote>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#overview">Overview</a></li>
+<li><a href="#authentication">Authentication</a></li>
+<li><a href="#rate-limits">Rate Limits</a></li>
+<li><a href="#pagination">Pagination</a></li>
+<li><a href="#endpoint-reference">Endpoint Reference</a></li>
+<li><a href="#error-handling">Error Handling</a></li>
+<li><a href="#best-practices">Best Practices</a></li>
+</ol>
+<hr />
+<h2 id="overview">Overview</h2>
+<ul>
+<li><strong>Base URL:</strong> <code>https://api.github.com</code></li>
+<li><strong>Version:</strong> v3 (media type:
+application/vnd.github.v3+json)</li>
+<li><strong>Encoding:</strong> All responses are in JSON format</li>
+<li><strong>Dates:</strong> All timestamps are in ISO 8601 format
+(UTC)</li>
+</ul>
+<hr />
+<h2 id="authentication">Authentication</h2>
+<p>Token-based (Authorization: Bearer <token>), OAuth2, and Basic
+Auth</p>
+<h3 id="token-based-authentication">Token-based Authentication</h3>
+<pre><code>Authorization: Bearer ghp_xxxxxxxxxxxxxxxxxxxx</code></pre>
+<p>Tokens can be created in GitHub Settings &gt; Developer settings &gt;
+Personal access tokens. Fine-grained tokens allow scoped access to
+specific repositories and permissions.</p>
+<h3 id="oauth2">OAuth2</h3>
+<p>For applications acting on behalf of users, use the OAuth2 web
+application flow: 1. Redirect user to
+<code>https://github.com/login/oauth/authorize</code> 2. Receive
+authorization code callback 3. Exchange code for access token at
+<code>POST https://github.com/login/oauth/access_token</code></p>
+<hr />
+<h2 id="rate-limits">Rate Limits</h2>
+<p>Unauthenticated: 60 requests/hour. Authenticated: 5,000
+requests/hour.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Authentication</th>
+<th>Limit</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Unauthenticated</td>
+<td>60 requests/hour</td>
+</tr>
+<tr class="even">
+<td>Authenticated</td>
+<td>5,000 requests/hour</td>
+</tr>
+<tr class="odd">
+<td>GitHub App (installation)</td>
+<td>5,000 requests/hour (scaled)</td>
+</tr>
+</tbody>
+</table>
+<p>Check your rate limit status:</p>
+<pre><code>GET /rate_limit
+Response includes: core, search, graphql limits</code></pre>
+<p>Rate limit headers are returned in every response: -
+<code>X-RateLimit-Limit</code> - <code>X-RateLimit-Remaining</code> -
+<code>X-RateLimit-Reset</code> (Unix timestamp)</p>
+<hr />
+<h2 id="pagination">Pagination</h2>
+<p>Link header-based, 100 items per page max.</p>
+<p>Paginated responses include a <code>Link</code> header with
+<code>rel</code> relations: - <code>rel="next"</code> — the next page -
+<code>rel="last"</code> — the last page - <code>rel="first"</code> — the
+first page - <code>rel="prev"</code> — the previous page</p>
+<p>Use the <code>per_page</code> parameter to control page size (max
+100, default 30). Use the <code>page</code> parameter to navigate
+pages.</p>
+<hr />
+<h2 id="endpoint-reference">Endpoint Reference</h2>
+<table>
+<colgroup>
+<col style="width: 24%" />
+<col style="width: 19%" />
+<col style="width: 24%" />
+<col style="width: 31%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Category</th>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Repos</td>
+<td><code>GET</code></td>
+<td><code>/repos/{owner}/{repo}</code></td>
+<td>Get a repository</td>
+</tr>
+<tr class="even">
+<td>Repos</td>
+<td><code>POST</code></td>
+<td><code>/user/repos</code></td>
+<td>Create a repository</td>
+</tr>
+<tr class="odd">
+<td>Repos</td>
+<td><code>PATCH</code></td>
+<td><code>/repos/{owner}/{repo}</code></td>
+<td>Update a repository</td>
+</tr>
+<tr class="even">
+<td>Repos</td>
+<td><code>DELETE</code></td>
+<td><code>/repos/{owner}/{repo}</code></td>
+<td>Delete a repository</td>
+</tr>
+<tr class="odd">
+<td>Issues</td>
+<td><code>GET</code></td>
+<td><code>/repos/{owner}/{repo}/issues</code></td>
+<td>List repository issues</td>
+</tr>
+<tr class="even">
+<td>Issues</td>
+<td><code>POST</code></td>
+<td><code>/repos/{owner}/{repo}/issues</code></td>
+<td>Create an issue</td>
+</tr>
+<tr class="odd">
+<td>Issues</td>
+<td><code>PATCH</code></td>
+<td><code>/repos/{owner}/{repo}/issues/{number}</code></td>
+<td>Update an issue</td>
+</tr>
+<tr class="even">
+<td>Pulls</td>
+<td><code>GET</code></td>
+<td><code>/repos/{owner}/{repo}/pulls</code></td>
+<td>List pull requests</td>
+</tr>
+<tr class="odd">
+<td>Pulls</td>
+<td><code>POST</code></td>
+<td><code>/repos/{owner}/{repo}/pulls</code></td>
+<td>Create a pull request</td>
+</tr>
+<tr class="even">
+<td>Pulls</td>
+<td><code>GET</code></td>
+<td><code>/repos/{owner}/{repo}/pulls/{number}</code></td>
+<td>Get a pull request</td>
+</tr>
+<tr class="odd">
+<td>Pulls</td>
+<td><code>PUT</code></td>
+<td><code>/repos/{owner}/{repo}/pulls/{number}/merge</code></td>
+<td>Merge a pull request</td>
+</tr>
+<tr class="even">
+<td>Users</td>
+<td><code>GET</code></td>
+<td><code>/users/{username}</code></td>
+<td>Get a user</td>
+</tr>
+<tr class="odd">
+<td>Users</td>
+<td><code>GET</code></td>
+<td><code>/user</code></td>
+<td>Get the authenticated user</td>
+</tr>
+<tr class="even">
+<td>Search</td>
+<td><code>GET</code></td>
+<td><code>/search/repositories?q={query}</code></td>
+<td>Search repositories</td>
+</tr>
+<tr class="odd">
+<td>Search</td>
+<td><code>GET</code></td>
+<td><code>/search/code?q={query}</code></td>
+<td>Search code</td>
+</tr>
+<tr class="even">
+<td>Search</td>
+<td><code>GET</code></td>
+<td><code>/search/issues?q={query}</code></td>
+<td>Search issues and pull requests</td>
+</tr>
+<tr class="odd">
+<td>Activity</td>
+<td><code>GET</code></td>
+<td><code>/repos/{owner}/{repo}/commits</code></td>
+<td>List commits</td>
+</tr>
+<tr class="even">
+<td>Activity</td>
+<td><code>GET</code></td>
+<td><code>/repos/{owner}/{repo}/releases</code></td>
+<td>List releases</td>
+</tr>
+<tr class="odd">
+<td>Activity</td>
+<td><code>GET</code></td>
+<td><code>/repos/{owner}/{repo}/forks</code></td>
+<td>List forks</td>
+</tr>
+<tr class="even">
+<td>Activity</td>
+<td><code>POST</code></td>
+<td><code>/repos/{owner}/{repo}/forks</code></td>
+<td>Create a fork</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="repositories">Repositories</h3>
+<p>The Repos API lets you manage repositories on GitHub.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get a repository</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-H</span> <span class="st">&#39;Authorization: Bearer TOKEN&#39;</span> <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  https://api.github.com/repos/octocat/Hello-World</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a repository</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST <span class="at">-H</span> <span class="st">&#39;Authorization: Bearer TOKEN&#39;</span> <span class="dt">\</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&#39;Content-Type: application/json&#39;</span> <span class="dt">\</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&#39;{&quot;name&quot;:&quot;my-new-repo&quot;,&quot;description&quot;:&quot;My new repo&quot;}&#39;</span> <span class="dt">\</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  https://api.github.com/user/repos</span></code></pre></div>
+<h3 id="issues">Issues</h3>
+<p>The Issues API enables issue tracking per repository.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># List issues</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-H</span> <span class="st">&#39;Authorization: Bearer TOKEN&#39;</span> <span class="dt">\</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  https://api.github.com/repos/octocat/Hello-World/issues</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Create an issue</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST <span class="at">-H</span> <span class="st">&#39;Authorization: Bearer TOKEN&#39;</span> <span class="dt">\</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&#39;Content-Type: application/json&#39;</span> <span class="dt">\</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&#39;{&quot;title&quot;:&quot;Bug found&quot;,&quot;body&quot;:&quot;Description of the bug&quot;}&#39;</span> <span class="dt">\</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  https://api.github.com/repos/octocat/Hello-World/issues</span></code></pre></div>
+<h3 id="pull-requests">Pull Requests</h3>
+<p>The Pulls API supports creating, reviewing, and merging pull
+requests.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># List pull requests</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-H</span> <span class="st">&#39;Authorization: Bearer TOKEN&#39;</span> <span class="dt">\</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  https://api.github.com/repos/octocat/Hello-World/pulls</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a pull request</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST <span class="at">-H</span> <span class="st">&#39;Authorization: Bearer TOKEN&#39;</span> <span class="dt">\</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&#39;Content-Type: application/json&#39;</span> <span class="dt">\</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&#39;{&quot;title&quot;:&quot;My PR&quot;,&quot;head&quot;:&quot;feature-branch&quot;,&quot;base&quot;:&quot;main&quot;}&#39;</span> <span class="dt">\</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  https://api.github.com/repos/octocat/Hello-World/pulls</span></code></pre></div>
+<h3 id="users">Users</h3>
+<p>The Users API provides access to user profiles and settings.</p>
+<h3 id="search">Search</h3>
+<p>The Search API provides advanced search across repositories, code,
+issues, and users.</p>
+<hr />
+<h2 id="error-handling">Error Handling</h2>
+<table>
+<colgroup>
+<col style="width: 59%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Status Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>200 OK</code></td>
+<td>Request succeeded</td>
+</tr>
+<tr class="even">
+<td><code>201 Created</code></td>
+<td>Resource created successfully</td>
+</tr>
+<tr class="odd">
+<td><code>204 No Content</code></td>
+<td>Request succeeded (no response body)</td>
+</tr>
+<tr class="even">
+<td><code>301 Moved</code></td>
+<td>Resource has moved (follow <code>Location</code> header)</td>
+</tr>
+<tr class="odd">
+<td><code>304 Not Modified</code></td>
+<td>Resource not modified (use conditional requests)</td>
+</tr>
+<tr class="even">
+<td><code>400 Bad Request</code></td>
+<td>Invalid request body or parameters</td>
+</tr>
+<tr class="odd">
+<td><code>401 Unauthorized</code></td>
+<td>Missing or invalid authentication</td>
+</tr>
+<tr class="even">
+<td><code>403 Forbidden</code></td>
+<td>Insufficient permissions or rate limited</td>
+</tr>
+<tr class="odd">
+<td><code>404 Not Found</code></td>
+<td>Resource does not exist</td>
+</tr>
+<tr class="even">
+<td><code>409 Conflict</code></td>
+<td>Conflict with current state (e.g., merge conflict)</td>
+</tr>
+<tr class="odd">
+<td><code>422 Unprocessable Entity</code></td>
+<td>Validation errors</td>
+</tr>
+<tr class="even">
+<td><code>429 Too Many Requests</code></td>
+<td>Rate limit exceeded</td>
+</tr>
+</tbody>
+</table>
+<p>Error responses include a JSON body with <code>message</code> and
+<code>documentation_url</code> fields.</p>
+<hr />
+<h2 id="best-practices">Best Practices</h2>
+<ol type="1">
+<li><p><strong>Use Conditional Requests</strong> — Include
+<code>If-None-Match</code> (ETag) and <code>If-Modified-Since</code>
+headers to avoid re-downloading unchanged data. A
+<code>304 Not Modified</code> response does not count against your rate
+limit.</p></li>
+<li><p><strong>Include Authentication</strong> — Authenticated requests
+get 83x higher rate limits. Use token-based auth for scripts and OAuth2
+for user-facing apps.</p></li>
+<li><p><strong>Handle Pagination</strong> — Always check the
+<code>Link</code> header and handle pagination for endpoints that return
+lists of resources.</p></li>
+<li><p><strong>Use the Correct Media Type</strong> — Send
+<code>Accept: application/vnd.github.v3+json</code> for the stable v3
+API.</p></li>
+<li><p><strong>Retry on 429/5xx</strong> — Implement exponential backoff
+with <code>Retry-After</code> headers. The
+<code>X-RateLimit-Reset</code> header tells you when your limit
+resets.</p></li>
+<li><p><strong>Use GraphQL for Complex Queries</strong> — For fetching
+related data in a single request, the GitHub GraphQL API (v4) is more
+efficient than multiple REST calls.</p></li>
+<li><p><strong>Watch for Breaking Changes</strong> — GitHub announces
+API changes via the <a
+href="https://developer.github.com/changes/">developer blog</a> and the
+<code>Sunset</code> HTTP header on deprecated endpoints.</p></li>
+</ol>
+<hr />
+<p><em>Documentation generated by a2a api-doc-generator artifact using
+live ddgr web search.</em></p>
