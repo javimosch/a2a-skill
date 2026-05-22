@@ -291,6 +291,36 @@ def extract_first_code_block(body: str) -> str:
     return strip_code_fence(body)
 
 
+def send_task(a2a_bin: str, project: str, agent_id: str, body: str,
+              timeout: int = 30) -> bool:
+    """Send a message body via stdin to avoid shell quoting issues.
+
+    Uses subprocess directly (not run_a2a) to pass the body through stdin
+    rather than embedding it in a shell command, which would break on any
+    single quotes or double quotes in the body text.
+
+    Returns True on success, False on failure.
+    """
+    import subprocess
+    env = os.environ.copy()
+    env["A2A_PROJECT"] = project
+    try:
+        proc = subprocess.run(
+            [a2a_bin, "send", agent_id, "-", "--from", "collector"],
+            input=body.encode(), capture_output=True, timeout=timeout, env=env,
+        )
+        if proc.returncode != 0:
+            print(f"[send_task] FAILED: a2a send {agent_id} (exit {proc.returncode}): {proc.stderr.decode()}", file=sys.stderr)
+            return False
+        return True
+    except subprocess.TimeoutExpired:
+        print(f"[send_task] TIMEOUT: a2a send {agent_id} after {timeout}s", file=sys.stderr)
+        return False
+    except FileNotFoundError:
+        print(f"[send_task] BINARY NOT FOUND: {a2a_bin}", file=sys.stderr)
+        return False
+
+
 def wait_for_messages(a2a_bin: str, project: str, agent_id: str,
                      expected_senders: set, timeout: int = 120) -> dict:
     """Wait for messages from expected senders. Returns {sender: body}."""

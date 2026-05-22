@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Add artifacts dir to path
 sys.path.insert(0, str(Path(__file__).parent / "examples" / "artifacts"))
-from _util import strip_html_preamble, strip_code_fence, extract_first_code_block, make_kit
+from _util import strip_html_preamble, strip_code_fence, extract_first_code_block, make_kit, send_task
 
 
 class TestStripHtmlPreamble(unittest.TestCase):
@@ -203,6 +203,26 @@ class TestMakeKit(unittest.TestCase):
         """Kit prompt includes the status done example."""
         kit = make_kit("test-agent", "tester", "do the thing", "myproject")
         self.assertIn("status done", kit)
+
+
+class TestSendTask(unittest.TestCase):
+    """Test the send_task() helper."""
+
+    def test_send_task_exists_and_callable(self):
+        """send_task is a callable function with the expected signature."""
+        self.assertTrue(callable(send_task))
+        import inspect
+        sig = inspect.signature(send_task)
+        params = list(sig.parameters.keys())
+        self.assertIn("a2a_bin", params)
+        self.assertIn("agent_id", params)
+        self.assertIn("body", params)
+        self.assertIn("project", params)
+
+    def test_send_task_fails_with_missing_bin(self):
+        """send_task returns False when a2a binary doesn't exist."""
+        result = send_task("/nonexistent/a2a", "test-proj", "test-agent", "hello world")
+        self.assertFalse(result)
 
 
 if __name__ == "__main__":
