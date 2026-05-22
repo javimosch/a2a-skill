@@ -1,6 +1,50 @@
-[11:55:02] #1 collector -> fetcher
-    Your task: You are the data fetcher. Generate interesting sample CSV data.\n\nSteps:\n1. Think of a real-world dataset to generate — examples:\n   - Server CPU temperature (°C) every 30 minutes over 48 hours\n   - Website response times (ms) over a 24-hour period\n   - Daily active users of an app over 30 days\n   - Stock price (USD) over 90 trading days\n2. Generate 20-30 data points as CSV with headers\n3. Add realistic variation — include trends, spikes, and noise\n4. Send the CSV data to the analyst:\n   a2a send analyst DATA_START\\n<your CSV data>\\nDATA_END --from fetcher\n\nExample CSV format:\ntimestamp,value\n0,35.2\n1,36.8\n...\n\nThe DATA must be between DATA_START and DATA_END markers.
-[11:55:02] #2 collector -> analyst
-    Your task: You are the data analyst. Wait for the fetcher to send you CSV data.\n\nSteps:\n1. Receive the fetcher's message:\n   a2a recv --as analyst --wait 60\n2. Parse the CSV data (timestamp,value format)\n3. Compute these statistics:\n   - Number of data points\n   - Minimum, maximum, mean, median\n   - Trend direction (increasing, decreasing, or stable)\n   - Volatility (standard deviation of changes between consecutive points)\n4. Send the analysis + the raw values array to the plotter:\n   a2a send plotter ANALYSIS_START\\n<your analysis as markdown>\\nVALUES:[val1,val2,...]\\nANALYSIS_END --from analyst\n\nThe VALUES must be a JSON array of floats that the plotter can use.
-[11:55:02] #3 collector -> plotter
-    Your task: You are the chart plotter. Wait for the analyst to send you data.\n\nSteps:\n1. Receive the analyst's message:\n   a2a recv --as plotter --wait 60\n2. Extract the VALUES array and the analysis from the message\n3. Generate an ASCII line chart from the values (use characters like ▁▂▃▄▅▆▇█ or |/-\\)\n4. Label the chart with min/max values and a title\n5. Broadcast the complete output:\n   a2a send all CHART_START\\n<your formatted chart with analysis>\\nCHART_END --from plotter\n\nThe output must be between CHART_START and CHART_END markers.
+[12:03:00] #1 collector -> fetcher
+    Your task: You are the data fetcher. Generate interesting sample CSV data.
+    
+    Steps:
+    1. Think of a real-world dataset to generate — examples:
+       - Server CPU temperature (°C) every 30 minutes over 48 hours
+       - Website response times (ms) over a 24-hour period
+       - Daily active users of an app over 30 days
+       - Stock price (USD) over 90 trading days
+    2. Generate 20-30 data points as CSV with headers
+    3. Add realistic variation — include trends, spikes, and noise
+    4. Send the CSV data to the analyst:
+       a2a send analyst DATA_START\n<your CSV data>\nDATA_END --from fetcher
+    
+    Example CSV format:
+    timestamp,value
+    0,35.2
+    1,36.8
+    ...
+    
+    The DATA must be between DATA_START and DATA_END markers.
+[12:03:00] #2 collector -> analyst
+    Your task: You are the data analyst. Wait for the fetcher to send you CSV data.
+    
+    Steps:
+    1. Receive the fetcher's message:
+       a2a recv --as analyst --wait 60
+    2. Parse the CSV data (timestamp,value format)
+    3. Compute these statistics:
+       - Number of data points
+       - Minimum, maximum, mean, median
+       - Trend direction (increasing, decreasing, or stable)
+       - Volatility (standard deviation of changes between consecutive points)
+    4. Send the analysis + the raw values array to the plotter:
+       a2a send plotter ANALYSIS_START\n<your analysis as markdown>\nVALUES:[val1,val2,...]\nANALYSIS_END --from analyst
+    
+    The VALUES must be a JSON array of floats that the plotter can use.
+[12:03:00] #3 collector -> plotter
+    Your task: You are the chart plotter. Wait for the analyst to send you data.
+    
+    Steps:
+    1. Receive the analyst's message:
+       a2a recv --as plotter --wait 60
+    2. Extract the VALUES array and the analysis from the message
+    3. Generate an ASCII line chart from the values (use characters like |/-\\)
+    4. Label the chart with min/max values and a title
+    5. Broadcast the complete output:
+       a2a send all CHART_START\n<your formatted chart with analysis>\nCHART_END --from plotter
+    
+    The output must be between CHART_START and CHART_END markers.
