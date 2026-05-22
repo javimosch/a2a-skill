@@ -4,7 +4,7 @@
 set -eu
 
 GO_A2A="${1:-./a2a}"
-PY_A2A="${2:-$(command -v a2a 2>/dev/null || echo '/home/jarancibia/ai/a2a-skill/a2a')}"
+PY_A2A="${2:-$(command -v a2a 2>/dev/null || echo './a2a.py')}"
 PROJECT="json-verify-$$"
 export A2A_PROJECT="$PROJECT"
 
