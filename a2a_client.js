@@ -18,6 +18,12 @@ class A2AClient {
    * @param {string} agentId  - This agent's ID
    */
   constructor(project, agentId) {
+    if (!project || !project.trim()) {
+      throw new Error('project must not be empty');
+    }
+    if (!agentId || !agentId.trim()) {
+      throw new Error('agent_id must not be empty');
+    }
     this.project = project;
     this.agentId = agentId;
     this.dbDir = path.join(os.homedir(), '.a2a', project);
@@ -46,6 +52,9 @@ class A2AClient {
    * @returns {Promise<number>} Message ID
    */
   async send(to, message, ttlSeconds = null) {
+    if (!to || !to.trim()) {
+      throw new Error('recipient must not be empty');
+    }
     const db = this._connect();
     const recipient = ['all', '*', 'broadcast'].includes(to.toLowerCase()) ? null : to;
     const now = Date.now() / 1000;
@@ -124,6 +133,9 @@ class A2AClient {
    * @returns {Promise<Array>}
    */
   async peek(limit = 20) {
+    if (limit <= 0) {
+      throw new Error('limit must be a positive integer');
+    }
     const db = this._connect();
     const rows = db.prepare(
       'SELECT id, sender, recipient, body, thread_id, created_at FROM messages ORDER BY created_at DESC LIMIT ?'
@@ -150,6 +162,10 @@ class A2AClient {
    * @param {string} status
    */
   async setStatus(status) {
+    const validStatuses = ['active', 'idle', 'done', 'blocked'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`invalid status '${status}'. Must be one of ${validStatuses.join(', ')}`);
+    }
     const db = this._connect();
     db.prepare('UPDATE agents SET status=?, last_seen=? WHERE id=?').run(
       status, Date.now() / 1000, this.agentId
@@ -193,6 +209,9 @@ class A2AClient {
    * @returns {Promise<Array>}
    */
   async search(query, limit = 50) {
+    if (!query || !query.trim()) {
+      throw new Error('search query must not be empty');
+    }
     const db = this._connect();
     const rows = db.prepare(
       'SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE LOWER(body) LIKE ? ORDER BY created_at DESC LIMIT ?'
