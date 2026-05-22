@@ -62,20 +62,22 @@ MSG_COLS = "id, sender, recipient, body, thread_id, created_at"
 MSG_COLS_M = "m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at"
 
 def project_name(explicit: str | None) -> str:
-    if explicit:
+    if explicit is not None:
+        if not explicit or not explicit.strip():
+            die("project name must not be empty")
         _validate_project_name(explicit)
         return explicit
     env = os.environ.get("A2A_PROJECT")
     if env:
         _validate_project_name(env)
         return env
-    return Path.cwd().name or "default"
+    name = Path.cwd().name or "default"
+    _validate_project_name(name)
+    return name
 
 
 def _validate_project_name(name: str) -> None:
     """Reject project names that could cause path traversal or directory escape."""
-    if not name or not name.strip():
-        die("project name must not be empty")
     if "/" in name or "\\" in name or name[0] == ".":
         die(f"invalid project name {name!r} — must not contain path separators or start with '.'")
 
@@ -564,6 +566,7 @@ def cmd_wait(args) -> None:
     deadline = now() + args.timeout
     while True:
         cleanup_expired(conn)
+        conn.commit()
         rows = _fetch_messages(conn, agent, unread_only=True, since=None,
                                limit=None, mark_read=False)
         if len(rows) >= args.count:
