@@ -312,9 +312,17 @@ func cmdSend() {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a send <to> <body> --from <id> [--thread T] [--ttl N] [--json]")
 		os.Exit(1)
 	}
+	if strings.TrimSpace(from) == "" {
+		fmt.Fprintln(os.Stderr, "a2a: --from agent id must not be empty")
+		os.Exit(1)
+	}
 
 	to := args[0]
 	body := args[1]
+	if strings.TrimSpace(to) == "" {
+		fmt.Fprintln(os.Stderr, "a2a: recipient must not be empty")
+		os.Exit(1)
+	}
 	if body == "-" {
 		stdin, _ := os.ReadFile(os.Stdin.Name())
 		body = strings.TrimSpace(string(stdin))
@@ -516,7 +524,10 @@ func cmdSearch() {
 		os.Exit(1)
 	}
 	query := args[0]
-
+	if strings.TrimSpace(query) == "" {
+		fmt.Fprintln(os.Stderr, "a2a: search query is empty — provide a keyword to search for")
+		os.Exit(1)
+	}
 	c := newClient("")
 	var msgs []a2a.Message
 	var err error
