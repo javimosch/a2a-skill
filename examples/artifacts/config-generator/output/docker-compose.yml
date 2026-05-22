@@ -1,72 +1,79 @@
+version: "3.8"
+
 services:
   db:
     image: postgres:16-alpine
-    container_name: db
+    container_name: a2a-db
     restart: unless-stopped
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d:ro
-    env_file: ./env/db.env
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
     networks:
       - appnet
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \${DB_USER:-appuser} -d \${DB_NAME:-appdb}"]
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
 
   app:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
-    image: myapp:latest
-    container_name: app
+    build: ./app
+    container_name: a2a-app
     restart: unless-stopped
-    user: node
-    working_dir: /app
-    volumes:
-      - ./app:/app
-      - /app/node_modules
-    env_file: ./env/app.env
-    networks:
-      - appnet
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - "3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+    env_file: .env
+    volumes:
+      - ./app:/app
+      - /app/node_modules
+    networks:
+      - appnet
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 15s
 
   nginx:
     image: nginx:1.25-alpine
-    container_name: nginx
+    container_name: a2a-nginx
     restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./certbot/www:/var/www/certbot:ro
-      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
     networks:
       - appnet
-    depends_on:
-      app:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD", "nginx", "-t"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
       interval: 30s
       timeout: 5s
       retries: 3
 
-volumes:
-  pgdata:
-
 networks:
   appnet:
     driver: bridge
+
+volumes:
+  pgdata:
