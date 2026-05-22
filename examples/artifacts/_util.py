@@ -92,8 +92,14 @@ def run_a2a_json(cmd: str, a2a_bin: str, project: str) -> list | dict:
 
 
 def spawn_agent(spawn_bin: str, cli: str, agent_id: str, kit_path: str,
-                project: str | None = None, model: str | None = None) -> int | None:
-    """Spawn a background AI CLI session via a2a-spawn. Returns PID."""
+                project: str | None = None, model: str | None = None,
+                health_timeout: int = 30, a2a_bin: str | None = None) -> int | None:
+    """Spawn a background AI CLI session via a2a-spawn. Returns PID.
+
+    Checks agent health by verifying the agent registers on the bus within
+    health_timeout seconds. Returns None if the agent fails to register.
+    Requires a2a_bin for health checks; falls back to PATH lookup.
+    """
     cmd = [spawn_bin, "--cli", cli, "--id", agent_id, "--kit-file", kit_path]
     if model:
         cmd.extend(["--model", model])
@@ -111,6 +117,11 @@ def spawn_agent(spawn_bin: str, cli: str, agent_id: str, kit_path: str,
         pid_str = proc.stdout.readline().decode().strip()
         pid = int(pid_str)
         print(f"[spawn] {agent_id} -> PID {pid}")
+        # Health check: verify agent registers on the bus within health_timeout
+        if project and health_timeout > 0:
+            if not _check_agent_health(agent_id, pid, project, health_timeout, a2a_bin=a2a_bin):
+                print(f"[spawn] {agent_id} health check failed — returning None", file=sys.stderr)
+                return None
         return pid
     except (ValueError, AttributeError):
         print(f"[spawn] Bad PID from {agent_id}", file=sys.stderr)
@@ -128,6 +139,58 @@ def _log_spawn_stderr(proc: subprocess.Popen, agent_id: str) -> None:
                 print(f"[spawn:{agent_id}] {line}", file=sys.stderr)
     except Exception as exc:
         print(f"[spawn:{agent_id}] Could not read stderr: {exc}", file=sys.stderr)
+
+
+def _check_agent_health(agent_id: str, pid: int, project: str, timeout: int = 30,
+                        a2a_bin: str | None = None) -> bool:
+    """Poll the a2a bus to verify an agent registered within timeout seconds.
+
+    Checks the agent's log file first for API errors, then polls a2a list.
+    Returns True if healthy, False otherwise.
+    """
+    import time as _time
+    deadline = _time.time() + timeout
+    log_path = f"/tmp/a2a-{agent_id}.log"
+
+    # Quick check: does the agent log already show an API error?
+    try:
+        with open(log_path) as f:
+            log_contents = f.read()
+        for marker in ["Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
+                        "401", "402", "429", "403"]:
+            if marker in log_contents:
+                print(f"[spawn] AGENT FAILED: {agent_id} log shows '{marker}'", file=sys.stderr)
+                return False
+    except (FileNotFoundError, OSError):
+        pass  # Log may not exist yet
+
+    # Poll a2a list until agent appears or timeout
+    a2a_cmd = a2a_bin or "a2a"
+    while _time.time() < deadline:
+        try:
+            args = [a2a_cmd, "list", "--json", "--project", project]
+            result = subprocess.run(
+                args, capture_output=True, text=True, timeout=10,
+            )
+            if result.returncode == 0 and result.stdout:
+                import json as _json
+                agents = _json.loads(result.stdout)
+                for ag in agents:
+                    if ag.get("id") == agent_id:
+                        print(f"[spawn] HEALTH OK: {agent_id} registered on bus")
+                        return True
+        except Exception:
+            pass
+        _time.sleep(3)
+
+    # Timeout — agent never registered. Read log to help debug.
+    try:
+        with open(log_path) as f:
+            last_lines = "".join(f.readlines()[-20:])
+        print(f"[spawn] HEALTH FAILED: {agent_id} not on bus after {timeout}s. Last log lines:\n{last_lines}", file=sys.stderr)
+    except (FileNotFoundError, OSError) as exc:
+        print(f"[spawn] HEALTH FAILED: {agent_id} not on bus after {timeout}s (log: {exc})", file=sys.stderr)
+    return False
 
 
 def make_kit(agent_id: str, role: str, instructions: str, project: str) -> str:

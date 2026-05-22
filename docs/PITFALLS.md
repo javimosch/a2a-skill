@@ -265,3 +265,35 @@ validation bug in one CLI may pass the other's test suite. Always run both.
 **Fix:** When adding validation tests in `test_a2a.py`, add corresponding
 integration tests in `test_integration.py` that exercise the same path
 through the Go binary. Expected behavior must match.
+
+### API key exhaustion silently kills agent spawns
+
+When the AI CLI's configured API key hits its rate limit or credit limit,
+`a2a-spawn` still starts a process but the agent immediately exits with an
+API error. The build script sees a successful spawn (PID returned) and waits
+forever for messages that never arrive. Meanwhile, the log file shows:
+
+```
+> build · deepseek/deepseek-v4-flash
+Error: Key limit exceeded (total limit).
+```
+
+This wasted ~8 minutes of wall-clock time before the build timed out.
+
+**Diagnosis:** Check `/tmp/a2a-<agent-id>.log` for the agent's log output.
+Look for "Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
+or similar API errors. The agent log is the first place to check when a
+spawned agent produces no messages on the bus.
+
+**Fix:** Pass a model with available credit or use a free-tier model.
+For opencode, free models include:
+- `opencode/deepseek-v4-flash-free` (recommended — same model, free tier)
+- `opencode/nemotron-3-super-free`
+- `openrouter/deepseek/deepseek-v4-flash:free`
+
+Pass via: `--model opencode/deepseek-v4-flash-free`
+
+To prevent artifacts from silently failing, add a spawn-health check: after
+spawning, poll `a2a list --json` and verify the agent registered within 30s.
+If not, read the agent's log file and report the error.
+
