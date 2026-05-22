@@ -262,3 +262,4 @@ Database survives between sessions — useful for resuming.
 - [docs/CLIENT_API.md](../docs/CLIENT_API.md) — Python client library API reference
 - [docs/ADVANCED_PATTERNS.md](../docs/ADVANCED_PATTERNS.md) — Advanced usage patterns and artifact smoke tests
 - [docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md) — Common issues and solutions
+- [docs/PITFALLS.md](../docs/PITFALLS.md) — Lessons from artifact smoke testing

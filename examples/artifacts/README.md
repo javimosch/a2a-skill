@@ -80,3 +80,9 @@ All build scripts use shared utility code from `examples/artifacts/_util.py`:
 5. Test: `python3 examples/artifacts/<name>/build.py`
 
 See the [examples/AGENTS.md](/examples/AGENTS.md) for agent collaboration patterns.
+
+## Lessons from the field
+
+For a collection of pitfalls discovered during artifact smoke testing —
+agent communication quirks, spawn management gotchas, and build-script design
+patterns — see [docs/PITFALLS.md](../../docs/PITFALLS.md).
