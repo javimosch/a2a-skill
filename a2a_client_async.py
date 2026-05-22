@@ -244,7 +244,12 @@ class A2AClientAsync:
 
         Returns:
             List of matching message dicts
+
+        Raises:
+            ValueError: If query is empty
         """
+        if not query or not query.strip():
+            raise ValueError("search query must not be empty")
         conn = await self._connect()
         cursor = await conn.execute(
             "SELECT id, sender, recipient, body, thread_id, created_at "
