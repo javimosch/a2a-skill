@@ -123,7 +123,7 @@ def main():
         with tempfile.NamedTemporaryFile(mode="w", prefix=f"a2a-{project}-{ag['id']}-", suffix=".kit", delete=False) as f:
             f.write(kit)
             kit_path = f.name
-        pid = spawn_agent(spawn_bin, args.cli, ag["id"], kit_path, project=project, model=args.model)
+        pid = spawn_agent(spawn_bin, args.cli, ag["id"], kit_path, project=project, model=args.model, a2a_bin=a2a_bin)
         if pid:
             mgr.add(pid)
         os.unlink(kit_path)
