@@ -35,6 +35,7 @@ output to `output/`.
 | `competitive-analysis/` | searcher, analyst, writer | `output/competitive-analysis.md`, `output/bus-state.txt` | 3 agents produce a competitive analysis with comparison table and market positioning |
 | `a2a-landscape/` | searcher, analyst, writer | `output/a2a-landscape.md`, `output/bus-state.txt` | 3 agents research and position a2a-skill against 9 competing multi-agent frameworks |
 | `weekly-digest/` | scout, curator, editor | `output/weekly-digest.md`, `output/bus-state.txt` | 3 agents produce a formatted tech news digest via ddgr web research |
+| `data-to-chart/` | fetcher, analyst, plotter | `output/charts.txt`, `output/analysis.md`, `output/bus-state.txt` | 3 agents produce CSV data, statistical analysis, and ASCII charts |
 
 ## Requirements
 
