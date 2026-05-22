@@ -256,6 +256,8 @@ def cmd_send(args) -> None:
     if body == "-":
         body = sys.stdin.read()
     ttl = getattr(args, "ttl", None)
+    if ttl is not None and ttl <= 0:
+        die("--ttl must be a positive number of seconds")
     cur = conn.execute(
         "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
         "VALUES (?,?,?,?,?,?)",
@@ -364,12 +366,12 @@ def cmd_peek(args) -> None:
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
-    raw_limit = args.limit
-    limit = raw_limit if raw_limit >= 0 else 20
+    if args.limit <= 0:
+        die("--limit must be a positive integer")
     rows = conn.execute(
         f"SELECT {MSG_COLS} FROM messages "
         "ORDER BY created_at DESC LIMIT ?",
-        (limit,),
+        (args.limit,),
     ).fetchall()
     conn.close()
     rows = list(reversed(rows))

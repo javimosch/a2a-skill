@@ -80,11 +80,13 @@ class A2AClientAsync:
             Message ID
 
         Raises:
-            ValueError: If recipient is empty
+            ValueError: If recipient is empty or ttl_seconds is not positive
         """
         conn = await self._connect()
         if not to or not to.strip():
             raise ValueError("recipient must not be empty")
+        if ttl_seconds is not None and ttl_seconds <= 0:
+            raise ValueError("ttl_seconds must be a positive number of seconds")
         recipient = None if to.lower() in ("all", "*", "broadcast") else to
         await conn.execute(
             "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
@@ -217,7 +219,12 @@ class A2AClientAsync:
 
         Returns:
             List of message dicts
+
+        Raises:
+            ValueError: If limit is not a positive integer
         """
+        if limit <= 0:
+            raise ValueError("limit must be a positive integer")
         conn = await self._connect()
         await self._cleanup_expired(conn)
         cursor = await conn.execute(
