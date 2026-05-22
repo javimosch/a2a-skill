@@ -13,6 +13,14 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any, Callable
 
 
+def _validate_project_name(name: str) -> None:
+    """Reject project names that could cause path traversal or directory escape."""
+    if not name or not name.strip():
+        raise ValueError("project name must not be empty")
+    if "/" in name or "\\" in name or name[0] == ".":
+        raise ValueError(f"invalid project name {name!r} — must not contain path separators or start with '.'")
+
+
 class A2AClientAsync:
     """Async client for a2a peer-to-peer messaging."""
 
@@ -30,6 +38,7 @@ class A2AClientAsync:
             raise ValueError("project must not be empty")
         if not agent_id or not agent_id.strip():
             raise ValueError("agent_id must not be empty")
+        _validate_project_name(project)
         self.project = project
         self.agent_id = agent_id
         self.db_path = Path.home() / ".a2a" / project / "database.db"

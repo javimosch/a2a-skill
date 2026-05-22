@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-a2a Client Library — Python API for a2a peer messaging.
+"""a2a Client Library — Python API for a2a peer messaging.
 
 Provides object-oriented access to a2a messaging without shell invocation.
 """
@@ -10,6 +9,14 @@ import sqlite3
 import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
+
+
+def _validate_project_name(name: str) -> None:
+    """Reject project names that could cause path traversal or directory escape."""
+    if not name or not name.strip():
+        raise ValueError("project name must not be empty")
+    if "/" in name or "\\" in name or name[0] == ".":
+        raise ValueError(f"invalid project name {name!r} — must not contain path separators or start with '.'")
 
 
 class A2AClient:
@@ -29,6 +36,7 @@ class A2AClient:
             raise ValueError("project must not be empty")
         if not agent_id or not agent_id.strip():
             raise ValueError("agent_id must not be empty")
+        _validate_project_name(project)
         self.project = project
         self.agent_id = agent_id
         self.db_path = Path.home() / ".a2a" / project / "database.db"
