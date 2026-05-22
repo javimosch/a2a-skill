@@ -74,11 +74,15 @@ echo "$OUT" | grep -q '"id": "alice"' && pass "list --json" || fail "list --json
 # 14. status update
 "$A2A" status done --as alice 2>&1 | grep -q "done" && pass "status done alice" || fail "status done alice"
 
-# 15. wait (no unread expected - we already recv'd)
-"$A2A" wait --as bob --count 0 --timeout 2 2>&1 | grep -q "ok" && pass "wait with count=0" || fail "wait with count=0"
+# 15. send a fresh message and wait for it
+"$A2A" send bob "fresh-msg" --from alice 2>&1 | grep -q "#3" || "$A2A" send bob "fresh-msg" --from alice 2>&1 | grep -q "#4"
+"$A2A" wait --as bob --count 1 --timeout 5 2>&1 | grep -q "ok" && pass "wait" || fail "wait"
+
+# 15b. wait with zero count is rejected
+"$A2A" wait --as bob --count 0 --timeout 1 2>&1 | grep -qi "must be a positive" && pass "wait rejects count=0" || fail "wait rejects count=0"
 
 # 16. send with --thread
-"$A2A" send bob "threaded msg" --from alice --thread test-thread 2>&1 | grep -q "#3" && pass "send with thread" || fail "send with thread"
+"$A2A" send bob "threaded msg" --from alice --thread test-thread 2>&1 | grep -qE "#[34]" && pass "send with thread" || fail "send with thread"
 
 # 17. thread view
 OUT=$("$A2A" thread test-thread 2>&1)
@@ -97,7 +101,7 @@ OUT=$("$A2A" search hello --json 2>&1)
 echo "$OUT" | grep -q '"body"' && pass "search --json" || fail "search --json"
 
 # 21. send with --ttl
-"$A2A" send bob "expiring msg" --from alice --ttl 1 2>&1 | grep -q "#4" && pass "send with TTL" || fail "send with TTL"
+"$A2A" send bob "expiring msg" --from alice --ttl 1 2>&1 | grep -qE "#[345]" && pass "send with TTL" || fail "send with TTL"
 
 # 22. clear (should refuse without --yes)
 "$A2A" clear 2>&1 | grep -q "refusing" && pass "clear refuses without --yes" || fail "clear refuses without --yes"

@@ -549,6 +549,11 @@ func cmdWait() {
 		os.Exit(1)
 	}
 
+	if count <= 0 {
+		fmt.Fprintln(os.Stderr, "a2a: --count must be a positive integer")
+		os.Exit(1)
+	}
+
 	c := newClient(agentID)
 	n, err := c.Wait(count, timeout)
 	if err != nil {
