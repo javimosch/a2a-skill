@@ -239,13 +239,21 @@ class TestMessaging(unittest.TestCase):
         conn.close()
 
         # Bob receives — should see both
-        args = a2a.argparse.Namespace(
-            project=self.project, **{"as_": "bob", "wait": 0, "all": False,
-                                     "peek": False, "limit": 0, "since": None,
-                                     "json": False, "include_self": False}
-        )
-        # Capture output — for now just verify no crash
-        a2a.cmd_recv(args)
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(
+                project=self.project, **{"as_": "bob", "wait": 0, "all": False,
+                                         "peek": False, "limit": 0, "since": None,
+                                         "json": False, "include_self": False}
+            )
+            a2a.cmd_recv(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("msg1", output)
+        self.assertIn("broadcast", output)
 
     def test_recv_all(self):
         """Receive with --all includes already-read messages."""
@@ -261,12 +269,20 @@ class TestMessaging(unittest.TestCase):
         conn.close()
 
         # Bob can still see it with --all
-        args = a2a.argparse.Namespace(
-            project=self.project, **{"as_": "bob", "wait": 0, "all": True,
-                                     "peek": False, "limit": 0, "since": None,
-                                     "json": False, "include_self": False}
-        )
-        a2a.cmd_recv(args)  # Should not crash
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(
+                project=self.project, **{"as_": "bob", "wait": 0, "all": True,
+                                         "peek": False, "limit": 0, "since": None,
+                                         "json": False, "include_self": False}
+            )
+            a2a.cmd_recv(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("old msg", output)
 
     def test_recv_filters_self(self):
         """Recv filters out messages from the agent itself."""
@@ -279,12 +295,21 @@ class TestMessaging(unittest.TestCase):
         conn.commit()
         conn.close()
 
-        args = a2a.argparse.Namespace(
-            project=self.project, **{"as_": "alice", "wait": 0, "all": False,
-                                     "peek": False, "limit": 0, "since": None,
-                                     "json": False, "include_self": False}
-        )
-        a2a.cmd_recv(args)  # Self-sent msg should not appear
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(
+                project=self.project, **{"as_": "alice", "wait": 0, "all": False,
+                                         "peek": False, "limit": 0, "since": None,
+                                         "json": False, "include_self": False}
+            )
+            a2a.cmd_recv(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        # Self-sent msg should NOT appear without --include-self
+        self.assertNotIn("self message", output)
 
     def test_recv_include_self(self):
         """--include-self makes self-sent messages visible."""
@@ -297,12 +322,21 @@ class TestMessaging(unittest.TestCase):
         conn.commit()
         conn.close()
 
-        args = a2a.argparse.Namespace(
-            project=self.project, **{"as_": "alice", "wait": 0, "all": False,
-                                     "peek": False, "limit": 0, "since": None,
-                                     "json": False, "include_self": True}
-        )
-        a2a.cmd_recv(args)  # Self-sent msg should appear
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(
+                project=self.project, **{"as_": "alice", "wait": 0, "all": False,
+                                         "peek": False, "limit": 0, "since": None,
+                                         "json": False, "include_self": True}
+            )
+            a2a.cmd_recv(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        # Self-sent msg SHOULD appear with --include-self
+        self.assertIn("self message", output)
 
 
 class TestLifecycle(unittest.TestCase):
@@ -404,13 +438,32 @@ class TestLifecycle(unittest.TestCase):
 
     def test_list_agents_empty(self):
         """List on empty bus prints '(no agents registered)'."""
-        args = a2a.argparse.Namespace(project=self.project, json=False)
-        a2a.cmd_list(args)  # Should not crash
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(project=self.project, json=False)
+            a2a.cmd_list(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("no agents registered", output)
 
     def test_project_info(self):
         """Project command prints resolved project info."""
-        args = a2a.argparse.Namespace(project=self.project)
-        a2a.cmd_project(args)  # Should not crash
+        import io, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(project=self.project)
+            a2a.cmd_project(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        info = json.loads(output)
+        self.assertEqual(info["project"], self.project)
+        self.assertIn("database.db", info["db"])
+        self.assertIsInstance(info["exists"], bool)
 
     def test_cmd_list_no_database(self):
         """List on non-initialized project raises SystemExit (connect fails)."""
@@ -421,7 +474,15 @@ class TestLifecycle(unittest.TestCase):
     def test_cmd_clear_no_database(self):
         """Clear on a project with no database prints notice and does not crash."""
         project = f"clear-nonex-{os.getpid()}"
-        a2a.cmd_clear(a2a.argparse.Namespace(project=project, yes=True))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_clear(a2a.argparse.Namespace(project=project, yes=True))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("nothing to clear", output)
 
     def test_cmd_clear_refuses_without_yes(self):
         """Clear without --yes exits with error."""

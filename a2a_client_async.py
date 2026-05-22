@@ -159,8 +159,14 @@ class A2AClientAsync:
 
         Returns:
             List of message dicts
+
+        Raises:
+            ValueError: If wait is negative
+
         """
         conn = await self._connect()
+        if wait < 0:
+            raise ValueError("wait must be a non-negative number of seconds")
         deadline = time.time() + wait if wait > 0 else None
 
         while True:

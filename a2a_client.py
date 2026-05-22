@@ -169,9 +169,15 @@ class A2AClient:
 
         Returns:
             List of message dicts
+
+        Raises:
+            ValueError: If wait is negative
+
         """
         conn = self._connect()
         try:
+            if wait < 0:
+                raise ValueError("wait must be a non-negative number of seconds")
             deadline = time.time() + wait if wait else None
             poll_interval = 0.1
 
@@ -196,6 +202,8 @@ class A2AClient:
                     )
                     params.append(self.agent_id)
 
+                if limit and limit < 0:
+                    raise ValueError("limit must be a non-negative integer")
                 base += "ORDER BY m.created_at ASC"
                 if limit:
                     base += " LIMIT ?"

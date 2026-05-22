@@ -678,14 +678,11 @@ class TestA2AClient(unittest.TestCase):
             alice.send("   ", "whitespace only")
 
     def test_recv_negative_wait_returns_immediately(self):
-        """recv() with negative wait returns immediately (no block)."""
+        """recv() with negative wait raises ValueError."""
         bob = A2AClient(self.project, "bob")
-        import time
-        start = time.time()
-        messages = bob.recv(wait=-1)
-        elapsed = time.time() - start
-        self.assertEqual(len(messages), 0)
-        self.assertLess(elapsed, 2, "recv with negative wait should not block")
+        with self.assertRaises(ValueError) as ctx:
+            bob.recv(wait=-1)
+        self.assertIn("non-negative", str(ctx.exception))
 
     def test_cross_project_isolation(self):
         """Messages in project A do not leak into project B."""
@@ -748,6 +745,13 @@ class TestA2AClient(unittest.TestCase):
             db_path_b.unlink()
         if proj_dir_b.exists():
             shutil.rmtree(proj_dir_b)
+
+    def test_negative_limit_raises_error(self):
+        """recv() with negative limit raises ValueError."""
+        bob = A2AClient(self.project, "bob")
+        with self.assertRaises(ValueError) as ctx:
+            bob.recv(wait=0, limit=-5)
+        self.assertIn("non-negative", str(ctx.exception))
 
 if __name__ == "__main__":
     unittest.main()
