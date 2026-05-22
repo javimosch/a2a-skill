@@ -330,3 +330,48 @@ This typically happens in:
   (as the weekly-digest build script does)
 
 ### API key exhaustion silently kills agent spawns
+
+AI CLIs (opencode, claude, pi) require valid API keys with available quota.
+When the key is exhausted or invalid, `a2a-spawn` still creates a process
+(PID assigned, log file written) but the agent process immediately errors
+out without registering on the bus or doing any work.
+
+The build script's `spawn_agent()` health check polls `a2a list --json` and
+waits up to 30s for the agent to appear. If the agent never registers, the
+health check fails and the spawn returns `None`. However, this 30s timeout
+adds significant latency to the build — 3 agents × 30s = 90s spent waiting
+for timeouts before the fallback can activate.
+
+**Detection pattern** (implemented in `_util.py` `_check_agent_health()`):
+
+```python
+for marker in ["Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
+                "401", "402", "429", "403"]:
+    if marker in log_contents:
+        return False  # Fast-fail: don't wait for full timeout
+```
+
+This checks the agent's log file (`/tmp/a2a-{agent_id}.log`) for error markers
+immediately after spawn, before entering the 30s polling loop.
+
+**Fallback pattern** (implemented in all build scripts):
+
+```python
+api_errors = check_agent_logs(agent_ids)
+if not spawned_ok or api_errors:
+    print(f"Agents have API/startup issues. Generating fallback...")
+    # Produce output directly so the artifact directory is always populated
+```
+
+**Diagnosis:** Check agent log files with `cat /tmp/a2a-{agent_id}.log`.
+Common markers:
+- `Key limit exceeded` — opencode API key monthly budget exhausted
+- `insufficient_quota` — claude/pi API key out of credits
+- `429` — rate limit hit; wait and retry
+
+**Best practices for build scripts:**
+1. Always implement a fallback path that produces output without agents.
+2. Check agent logs before entering the polling loop (fast-fail).
+3. The `output/` directory should always be populated, even with a fallback note.
+4. The bus state snapshot (`peek --limit 30`) provides debugging context even
+   when agents fail — send messages are visible even without agent responses.
