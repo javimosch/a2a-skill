@@ -36,7 +36,8 @@ output to `output/`.
 | `a2a-landscape/` | searcher, analyst, writer | `output/a2a-landscape.md`, `output/bus-state.txt` | 3 agents research and position a2a-skill against 9 competing multi-agent frameworks |
 | `weekly-digest/` | scout, curator, editor | `output/weekly-digest.md`, `output/bus-state.txt` | 3 agents produce a formatted tech news digest via ddgr web research |
 || `data-to-chart/` | fetcher, analyst, plotter | `output/charts.txt`, `output/analysis.md`, `output/bus-state.txt` | 3 agents produce CSV data, statistical analysis, and ASCII charts |
-|| `doc-pipeline/` | writer, formatter, publisher | `output/guide.md`, `output/guide.html`, `output/bundle.zip`, `output/bus-state.txt` | 3 agents produce a markdown guide, convert to HTML via pandoc, and bundle into a zip archive |
+||| `doc-pipeline/` | writer, formatter, publisher | `output/guide.md`, `output/guide.html`, `output/bundle.zip`, `output/bus-state.txt` | 3 agents produce a markdown guide, convert to HTML via pandoc, and bundle into a zip archive |
+|| `tech-stack-advisor/` | researcher, recommender | `output/tech-stack-guide.md`, `output/bus-state.txt` | 2 agents research and recommend a technology stack using ddgr web search |
 
 ## Requirements
 
