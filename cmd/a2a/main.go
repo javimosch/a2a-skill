@@ -313,10 +313,21 @@ func cmdSend() {
 
 	var ttlPtr *int
 	if hasFlag("--ttl") {
-		t := getFlagInt("--ttl")
-		if t > 0 {
-			ttlPtr = &t
+		ttlVal := getFlagValue("--ttl")
+		if ttlVal == "" {
+			fmt.Fprintln(os.Stderr, "a2a: --ttl requires a numeric value")
+			os.Exit(1)
 		}
+		t, err := strconv.Atoi(ttlVal)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "a2a: --ttl must be a positive number of seconds (got %q)\n", ttlVal)
+			os.Exit(1)
+		}
+		if t <= 0 {
+			fmt.Fprintln(os.Stderr, "a2a: --ttl must be a positive number of seconds")
+			os.Exit(1)
+		}
+		ttlPtr = &t
 	}
 
 	c := newClient(from)
