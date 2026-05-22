@@ -202,7 +202,11 @@ func cmdRegister() {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a register <id> [--role R] [--prompt P] [--cli C] [--pid N] [--upsert]")
 		os.Exit(1)
 	}
-	agentID := os.Args[2]
+	agentID := strings.TrimSpace(os.Args[2])
+	if agentID == "" {
+		fmt.Fprintln(os.Stderr, "a2a: agent id must not be empty — pass a valid registered agent id")
+		os.Exit(1)
+	}
 	role := getFlagValue("--role")
 	prompt := getFlagValue("--prompt")
 	cli := getFlagValue("--cli")
@@ -227,7 +231,12 @@ func cmdUnregister() {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a unregister <id>")
 		os.Exit(1)
 	}
-	c := newClient(args[0])
+	agentID := strings.TrimSpace(args[0])
+	if agentID == "" {
+		fmt.Fprintln(os.Stderr, "a2a: agent id must not be empty — pass a valid registered agent id")
+		os.Exit(1)
+	}
+	c := newClient(agentID)
 	if err := c.Unregister(); err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: unregister error: %v\n", err)
 		os.Exit(1)
