@@ -1,125 +1,329 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlowForge — Project Management, Reinvented</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowForge — Ship Faster. Stress Less.</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #1e293b; line-height: 1.6; }
-
-    nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 5%; background: #fff; border-bottom: 1px solid #e2e8f0; }
-    nav .logo { font-size: 1.5rem; font-weight: 700; color: #4f46e5; }
-    nav .nav-links { display: flex; gap: 2rem; list-style: none; }
-    nav .nav-links a { text-decoration: none; color: #475569; font-weight: 500; transition: color 0.2s; }
-    nav .nav-links a:hover { color: #4f46e5; }
-    nav .btn-cta { background: #4f46e5; color: #fff; padding: 0.5rem 1.25rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600; }
-
-    .hero { display: flex; align-items: center; justify-content: space-between; padding: 5rem 5%; background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); }
-    .hero .content { max-width: 540px; }
-    .hero h1 { font-size: 3rem; font-weight: 800; color: #1e3a8a; line-height: 1.2; margin-bottom: 1rem; }
-    .hero p { font-size: 1.125rem; color: #475569; margin-bottom: 2rem; }
-    .hero .btn-primary { display: inline-block; background: #4f46e5; color: #fff; padding: 0.75rem 2rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600; font-size: 1rem; }
-    .hero .btn-secondary { display: inline-block; background: transparent; color: #4f46e5; padding: 0.75rem 2rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600; font-size: 1rem; border: 2px solid #4f46e5; margin-left: 1rem; }
-    .hero .illustration { width: 45%; height: 320px; background: linear-gradient(135deg, #6366f1, #818cf8); border-radius: 1.5rem; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.25rem; font-weight: 600; }
-
-    .features { padding: 5rem 5%; text-align: center; background: #fff; }
-    .features h2 { font-size: 2.25rem; font-weight: 700; color: #1e3a8a; margin-bottom: 0.75rem; }
-    .features .subtitle { color: #64748b; font-size: 1.125rem; margin-bottom: 3rem; }
-    .features .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem; max-width: 1100px; margin: 0 auto; }
-    .features .card { background: #f8fafc; padding: 2rem; border-radius: 1rem; border: 1px solid #e2e8f0; text-align: left; transition: box-shadow 0.2s; }
-    .features .card:hover { box-shadow: 0 8px 25px rgba(79, 70, 229, 0.1); }
-    .features .card .icon { width: 48px; height: 48px; background: #eef2ff; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; font-size: 1.5rem; }
-    .features .card h3 { font-size: 1.25rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; }
-    .features .card p { color: #64748b; font-size: 0.95rem; }
-
-    footer { background: #1e293b; color: #cbd5e1; padding: 3rem 5%; }
-    footer .grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 2rem; max-width: 1100px; margin: 0 auto; }
-    footer h4 { color: #fff; font-size: 1.125rem; margin-bottom: 1rem; }
-    footer .logo { font-size: 1.25rem; font-weight: 700; color: #818cf8; margin-bottom: 0.75rem; }
-    footer p { font-size: 0.875rem; }
-    footer ul { list-style: none; }
-    footer ul li { margin-bottom: 0.5rem; }
-    footer ul a { color: #94a3b8; text-decoration: none; font-size: 0.875rem; }
-    footer ul a:hover { color: #818cf8; }
-    footer .bottom { border-top: 1px solid #334155; margin-top: 2rem; padding-top: 1.5rem; text-align: center; font-size: 0.8rem; color: #64748b; }
+    :root {
+      --indigo-50: #eef2ff;
+      --indigo-100: #e0e7ff;
+      --indigo-200: #c7d2fe;
+      --indigo-300: #a5b4fc;
+      --indigo-400: #818cf8;
+      --indigo-500: #6366f1;
+      --indigo-600: #4f46e5;
+      --indigo-700: #4338ca;
+      --indigo-800: #3730a3;
+      --indigo-900: #312e81;
+      --blue-50: #eff6ff;
+      --blue-100: #dbeafe;
+      --blue-400: #60a5fa;
+      --blue-500: #3b82f6;
+      --blue-600: #2563eb;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --white: #ffffff;
+      --gradient-hero: linear-gradient(135deg, var(--indigo-900) 0%, var(--blue-600) 100%);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
+      --radius: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--slate-800);
+      background: var(--white);
+      line-height: 1.6;
+    }
+    a { text-decoration: none; color: inherit; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+      z-index: 100;
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1.4rem; font-weight: 800;
+      color: var(--indigo-600);
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--gradient-hero);
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--white); font-size: 1rem; font-weight: 700;
+    }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a {
+      font-size: .9rem; font-weight: 500; color: var(--slate-600);
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--indigo-600); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px; border-radius: var(--radius);
+      font-weight: 600; font-size: .9rem;
+      cursor: pointer; border: none; transition: all .2s;
+    }
+    .btn-primary {
+      background: var(--indigo-600); color: var(--white);
+    }
+    .btn-primary:hover { background: var(--indigo-700); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-outline {
+      background: transparent; color: var(--indigo-600);
+      border: 2px solid var(--indigo-200);
+    }
+    .btn-outline:hover { border-color: var(--indigo-400); background: var(--indigo-50); }
+    .btn-white {
+      background: var(--white); color: var(--indigo-700);
+    }
+    .btn-white:hover { background: var(--indigo-50); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+    .btn-lg { padding: 14px 32px; font-size: 1rem; }
+    .hero {
+      padding: 140px 0 100px;
+      background: var(--gradient-hero);
+      color: var(--white);
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Cpattern%20id%3D%22grid%22%20width%3D%2240%22%20height%3D%2240%22%20patternUnits%3D%22userSpaceOnUse%22%3E%3Cpath%20d%3D%22M%2040%200%20L%200%200%200%2040%22%20fill%3D%22none%22%20stroke%3D%22rgba(255,255,255,.08)%22%20stroke-width%3D%221%22%2F%3E%3C%2Fpattern%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23grid)%22%2F%3E%3C%2Fsvg%3E");
+      opacity: .1;
+    }
+    .hero-grid {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
+      align-items: center; text-align: left;
+    }
+    .hero h1 {
+      font-size: 3.2rem; font-weight: 800; line-height: 1.15;
+      letter-spacing: -.02em; margin-bottom: 20px;
+    }
+    .hero h1 span { color: var(--indigo-300); }
+    .hero p {
+      font-size: 1.15rem; color: var(--indigo-200);
+      max-width: 520px; margin-bottom: 32px;
+    }
+    .hero-buttons { display: flex; gap: 16px; flex-wrap: wrap; }
+    .hero-visual {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: var(--radius-xl);
+      padding: 40px; min-height: 340px;
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .hero-visual-placeholder {
+      color: rgba(255,255,255,.4);
+      font-size: 1rem; text-align: center;
+    }
+    .features { padding: 100px 0; background: var(--slate-50); }
+    .section-tag {
+      display: inline-block;
+      padding: 4px 14px; border-radius: 999px;
+      background: var(--indigo-100); color: var(--indigo-700);
+      font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 2.4rem; font-weight: 800; color: var(--slate-900);
+      margin-bottom: 12px;
+    }
+    .section-subtitle {
+      font-size: 1.05rem; color: var(--slate-500);
+      max-width: 600px; margin-bottom: 48px;
+    }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px;
+    }
+    .feature-card {
+      background: var(--white); border-radius: var(--radius-lg);
+      padding: 32px; border: 1px solid var(--slate-200);
+      transition: all .3s;
+    }
+    .feature-card:hover {
+      border-color: var(--indigo-200); box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; margin-bottom: 16px;
+    }
+    .feature-icon.blue { background: var(--blue-100); color: var(--blue-600); }
+    .feature-icon.indigo { background: var(--indigo-100); color: var(--indigo-600); }
+    .feature-icon.purple { background: #ede9fe; color: #7c3aed; }
+    .feature-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; color: var(--slate-900); }
+    .feature-card p { font-size: .9rem; color: var(--slate-500); line-height: 1.7; }
+    .footer {
+      background: var(--slate-900); color: var(--slate-400);
+      padding: 60px 0 40px;
+    }
+    .footer-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px;
+      margin-bottom: 40px;
+    }
+    .footer-brand .logo { color: var(--white); margin-bottom: 12px; }
+    .footer-brand p { font-size: .85rem; line-height: 1.7; max-width: 300px; }
+    .footer-col h4 { color: var(--white); font-size: .85rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
+    .footer-col a {
+      display: block; padding: 4px 0;
+      font-size: .85rem; transition: color .2s;
+    }
+    .footer-col a:hover { color: var(--indigo-300); }
+    .footer-bottom {
+      border-top: 1px solid var(--slate-700);
+      padding-top: 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: .8rem;
+    }
+    @media (max-width: 768px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
+      .hero h1 { font-size: 2.2rem; }
+      .hero p { margin-left: auto; margin-right: auto; }
+      .hero-buttons { justify-content: center; }
+      .features-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .nav-links { display: none; }
+      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+    }
   </style>
 </head>
 <body>
-  <nav>
-    <div class="logo">FlowForge</div>
-    <ul class="nav-links">
-      <li><a href="#">Features</a></li>
-      <li><a href="#">Pricing</a></li>
-      <li><a href="#">About</a></li>
-    </ul>
-    <a href="#" class="btn-cta">Get Started</a>
+  <nav class="nav">
+    <div class="container nav-inner">
+      <div class="logo">
+        <div class="logo-icon">F</div>
+        FlowForge
+      </div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#">Pricing</a>
+        <a href="#">Docs</a>
+        <a href="#">Login</a>
+        <a href="#" class="btn btn-primary">Get Started</a>
+      </div>
+    </div>
   </nav>
-
   <section class="hero">
-    <div class="content">
-      <h1>Build Without the Chaos.</h1>
-      <p>FlowForge is the project management platform that turns tangled workflows into streamlined momentum. Kanban, Gantt, and team chat — unified in one forge.</p>
-      <a href="#" class="btn-primary">Start Forging — Free Forever</a>
-      <a href="#" class="btn-secondary">Watch Demo</a>
-    </div>
-    <div class="illustration">Your Forge Awaits</div>
-  </section>
-
-  <section class="features">
-    <h2>Everything your team needs</h2>
-    <p class="subtitle">Three powerful tools. One unified forge.</p>
-    <div class="grid">
-      <div class="card">
-        <div class="icon">⬡</div>
-        <h3>Kanban Boards</h3>
-        <p>Drag. Drop. Done. Visualize every task from backlog to delivery. Custom columns, WIP limits, and swimlanes keep your team flowing, not flooding.</p>
-      </div>
-      <div class="card">
-        <div class="icon">⟷</div>
-        <h3>Gantt Charts</h3>
-        <p>See the big picture before it unfolds. Timeline views with dependency mapping, critical path tracking, and automatic scheduling help you ship on time — every time.</p>
-      </div>
-      <div class="card">
-        <div class="icon">💬</div>
-        <h3>Team Chat</h3>
-        <p>Stop context-switching. Every conversation lives beside the work it belongs to — threaded by task, searchable forever, and never lost in a Slack graveyard.</p>
+    <div class="container">
+      <div class="hero-grid">
+        <div>
+          <h1>Ship Faster. <span>Stress Less.</span> FlowForge.</h1>
+          <p>The all-in-one project management platform that turns chaos into clarity. Kanban, Gantt, and team chat — unified in one seamless workspace.</p>
+          <div class="hero-buttons">
+            <a href="#" class="btn btn-white btn-lg">Start your free trial — no credit card required</a>
+            <a href="#" class="btn btn-outline btn-lg" style="border-color:rgba(255,255,255,.3);color:var(--white);">Watch Demo</a>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-visual-placeholder">
+            <div style="font-size:3rem;margin-bottom:12px;">⬡</div>
+            Interactive Dashboard Preview
+          </div>
+        </div>
       </div>
     </div>
   </section>
-
-  <footer>
-    <div class="grid">
-      <div>
-        <div class="logo">FlowForge</div>
-        <p>No credit card. No setup fees. Just you, your team, and a forge that keeps up.</p>
-      </div>
-      <div>
-        <h4>Product</h4>
-        <ul>
-          <li><a href="#">Features</a></li>
-          <li><a href="#">Pricing</a></li>
-          <li><a href="#">Changelog</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Company</h4>
-        <ul>
-          <li><a href="#">About</a></li>
-          <li><a href="#">Blog</a></li>
-          <li><a href="#">Careers</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Support</h4>
-        <ul>
-          <li><a href="#">Docs</a></li>
-          <li><a href="#">Contact</a></li>
-          <li><a href="#">Status</a></li>
-        </ul>
+  <section class="features" id="features">
+    <div class="container">
+      <span class="section-tag">Features</span>
+      <h2 class="section-title">Everything you need to deliver</h2>
+      <p class="section-subtitle">From idea to shipped, without the friction. FlowForge gives your team a single source of truth.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon blue">⊞</div>
+          <h3>Kanban Boards</h3>
+          <p>Visualize every stage of your workflow. Drag, drop, and ship with confidence. Custom columns, WIP limits, and automation rules keep your team moving without the noise.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon indigo">◷</div>
+          <h3>Gantt Charts</h3>
+          <p>Turn deadlines into a game plan. Map dependencies, spot bottlenecks before they happen, and keep every milestone on track — all with an interactive timeline that updates in real time.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon purple">⬡</div>
+          <h3>Team Chat</h3>
+          <p>Stop juggling tabs. Context-rich chat lives inside your projects — linked to tasks, boards, and timelines. Every conversation has a home, and nothing slips through the cracks.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon indigo">◎</div>
+          <h3>Team Collaboration</h3>
+          <p>Threaded comments, @mentions, and granular notifications that keep everyone in the loop.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon blue">⌗</div>
+          <h3>Goal Tracking</h3>
+          <p>Connect daily work to OKRs. Set quarterly goals and watch progress update in real time.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon purple">⟐</div>
+          <h3>Integrations</h3>
+          <p>Connect Slack, GitHub, Figma, and 200+ tools. Automate workflows with no-code triggers.</p>
+        </div>
       </div>
     </div>
-    <div class="bottom">&copy; 2026 FlowForge. All rights reserved.</div>
+  </section>
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="logo">
+            <div class="logo-icon">F</div>
+            FlowForge
+          </div>
+          <p>Project management for teams who build. Forged from experience, shipped with purpose.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="#">Features</a>
+          <a href="#">Pricing</a>
+          <a href="#">Changelog</a>
+          <a href="#">API Docs</a>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="#">About</a>
+          <a href="#">Blog</a>
+          <a href="#">Careers</a>
+          <a href="#">Contact</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Security</a>
+          <a href="#">Cookies</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 FlowForge. All rights reserved.</span>
+        <span>Built with ⚡ for modern teams</span>
+      </div>
+    </div>
   </footer>
 </body>
 </html>
