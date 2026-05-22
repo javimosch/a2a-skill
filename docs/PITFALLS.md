@@ -1,377 +1,358 @@
-# PITFALLS.md — lessons from artifact smoke testing
-
-Pitfalls discovered during collaborative artifact smoke testing with a2a agent
-teams. Focuses on **agent behavior** and **build-script orchestration** problems,
-not CLI bugs or feature gaps.
-
-## How agents communicate (and miscommunicate)
-
-### Agents wrap output in markdown code blocks
-
-Even when kit prompts say "start directly with <!DOCTYPE html> — no preamble,"
-agents frequently wrap the HTML in a markdown fenced code block:
-
-    ```html
-    <!DOCTYPE html>
-    <html>...
-    </html>
-    ```
-
-Same for SVG (` ```svg `), Python (` ```python `), YAML (` ```yaml `), and
-other formats. The `_util.py` helper function `strip_html_preamble()` handles
-HTML specifically, but other formats need their own extraction logic.
-
-**Fix:** Build scripts that expect code output (not HTML) should either:
-- Use a prefix marker like `FINAL_CODE:` and extract everything after it.
-- Strip the outermost markdown code fence if present.
-- Embed the format hint in the kit prompt as a prefix requirement.
-
-### Agents send "test message" first
-
-In color-palette builds, the colorist agent sent `"Test message"` as message #3
-before the real palette in message #4. The build script's `recv` loop must
-filter out non-matching messages rather than accepting the first arrival.
-
-**Fix:** In `recv` loops, check `sender` AND content criteria. Don't break on
-the first message from a peer — wait for one that actually matches.
-
-### Agent preamble text contaminates extraction
-
-Agents love to preface output with "Here is the final HTML:" or "I have
-generated the SVG below:" before the actual content. This makes regex-based
-extraction fragile.
-
-**Fix:** `strip_html_preamble()` handles HTML by finding `<!DOCTYPE` or `<html`.
-For non-HTML formats, use distinctive content markers (e.g. `FINAL_CODE:`,
-`FILE:docker-compose.yml`) that the agent places before the data.
-
-### Agents sometimes truncate output mid-stream
-
-In svg-banner builds, the designer's first SVG was truncated — an `<svg>`
-element with a `<text>` attribute cut off mid-value and no closing tags. The
-reviewer caught the truncation and asked for a resend.
-
-**Fix:** Always have at least one review round for complex artifacts. Before
-accepting output, verify structural completeness (valid XML, matching tags).
-
-## Spawn and process management
-
-### PID may not be emitted if spawn fails silently
-
-The `spawn_agent()` function reads a single line from the subprocess stdout
-expecting a PID. If `a2a-spawn` fails (e.g. missing CLI binary), stdout is
-empty and `int('')` raises ValueError. The function returns `None` but the
-parent may not check the return value.
-
-**Fix:** After `spawn_agent()` returns `None`, log the spawn binary's stderr
-before continuing.
-
-### Orphaned processes survive unclean termination
-
-The `SpawnManager` uses `atexit.register()` which only fires on normal exit.
-If the script receives SIGKILL, the spawned agents keep running in the
-background forever.
-
-**Fix:** Register a `--pidfile` per spawned agent and use `a2a list --json`
-to enumerate PIDs on startup. Clean up orphans at the start of each build.
-
-### Concurrent builds on the same project name collide
-
-If two cron jobs or build scripts use the same `--project` name, their agents
-interleave on the same bus. Agents from build A receive messages meant for
-build B, and vice versa.
-
-**Fix:** Always use a unique project name per run. The cron-based approach
-should use `a2a-artifact-verify-<timestamp>` or similar.
-
-### Agent spawn is I/O-bound, not CPU-bound
-
-Spawning 3 opencode agents sequentially (in a `for` loop) takes 30+ seconds
-just for startup. The build script's 180-second timeout includes this startup
-time, so don't set it too tight.
-
-**Fix:** If opencode startup is slow, increase `--wait` values in kit prompts
-and the build script's overall timeout. The kit prompt's `--wait 20` gives
-each agent time to boot up before their first `recv` blocks.
-
-## Kit prompt design
-
-### "All peers are listening" is a dangerous assumption
-
-The kit prompt tells each agent to start by running the locator snippet, then
-`recv --wait 5`. But agents spawn sequentially, so the last agent spawned may
-not be listening yet when the first agents start sending.
-
-**Fix:** The build script should sleep 3-5 seconds after spawning all agents
-before sending startup tasks. All kit prompts should use `recv --wait 20` with
-a loop so late-starting agents catch up.
-
-### Agents invent peers not on the bus
-
-Despite the kit prompt rule "Do not invent peers. Address only ids returned by
-`a2a list`", agents sometimes invent peer names based on their understanding
-of what roles should exist.
-
-**Fix:** The kit prompt's peer list section should be explicit: list every
-registered peer id and role. Don't just say "there are other agents."
-
-### Hard cap prevents runaway costs
-
-The 8-iteration hard cap in the kit prompt is essential. Without it, an agent
-that gets stuck in a loop (e.g. continually receiving empty `recv` results)
-will keep going until manually killed. With opencode, each loop iteration
-costs model inference tokens.
-
-**Fix:** Always include `"Hard cap: 8 loop iterations, then mark done and stop"`
-in every kit prompt. Also set `--max-turns` on the spawn CLI flags where
-supported.
-
-## Build script design
-
-### Multiple messages with the same prefix
-
-When using `FILE:` or `FINAL_CODE:` prefix patterns, the agent may send
-multiple messages with the same prefix as they iterate. The build script
-should capture the LAST message, not the first.
-
-**Fix:** In the `recv` loop, update a dict keyed by file/type prefix rather
-than breaking on the first match. Only break when all expected files are
-collected.
-
-### The integrator may not broadcast directly
-
-In the landing-page artifact, the integrator broadcasts the final HTML wrapped
-in a markdown code block (````html...````). The build script captures this but
-the saved file includes the markdown wrapper if `strip_html_preamble` doesn't
-catch it.
-
-**Fix:** The kit prompt for the integrator should say "Broadcast the final HTML
-directly — no markdown code blocks, no explanatory text. Start with
-<!DOCTYPE html>."
-
-### Shell quoting fails when task instructions contain single quotes
-
-When a build script uses `run_a2a(f'send {id} "Your task: {prompt}"')`, the
-prompt is embedded in a shell command via shlex. If the prompt contains shell
-metacharacters — particularly single quotes (`'`) or double quotes (`"`) —
-shlex.split() raises `ValueError: No closing quotation`.
-
-This happened in the web-research-report and news-briefing artifacts, whose
-agent kit prompts include a2a command examples like:
-
-```
-a2a send analyst 'FINDINGS: ...' --from researcher
-```
-
-The single quotes inside the prompt, when embedded in `"Your task: ..."`,
-are interpreted by shlex as starting new quote boundaries.
-
-**Fix:** Send task bodies via stdin instead of embedding in shell command args.
-Use subprocess directly:
-
-```python
-proc = subprocess.run(
-    [a2a_bin, "send", agent_id, "-", "--from", "collector"],
-    input=body.encode(), capture_output=True, timeout=30, env=env,
-)
-```
-
-The `-` body argument tells a2a to read the message body from stdin.
-
-### wait_for_messages() drops subsequent peer messages
-
-The `wait_for_messages()` helper in `_util.py` returns on the first message
-from each expected sender. If a peer sends multiple rounds (like the svg
-reviewer), only the first message is captured.
-
-**Fix:** For multi-round workflows, use the inline `recv` loop pattern that
-updates a dict and only breaks when all criteria are met. See the
-`svg-banner/build.py` for an example that handles review rounds.
-
-### Bus peek output can exceed terminal buffer
-
-`a2a peek --limit 50` dumps raw message bodies to stdout. If agents sent large
-HTML blocks, the terminal output can be megabytes. This is mostly a concern
-for cron jobs that log all output.
-
-**Fix:** Use `peek --limit 10` for summary views. For detailed inspection,
-use `peek --json` and process with `jq` or Python.
-
-## Source vs doc divergence
-
-### strip_html_preamble() only handles HTML
-
-The `_util.py` helper `strip_html_preamble()` searches for `<!DOCTYPE` or
-`<html` to strip preamble text. It does NOT handle:
-- SVG (`<svg` tag)
-- YAML (`version:` or `services:`)
-- Python (`#!/usr/bin/env python3`)
-- Plain text or markdown
-
-**Fix:** When adding a new artifact format, add a corresponding strip function
-to `_util.py` or handle extraction in the build script directly.
-
-## Cross-CLI validation parity
-
-### Python and Go CLIs must agree on invalid inputs
-
-The a2a ecosystem has two CLIs: `a2a.py` (Python) and `cmd/a2a/main.go` (Go
-binary compiled to `a2a`). They share the same database schema but handle
-input validation independently. Inconsistencies cause test failures when
-integration tests (which use the Go binary) exercise validation paths that
-the Python CLI tests cover.
-
-Known gaps (and fixes):
-- `--ttl`: Python rejects `<= 0`. Go used to silently ignore non-positive
-  values. **Fixed:** Go now parses `--ttl` strictly and rejects non-positive
-  values with the same error message.
-- `--limit` on `peek`/`search`: Python rejects `<= 0`. Go used to accept `0`
-  for some commands. **Fixed:** Go now rejects non-positive limits.
-- Empty agent IDs: Python rejects `""` and whitespace-only IDs for
-  `register` and `unregister`. Go used to pass them to SQLite, which would
-  either succeed (creating a DB entry with an empty ID) or fail with a
-  confusing SQL error. **Fixed:** Go now checks `strings.TrimSpace(id) == ""`
-  and prints the same error message.
-- Empty `to` in `Send`: Python client raises `ValueError`. Go client library
-  used to pass empty strings to SQLite, creating messages with NULL or empty
-  recipients. Go CLI also didn't validate. **Fixed:** Go client library and
-  CLI, Node.js client, and Rust client now reject empty recipients.
-- Empty query in `Search`: Python CLI and Go CLI used to pass empty strings
-  to SQLite `LIKE` matching (which matched everything). **Fixed:** Go client
-  library, Python sync and async clients, and Rust client now all reject empty
-  or whitespace-only search queries with a clear error.
-- Non-positive limit in `Peek`: Python client validates, but Go client library
-  and Node.js/Rust clients did not. **Fixed:** All client libraries now reject
-  `limit <= 0` at the library level, matching the Python CLI behavior.
-- Non-positive count in `Wait`: Go CLI validated, but Go client library did
-  not. **Fixed:** Go `Wait()` now rejects `count <= 0` at the library level.
-- Empty project/agentId in constructor: Node.js client did not validate.
-  **Fixed:** Node.js `A2AClient` constructor now throws on empty project or
-  agentId, matching Python behavior.
-- Invalid status in `setStatus`: Node.js client accepted any string.
-  **Fixed:** Node.js `setStatus()` now validates against the known status
-  values (`active`, `idle`, `done`, `blocked`), matching Python behavior.
-
-**Fix:** When adding a new validation check to `a2a.py`, add the equivalent
-check to `cmd/a2a/main.go` at the same time. Run both test suites before
-committing.
-
-### Integration tests use the Go binary, unit tests use Python
-
-`test_integration.py` shells out to the `a2a` binary (Go), while
-`test_a2a.py` imports `a2a.py` and calls functions directly. This means a
-validation bug in one CLI may pass the other's test suite. Always run both.
-
-**Fix:** When adding validation tests in `test_a2a.py`, add corresponding
-integration tests in `test_integration.py` that exercise the same path
-through the Go binary. Expected behavior must match.
-
-### API key exhaustion silently kills agent spawns
-
-When the AI CLI's configured API key hits its rate limit or credit limit,
-`a2a-spawn` still starts a process but the agent immediately exits with an
-API error. The build script sees a successful spawn (PID returned) and waits
-forever for messages that never arrive. Meanwhile, the log file shows:
-
-```
-> build · deepseek/deepseek-v4-flash
-Error: Key limit exceeded (total limit).
-```
-
-This wasted ~8 minutes of wall-clock time before the build timed out.
-
-**Diagnosis:** Check `/tmp/a2a-<agent-id>.log` for the agent's log output.
-Look for "Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
-or similar API errors. The agent log is the first place to check when a
-spawned agent produces no messages on the bus.
-
-**Fix:** Pass a model with available credit or use a free-tier model.
-For opencode, free models include:
-- `opencode/deepseek-v4-flash-free` (recommended — same model, free tier)
-- `opencode/nemotron-3-super-free`
-- `openrouter/deepseek/deepseek-v4-flash:free`
-
-Pass via: `--model opencode/deepseek-v4-flash-free`
-
-To prevent artifacts from silently failing, add a spawn-health check: after
-spawning, poll `a2a list --json` and verify the agent registered within 30s.
-If not, read the agent's log file and report the error.
-
-### ddgr / DuckDuckGo blocks automated requests (HTTP 202)
-
-ddgr (DuckDuckGo CLI search) returns `HTTP Error 202: Accepted` with empty
-results in environments where DuckDuckGo has flagged the IP for automated
-querying. This is a server-side block, not a client configuration issue:
-
-```
-$ ddgr --json -n 3 "test"
-[ERROR] HTTP Error 202: Accepted
-[]
-```
-
-All artifacts that use `ddgr` for web research (web-research-report,
-news-briefing, competitive-analysis, a2a-landscape, weekly-digest) will
-return empty results when ddgr is blocked. The agents attempt the search,
-get back empty JSON, and have nothing to work with.
-
-This typically happens in:
-- Cloud/VM environments with datacenter IP ranges
-- Environments behind VPNs or proxy services
-- CI/CD runners that share IPs
-
-**Diagnosis:** Run `ddgr --json -n 1 "test"` directly. If it returns
-`HTTP Error 202`, ddgr is blocked.
-
-**Mitigations (none guaranteed):**
-- Use `-t w` (past week) instead of `-t m` to reduce query scope
-- Increase `--num 3` to avoid hitting rate limits too fast
-- Run from a residential IP or use a different search tool
-- The build script should detect empty ddgr results and fall back gracefully
-  (as the weekly-digest build script does)
-
-### API key exhaustion silently kills agent spawns
-
-AI CLIs (opencode, claude, pi) require valid API keys with available quota.
-When the key is exhausted or invalid, `a2a-spawn` still creates a process
-(PID assigned, log file written) but the agent process immediately errors
-out without registering on the bus or doing any work.
-
-The build script's `spawn_agent()` health check polls `a2a list --json` and
-waits up to 30s for the agent to appear. If the agent never registers, the
-health check fails and the spawn returns `None`. However, this 30s timeout
-adds significant latency to the build — 3 agents × 30s = 90s spent waiting
-for timeouts before the fallback can activate.
-
-**Detection pattern** (implemented in `_util.py` `_check_agent_health()`):
-
-```python
-for marker in ["Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
-                "401", "402", "429", "403"]:
-    if marker in log_contents:
-        return False  # Fast-fail: don't wait for full timeout
-```
-
-This checks the agent's log file (`/tmp/a2a-{agent_id}.log`) for error markers
-immediately after spawn, before entering the 30s polling loop.
-
-**Fallback pattern** (implemented in all build scripts):
-
-```python
-api_errors = check_agent_logs(agent_ids)
-if not spawned_ok or api_errors:
-    print(f"Agents have API/startup issues. Generating fallback...")
-    # Produce output directly so the artifact directory is always populated
-```
-
-**Diagnosis:** Check agent log files with `cat /tmp/a2a-{agent_id}.log`.
-Common markers:
-- `Key limit exceeded` — opencode API key monthly budget exhausted
-- `insufficient_quota` — claude/pi API key out of credits
-- `429` — rate limit hit; wait and retry
-
-**Best practices for build scripts:**
-1. Always implement a fallback path that produces output without agents.
-2. Check agent logs before entering the polling loop (fast-fail).
-3. The `output/` directory should always be populated, even with a fallback note.
-4. The bus state snapshot (`peek --limit 30`) provides debugging context even
-   when agents fail — send messages are visible even without agent responses.
+     1|# PITFALLS.md — lessons from artifact smoke testing
+     2|
+     3|Pitfalls discovered during collaborative artifact smoke testing with a2a agent
+     4|teams. Focuses on **agent behavior** and **build-script orchestration** problems,
+     5|not CLI bugs or feature gaps.
+     6|
+     7|## How agents communicate (and miscommunicate)
+     8|
+     9|### Agents wrap output in markdown code blocks
+    10|
+    11|Even when kit prompts say "start directly with <!DOCTYPE html> — no preamble,"
+    12|agents frequently wrap the HTML in a markdown fenced code block:
+    13|
+    14|    ```html
+    15|    <!DOCTYPE html>
+    16|    <html>...
+    17|    </html>
+    18|    ```
+    19|
+    20|Same for SVG (` ```svg `), Python (` ```python `), YAML (` ```yaml `), and
+    21|other formats. The `_util.py` helper function `strip_html_preamble()` handles
+    22|HTML specifically, but other formats need their own extraction logic.
+    23|
+    24|**Fix:** Build scripts that expect code output (not HTML) should either:
+    25|- Use a prefix marker like `FINAL_CODE:` and extract everything after it.
+    26|- Strip the outermost markdown code fence if present.
+    27|- Embed the format hint in the kit prompt as a prefix requirement.
+    28|
+    29|### Agents send "test message" first
+    30|
+    31|In color-palette builds, the colorist agent sent `"Test message"` as message #3
+    32|before the real palette in message #4. The build script's `recv` loop must
+    33|filter out non-matching messages rather than accepting the first arrival.
+    34|
+    35|**Fix:** In `recv` loops, check `sender` AND content criteria. Don't break on
+    36|the first message from a peer — wait for one that actually matches.
+    37|
+    38|### Agent preamble text contaminates extraction
+    39|
+    40|Agents love to preface output with "Here is the final HTML:" or "I have
+    41|generated the SVG below:" before the actual content. This makes regex-based
+    42|extraction fragile.
+    43|
+    44|**Fix:** `strip_html_preamble()` handles HTML by finding `<!DOCTYPE` or `<html`.
+    45|For non-HTML formats, use distinctive content markers (e.g. `FINAL_CODE:`,
+    46|`FILE:docker-compose.yml`) that the agent places before the data.
+    47|
+    48|### Agents sometimes truncate output mid-stream
+    49|
+    50|In svg-banner builds, the designer's first SVG was truncated — an `<svg>`
+    51|element with a `<text>` attribute cut off mid-value and no closing tags. The
+    52|reviewer caught the truncation and asked for a resend.
+    53|
+    54|**Fix:** Always have at least one review round for complex artifacts. Before
+    55|accepting output, verify structural completeness (valid XML, matching tags).
+    56|
+    57|## Spawn and process management
+    58|
+    59|### PID may not be emitted if spawn fails silently
+    60|
+    61|The `spawn_agent()` function reads a single line from the subprocess stdout
+    62|expecting a PID. If `a2a-spawn` fails (e.g. missing CLI binary), stdout is
+    63|empty and `int('')` raises ValueError. The function returns `None` but the
+    64|parent may not check the return value.
+    65|
+    66|**Fix:** After `spawn_agent()` returns `None`, log the spawn binary's stderr
+    67|before continuing.
+    68|
+    69|### Orphaned processes survive unclean termination
+    70|
+    71|The `SpawnManager` uses `atexit.register()` which only fires on normal exit.
+    72|If the script receives SIGKILL, the spawned agents keep running in the
+    73|background forever.
+    74|
+    75|**Fix:** Register a `--pidfile` per spawned agent and use `a2a list --json`
+    76|to enumerate PIDs on startup. Clean up orphans at the start of each build.
+    77|
+    78|### Concurrent builds on the same project name collide
+    79|
+    80|If two cron jobs or build scripts use the same `--project` name, their agents
+    81|interleave on the same bus. Agents from build A receive messages meant for
+    82|build B, and vice versa.
+    83|
+    84|**Fix:** Always use a unique project name per run. The cron-based approach
+    85|should use `a2a-artifact-verify-<timestamp>` or similar.
+    86|
+    87|### Agent spawn is I/O-bound, not CPU-bound
+    88|
+    89|Spawning 3 opencode agents sequentially (in a `for` loop) takes 30+ seconds
+    90|just for startup. The build script's 180-second timeout includes this startup
+    91|time, so don't set it too tight.
+    92|
+    93|**Fix:** If opencode startup is slow, increase `--wait` values in kit prompts
+    94|and the build script's overall timeout. The kit prompt's `--wait 20` gives
+    95|each agent time to boot up before their first `recv` blocks.
+    96|
+    97|## Kit prompt design
+    98|
+    99|### "All peers are listening" is a dangerous assumption
+   100|
+   101|The kit prompt tells each agent to start by running the locator snippet, then
+   102|`recv --wait 5`. But agents spawn sequentially, so the last agent spawned may
+   103|not be listening yet when the first agents start sending.
+   104|
+   105|**Fix:** The build script should sleep 3-5 seconds after spawning all agents
+   106|before sending startup tasks. All kit prompts should use `recv --wait 20` with
+   107|a loop so late-starting agents catch up.
+   108|
+   109|### Agents invent peers not on the bus
+   110|
+   111|Despite the kit prompt rule "Do not invent peers. Address only ids returned by
+   112|`a2a list`", agents sometimes invent peer names based on their understanding
+   113|of what roles should exist.
+   114|
+   115|**Fix:** The kit prompt's peer list section should be explicit: list every
+   116|registered peer id and role. Don't just say "there are other agents."
+   117|
+   118|### Hard cap prevents runaway costs
+   119|
+   120|The 8-iteration hard cap in the kit prompt is essential. Without it, an agent
+   121|that gets stuck in a loop (e.g. continually receiving empty `recv` results)
+   122|will keep going until manually killed. With opencode, each loop iteration
+   123|costs model inference tokens.
+   124|
+   125|**Fix:** Always include `"Hard cap: 8 loop iterations, then mark done and stop"`
+   126|in every kit prompt. Also set `--max-turns` on the spawn CLI flags where
+   127|supported.
+   128|
+   129|## Build script design
+   130|
+   131|### Multiple messages with the same prefix
+   132|
+   133|When using `FILE:` or `FINAL_CODE:` prefix patterns, the agent may send
+   134|multiple messages with the same prefix as they iterate. The build script
+   135|should capture the LAST message, not the first.
+   136|
+   137|**Fix:** In the `recv` loop, update a dict keyed by file/type prefix rather
+   138|than breaking on the first match. Only break when all expected files are
+   139|collected.
+   140|
+   141|### The integrator may not broadcast directly
+   142|
+   143|In the landing-page artifact, the integrator broadcasts the final HTML wrapped
+   144|in a markdown code block (````html...````). The build script captures this but
+   145|the saved file includes the markdown wrapper if `strip_html_preamble` doesn't
+   146|catch it.
+   147|
+   148|**Fix:** The kit prompt for the integrator should say "Broadcast the final HTML
+   149|directly — no markdown code blocks, no explanatory text. Start with
+   150|<!DOCTYPE html>."
+   151|
+   152|### Shell quoting fails when task instructions contain single quotes
+   153|
+   154|When a build script uses `run_a2a(f'send {id} "Your task: {prompt}"')`, the
+   155|prompt is embedded in a shell command via shlex. If the prompt contains shell
+   156|metacharacters — particularly single quotes (`'`) or double quotes (`"`) —
+   157|shlex.split() raises `ValueError: No closing quotation`.
+   158|
+   159|This happened in the web-research-report and news-briefing artifacts, whose
+   160|agent kit prompts include a2a command examples like:
+   161|
+   162|```
+   163|a2a send analyst 'FINDINGS: ...' --from researcher
+   164|```
+   165|
+   166|The single quotes inside the prompt, when embedded in `"Your task: ..."`,
+   167|are interpreted by shlex as starting new quote boundaries.
+   168|
+   169|**Fix:** Send task bodies via stdin instead of embedding in shell command args.
+   170|Use subprocess directly:
+   171|
+   172|```python
+   173|proc = subprocess.run(
+   174|    [a2a_bin, "send", agent_id, "-", "--from", "collector"],
+   175|    input=body.encode(), capture_output=True, timeout=30, env=env,
+   176|)
+   177|```
+   178|
+   179|The `-` body argument tells a2a to read the message body from stdin.
+   180|
+   181|### wait_for_messages() drops subsequent peer messages
+   182|
+   183|The `wait_for_messages()` helper in `_util.py` returns on the first message
+   184|from each expected sender. If a peer sends multiple rounds (like the svg
+   185|reviewer), only the first message is captured.
+   186|
+   187|**Fix:** For multi-round workflows, use the inline `recv` loop pattern that
+   188|updates a dict and only breaks when all criteria are met. See the
+   189|`svg-banner/build.py` for an example that handles review rounds.
+   190|
+   191|### Bus peek output can exceed terminal buffer
+   192|
+   193|`a2a peek --limit 50` dumps raw message bodies to stdout. If agents sent large
+   194|HTML blocks, the terminal output can be megabytes. This is mostly a concern
+   195|for cron jobs that log all output.
+   196|
+   197|**Fix:** Use `peek --limit 10` for summary views. For detailed inspection,
+   198|use `peek --json` and process with `jq` or Python.
+   199|
+   200|## Source vs doc divergence
+   201|
+   202|### strip_html_preamble() only handles HTML
+   203|
+   204|The `_util.py` helper `strip_html_preamble()` searches for `<!DOCTYPE` or
+   205|`<html` to strip preamble text. It does NOT handle:
+   206|- SVG (`<svg` tag)
+   207|- YAML (`version:` or `services:`)
+   208|- Python (`#!/usr/bin/env python3`)
+   209|- Plain text or markdown
+   210|
+   211|**Fix:** When adding a new artifact format, add a corresponding strip function
+   212|to `_util.py` or handle extraction in the build script directly.
+   213|
+   214|## Cross-CLI validation parity
+   215|
+   216|### Python and Go CLIs must agree on invalid inputs
+   217|
+   218|The a2a ecosystem has two CLIs: `a2a.py` (Python) and `cmd/a2a/main.go` (Go
+   219|binary compiled to `a2a`). They share the same database schema but handle
+   220|input validation independently. Inconsistencies cause test failures when
+   221|integration tests (which use the Go binary) exercise validation paths that
+   222|the Python CLI tests cover.
+   223|
+   224|Known gaps (and fixes):
+   225|- `--ttl`: Python rejects `<= 0`. Go used to silently ignore non-positive
+   226|  values. **Fixed:** Go now parses `--ttl` strictly and rejects non-positive
+   227|  values with the same error message.
+   228|- `--limit` on `peek`/`search`: Python rejects `<= 0`. Go used to accept `0`
+   229|  for some commands. **Fixed:** Go now rejects non-positive limits.
+   230|- Empty agent IDs: Python rejects `""` and whitespace-only IDs for
+   231|  `register` and `unregister`. Go used to pass them to SQLite, which would
+   232|  either succeed (creating a DB entry with an empty ID) or fail with a
+   233|  confusing SQL error. **Fixed:** Go now checks `strings.TrimSpace(id) == ""`
+   234|  and prints the same error message.
+   235|- Empty `to` in `Send`: Python client raises `ValueError`. Go client library
+   236|  used to pass empty strings to SQLite, creating messages with NULL or empty
+   237|  recipients. Go CLI also didn't validate. **Fixed:** Go client library and
+   238|  CLI, Node.js client, and Rust client now reject empty recipients.
+   239|- Empty query in `Search`: Python CLI and Go CLI used to pass empty strings
+   240|  to SQLite `LIKE` matching (which matched everything). **Fixed:** Go client
+   241|  library, Python sync and async clients, and Rust client now all reject empty
+   242|  or whitespace-only search queries with a clear error.
+   243|- Non-positive limit in `Peek`: Python client validates, but Go client library
+   244|  and Node.js/Rust clients did not. **Fixed:** All client libraries now reject
+   245|  `limit <= 0` at the library level, matching the Python CLI behavior.
+   246|- Non-positive count in `Wait`: Go CLI validated, but Go client library did
+   247|  not. **Fixed:** Go `Wait()` now rejects `count <= 0` at the library level.
+   248|- Empty project/agentId in constructor: Node.js client did not validate.
+   249|  **Fixed:** Node.js `A2AClient` constructor now throws on empty project or
+   250|  agentId, matching Python behavior.
+   251|- Invalid status in `setStatus`: Node.js client accepted any string.
+   252|  **Fixed:** Node.js `setStatus()` now validates against the known status
+   253|  values (`active`, `idle`, `done`, `blocked`), matching Python behavior.
+   254|
+   255|**Fix:** When adding a new validation check to `a2a.py`, add the equivalent
+   256|check to `cmd/a2a/main.go` at the same time. Run both test suites before
+   257|committing.
+   258|
+   259|### Integration tests use the Go binary, unit tests use Python
+   260|
+   261|`test_integration.py` shells out to the `a2a` binary (Go), while
+   262|`test_a2a.py` imports `a2a.py` and calls functions directly. This means a
+   263|validation bug in one CLI may pass the other's test suite. Always run both.
+   264|
+   265|**Fix:** When adding validation tests in `test_a2a.py`, add corresponding
+   266|integration tests in `test_integration.py` that exercise the same path
+   267|through the Go binary. Expected behavior must match.
+   268|
+   269|### API key exhaustion silently kills agent spawns
+   270|
+   271|AI CLIs (opencode, claude, pi) require valid API keys with available quota.
+   272|When the key is exhausted or invalid, `a2a-spawn` still creates a process
+   273|(PID assigned, log file written) but the agent process immediately errors
+   274|out without registering on the bus or doing any work:
+   275|
+   276|```
+   277|> build · deepseek/deepseek-v4-flash
+   278|Error: Key limit exceeded (total limit).
+   279|```
+   280|
+   281|This wasted ~8 minutes of wall-clock time per build before timeouts kicked in.
+   282|
+   283|The `spawn_agent()` health check polls `a2a list --json` and waits up to 30s
+   284|for the agent to appear. If the agent never registers, the health check fails
+   285|and spawn returns `None`. However, this 30s timeout adds significant latency
+   286|— 3 agents × 30s = 90s spent waiting for timeouts before fallback activates.
+   287|
+   288|**Diagnosis:** Check `/tmp/a2a-<agent-id>.log` for the agent's log output.
+   289|Common markers:
+   290|- `Key limit exceeded` — opencode API key monthly budget exhausted
+   291|- `insufficient_quota` — claude/pi API key out of credits
+   292|- `429` — rate limit hit; wait and retry
+   293|
+   294|**Mitigation (free models):** For opencode, use a free-tier model:
+   295|- `opencode/deepseek-v4-flash-free` (recommended — same model, free tier)
+   296|- `opencode/nemotron-3-super-free`
+   297|- `openrouter/deepseek/deepseek-v4-flash:free`
+   298|
+   299|Pass via: `--model opencode/deepseek-v4-flash-free`
+   300|
+   301|**Detection pattern** (implemented in `_util.py` `_check_agent_health()`):
+   302|```python
+   303|for marker in ["Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
+   304|                "401", "402", "429", "403"]:
+   305|    if marker in log_contents:
+   306|        return False  # Fast-fail: don't wait for full timeout
+   307|```
+   308|
+   309|This checks the agent's log file immediately after spawn, before the 30s poll.
+   310|
+   311|**Fallback pattern** (implemented in all build scripts):
+   312|```python
+   313|api_errors = check_agent_logs(agent_ids)
+   314|if not spawned_ok or api_errors:
+   315|    print(f"Agents have API/startup issues. Generating fallback...")
+   316|    # Produce output directly so the artifact directory is always populated
+   317|```
+   318|
+   319|**Best practices for build scripts:**
+   320|1. Always implement a fallback path that produces output without agents.
+   321|2. Check agent logs before entering the polling loop (fast-fail).
+   322|3. The `output/` directory should always be populated, even with a fallback note.
+   323|4. The bus state snapshot (`peek --limit 30`) provides debugging context even
+   324|   when agents fail — send messages are visible even without agent responses.
+   325|
+   326|### ddgr / DuckDuckGo blocks automated requests (HTTP 202)
+   327|
+   328|ddgr (DuckDuckGo CLI search) returns `HTTP Error 202: Accepted` with empty
+   329|results in environments where DuckDuckGo has flagged the IP for automated
+   330|querying. This is a server-side block, not a client configuration issue:
+   331|
+   332|```
+   333|$ ddgr --json -n 3 "test"
+   334|[ERROR] HTTP Error 202: Accepted
+   335|[]
+   336|```
+   337|
+   338|All artifacts that use `ddgr` for web research (web-research-report,
+   339|news-briefing, competitive-analysis, a2a-landscape, weekly-digest) will
+   340|return empty results when ddgr is blocked. The agents attempt the search,
+   341|get back empty JSON, and have nothing to work with.
+   342|
+   343|This typically happens in:
+   344|- Cloud/VM environments with datacenter IP ranges
+   345|- Environments behind VPNs or proxy services
+   346|- CI/CD runners that share IPs
+   347|
+   348|**Diagnosis:** Run `ddgr --json -n 1 "test"` directly. If it returns
+   349|`HTTP Error 202`, ddgr is blocked.
+   350|
+   351|**Mitigations (none guaranteed):**
+   352|- Use `-t w` (past week) instead of `-t m` to reduce query scope
+   353|- Increase `--num 3` to avoid hitting rate limits too fast
+   354|- Run from a residential IP or use a different search tool
+   355|- The build script should detect empty ddgr results and fall back gracefully
+   356|  (as the weekly-digest build script does)
+   357|
+   358|
