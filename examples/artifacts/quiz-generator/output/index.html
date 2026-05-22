@@ -3,115 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Space Exploration Quiz</title>
+<title>Roman Empire Quiz</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;display:flex;justify-content:center;padding:40px 20px}
-  .container{max-width:720px;width:100%;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.1);padding:40px}
-  h1{font-size:28px;margin-bottom:8px;color:#1a1a2e}
-  .subtitle{font-size:14px;color:#666;margin-bottom:32px}
-  .question{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #eee}
-  .question:last-child{border-bottom:none;margin-bottom:0}
-  .q-text{font-size:16px;font-weight:600;margin-bottom:12px;line-height:1.5}
-  .options{display:flex;flex-direction:column;gap:8px}
-  .options label{display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid #e0e0e0;border-radius:10px;cursor:pointer;transition:.2s;font-size:15px}
-  .options label:hover{border-color:#4a6cf7;background:#f8f9ff}
-  .options input[type=radio]{accent-color:#4a6cf7;width:18px;height:18px;cursor:pointer}
-  .correct{background:#d4edda!important;border-color:#28a745!important;color:#155724}
-  .wrong{background:#f8d7da!important;border-color:#dc3545!important;color:#721c24}
-  .btn{padding:14px 32px;font-size:16px;font-weight:600;border:none;border-radius:10px;cursor:pointer;transition:.2s;margin-top:8px}
-  .btn-check{background:#4a6cf7;color:#fff}
-  .btn-check:hover{background:#3a5bd7}
-  .btn-reset{background:#6c757d;color:#fff;margin-left:12px}
-  .btn-reset:hover{background:#5a6268}
-  .actions{display:flex;justify-content:center;margin-top:32px}
-  .score{text-align:center;font-size:18px;font-weight:600;margin-top:20px;padding:14px;border-radius:10px;display:none}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f1f5f9;min-height:100vh;display:flex;justify-content:center;padding:2rem 1rem}
+  .container{max-width:720px;width:100%}
+  h1{font-size:2rem;color:#1e293b;margin-bottom:0.5rem}
+  .subtitle{color:#64748b;margin-bottom:2rem;font-size:0.95rem}
+  .question{background:#fff;border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.08);transition:box-shadow .2s}
+  .question-title{font-weight:600;color:#1e293b;margin-bottom:0.75rem;font-size:1.05rem}
+  .options{display:flex;flex-direction:column;gap:0.5rem}
+  .options label{display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:8px;border:1.5px solid #e2e8f0;cursor:pointer;transition:all .15s;font-size:0.95rem}
+  .options label:hover{border-color:#94a3b8;background:#f8fafc}
+  .options input[type="radio"]{accent-color:#6366f1;width:16px;height:16px;flex-shrink:0}
+  .correct{border-color:#22c55e!important;background:#f0fdf4!important}
+  .correct::after{content:" ✓";color:#22c55e;font-weight:700;margin-left:auto}
+  .wrong{border-color:#ef4444!important;background:#fef2f2!important}
+  .wrong::after{content:" ✗";color:#ef4444;font-weight:700;margin-left:auto}
+  .btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.5rem;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn-primary{background:#6366f1;color:#fff}
+  .btn-primary:hover{background:#4f46e5}
+  .btn-secondary{background:#e2e8f0;color:#475569}
+  .btn-secondary:hover{background:#cbd5e1}
+  .actions{display:flex;gap:0.75rem;margin-top:1.5rem;flex-wrap:wrap}
+  .score{background:#fff;border-radius:12px;padding:1rem 1.5rem;margin-top:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,.08);text-align:center;font-size:1.1rem;font-weight:600;color:#1e293b;display:none}
+  .score .num{color:#6366f1}
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>🚀 Space Exploration</h1>
-  <p class="subtitle">Test your knowledge of space exploration history and our solar system</p>
-  <form id="quizForm">
-    <div class="question">
-      <div class="q-text">1. Which planet in our solar system has the shortest orbital period?</div>
-      <div class="options">
-        <label><input type="radio" name="q1" value="A"> Mercury</label>
-        <label><input type="radio" name="q1" value="B"> Venus</label>
-        <label><input type="radio" name="q1" value="C"> Mars</label>
-        <label><input type="radio" name="q1" value="D"> Jupiter</label>
-      </div>
+  <h1>🏛️ The Roman Empire</h1>
+  <p class="subtitle">Test your knowledge of ancient Rome</p>
+
+  <div class="question" data-answer="C">
+    <div class="question-title">1. What year did the Western Roman Empire officially fall?</div>
+    <div class="options">
+      <label><input type="radio" name="q1" value="A"> 376 AD</label>
+      <label><input type="radio" name="q1" value="B"> 410 AD</label>
+      <label><input type="radio" name="q1" value="C"> 476 AD</label>
+      <label><input type="radio" name="q1" value="D"> 500 AD</label>
     </div>
-    <div class="question">
-      <div class="q-text">2. What was the name of the first artificial satellite launched into space?</div>
-      <div class="options">
-        <label><input type="radio" name="q2" value="A"> Explorer 1</label>
-        <label><input type="radio" name="q2" value="B"> Sputnik 1</label>
-        <label><input type="radio" name="q2" value="C"> Vanguard 1</label>
-        <label><input type="radio" name="q2" value="D"> Apollo 1</label>
-      </div>
-    </div>
-    <div class="question">
-      <div class="q-text">3. Which space telescope is the successor to the Hubble Space Telescope, launched in December 2021?</div>
-      <div class="options">
-        <label><input type="radio" name="q3" value="A"> Chandra</label>
-        <label><input type="radio" name="q3" value="B"> Kepler</label>
-        <label><input type="radio" name="q3" value="C"> James Webb</label>
-        <label><input type="radio" name="q3" value="D"> Spitzer</label>
-      </div>
-    </div>
-    <div class="question">
-      <div class="q-text">4. What is the largest moon of Saturn?</div>
-      <div class="options">
-        <label><input type="radio" name="q4" value="A"> Europa</label>
-        <label><input type="radio" name="q4" value="B"> Titan</label>
-        <label><input type="radio" name="q4" value="C"> Ganymede</label>
-        <label><input type="radio" name="q4" value="D"> Io</label>
-      </div>
-    </div>
-    <div class="question">
-      <div class="q-text">5. Which Apollo mission was the first to land humans on the Moon?</div>
-      <div class="options">
-        <label><input type="radio" name="q5" value="A"> Apollo 11</label>
-        <label><input type="radio" name="q5" value="B"> Apollo 13</label>
-        <label><input type="radio" name="q5" value="C"> Apollo 8</label>
-        <label><input type="radio" name="q5" value="D"> Apollo 1</label>
-      </div>
-    </div>
-  </form>
-  <div class="actions">
-    <button class="btn btn-check" onclick="checkAnswers()">Check Answers</button>
-    <button class="btn btn-reset" onclick="resetQuiz()">Reset</button>
   </div>
-  <div id="score" class="score"></div>
+
+  <div class="question" data-answer="D">
+    <div class="question-title">2. Which emperor built the Colosseum in Rome?</div>
+    <div class="options">
+      <label><input type="radio" name="q2" value="A"> Julius Caesar</label>
+      <label><input type="radio" name="q2" value="B"> Nero</label>
+      <label><input type="radio" name="q2" value="C"> Augustus</label>
+      <label><input type="radio" name="q2" value="D"> Vespasian</label>
+    </div>
+  </div>
+
+  <div class="question" data-answer="B">
+    <div class="question-title">3. What was the name of the elite Roman military unit that served as the emperor personal bodyguard?</div>
+    <div class="options">
+      <label><input type="radio" name="q3" value="A"> The Legionaries</label>
+      <label><input type="radio" name="q3" value="B"> The Praetorian Guard</label>
+      <label><input type="radio" name="q3" value="C"> The Equites</label>
+      <label><input type="radio" name="q3" value="D"> The Triarii</label>
+    </div>
+  </div>
+
+  <div class="question" data-answer="C">
+    <div class="question-title">4. Which Punic War general famously crossed the Alps with war elephants to attack Rome?</div>
+    <div class="options">
+      <label><input type="radio" name="q4" value="A"> Spartacus</label>
+      <label><input type="radio" name="q4" value="B"> Attila the Hun</label>
+      <label><input type="radio" name="q4" value="C"> Hannibal</label>
+      <label><input type="radio" name="q4" value="D"> Scipio Africanus</label>
+    </div>
+  </div>
+
+  <div class="question" data-answer="B">
+    <div class="question-title">5. What material did the Romans use to create their durable concrete?</div>
+    <div class="options">
+      <label><input type="radio" name="q5" value="A"> Marble dust</label>
+      <label><input type="radio" name="q5" value="B"> Volcanic ash</label>
+      <label><input type="radio" name="q5" value="C"> Limestone</label>
+      <label><input type="radio" name="q5" value="D"> Clay</label>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="checkAnswers()">Check Answers</button>
+    <button class="btn btn-secondary" onclick="resetQuiz()">Reset</button>
+  </div>
+
+  <div class="score" id="score"></div>
 </div>
+
 <script>
-  const answers = {q1:"A",q2:"B",q3:"C",q4:"B",q5:"A"};
-  function checkAnswers(){
-    let score = 0, total = 5;
-    for(let q in answers){
-      const sel = document.querySelector(`input[name="${q}"]:checked`);
-      const labels = document.querySelectorAll(`input[name="${q}"]`);
-      labels.forEach(l => {
-        const lb = l.closest("label");
-        lb.classList.remove("correct","wrong");
-        if(l.value === answers[q]) lb.classList.add("correct");
-      });
-      if(sel && sel.value === answers[q]){score++; sel.closest("label").classList.add("correct");}
-      else if(sel) sel.closest("label").classList.add("wrong");
-    }
-    const scoreDiv = document.getElementById("score");
-    const pct = Math.round(score/total*100);
-    scoreDiv.style.display="block";
-    scoreDiv.style.background=pct===100?"#d4edda":"#fff3cd";
-    scoreDiv.style.color=pct===100?"#155724":"#856404";
-    scoreDiv.innerHTML = `You scored ${score}/${total} (${pct}%)`;
-  }
-  function resetQuiz(){
-    document.querySelectorAll("input[type=radio]").forEach(r=>r.checked=false);
-    document.querySelectorAll("label").forEach(l=>l.classList.remove("correct","wrong"));
-    document.getElementById("score").style.display="none";
-  }
+function checkAnswers(){
+  let correct=0,total=document.querySelectorAll(".question").length;
+  document.querySelectorAll(".question").forEach(q=>{
+    let answer=q.dataset.answer;
+    let labels=q.querySelectorAll("label");
+    let selected=q.querySelector("input[type=radio]:checked");
+    labels.forEach(l=>{l.classList.remove("correct","wrong")});
+    if(selected){
+      if(selected.value===answer){labels[["A","B","C","D"].indexOf(answer)].classList.add("correct");correct++}
+      else{selected.parentElement.classList.add("wrong");labels[["A","B","C","D"].indexOf(answer)].classList.add("correct")}
+    }else{labels[["A","B","C","D"].indexOf(answer)].classList.add("correct")}
+  });
+  let s=document.getElementById("score");
+  s.style.display="block";
+  s.innerHTML="You scored <span class=\"num\">"+correct+"/"+total+"</span> ("+Math.round(correct/total*100)+"%)";
+}
+function resetQuiz(){
+  document.querySelectorAll("input[type=radio]").forEach(i=>i.checked=false);
+  document.querySelectorAll("label").forEach(l=>l.classList.remove("correct","wrong"));
+  document.getElementById("score").style.display="none";
+}
 </script>
 </body>
 </html>

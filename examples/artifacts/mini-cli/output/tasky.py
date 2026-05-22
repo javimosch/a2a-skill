@@ -1,86 +1,83 @@
 #!/usr/bin/env python3
-import json
-import argparse
-import sys
-import os
+import argparse, json, sys, pathlib
 
-TASKY_DIR = os.path.expanduser("~/.tasky")
-TASKS_FILE = os.path.join(TASKY_DIR, "tasks.json")
+TASKS_PATH = pathlib.Path.home() / ".tasky" / "tasks.json"
 
-def load_data() -> dict:
+def load_tasks(path: str) -> list:
+    p = pathlib.Path(path)
+    if not p.exists():
+        return []
     try:
-        with open(TASKS_FILE) as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {"next_id": 1, "tasks": {}}
+        with open(p) as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except (json.JSONDecodeError, OSError):
+        return []
 
-def save_data(data: dict) -> None:
-    os.makedirs(TASKY_DIR, exist_ok=True)
-    with open(TASKS_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+def save_tasks(path: str, tasks: list) -> None:
+    p = pathlib.Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with open(p, "w") as f:
+        json.dump(tasks, f, indent=2)
+        f.write("\n")
 
-def cmd_add(tasks: list[str]) -> None:
-    if not tasks:
-        print("Usage: tasky add <task description>")
-        sys.exit(1)
-    data = load_data()
-    text = " ".join(tasks)
-    task_id = str(data["next_id"])
-    data["tasks"][task_id] = {"id": data["next_id"], "text": text, "done": False}
-    data["next_id"] += 1
-    save_data(data)
-    print(f"Added task {task_id}: {text}")
+def add_task(tasks: list, description: str) -> dict:
+    task_id = max((t["id"] for t in tasks), default=0) + 1
+    task = {"id": task_id, "description": description, "done": False}
+    tasks.append(task)
+    save_tasks(str(TASKS_PATH), tasks)
+    return task
 
-def cmd_list() -> None:
-    data = load_data()
-    if not data["tasks"]:
-        print("No tasks.")
-        return
-    for tid in sorted(data["tasks"], key=int):
-        t = data["tasks"][tid]
-        status = "[x]" if t["done"] else "[ ]"
-        print(f"{status} {t['id']}. {t['text']}")
+def list_tasks(tasks: list) -> None:
+    print(f"{'ID':<4} {'Description':<30} {'Done'}")
+    print("-" * 44)
+    for t in tasks:
+        done = "yes" if t["done"] else "no"
+        desc = t["description"][:30]
+        print(f"{t['id']:<4} {desc:<30} {done}")
 
-def cmd_done(task_id: str) -> None:
-    data = load_data()
-    if task_id not in data["tasks"]:
-        print(f"Error: task {task_id} not found.")
-        sys.exit(1)
-    data["tasks"][task_id]["done"] = True
-    save_data(data)
-    print(f"Task {task_id} marked as done.")
+def done_task(tasks: list, task_id: int) -> dict | None:
+    for t in tasks:
+        if t["id"] == task_id:
+            t["done"] = True
+            save_tasks(str(TASKS_PATH), tasks)
+            return t
+    return None
 
-def cmd_clear() -> None:
-    save_data({"next_id": 1, "tasks": {}})
-    print("All tasks cleared.")
+def clear_tasks() -> list:
+    save_tasks(str(TASKS_PATH), [])
+    return []
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    p = argparse.ArgumentParser(prog="tasky", description="Minimal task tracker.")
+    sub = p.add_subparsers(dest="command", required=True)
+    add_p = sub.add_parser("add", help="Add a new task")
+    add_p.add_argument("description", help="Task description")
+    done_p = sub.add_parser("done", help="Mark a task as done")
+    done_p.add_argument("task_id", type=int, help="Task ID to mark done")
+    sub.add_parser("list", help="List all tasks")
+    sub.add_parser("clear", help="Clear all tasks")
+    return p.parse_args(argv)
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Minimal JSON task tracker")
-    subparsers = parser.add_subparsers(dest="command")
-
-    add_parser = subparsers.add_parser("add", help="Add a new task")
-    add_parser.add_argument("task", nargs="*", help="Task description")
-
-    subparsers.add_parser("list", help="List all tasks")
-
-    done_parser = subparsers.add_parser("done", help="Mark a task as done")
-    done_parser.add_argument("task_id", help="Task ID to mark as done")
-
-    subparsers.add_parser("clear", help="Clear all tasks")
-
-    args = parser.parse_args()
-
+    args = parse_args(sys.argv[1:])
+    if args.command == "clear":
+        clear_tasks()
+        print("All tasks cleared")
+        return
+    tasks = load_tasks(str(TASKS_PATH))
     if args.command == "add":
-        cmd_add(args.task)
+        t = add_task(tasks, args.description)
+        print(f"Added task {t['id']}: {t['description']}")
     elif args.command == "list":
-        cmd_list()
+        list_tasks(tasks)
     elif args.command == "done":
-        cmd_done(args.task_id)
-    elif args.command == "clear":
-        cmd_clear()
-    else:
-        parser.print_help()
-        sys.exit(1)
+        t = done_task(tasks, args.task_id)
+        if t:
+            print(f"Task {args.task_id} marked as done")
+        else:
+            print(f"Error: task {args.task_id} not found", file=sys.stderr)
+            sys.exit(1)
 
 if __name__ == "__main__":
     main()
