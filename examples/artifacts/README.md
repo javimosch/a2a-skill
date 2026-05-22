@@ -33,6 +33,7 @@ output to `output/`.
 | `web-research-report/` | researcher, analyst, writer | `output/report.md`, `output/bus-state.txt` | 3 agents produce a research report using ddgr for live web search |
 | `news-briefing/` | curator, narrator | `output/briefing.md`, `output/bus-state.txt` | 2 agents produce a tech news briefing with real ddgr-sourced stories |
 | `competitive-analysis/` | searcher, analyst, writer | `output/competitive-analysis.md`, `output/bus-state.txt` | 3 agents produce a competitive analysis with comparison table and market positioning |
+| `a2a-landscape/` | searcher, analyst, writer | `output/a2a-landscape.md`, `output/bus-state.txt` | 3 agents research and position a2a-skill against 9 competing multi-agent frameworks |
 
 ## Requirements
 
@@ -57,8 +58,8 @@ python3 examples/artifacts/svg-banner/build.py --cli claude --model haiku
 # Custom project name:
 python3 examples/artifacts/mini-cli/build.py --cli pi --model sonnet
 
-# Recommended: opencode with opencode-go/deepseek-v4-flash:
-python3 examples/artifacts/quiz-generator/build.py --cli opencode --model opencode-go/deepseek-v4-flash
+# Recommended: opencode with the free DeepSeek V4 Flash model:
+python3 examples/artifacts/quiz-generator/build.py --cli opencode --model opencode/deepseek-v4-flash-free
 ```
 
 Output goes to `examples/artifacts/<name>/output/` (checked in).
