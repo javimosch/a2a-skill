@@ -2109,5 +2109,53 @@ class TestWALInvariant(unittest.TestCase):
         self.assertTrue(db_path.parent.exists())
 
 
+class TestProjectNameValidation(unittest.TestCase):
+    """Test project name input validation (path traversal prevention)."""
+
+    def test_valid_project_name(self):
+        """Valid project names should work normally."""
+        name = a2a.project_name("my-project-123")
+        self.assertEqual(name, "my-project-123")
+
+    def test_simple_name_from_env(self):
+        """Project name from env var should work."""
+        os.environ["A2A_PROJECT"] = "simple-test"
+        name = a2a.project_name(None)
+        self.assertEqual(name, "simple-test")
+        del os.environ["A2A_PROJECT"]
+
+    def test_path_separator_rejected(self):
+        """Project name containing '/' should be rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.project_name("../../evil")
+
+    def test_backslash_rejected(self):
+        """Project name containing '\\' should be rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.project_name("evil\\..")
+
+    def test_dot_prefix_rejected(self):
+        """Project name starting with '.' should be rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.project_name(".hidden")
+
+    def test_empty_project_name_rejected(self):
+        """Empty project name should be rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.project_name("")
+
+    def test_whitespace_project_name_rejected(self):
+        """Whitespace-only project name should be rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.project_name("   ")
+
+    def test_env_path_separator_rejected(self):
+        """Project name from env var containing '/' should be rejected."""
+        os.environ["A2A_PROJECT"] = "a/b"
+        with self.assertRaises(SystemExit):
+            a2a.project_name(None)
+        del os.environ["A2A_PROJECT"]
+
+
 if __name__ == "__main__":
     unittest.main()
