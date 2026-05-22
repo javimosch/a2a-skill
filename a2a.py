@@ -539,6 +539,8 @@ def cmd_stats(args) -> None:
 
 def cmd_wait(args) -> None:
     """Block until N messages exist for agent, or timeout."""
+    if args.count <= 0:
+        die("--count must be a positive integer")
     agent, conn = _resolve_agent(args)
     deadline = now() + args.timeout
     while True:
