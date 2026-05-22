@@ -131,9 +131,16 @@ def main():
 
     time.sleep(3)
 
-    # Send tasks
+    import subprocess
+    env = os.environ.copy()
     for ag in agents:
-        run_a2a(f'send {ag["id"]} "Your task: {ag["task"]}" --from collector', a2a_bin, project)
+        body = f"Your task: {ag['task']}"
+        proc = subprocess.run(
+            [a2a_bin, "send", ag["id"], "-", "--from", "collector"],
+            input=body.encode(), capture_output=True, timeout=30, env=env,
+        )
+        if proc.returncode != 0:
+            print(f"[{ARTIFACT}] WARNING: send to {ag['id']} failed: {proc.stderr.decode()}", file=sys.stderr)
         print(f"[{ARTIFACT}] → sent task to {ag['id']}")
 
     # Wait for the writer's report broadcast

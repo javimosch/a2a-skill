@@ -31,6 +31,7 @@ output to `output/`.
 | `quiz-generator/` | researcher, checker, formatter | `output/index.html` | 3 agents collaborate to produce an interactive HTML quiz page |
 | `docker-compose-generator/` | specifier, writer | `output/docker-compose.yml`, `output/README.md` | 2 agents spec and write a 5-service Docker stack with README |
 | `web-research-report/` | researcher, analyst, writer | `output/report.md`, `output/bus-state.txt` | 3 agents produce a research report using ddgr for live web search |
+| `news-briefing/` | curator, narrator | `output/briefing.md`, `output/bus-state.txt` | 2 agents produce a tech news briefing with real ddgr-sourced stories |
 
 ## Requirements
 
