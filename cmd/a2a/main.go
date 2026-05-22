@@ -491,7 +491,11 @@ func cmdThread() {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a thread <id> [--json]")
 		os.Exit(1)
 	}
-	threadID := args[0]
+	threadID := strings.TrimSpace(args[0])
+	if threadID == "" {
+		fmt.Fprintln(os.Stderr, "a2a: thread id must not be empty")
+		os.Exit(1)
+	}
 
 	c := newClient("")
 	msgs, err := c.Thread(threadID)
