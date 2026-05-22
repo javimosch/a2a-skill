@@ -42,6 +42,7 @@ output to `output/`.
 | `github-trending-report/` | searcher, describer, compiler | `output/trending.md`, `output/bus-state.txt` | 3 agents produce a weekly GitHub trending repositories report via ddgr research |
 | `api-doc-generator/` | searcher, describer, docsmith | `output/api-docs.md`, `output/api-docs.html`, `output/bus-state.txt` | 3 agents produce a GitHub REST API reference guide with pandoc HTML conversion |
 | `dependency-check/` | fetcher, reporter | `output/advisory.md`, `output/bus-state.txt` | 2 agents scan project deps and search ddgr for known CVEs |
+| `security-audit/` | scanner, reporter | `output/report.md`, `output/raw-findings.json`, `output/bus-state.txt` | 2 agents research CVEs across web/AI/OS categories and produce a system security posture report |
 
 ## Requirements
 
