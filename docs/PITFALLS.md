@@ -203,6 +203,25 @@ Known gaps (and fixes):
   either succeed (creating a DB entry with an empty ID) or fail with a
   confusing SQL error. **Fixed:** Go now checks `strings.TrimSpace(id) == ""`
   and prints the same error message.
+- Empty `to` in `Send`: Python client raises `ValueError`. Go client library
+  used to pass empty strings to SQLite, creating messages with NULL or empty
+  recipients. Go CLI also didn't validate. **Fixed:** Go client library and
+  CLI, Node.js client, and Rust client now reject empty recipients.
+- Empty query in `Search`: Python CLI and Go CLI used to pass empty strings
+  to SQLite `LIKE` matching (which matched everything). **Fixed:** Go client
+  library, Python sync and async clients, and Rust client now all reject empty
+  or whitespace-only search queries with a clear error.
+- Non-positive limit in `Peek`: Python client validates, but Go client library
+  and Node.js/Rust clients did not. **Fixed:** All client libraries now reject
+  `limit <= 0` at the library level, matching the Python CLI behavior.
+- Non-positive count in `Wait`: Go CLI validated, but Go client library did
+  not. **Fixed:** Go `Wait()` now rejects `count <= 0` at the library level.
+- Empty project/agentId in constructor: Node.js client did not validate.
+  **Fixed:** Node.js `A2AClient` constructor now throws on empty project or
+  agentId, matching Python behavior.
+- Invalid status in `setStatus`: Node.js client accepted any string.
+  **Fixed:** Node.js `setStatus()` now validates against the known status
+  values (`active`, `idle`, `done`, `blocked`), matching Python behavior.
 
 **Fix:** When adding a new validation check to `a2a.py`, add the equivalent
 check to `cmd/a2a/main.go` at the same time. Run both test suites before

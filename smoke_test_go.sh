@@ -81,6 +81,15 @@ echo "$OUT" | grep -q '"id": "alice"' && pass "list --json" || fail "list --json
 # 15b. wait with zero count is rejected
 "$A2A" wait --as bob --count 0 --timeout 1 2>&1 | grep -qi "must be a positive" && pass "wait rejects count=0" || fail "wait rejects count=0"
 
+# 15c. send with empty recipient is rejected
+"$A2A" send "" "body" --from alice 2>&1 | grep -qi "must not be empty" && pass "send rejects empty recipient" || fail "send rejects empty recipient"
+
+# 15d. search with empty query is rejected
+"$A2A" search "" 2>&1 | grep -qi "empty" && pass "search rejects empty query" || fail "search rejects empty query"
+
+# 15e. peek with zero limit is rejected
+"$A2A" peek --limit 0 2>&1 | grep -qi "must be a positive" && pass "peek rejects limit=0" || fail "peek rejects limit=0"
+
 # 16. send with --thread
 "$A2A" send bob "threaded msg" --from alice --thread test-thread 2>&1 | grep -qE "#[34]" && pass "send with thread" || fail "send with thread"
 
