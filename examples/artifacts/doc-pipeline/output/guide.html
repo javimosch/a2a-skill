@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>a2a Quick Start Guide</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+<style>body{max-width:800px;margin:auto;padding:2em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#e0e0e0;background:#1a1a2e}h1,h2,h3{color:#e94560}code{background:#16213e;padding:2px 6px;border-radius:3px;font-size:0.9em}pre{background:#16213e;padding:1em;border-radius:6px;overflow-x:auto}table{border-collapse:collapse;width:100%}th,td{border:1px solid #333;padding:8px;text-align:left}th{background:#16213e;color:#e94560}a{color:#4fc3f7}</style></head>
+<body>
+<header id="title-block-header">
+<h1 class="title">a2a Quick Start Guide</h1>
+</header>
+<h1 id="a2a-quick-start-guide">a2a Quick Start Guide</h1>
+<p>A peer-to-peer messaging bus for agentic CLI sessions.</p>
+<h2 id="what-is-a2a">What is a2a?</h2>
+<p><strong>a2a</strong> is a lightweight, zero-dependency messaging bus
+that lets AI agents communicate directly — no orchestrator, no central
+chain of command. Each agent runs in its own CLI session and uses
+<code>a2a send</code> / <code>a2a recv</code> to exchange messages
+through a shared SQLite database (the “bus”).</p>
+<h2 id="installation">Installation</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/javimosch/a2a-skill.git ~/a2a-skill</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ln</span> <span class="at">-sf</span> ~/a2a-skill/a2a /usr/local/bin/a2a</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ln</span> <span class="at">-sf</span> ~/a2a-skill/a2a-spawn /usr/local/bin/a2a-spawn</span></code></pre></div>
+<p>No <code>pip install</code> or npm required — a2a runs on Python 3
+stdlib + sqlite3.</p>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="initialize-the-bus">1. Initialize the bus</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">a2a</span> init <span class="at">--project</span> my-project</span></code></pre></div>
+<h3 id="register-agents">2. Register agents</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">a2a</span> register alice <span class="at">--role</span> researcher <span class="at">--cli</span> claude</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">a2a</span> register bob <span class="at">--role</span> writer <span class="at">--cli</span> opencode</span></code></pre></div>
+<h3 id="send-a-message">3. Send a message</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">a2a</span> send bob <span class="st">&quot;Research the latest AI trends&quot;</span> <span class="at">--from</span> alice</span></code></pre></div>
+<h3 id="receive-messages">4. Receive messages</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">a2a</span> recv <span class="at">--as</span> bob <span class="at">--wait</span> 30</span></code></pre></div>
+<h3 id="broadcast-to-all-agents">5. Broadcast to all agents</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">a2a</span> send all <span class="st">&quot;Meeting in 5 minutes&quot;</span> <span class="at">--from</span> alice</span></code></pre></div>
+<h3 id="mark-yourself-done">6. Mark yourself done</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">a2a</span> status done <span class="at">--as</span> alice</span></code></pre></div>
+<h2 id="key-concepts">Key Concepts</h2>
+<table>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 59%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concept</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Bus</strong></td>
+<td>Shared SQLite database (WAL mode) stored at
+<code>~/.a2a/{project}/database.db</code></td>
+</tr>
+<tr class="even">
+<td><strong>Agent</strong></td>
+<td>A registered participant with an ID, role, and optional prompt/cli
+metadata</td>
+</tr>
+<tr class="odd">
+<td><strong>Message</strong></td>
+<td>A text payload with sender, recipient (or <code>NULL</code> for
+broadcast), and timestamp</td>
+</tr>
+<tr class="even">
+<td><strong>Read tracking</strong></td>
+<td>Per-agent <code>reads</code> table ensures each message is delivered
+exactly once</td>
+</tr>
+<tr class="odd">
+<td><strong>Thread</strong></td>
+<td>Group related messages with <code>--thread &lt;id&gt;</code> for
+multi-turn conversations</td>
+</tr>
+<tr class="even">
+<td><strong>TTL</strong></td>
+<td>Optional expiry time via <code>--ttl &lt;seconds&gt;</code>; expired
+messages auto-clean</td>
+</tr>
+<tr class="odd">
+<td><strong>Project</strong></td>
+<td>Isolated bus namespace; agents on different projects can’t see each
+other</td>
+</tr>
+<tr class="even">
+<td><strong>WAL mode</strong></td>
+<td>Write-Ahead Logging enables concurrent writers without
+deadlocks</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cli-command-reference">CLI Command Reference</h2>
+<table>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 59%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>a2a init</code></td>
+<td>Initialize a new a2a project bus</td>
+</tr>
+<tr class="even">
+<td><code>a2a register &lt;id&gt;</code></td>
+<td>Register an agent on the bus</td>
+</tr>
+<tr class="odd">
+<td><code>a2a unregister &lt;id&gt;</code></td>
+<td>Remove an agent from the bus</td>
+</tr>
+<tr class="even">
+<td><code>a2a send &lt;to&gt; &lt;body&gt;</code></td>
+<td>Send a message (use <code>all</code> for broadcast)</td>
+</tr>
+<tr class="odd">
+<td><code>a2a recv --as &lt;id&gt;</code></td>
+<td>Receive unread messages (blocks up to <code>--wait</code>
+seconds)</td>
+</tr>
+<tr class="even">
+<td><code>a2a peek</code></td>
+<td>View recent messages without marking them read</td>
+</tr>
+<tr class="odd">
+<td><code>a2a list</code></td>
+<td>List registered agents</td>
+</tr>
+<tr class="even">
+<td><code>a2a search &lt;query&gt;</code></td>
+<td>Search message contents</td>
+</tr>
+<tr class="odd">
+<td><code>a2a thread &lt;id&gt;</code></td>
+<td>View all messages in a thread</td>
+</tr>
+<tr class="even">
+<td><code>a2a stats</code></td>
+<td>Show bus statistics (message count, agent count)</td>
+</tr>
+<tr class="odd">
+<td><code>a2a status &lt;state&gt;</code></td>
+<td>Set agent status (idle, active, blocked, done)</td>
+</tr>
+<tr class="even">
+<td><code>a2a clear --yes</code></td>
+<td>Delete the entire project database</td>
+</tr>
+<tr class="odd">
+<td><code>a2a wait &lt;n&gt;</code></td>
+<td>Block until N unread messages arrive</td>
+</tr>
+</tbody>
+</table>
+<h2 id="multi-agent-patterns">Multi-Agent Patterns</h2>
+<h3 id="coordinator-workers">Coordinator → Workers</h3>
+<p>A coordinator agent delegates subtasks to worker agents, then
+collects results:</p>
+<pre><code>coordinator ──send──&gt; worker-1 ──send──&gt; coordinator
+           ──send──&gt; worker-2 ──send──&gt; coordinator</code></pre>
+<h3 id="pipeline">Pipeline</h3>
+<p>Agents pass work sequentially down a chain:</p>
+<pre><code>writer ──send──&gt; formatter ──send──&gt; publisher ──send──&gt; collector</code></pre>
+<h3 id="broadcast">Broadcast</h3>
+<p>One agent sends to all agents simultaneously for announcements or
+questions.</p>
+<h2 id="best-practices">Best Practices</h2>
+<ol type="1">
+<li><p><strong>Always call <code>a2a status done</code></strong> when
+finished — otherwise the bus shows the agent as active forever.</p></li>
+<li><p><strong>Use <code>--wait</code> instead of sleep loops</strong> —
+<code>--wait 30</code> blocks efficiently until a message
+arrives.</p></li>
+<li><p><strong>Include the WAL invariant</strong> in any new module that
+opens SQLite directly:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>conn.execute(<span class="st">&quot;PRAGMA journal_mode=WAL&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>conn.execute(<span class="st">&quot;PRAGMA busy_timeout=5000&quot;</span>)</span></code></pre></div></li>
+<li><p><strong>Hard-cap agent iterations</strong> (5-10 turns) to
+prevent runaway budget consumption.</p></li>
+<li><p><strong>Test with <code>a2a peek --limit 30</code></strong> after
+a multi-agent run to verify bus state.</p></li>
+</ol>
+</body>
+</html>
