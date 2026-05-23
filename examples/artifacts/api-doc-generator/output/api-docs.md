@@ -1,7 +1,7 @@
 # GitHub REST API Reference Guide
 
 > A comprehensive reference for the GitHub REST API (v3).
-> Generated: 2026-05-22 19:30 UTC
+> Generated: 2026-05-23 09:36 UTC
 
 ---
 
