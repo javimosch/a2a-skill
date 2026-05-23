@@ -104,6 +104,25 @@ class TestA2AClient(unittest.TestCase):
         with self.assertRaises(ValueError):
             A2AClient("   ", "alice")
 
+    def test_constructor_agent_id_too_long_raises_error(self):
+        """A2AClient with agent_id > 256 chars raises ValueError."""
+        with self.assertRaises(ValueError):
+            A2AClient(self.project, "a" * 300)
+
+    def test_send_thread_id_too_long_raises_error(self):
+        """send() with thread_id > 256 chars raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        alice.register("tester")
+        with self.assertRaises(ValueError):
+            alice.send("bob", "test", thread_id="t" * 300)
+
+    def test_send_body_too_long_raises_error(self):
+        """send() with body > 100000 chars raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        alice.register("tester")
+        with self.assertRaises(ValueError):
+            alice.send("bob", "x" * 100_001)
+
     def test_send_direct(self):
         """Test sending a direct message."""
         alice = A2AClient(self.project, "alice")

@@ -1188,6 +1188,45 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(row["thread_id"], "topic-42")
         self.assertEqual(row["ttl_seconds"], 3600)
         conn.close()
+    def test_cmd_send_thread_id_too_long_raises_error(self):
+        """Send with --thread > 256 chars raises SystemExit."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("bob", "active", a2a.now(), a2a.now())
+        )
+        conn.commit()
+        conn.close()
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(a2a.argparse.Namespace(
+                project=self.project, to="bob", body="test",
+                **{"from_": "alice", "thread": "t" * 300, "ttl": None, "json": False}
+            ))
+
+    def test_cmd_send_body_too_long_raises_error(self):
+        """Send with body > 100000 chars raises SystemExit."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("bob", "active", a2a.now(), a2a.now())
+        )
+        conn.commit()
+        conn.close()
+        long_body = "x" * 100_001
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(a2a.argparse.Namespace(
+                project=self.project, to="bob", body=long_body,
+                **{"from_": "alice", "thread": None, "ttl": None, "json": False}
+            ))
+
 
     def test_cmd_thread_with_messages(self):
         """cmd_thread retrieves all messages in a thread in chronological order."""
@@ -2278,6 +2317,23 @@ class TestEdgeCases(unittest.TestCase):
         sys.stdout = old_stdout
         # Should find all 10 messages (well under 200 cap)
         self.assertIn("searchable message 9", output)
+
+    def test_cmd_register_id_too_long_raises_error(self):
+        """Register with agent ID > 256 chars raises SystemExit."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_register(
+                a2a.argparse.Namespace(
+                    project=self.project, id="a" * 300, role="tester",
+                    prompt="", cli="", pid=0, upsert=False,
+                )
+            )
+
+    def test_cmd_unregister_id_too_long_raises_error(self):
+        """Unregister with agent ID > 256 chars raises SystemExit."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_unregister(
+                a2a.argparse.Namespace(project=self.project, id="b" * 300)
+            )
 
 
 class TestWALInvariant(unittest.TestCase):
