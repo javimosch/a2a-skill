@@ -278,11 +278,16 @@ class A2AClientAsync:
         """Get all messages in a thread.
 
         Args:
-            thread_id: Thread ID
+            thread_id: Thread ID (must not be empty)
 
         Returns:
             List of message dicts
+
+        Raises:
+            ValueError: If thread_id is empty or whitespace-only
         """
+        if not thread_id or not thread_id.strip():
+            raise ValueError("thread_id must not be empty")
         conn = await self._connect()
         cursor = await conn.execute(
             "SELECT id, sender, recipient, body, thread_id, created_at "
@@ -405,12 +410,19 @@ class A2AClientAsync:
         """Wait for a specific number of messages.
 
         Args:
-            count: Number of messages to wait for
-            timeout: Max seconds to wait (default: 60)
+            count: Number of messages to wait for (must be positive)
+            timeout: Max seconds to wait (must be non-negative, default: 60)
 
         Returns:
             List of message dicts
+
+        Raises:
+            ValueError: If count is not a positive integer or timeout is negative
         """
+        if not isinstance(count, int) or count <= 0:
+            raise ValueError("count must be a positive integer")
+        if timeout < 0:
+            raise ValueError("timeout must be a non-negative number of seconds")
         deadline = time.time() + timeout
         messages = []
 
