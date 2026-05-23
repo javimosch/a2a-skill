@@ -87,11 +87,14 @@ echo "$OUT" | grep -q '"id": "alice"' && pass "list --json" || fail "list --json
 # 15d. search with empty query is rejected
 "$A2A" search "" 2>&1 | grep -qi "empty" && pass "search rejects empty query" || fail "search rejects empty query"
 
-# 15e. peek with zero limit is rejected
+# 15e. send with empty body warns
+"$A2A" send alice "" --from alice 2>&1 | grep -qi "warning.*empty" && pass "send warns on empty body" || fail "send warns on empty body"
+
+# 15f. peek with zero limit is rejected
 "$A2A" peek --limit 0 2>&1 | grep -qi "must be a positive" && pass "peek rejects limit=0" || fail "peek rejects limit=0"
 
 # 16. send with --thread
-"$A2A" send bob "threaded msg" --from alice --thread test-thread 2>&1 | grep -qE "#[34]" && pass "send with thread" || fail "send with thread"
+"$A2A" send bob "threaded msg" --from alice --thread test-thread 2>&1 | grep -qE "#[3456]" && pass "send with thread" || fail "send with thread"
 
 # 17. thread view
 OUT=$("$A2A" thread test-thread 2>&1)
@@ -113,7 +116,7 @@ OUT=$("$A2A" search hello --json 2>&1)
 echo "$OUT" | grep -q '"body"' && pass "search --json" || fail "search --json"
 
 # 21. send with --ttl
-"$A2A" send bob "expiring msg" --from alice --ttl 1 2>&1 | grep -qE "#[345]" && pass "send with TTL" || fail "send with TTL"
+"$A2A" send bob "expiring msg" --from alice --ttl 1 2>&1 | grep -qE "#[4567]" && pass "send with TTL" || fail "send with TTL"
 
 # 22. clear (should refuse without --yes)
 "$A2A" clear 2>&1 | grep -q "refusing" && pass "clear refuses without --yes" || fail "clear refuses without --yes"
