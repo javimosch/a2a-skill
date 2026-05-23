@@ -120,6 +120,29 @@ test('send() to "*" also creates broadcast', async () => {
   assert.strictEqual(row.recipient, null);
 });
 
+test('send() to unknown recipient rejects', async () => {
+  const { alice } = makeClients('send-unknown-recip');
+  try {
+    await alice.send('nonexistent', 'hello');
+    assert.fail('expected error for unknown recipient');
+  } catch (e) {
+    assert.ok(e.message.includes('unknown recipient'));
+  }
+});
+
+test('send() from unregistered sender rejects', async () => {
+  const { alice, dir, dbPath } = makeClients('send-ghost-sender');
+  const ghost = new A2AClient('send-ghost-sender', 'ghost');
+  ghost.dbDir = dir;
+  ghost.dbPath = dbPath;
+  try {
+    await ghost.send('alice', 'hello');
+    assert.fail('expected error for unregistered sender');
+  } catch (e) {
+    assert.ok(e.message.includes('register first'));
+  }
+});
+
 // --- recv ---
 
 test('recv() returns direct message', async () => {
