@@ -349,6 +349,10 @@ class A2AClient:
     ) -> bool:
         """Block until N unread messages or timeout.
 
+        Accumulates messages across polls so count > 1 works even when
+        messages arrive one at a time. Messages are marked as read as
+        they arrive.
+
         Args:
             count: Number of unread messages to wait for (must be positive)
             timeout: Max seconds to wait (must be non-negative)
@@ -364,11 +368,14 @@ class A2AClient:
         if timeout < 0:
             raise ValueError("timeout must be a non-negative number of seconds")
         deadline = time.time() + timeout
+        seen = []
         while time.time() < deadline:
-            messages = self.recv(unread_only=True)
-            if len(messages) >= count:
+            msgs = self.recv(unread_only=True, wait=0)
+            seen.extend(msgs)
+            if len(seen) >= count:
                 return True
-            time.sleep(0.5)
+            if not msgs:
+                time.sleep(0.5)
         return False
 
     def search(self, query: str, limit: int = 50) -> List[Dict[str, Any]]:

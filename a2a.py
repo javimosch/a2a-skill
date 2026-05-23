@@ -192,10 +192,14 @@ def cmd_register(args) -> None:
         die(f"agent id too long ({len(args.id)} chars, max {MAX_ID_LENGTH})")
     if args.pid is not None and args.pid <= 0:
         die("--pid must be a positive integer")
-    if args.role and not args.role.strip():
-        die("--role must not be whitespace-only")
-    if args.cli and not args.cli.strip():
-        die("--cli must not be whitespace-only")
+    if args.role:
+        args.role = args.role.strip()
+        if not args.role:
+            die("--role must not be whitespace-only")
+    if args.cli:
+        args.cli = args.cli.strip()
+        if not args.cli:
+            die("--cli must not be whitespace-only")
     name, conn = _open(args, create=True)
     ts = now()
     try:
