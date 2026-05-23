@@ -355,6 +355,9 @@ func cmdSend() {
 		stdin, _ := os.ReadFile(os.Stdin.Name())
 		body = strings.TrimSpace(string(stdin))
 	}
+	if strings.TrimSpace(body) == "" {
+		fmt.Fprintln(os.Stderr, "a2a: warning: sending empty message body")
+	}
 
 	var ttlPtr *int
 	if hasFlag("--ttl") {
