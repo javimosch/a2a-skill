@@ -208,6 +208,7 @@ A2A="${{A2A_BIN:-}}"
 [ -z "$A2A" ] && A2A="$(command -v a2a 2>/dev/null)"
 [ -z "$A2A" ] && [ -x "$HOME/.agents/skills/a2a/a2a" ] && A2A="$HOME/.agents/skills/a2a/a2a"
 [ -z "$A2A" ] && [ -x "$HOME/.claude/skills/a2a/a2a" ] && A2A="$HOME/.claude/skills/a2a/a2a"
+[ -z "$A2A" ] && [ -x "/usr/local/lib/hermes-agent/a2a" ] && A2A="/usr/local/lib/hermes-agent/a2a"
 
 == How to communicate ==
 A2A_PROJECT={project} is in your environment.
