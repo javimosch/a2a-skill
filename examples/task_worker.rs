@@ -19,7 +19,13 @@ struct Task {
 }
 
 fn main() {
-    let client = Client::new("production", "worker-1");
+    let client = match Client::new("production", "worker-1") {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Client creation failed: {}", e);
+            return;
+        }
+    };
 
     // Register as active
     if let Err(e) = client.set_status("active") {
