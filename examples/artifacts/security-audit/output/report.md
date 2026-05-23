@@ -1,6 +1,6 @@
 # System Security Posture Report
 
-**Generated:** 2026-05-23 08:29 UTC
+**Generated:** 2026-05-23 16:29 UTC
 **Scope:** Web frameworks, AI/ML tools, OS/kernel, system configuration
 
 ---
@@ -13,37 +13,38 @@ This report summarizes findings from web research and system security checks.
 
 | Metric | Value |
 |--------|-------|
-| **Overall Risk Score** | **4.0/10 — 🟡 Elevated** |
+| **Overall Risk Score** | **8.1/10 — 🔴 Critical** |
 | Total Findings | 10 |
-| Total CVEs Referenced | 0 |
-| Critical | 2 |
+| Total CVEs Referenced | 2 |
+| Critical | 4 |
 | High | 0 |
 | Medium | 0 |
-| Low | 0 |
-| Info | 8 |
+| Low | 1 |
+| Info | 5 |
 
 ### Severity Distribution
 
-  Critical: ████ (2)
-  Info: ████████████████ (8)
+  Critical: ████████ (4)
+  Low: ██ (1)
+  Info: ██████████ (5)
 
 ### 1. Web Framework Vulnerabilities
 
+- 🔴 **[Critical]** HeroDevs Blog | March 2026 Spring CVE Roundup: Six New Vulnerabilities ...
+  - Six newly disclosed Spring CVEs (March 2026) impact Spring Boot, Security, Framework, and Cloud Config—covering critical header omissions, auth bypass
+  - Source: [https://www.herodevs.com/blog-posts/march-2026-spring-cve-roundup-six-new-vulnerabilities-patched-across-the-spring-ecosystem](https://www.herodevs.com/blog-posts/march-2026-spring-cve-roundup-six-new-vulnerabilities-patched-across-the-spring-ecosystem)
+- 🔵 **[Low]** Nvd - Cve-2026-22732
+  - An official website of the United States government NVD MENU Information Technology Laboratory National Vulnerability Database Vulnerabilities
+  - Source: [https://nvd.nist.gov/vuln/detail/CVE-2026-22732](https://nvd.nist.gov/vuln/detail/CVE-2026-22732)
 - 🔴 **[Critical]** Top CVEs of 2026: Critical Vulnerabilities Every Enterprise Must Patch ...
   - From zero-day exploits to actively weaponized flaws, 2026 has already delivered high-severity CVEs targeting enterprise infrastructure. This guide bre
   - Source: [https://hive-project.com/blog/top-cves-of-2026-critical-vulnerabilities-every-enterprise-must-patch-right-now/](https://hive-project.com/blog/top-cves-of-2026-critical-vulnerabilities-every-enterprise-must-patch-right-now/)
-- ⚪ **[Info]** CVE: Common Vulnerabilities and Exposures
-  - At cve.org, we provide the authoritative reference method for publicly known information-security vulnerabilities and exposures
-  - Source: [https://www.cve.org/](https://www.cve.org/)
-- ⚪ **[Info]** Database CVE, CWE, CISA KEV & Vulnerability Intelligence | CVE Find
-  - CVE Find is a cybersecurity intelligence platform indexing CVEs, CWEs, CAPEC, CVSS, EPSS and threat data. Search, track, and analyze known vulnerabili
-  - Source: [https://www.cvefind.com/](https://www.cvefind.com/)
-- ⚪ **[Info]** Vulnerability Summary for the Week of April 6, 2026 - CISA
-  - (CVE) vulnerability naming standard and are organized according to severity, determined by the Common Vulnerability Scoring System (CVSS) standard. Th
-  - Source: [https://www.cisa.gov/news-events/bulletins/sb26-103](https://www.cisa.gov/news-events/bulletins/sb26-103)
-- 🔴 **[Critical]** FIRST Releases 2026 Vulnerability Report, Projecting Record-Breaking ...
-  - The model accounts for the structural change in CVE publication patterns that occurred in 2017-2018, providing asymmetric confidence intervals that ac
-  - Source: [https://www.first.org/newsroom/releases/20260211](https://www.first.org/newsroom/releases/20260211)
+- 🔴 **[Critical]** Weekly Security Roundup: Navigating the April 2026 Threat Landscape and ...
+  - Weekly Security Roundup: Navigating the April 2026 Threat Landscape and Critical Framework Exploits This week's roundup analyzes the massive fallout f
+  - Source: [https://cvedatabase.com/blog/weekly-security-roundup-navigating-the-april-2026-threat-landscape-and-critical--2026-04-20](https://cvedatabase.com/blog/weekly-security-roundup-navigating-the-april-2026-threat-landscape-and-critical--2026-04-20)
+- 🔴 **[Critical]** Current Common Vulnerabilities and Exposures - Feedly
+  - Welcome to Feedly CVEs — Research critical vulnerabilities (CVEs) with all the real-time and historical information you need to assess the risk to you
+  - Source: [https://feedly.com/cve](https://feedly.com/cve)
 
 ### 2. AI/ML Security
 
@@ -59,9 +60,9 @@ This report summarizes findings from web research and system security checks.
 - ⚪ **[Info]** NSA issues guidance on AI supply chain risks and cybersecurity ...
   - The guidance, released in March 2026, defines the AI supply chain as a combination of components including training data, models, software, hardware, 
   - Source: [https://cadeproject.org/updates/nsa-issues-guidance-on-ai-supply-chain-risks-and-cybersecurity-vulnerabilities/](https://cadeproject.org/updates/nsa-issues-guidance-on-ai-supply-chain-risks-and-cybersecurity-vulnerabilities/)
-- ⚪ **[Info]** The Growing Cybersecurity Risks To The Supply Chain In The AI Era - Forbes
-  - Artificial intelligence (AI) simultaneously exacerbates vulnerabilities as it revolutionizes operations through predictive analytics, automation, and 
-  - Source: [https://www.forbes.com/sites/chuckbrooks/2026/05/22/the-growing-cybersecurity-risks-to-the-supply-chain-in-the-ai-era/](https://www.forbes.com/sites/chuckbrooks/2026/05/22/the-growing-cybersecurity-risks-to-the-supply-chain-in-the-ai-era/)
+- ⚪ **[Info]** Case study: Securing AI application supply chains
+  - This case study examines how vulnerabilities in AI frameworks and orchestration layers can introduce supply chain risk. Using a real-world LangChain v
+  - Source: [https://www.microsoft.com/en-us/security/blog/2026/01/30/case-study-securing-ai-application-supply-chains/](https://www.microsoft.com/en-us/security/blog/2026/01/30/case-study-securing-ai-application-supply-chains/)
 
 ### 3. Operating System / Kernel
 
@@ -73,14 +74,14 @@ This report summarizes findings from web research and system security checks.
 
 ```
 Filesystem                        Size  Used Avail Use% Mounted on
-/dev/mapper/pve-vm--100--disk--0   69G   27G   40G  40% /
+/dev/mapper/pve-vm--100--disk--0   69G   27G   40G  41% /
 none                              492K  4.0K  488K   1% /dev
 efivarfs                          192K  142K   46K  76% /sys/firmware/efi/efivars
 tmpfs                              16G  4.0K   16G   1% /dev/shm
-tmpfs                             6.3G  304K  6.3G   1% /run
+tmpfs                             6.3G  396K  6.3G   1% /run
 tmpfs                             5.0M     0  5.0M   0% /run/lock
-tmpfs                             3.2G  536K  3.2G   1% /run/user/0
-overlay                            69G   27G   40G  40% /var/lib/docker/rootfs/overlayfs/c631515621b48647ad30a16595926d38f38d5b14aa6f8306f1157ef41f280a02
+tmpfs                             3.2G  1.5M  3.2G   1% /run/user/0
+overlay                            69G   27G   40G  41% /var/lib/docker/rootfs/overlayfs/c631515621b48647ad30a16595926d38f38d5b14aa6f8306f1157ef41f280a02
 ```
 
 #### Listening Ports
@@ -107,7 +108,7 @@ LISTEN 0      4096                            *:22               *:*    users:((
 #### Uptime & Load
 
 ```
-08:29:20 up 16:22,  1 user,  load average: 0.18, 0.28, 0.28
+16:29:41 up 1 day, 22 min,  1 user,  load average: 0.61, 0.31, 0.31
 ```
 
 #### Kernel Errors
@@ -118,7 +119,7 @@ LISTEN 0      4096                            *:22               *:*    users:((
 
 ## Recommendations
 
-1. **Immediate action:** 2 critical findings require urgent review. Apply available patches and updates.
+1. **Immediate action:** 4 critical findings require urgent review. Apply available patches and updates.
 2. **Network audit:** Review 8 non-standard listening ports — verify they are intentional.
 3. **Continuous monitoring:** Run this security audit weekly to track new CVEs and system changes.
 4. **Patch management:** Subscribe to security advisories for all in-scope technologies and apply patches within SLA.

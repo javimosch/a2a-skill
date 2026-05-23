@@ -13,8 +13,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             53,
             92
@@ -39,7 +39,7 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-2",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf"
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf"
         },
         {
           "check_id": "CKV_AWS_277",
@@ -51,8 +51,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             53,
             92
@@ -77,7 +77,7 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-aws-security-group-does-not-allow-all-traffic-on-all-ports",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf"
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf"
         },
         {
           "check_id": "CKV_AWS_93",
@@ -91,8 +91,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             95,
             103
@@ -118,13 +118,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/bc-aws-s3-24",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -132,7 +132,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -140,7 +140,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -158,8 +158,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             124,
             126
@@ -182,13 +182,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-348",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "user": [
               {
                 "type": "resource",
                 "name": "aws_iam_user.admin",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -223,18 +223,18 @@
               }
             },
             "evaluated_keys": [
-              "acl",
+              "access_control_policy/grant/*/grantee/uri",
+              "resource_type",
               "access_control_policy/grant/*/permission",
               "access_control_policy",
-              "access_control_policy/grant",
-              "access_control_policy/grant/*/grantee/uri",
-              "resource_type"
+              "acl",
+              "access_control_policy/grant"
             ]
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             95,
             103
@@ -260,13 +260,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/s3-2-acl-write-permissions-everyone",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -274,7 +274,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -282,7 +282,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -321,8 +321,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             109,
             116
@@ -347,13 +347,81 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/ensure-an-iam-user-does-not-have-access-to-the-console-group",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+                "module_connection": false
+              }
+            ]
+          }
+        },
+        {
+          "check_id": "CKV2_AWS_56",
+          "bc_check_id": "BC_AWS_IAM_75",
+          "check_name": "Ensure AWS Managed IAMFullAccess IAM policy is not used.",
+          "check_result": {
+            "result": "PASSED",
+            "entity": {
+              "aws_iam_user_policy_attachment": {
+                "admin": {
+                  "__end_line__": 121,
+                  "__start_line__": 118,
+                  "policy_arn": [
+                    "arn:aws:iam::aws:policy/AdministratorAccess"
+                  ],
+                  "user": [
+                    "admin-user"
+                  ],
+                  "__address__": "aws_iam_user_policy_attachment.admin",
+                  "__provider_address__": "aws.default"
+                }
+              }
+            },
+            "evaluated_keys": [
+              "policy_arn",
+              "managed_policy_arns/*",
+              "arn",
+              "name",
+              "managed_policy_arn"
+            ]
+          },
+          "code_block": null,
+          "file_path": "/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "file_line_range": [
+            118,
+            121
+          ],
+          "resource": "aws_iam_user_policy_attachment.admin",
+          "evaluations": null,
+          "check_class": "checkov.common.graph.checks_infra.base_check",
+          "fixed_definition": null,
+          "entity_tags": null,
+          "caller_file_path": null,
+          "caller_file_line_range": null,
+          "resource_address": null,
+          "severity": null,
+          "bc_category": null,
+          "benchmarks": null,
+          "description": null,
+          "short_description": null,
+          "vulnerability_details": null,
+          "connected_node": null,
+          "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-2-56",
+          "details": [],
+          "check_len": null,
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "breadcrumbs": {
+            "user": [
+              {
+                "type": "resource",
+                "name": "aws_iam_user.admin",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -389,14 +457,14 @@
             },
             "evaluated_keys": [
               "rule/apply_server_side_encryption_by_default/sse_algorithm",
-              "resource_type",
-              "server_side_encryption_configuration/rule/apply_server_side_encryption_by_default/sse_algorithm"
+              "server_side_encryption_configuration/rule/apply_server_side_encryption_by_default/sse_algorithm",
+              "resource_type"
             ]
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             95,
             103
@@ -422,13 +490,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/s3-14-data-encrypted-at-rest",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -436,7 +504,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -444,75 +512,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
-                "module_connection": false
-              }
-            ]
-          }
-        },
-        {
-          "check_id": "CKV2_AWS_56",
-          "bc_check_id": "BC_AWS_IAM_75",
-          "check_name": "Ensure AWS Managed IAMFullAccess IAM policy is not used.",
-          "check_result": {
-            "result": "PASSED",
-            "entity": {
-              "aws_iam_user_policy_attachment": {
-                "admin": {
-                  "__end_line__": 121,
-                  "__start_line__": 118,
-                  "policy_arn": [
-                    "arn:aws:iam::aws:policy/AdministratorAccess"
-                  ],
-                  "user": [
-                    "admin-user"
-                  ],
-                  "__address__": "aws_iam_user_policy_attachment.admin",
-                  "__provider_address__": "aws.default"
-                }
-              }
-            },
-            "evaluated_keys": [
-              "policy_arn",
-              "managed_policy_arns/*",
-              "managed_policy_arn",
-              "name",
-              "arn"
-            ]
-          },
-          "code_block": null,
-          "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "file_line_range": [
-            118,
-            121
-          ],
-          "resource": "aws_iam_user_policy_attachment.admin",
-          "evaluations": null,
-          "check_class": "checkov.common.graph.checks_infra.base_check",
-          "fixed_definition": null,
-          "entity_tags": null,
-          "caller_file_path": null,
-          "caller_file_line_range": null,
-          "resource_address": null,
-          "severity": null,
-          "bc_category": null,
-          "benchmarks": null,
-          "description": null,
-          "short_description": null,
-          "vulnerability_details": null,
-          "connected_node": null,
-          "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-2-56",
-          "details": [],
-          "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "breadcrumbs": {
-            "user": [
-              {
-                "type": "resource",
-                "name": "aws_iam_user.admin",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -532,8 +532,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             42,
             50
@@ -558,7 +558,7 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-vpc-subnets-do-not-assign-public-ip-by-default",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf"
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf"
         },
         {
           "check_id": "CKV_AWS_24",
@@ -575,8 +575,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             53,
             92
@@ -601,7 +601,7 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-1-port-security",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf"
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf"
         },
         {
           "check_id": "CKV_AWS_382",
@@ -618,8 +618,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             53,
             92
@@ -644,7 +644,7 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/bc-aws-382",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf"
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf"
         },
         {
           "check_id": "CKV_AWS_260",
@@ -661,8 +661,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             53,
             92
@@ -687,7 +687,7 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-aws-security-groups-do-not-allow-ingress-from-00000-to-port-80",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf"
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf"
         },
         {
           "check_id": "CKV_AWS_23",
@@ -702,8 +702,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             53,
             92
@@ -728,7 +728,7 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-31",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf"
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf"
         },
         {
           "check_id": "CKV_AWS_273",
@@ -740,8 +740,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             109,
             116
@@ -766,13 +766,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-273",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -790,8 +790,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             118,
             121
@@ -814,13 +814,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/iam-16-iam-policy-privileges-1",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "user": [
               {
                 "type": "resource",
                 "name": "aws_iam_user.admin",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -838,8 +838,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             118,
             121
@@ -862,13 +862,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-iam-policies/bc-aws-274",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "user": [
               {
                 "type": "resource",
                 "name": "aws_iam_user.admin",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -884,8 +884,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             11,
             16
@@ -908,7 +908,7 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/secrets-policies/bc-aws-secrets-5",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf"
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf"
         },
         {
           "check_id": "CKV2_AWS_12",
@@ -942,21 +942,21 @@
               }
             },
             "evaluated_keys": [
-              "ingress/from_port",
-              "ingress/protocol",
-              "ingress/to_port",
-              "egress/cidr_blocks",
-              "egress/to_port",
-              "ingress/self",
-              "egress/from_port",
               "egress/protocol",
-              "resource_type"
+              "egress/from_port",
+              "egress/cidr_blocks",
+              "ingress/from_port",
+              "ingress/to_port",
+              "resource_type",
+              "ingress/protocol",
+              "egress/to_port",
+              "ingress/self"
             ]
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             31,
             40
@@ -982,13 +982,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-4",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -1023,15 +1023,15 @@
               }
             },
             "evaluated_keys": [
-              "resource_type",
               "block_public_acls",
-              "block_public_policy"
+              "block_public_policy",
+              "resource_type"
             ]
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             95,
             103
@@ -1057,13 +1057,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/s3-bucket-should-have-public-access-blocks-defaults-to-false-if-the-public-access-block-is-not-attached",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1071,7 +1071,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1079,7 +1079,97 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+                "module_connection": false
+              }
+            ]
+          }
+        },
+        {
+          "check_id": "CKV_AWS_18",
+          "bc_check_id": "BC_AWS_S3_13",
+          "check_name": "Ensure the S3 bucket has access logging enabled",
+          "check_result": {
+            "result": "FAILED",
+            "entity": {
+              "aws_s3_bucket": {
+                "data": {
+                  "__end_line__": 103,
+                  "__start_line__": 95,
+                  "acl": [
+                    "public-read"
+                  ],
+                  "bucket": [
+                    "my-insecure-app-data-2026"
+                  ],
+                  "tags": [
+                    {
+                      "Environment": "production",
+                      "Name": "my-insecure-app-data-2026"
+                    }
+                  ],
+                  "__address__": "aws_s3_bucket.data",
+                  "__provider_address__": "aws.default"
+                }
+              }
+            },
+            "evaluated_keys": [
+              "logging",
+              "resource_type"
+            ]
+          },
+          "code_block": null,
+          "file_path": "/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "file_line_range": [
+            95,
+            103
+          ],
+          "resource": "aws_s3_bucket.data",
+          "evaluations": null,
+          "check_class": "checkov.common.graph.checks_infra.base_check",
+          "fixed_definition": null,
+          "entity_tags": {
+            "Environment": "production",
+            "Name": "my-insecure-app-data-2026"
+          },
+          "caller_file_path": null,
+          "caller_file_line_range": null,
+          "resource_address": null,
+          "severity": null,
+          "bc_category": null,
+          "benchmarks": null,
+          "description": null,
+          "short_description": null,
+          "vulnerability_details": null,
+          "connected_node": null,
+          "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/s3-13-enable-logging",
+          "details": [],
+          "check_len": null,
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "breadcrumbs": {
+            "tags.Environment": [
+              {
+                "type": "variable",
+                "name": "environment",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+                "module_connection": false
+              }
+            ],
+            "bucket": [
+              {
+                "type": "variable",
+                "name": "bucket_name",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+                "module_connection": false
+              }
+            ],
+            "tags.Name": [
+              {
+                "type": "variable",
+                "name": "bucket_name",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -1121,8 +1211,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             95,
             103
@@ -1148,13 +1238,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-s3-bucket-has-cross-region-replication-enabled",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1162,7 +1252,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1170,97 +1260,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
-                "module_connection": false
-              }
-            ]
-          }
-        },
-        {
-          "check_id": "CKV_AWS_18",
-          "bc_check_id": "BC_AWS_S3_13",
-          "check_name": "Ensure the S3 bucket has access logging enabled",
-          "check_result": {
-            "result": "FAILED",
-            "entity": {
-              "aws_s3_bucket": {
-                "data": {
-                  "__end_line__": 103,
-                  "__start_line__": 95,
-                  "acl": [
-                    "public-read"
-                  ],
-                  "bucket": [
-                    "my-insecure-app-data-2026"
-                  ],
-                  "tags": [
-                    {
-                      "Environment": "production",
-                      "Name": "my-insecure-app-data-2026"
-                    }
-                  ],
-                  "__address__": "aws_s3_bucket.data",
-                  "__provider_address__": "aws.default"
-                }
-              }
-            },
-            "evaluated_keys": [
-              "logging",
-              "resource_type"
-            ]
-          },
-          "code_block": null,
-          "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "file_line_range": [
-            95,
-            103
-          ],
-          "resource": "aws_s3_bucket.data",
-          "evaluations": null,
-          "check_class": "checkov.common.graph.checks_infra.base_check",
-          "fixed_definition": null,
-          "entity_tags": {
-            "Environment": "production",
-            "Name": "my-insecure-app-data-2026"
-          },
-          "caller_file_path": null,
-          "caller_file_line_range": null,
-          "resource_address": null,
-          "severity": null,
-          "bc_category": null,
-          "benchmarks": null,
-          "description": null,
-          "short_description": null,
-          "vulnerability_details": null,
-          "connected_node": null,
-          "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/s3-13-enable-logging",
-          "details": [],
-          "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "breadcrumbs": {
-            "tags.Environment": [
-              {
-                "type": "variable",
-                "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
-                "module_connection": false
-              }
-            ],
-            "bucket": [
-              {
-                "type": "variable",
-                "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
-                "module_connection": false
-              }
-            ],
-            "tags.Name": [
-              {
-                "type": "variable",
-                "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -1300,8 +1300,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             95,
             103
@@ -1327,13 +1327,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-logging-policies/bc-aws-2-62",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1341,7 +1341,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1349,7 +1349,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -1469,8 +1469,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             53,
             92
@@ -1495,7 +1495,7 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-that-security-groups-are-attached-to-ec2-instances-or-elastic-network-interfaces-enis",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf"
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf"
         },
         {
           "check_id": "CKV_AWS_20",
@@ -1526,17 +1526,17 @@
               }
             },
             "evaluated_keys": [
-              "acl",
-              "access_control_policy",
-              "access_control_policy/grant",
               "access_control_policy/grant/*/grantee/uri",
-              "resource_type"
+              "resource_type",
+              "access_control_policy",
+              "acl",
+              "access_control_policy/grant"
             ]
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             95,
             103
@@ -1562,13 +1562,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/s3-1-acl-read-permissions-everyone",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1576,7 +1576,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1584,7 +1584,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -1620,14 +1620,14 @@
             },
             "evaluated_keys": [
               "rule/apply_server_side_encryption_by_default/sse_algorithm",
-              "resource_type",
-              "server_side_encryption_configuration/rule/apply_server_side_encryption_by_default/sse_algorithm"
+              "server_side_encryption_configuration/rule/apply_server_side_encryption_by_default/sse_algorithm",
+              "resource_type"
             ]
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             95,
             103
@@ -1653,13 +1653,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-s3-buckets-are-encrypted-with-kms-by-default",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1667,7 +1667,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1675,7 +1675,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -1719,8 +1719,8 @@
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             31,
             40
@@ -1746,13 +1746,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-logging-policies/logging-9-enable-vpc-flow-logging",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -1787,14 +1787,14 @@
               }
             },
             "evaluated_keys": [
-              "resource_type",
-              "lifecycle_rule"
+              "lifecycle_rule",
+              "resource_type"
             ]
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             95,
             103
@@ -1820,13 +1820,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-logging-policies/bc-aws-2-61",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1834,7 +1834,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1842,7 +1842,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -1878,14 +1878,14 @@
             },
             "evaluated_keys": [
               "versioning_configuration/status",
-              "resource_type",
-              "versioning/enabled"
+              "versioning/enabled",
+              "resource_type"
             ]
           },
           "code_block": null,
           "file_path": "/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             95,
             103
@@ -1911,13 +1911,13 @@
           "guideline": "https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/s3-16-enable-versioning",
           "details": [],
           "check_len": null,
-          "definition_context_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "definition_context_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "breadcrumbs": {
             "tags.Environment": [
               {
                 "type": "variable",
                 "name": "environment",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1925,7 +1925,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ],
@@ -1933,7 +1933,7 @@
               {
                 "type": "variable",
                 "name": "bucket_name",
-                "path": "/tmp/infra-compliance-axulwwr_/main.tf",
+                "path": "/tmp/infra-compliance-zy8r_70p/main.tf",
                 "module_connection": false
               }
             ]
@@ -1966,9 +1966,9 @@
             "result": "FAILED"
           },
           "code_block": null,
-          "file_path": "/../../../tmp/infra-compliance-axulwwr_/main.tf",
-          "file_abs_path": "/tmp/infra-compliance-axulwwr_/main.tf",
-          "repo_file_path": "/tmp/infra-compliance-axulwwr_/main.tf",
+          "file_path": "/../../../tmp/infra-compliance-zy8r_70p/main.tf",
+          "file_abs_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
+          "repo_file_path": "/tmp/infra-compliance-zy8r_70p/main.tf",
           "file_line_range": [
             14,
             15

@@ -1,6 +1,6 @@
 # Infrastructure Compliance Report
 
-**Generated:** 2026-05-23 05:42 UTC
+**Generated:** 2026-05-23 16:29 UTC
 **Scanner:** checkov
 **Scope:** Terraform configuration compliance (CIS, HIPAA, GDPR, AWS best practices)
 
@@ -74,12 +74,12 @@
 - **CKV2_AWS_12**: Ensure the default security group of every VPC restricts all traffic
   - Resource: `aws_vpc.main`
   - Guideline: [https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-4](https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-4)
-- **CKV_AWS_144**: Ensure that S3 bucket has cross-region replication enabled
-  - Resource: `aws_s3_bucket.data`
-  - Guideline: [https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-s3-bucket-has-cross-region-replication-enabled](https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-s3-bucket-has-cross-region-replication-enabled)
 - **CKV_AWS_18**: Ensure the S3 bucket has access logging enabled
   - Resource: `aws_s3_bucket.data`
   - Guideline: [https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/s3-13-enable-logging](https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/s3-policies/s3-13-enable-logging)
+- **CKV_AWS_144**: Ensure that S3 bucket has cross-region replication enabled
+  - Resource: `aws_s3_bucket.data`
+  - Guideline: [https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-s3-bucket-has-cross-region-replication-enabled](https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-s3-bucket-has-cross-region-replication-enabled)
 - **CKV2_AWS_62**: Ensure S3 buckets should have event notifications enabled
   - Resource: `aws_s3_bucket.data`
   - Guideline: [https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-logging-policies/bc-aws-2-62](https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-logging-policies/bc-aws-2-62)
@@ -116,8 +116,8 @@
 11. **Ensure IAM policies are attached only to groups or roles (Reducing access management complexity may in-turn reduce opportunity for a principal to inadvertently receive or retain excessive privileges.)** (Resource: `aws_iam_user_policy_attachment.admin`, CKV_AWS_40) — Address as part of routine compliance maintenance.
 12. **Disallow IAM roles, users, and groups from using the AWS AdministratorAccess policy** (Resource: `aws_iam_user_policy_attachment.admin`, CKV_AWS_274) — Address as part of routine compliance maintenance.
 13. **Ensure the default security group of every VPC restricts all traffic** (Resource: `aws_vpc.main`, CKV2_AWS_12) — Address as part of routine compliance maintenance.
-14. **Ensure that S3 bucket has cross-region replication enabled** (Resource: `aws_s3_bucket.data`, CKV_AWS_144) — Address as part of routine compliance maintenance.
-15. **Ensure the S3 bucket has access logging enabled** (Resource: `aws_s3_bucket.data`, CKV_AWS_18) — Address as part of routine compliance maintenance.
+14. **Ensure the S3 bucket has access logging enabled** (Resource: `aws_s3_bucket.data`, CKV_AWS_18) — Address as part of routine compliance maintenance.
+15. **Ensure that S3 bucket has cross-region replication enabled** (Resource: `aws_s3_bucket.data`, CKV_AWS_144) — Address as part of routine compliance maintenance.
 16. **Ensure S3 buckets should have event notifications enabled** (Resource: `aws_s3_bucket.data`, CKV2_AWS_62) — Address as part of routine compliance maintenance.
 17. **Ensure that Security Groups are attached to another resource** (Resource: `aws_security_group.web`, CKV2_AWS_5) — Address as part of routine compliance maintenance.
 18. **Ensure that S3 buckets are encrypted with KMS by default** (Resource: `aws_s3_bucket.data`, CKV_AWS_145) — Address as part of routine compliance maintenance.

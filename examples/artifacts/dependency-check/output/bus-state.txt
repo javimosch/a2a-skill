@@ -1,0 +1,34 @@
+[16:29:37] #1 collector -> fetcher
+    Your task: You are the dependency fetcher for a2a-skill, a Go+Python+JS+Rust project.
+    
+    You have shell access. Read dependency files and extract the dependency list.
+    
+    Steps:
+    1. Read the Go module dependencies:
+       cat go.mod | grep -E "^\\t" | head -30
+    2. Read the Python imports from the main files:
+       grep "^import\\|^from" a2a.py a2a_client.py 2>/dev/null
+    3. Combine all unique dependency names into a structured list
+    4. Send the full dependency list to the reporter:
+       a2a send reporter "DEPS_START\n<dependency list with one per line>\nDEPS_END" --from fetcher
+    
+    Include the dependency name and source file for each entry.
+[16:29:38] #2 collector -> reporter
+    Your task: You are the security reporter. You search for CVEs of each dependency.
+    
+    Tools available:
+      ddgr --json -n 5 "<dependency> CVE vulnerability"
+    
+    Steps:
+    1. Wait for the fetcher to send the dependency list:
+       a2a recv --as reporter --wait 60
+    2. For each unique dependency, search ddgr for known CVEs:
+       ddgr --json -n 5 "<dependency> CVE security vulnerability"
+    3. Group findings by dependency
+    4. Write a markdown advisory with:
+       - Summary section with total dependencies checked and findings count
+       - Per-dependency section with CVE info (if any)
+       - Severity classification (Critical/High/Medium/Low/None)
+       - Recommendations section
+    5. Broadcast the advisory:
+       a2a send all "ADVISORY_START\n<full advisory>\nADVISORY_END" --from reporter

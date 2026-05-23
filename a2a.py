@@ -173,10 +173,15 @@ def cmd_project(args) -> None:
 
 
 def cmd_register(args) -> None:
-    if not args.id or not args.id.strip():
+    args.id = args.id.strip()
+    if not args.id:
         die("agent id must not be empty — pass a valid registered agent id")
     if args.pid is not None and args.pid <= 0:
         die("--pid must be a positive integer")
+    if args.role and not args.role.strip():
+        die("--role must not be whitespace-only")
+    if args.cli and not args.cli.strip():
+        die("--cli must not be whitespace-only")
     name, conn = _open(args, create=True)
     ts = now()
     try:
@@ -202,7 +207,8 @@ def cmd_register(args) -> None:
 
 
 def cmd_unregister(args) -> None:
-    if not args.id or not args.id.strip():
+    args.id = args.id.strip()
+    if not args.id:
         die("agent id must not be empty — pass a valid registered agent id")
     _, conn = _open(args)
     cur = conn.execute("DELETE FROM agents WHERE id=?", (args.id,))
@@ -264,8 +270,8 @@ def _touch(conn: sqlite3.Connection, agent_id: str) -> None:
 
 def cmd_send(args) -> None:
     sender = getattr(args, "from_")
-    if not sender:
-        die("--from <agent-id> is required")
+    if not sender or not sender.strip():
+        die("--from <agent-id> is required — provide a registered agent id")
     if not args.to or not args.to.strip():
         die("recipient must not be empty — use 'all' for broadcast")
     _, conn = _open(args)
@@ -282,6 +288,8 @@ def cmd_send(args) -> None:
     body = args.body
     if body == "-":
         body = sys.stdin.read()
+    if not body.strip():
+        print("a2a: warning: sending empty message body", file=sys.stderr)
     ttl = getattr(args, "ttl", None)
     if ttl is not None and ttl <= 0:
         die("--ttl must be a positive number of seconds")

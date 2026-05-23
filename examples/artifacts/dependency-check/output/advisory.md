@@ -1,6 +1,6 @@
 # Security Advisory — a2a-skill Dependencies
 
-Generated: 2026-05-22 18:26 UTC
+Generated: 2026-05-23 16:31 UTC
 
 ## Summary
 
