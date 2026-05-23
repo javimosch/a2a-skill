@@ -931,3 +931,68 @@ func TestWaitNonPositiveCountFails(t *testing.T) {
 		t.Fatal("expected error for Wait(-1, 1), got nil")
 	}
 }
+
+func TestSendNonPositiveTTLFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("sender", "", "", 0, false)
+
+	// TTL zero
+	zeroTTL := 0
+	_, err := c.Send("bob", "test", "", &zeroTTL)
+	if err == nil {
+		t.Fatal("expected error for Send with TTL=0, got nil")
+	}
+	if !strings.Contains(err.Error(), "ttl_seconds") {
+		t.Fatalf("expected error about ttl_seconds, got: %v", err)
+	}
+
+	// TTL negative
+	negTTL := -5
+	_, err = c.Send("bob", "test", "", &negTTL)
+	if err == nil {
+		t.Fatal("expected error for Send with TTL=-5, got nil")
+	}
+	if !strings.Contains(err.Error(), "ttl_seconds") {
+		t.Fatalf("expected error about ttl_seconds, got: %v", err)
+	}
+}
+
+func TestRecvNegativeLimitFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "tester"
+	c.Register("receiver", "", "", 0, false)
+
+	_, err := c.Recv(RecvOpts{Limit: -1})
+	if err == nil {
+		t.Fatal("expected error for Recv with negative limit, got nil")
+	}
+	if !strings.Contains(err.Error(), "limit") {
+		t.Fatalf("expected error about limit, got: %v", err)
+	}
+}
+
+func TestThreadEmptyIDFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	_, err := c.Thread("")
+	if err == nil {
+		t.Fatal("expected error for Thread with empty ID, got nil")
+	}
+	if !strings.Contains(err.Error(), "thread id") {
+		t.Fatalf("expected error about thread id, got: %v", err)
+	}
+
+	_, err = c.Thread("   ")
+	if err == nil {
+		t.Fatal("expected error for Thread with whitespace-only ID, got nil")
+	}
+	if !strings.Contains(err.Error(), "thread id") {
+		t.Fatalf("expected error about thread id, got: %v", err)
+	}
+}
