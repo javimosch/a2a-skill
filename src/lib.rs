@@ -119,10 +119,37 @@ impl Client {
             }
         }
         let conn = self.connect()?;
+
+        // Validate sender exists
+        let sender_exists: bool = conn.query_row(
+            "SELECT COUNT(1) FROM agents WHERE id = ?1",
+            params![&self.agent_id],
+            |row| row.get::<_, i64>(0),
+        ).map(|c| c > 0).unwrap_or(false);
+        if !sender_exists {
+            return Err(rusqlite::Error::InvalidParameterName(
+                format!("unknown sender '{}' — register first", self.agent_id),
+            ));
+        }
+
         let recipient = match to {
             "all" | "*" | "broadcast" => None,
             other => Some(other.to_string()),
         };
+
+        // Validate recipient exists (for non-broadcast)
+        if let Some(ref recip) = recipient {
+            let recip_exists: bool = conn.query_row(
+                "SELECT COUNT(1) FROM agents WHERE id = ?1",
+                params![recip],
+                |row| row.get::<_, i64>(0),
+            ).map(|c| c > 0).unwrap_or(false);
+            if !recip_exists {
+                return Err(rusqlite::Error::InvalidParameterName(
+                    format!("unknown recipient '{}' — register them first", recip),
+                ));
+            }
+        }
 
         conn.execute(
             "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
