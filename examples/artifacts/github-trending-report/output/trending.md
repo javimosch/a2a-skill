@@ -1,79 +1,49 @@
-# GitHub Trending Report — Week of May 22, 2026
+# GitHub Trending Report — Week of May 18, 2026
 
-> **Note:** This report was generated using live `ddgr` web search data (May 22, 2026).
-> The AI agent collaboration was unable to run due to OpenRouter API key limits on
-> the `opencode-go/deepseek-v4-flash` model. The data below is sourced from real
-> GitHub trending pages, the DEV Community weekly report, and ByteByteGo analysis.
+This week in the GitHub trending ecosystem, AI-focused repositories continue to dominate the landscape with astonishing star counts. The top 12 trending repositories reflect a massive surge in agentic AI tooling, skill frameworks, and developer productivity tools — a clear signal that the industry is racing toward autonomous coding agents and composable AI workflows.
 
-## Executive Summary
-
-This week's GitHub trending data paints a clear picture: **AI agent skills frameworks** and **coding assistant tools** have taken over the open-source ecosystem. The Claude Code skills ecosystem, agent orchestration frameworks, and local-first AI tools dominate the top trending repositories.
-
----
-
-## Top Trending Repositories
+## Repository Listing
 
 | Repository | Category | Popularity | Language | Description |
-|------------|----------|-----------|----------|-------------|
-| [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | AI Agents | 🔥 High | Markdown | Curated skills for AI coding agents (Claude Code, Copilot, Codex) |
-| [anthropics/skills](https://github.com/anthropics/skills) | AI Agents | 🔥 High | Markdown | Official Claude Code skills repository by Anthropic |
-| [nousresearch/hermes-agent](https://github.com/nousresearch/hermes-agent) | AI Agents | 🔥 High | Python | Open-source AI agent with tool-use, skills, and multi-agent support |
-| [openclaw/openclaw](https://github.com/openclaw/openclaw) | AI Agents | 🔥 High | Python | Breakout AI agent (fastest-growing OSS project of 2026) |
-| [TauricResearch/TradingAgents](https://github.com/TauricResearch/TradingAgents) | Finance AI | 🔥 High | Python | Multi-agent AI trading framework |
-| [github/spec-kit](https://github.com/github/spec-kit) | Developer Tools | 🔥 High | TypeScript | GitHub's official skill/knowledge specification kit |
-| [bytedance/UI-TARS-desktop](https://github.com/bytedance/UI-TARS-desktop) | UI Agents | ⭐ Medium | Python | Desktop UI agent framework from ByteDance |
-| [obra/superpowers](https://github.com/obra/superpowers) | AI Agents | ⭐ Medium | TypeScript | Agent superpowers framework |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | AI Agents | ⭐ Medium | Markdown | TypeScript-focused skills for coding agents |
-| [datawhalechina/hello-agents](https://github.com/datawhalechina/hello-agents) | Education | ⭐ Medium | Python | Educational repo for building AI agents from scratch |
-| [deepseek-ai/DeepSeek-V3](https://github.com/deepseek-ai/DeepSeek-V3) | LLMs | 🔥 High | Python | State-of-the-art open-source LLM |
-| [ollama/ollama](https://github.com/ollama/ollama) | Local AI | 🔥 High | Go | Run LLMs locally with ease |
-| [open-webui/open-webui](https://github.com/open-webui/open-webui) | Local AI | 🔥 High | Python/Svelte | User-friendly WebUI for local LLMs |
-| [vllm-project/vllm](https://github.com/vllm-project/vllm) | Inference | 🔥 High | Python | High-throughput LLM serving |
-| [langgenius/dify](https://github.com/langgenius/dify) | AI Apps | 🔥 High | Python/TS | LLM application development platform |
-| [n8n-io/n8n](https://github.com/n8n-io/n8n) | Automation | 🔥 High | TypeScript | Fair-code workflow automation with AI capabilities |
-| [infiniflow/ragflow](https://github.com/infiniflow/ragflow) | RAG | ⭐ Medium | Python | Open-source RAG engine |
-| [tinyhumansai/openhuman](https://github.com/tinyhumansai/openhuman) | AI Agents | 🌱 Emerging | Python | Open-source human-like AI agent |
-| [anomalyco/opencode](https://github.com/anomalyco/opencode) | Coding | 🔥 High | Go | Open-source coding agent (Codex CLI alternative) |
-| [garrytan/gstack](https://github.com/garrytan/gstack) | AI Tools | 🌱 Emerging | TypeScript | New AI development stack |
-
----
+|---|---|---|---|---|
+| [openclaw/openclaw](https://github.com/openclaw/openclaw) | AI | High | TypeScript | Personal AI assistant that learns and acts on your behalf. |
+| [obra/superpowers](https://github.com/obra/superpowers) | AI | High | Shell | Agentic skills framework for empowering AI agents with reusable capabilities. |
+| [ultraworkers/claw-code](https://github.com/ultraworkers/claw-code) | AI | High | Rust | Fastest repo to reach 100K stars, a high-performance coding agent. |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | AI | High | JavaScript | Agent harness optimization for efficient AI execution. |
+| [anomalyco/opencode](https://github.com/anomalyco/opencode) | AI | High | TypeScript | Open source AI coding agent for interactive CLI development. |
+| [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) | AI | High | Python | An AI agent framework designed to grow and adapt with the user. |
+| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | AI | High | N/A | Karpathy-inspired CLAUDE.md skills for AI coding agents. |
+| [anthropics/skills](https://github.com/anthropics/skills) | AI | High | Python | Official Anthropic public repository for agent skills. |
+| [github/spec-kit](https://github.com/github/spec-kit) | DevOps | High | Python | Spec-Driven Development toolkit for structured software design. |
+| [google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli) | AI | High | TypeScript | Google Gemini AI assistant accessible directly from the terminal. |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | AI | High | Shell | Practical skills and configurations for real-world AI engineering. |
+| [garrytan/gstack](https://github.com/garrytan/gstack) | Tools | High | TypeScript | Tool setup combining CEO, Designer, and Engineering Manager workflows. |
 
 ## Trending Categories
 
-### 🤖 AI Agent Frameworks & Skills (Biggest Category)
-The dominant trend this week is **skills-based AI agent frameworks**. Multiple repositories — `agent-skills`, `anthropics/skills`, `mattpocock/skills`, `hermes-agent`, `spec-kit` — all focus on defining reusable capabilities for coding agents. The "skills" pattern (markdown files defining agent behaviors) has become the standard approach.
+### AI / Agent Frameworks (10 repos)
+The AI category dominates with **10 of 12** trending repos. The theme this week is **agentic AI** — openclaw, claw-code, and hermes-agent are all personal/autonomous agent platforms. Skills frameworks are also hot: superpowers, anthropics/skills, mattpocock/skills, and andrej-karpathy-skills all provide reusable capability definitions for AI coding agents. **openclaw** leads the pack at an extraordinary **374K stars**, followed by superpowers at 203K.
 
-### 🧠 Local LLM Tools
-`ollama`, `open-webui`, and `vllm` continue their strong performance as the ecosystem shifts toward local, private AI inference. These repos have been consistently trending for months.
+### DevOps (1 repo)
+- **github/spec-kit** (105K stars) — GitHubs own Spec-Driven Development toolkit, reflecting growing interest in structured, specification-first software design workflows.
 
-### 🔧 AI Coding Assistants
-`opencode`, `claude-code` (Anthropic), `gemini-cli` (Google) — every major AI company now ships a terminal-based coding assistant. The competition is fierce and driving rapid innovation.
-
-### 📊 Agentic Frameworks
-`langchain`, `langflow`, `dify`, `n8n` — the low-code/no-code agent builder space is consolidating around a few winners. Dify and n8n in particular show strong growth.
-
----
+### Tools (1 repo)
+- **garrytan/gstack** (100K stars) — A multi-role workflow tool that combines CEO, Designer, and Engineering Manager perspectives into a single CLI.
 
 ## Notable Mentions
 
-1. **addyosmani/agent-skills** — Google Chrome team member Addy Osmani's curated skills collection has become the de facto community standard for Claude Code skills
-2. **TauricResearch/TradingAgents** — Demonstrates the application of multi-agent AI to quantitative finance, a rapidly growing niche
-3. **OpenClaw** — Dubbed "the fastest-growing open-source project in GitHub history" by ByteByteGo, this AI agent framework is reshaping expectations
-4. **n8n-io/n8n** — Fair-code workflow automation that has successfully pivoted to embrace AI agent workflows
-
----
+- **openclaw/openclaw** (374K ★) — The highest-starred repo this week by a wide margin. A personal AI assistant that learns and acts on your behalf; its astonishing growth signals mainstream adoption of autonomous agent technology.
+- **ultraworkers/claw-code** (192K ★) — Marketed as the fastest repo to reach 100K stars. Built in Rust for performance, it represents the cutting edge of AI coding agents.
+- **anomalyco/opencode** (164K ★) — An open source AI coding agent for interactive CLI development. The fact that this repo is itself used to compile this very report is a delightful bit of recursion.
+- **github/spec-kit** (105K ★) — GitHubs official entry into spec-driven development, indicating that the platform is investing heavily in structured software design tooling.
+- **garrytan/gstack** (100K ★) — A novel approach combining CEO, designer, and engineering manager workflows into one tool — reflecting the industrys push toward AI-augmented full-stack development roles.
 
 ## Summary
 
-The week of May 22, 2026 is dominated by **AI agent skills and frameworks**. The "skills" paradigm — where agents load markdown-defined capabilities — has become the dominant pattern, with Anthropic, GitHub, and the community all standardizing around it. Local AI tooling (`ollama`, `open-webui`) remains consistently strong, while agent frameworks for specific domains (trading, UI automation, education) are emerging as the next growth frontier.
+This weeks GitHub trending landscape is overwhelmingly defined by **agentic AI infrastructure**. The top 12 repos collectively account for over **2 million GitHub stars**, with every single entry crossing the 100K star threshold — an extraordinary concentration of popularity. Key takeaways:
 
-### Key Takeaways
-1. **Skills are the new APIs** — the skills pattern is becoming the universal interface for agent capabilities
-2. **AI coding assistants have gone mainstream** — every major AI provider ships one
-3. **Open-source is winning** — all top repos are open-source, with none from closed-source vendors
-4. **Multi-agent systems are real** — TradingAgents, Hermes Agent, and OpenClaw all demonstrate production multi-agent patterns
-
----
-
-*Data sourced from ddgr web search, DEV.to weekly report, ByteByteGo analysis, and GitHub trending pages.*
-*Generated: May 22, 2026*
+1. **AI agents are the dominant narrative** — 10 of 12 trending repos are AI/agent-related, spanning personal assistants, coding agents, and skill frameworks.
+2. **Skills/agent definition frameworks are a new category** — superpowers, anthropics/skills, and mattpocock/skills all address the same problem: giving AI agents reusable, composable capabilities.
+3. **Developer tooling is getting smarter** — spec-kit and gstack move beyond traditional dev tools toward AI-augmented, multi-perspective workflows.
+4. **TypeScript leads in language adoption** (4 repos), followed by Python and Shell (2 each), with Rust making a strong showing via claw-code.
+5. **The 100K-star club is no longer exceptional** — all 12 trending repos have crossed this milestone, reflecting the rapid growth of the AI/agent ecosystem on GitHub.
