@@ -1,4 +1,4 @@
-[14:28:37] #1 collector -> researcher
+[08:20:36] #1 collector -> researcher
     Your task: You are the technology researcher. Your job is to research the category: "best python web frameworks 2026".
     
     You have shell access. Use ddgr for web search — it returns JSON.
@@ -17,7 +17,7 @@
       - Key features and strengths
       - Weaknesses or limitations
       - Source URL
-[14:28:37] #2 collector -> recommender
+[08:20:37] #2 collector -> recommender
     Your task: You are the technology advisor/recommender. Wait for the researcher to send you findings.
     
     Steps:
@@ -34,180 +34,162 @@
     6. Broadcast the complete guide:
        a2a send all 'GUIDE_START\n<your complete markdown guide>\nGUIDE_END' --from recommender
        The guide must be between GUIDE_START and GUIDE_END markers.
-[14:29:12] #3 researcher -> recommender
-    FINDINGS: Top Python Web Frameworks 2026
+[08:21:34] #3 researcher -> recommender
+    FINDINGS: Best Python Web Frameworks 2026 — Research Results
     
-    === Full-Stack / All-in-One ===
-    1. Django (v5.x, 2026)
-       - "Batteries included" full-stack framework with built-in ORM, auth, admin panel, security protections
-       - Pros: Mature ecosystem, admin interface, ORM, vast plugin system, strong security
-       - Cons: No modern frontend (needs React/etc.), not async-native, monolithic architecture
-       - URL: https://www.djangoproject.com
-       - Used by: Instagram, Spotify, Mozilla
+    Source: JetBrains State of Python 2025 survey, Python.org Wiki, GitHub Topics
     
-    2. Reflex (v0.7+, 2025-2026)
-       - Full-stack Python framework; write frontend AND backend in pure Python (React under hood)
-       - Pros: Pure Python end-to-end, 60+ built-in UI components, Tailwind/CSS, SQLAlchemy integration, auth options, one-command deploy
-       - Cons: Newer/smaller ecosystem, possible breaking changes
-       - URL: https://reflex.dev
-       - GitHub: https://github.com/reflex-dev/reflex (28k stars)
+    === TOP TIER (High Adoption, Production-Ready) ===
     
-    === High-Performance / Async APIs ===
-    3. FastAPI (v0.115+, 2026)
-       - Modern async backend framework with automatic OpenAPI docs via Python type hints
-       - Pros: Excellent performance (matches Node.js/Go), type hints, auto Swagger docs, Pydantic validation, native async
-       - Cons: No frontend layer, limited built-in features vs Django
-       - URL: https://fastapi.tiangolo.com
-       - Used by: Netflix, Uber, Microsoft
+    1. FastAPI (v0.115.12, 2025)
+       Description: Modern, high-performance async API framework built on Starlette + Pydantic. Uses Python type hints for auto-validation and auto-generated OpenAPI docs.
+       Strengths: Async-native, type-safe, auto-docs (Swagger/ReDoc), excellent for AI/ML model serving, 38% usage (+9% YoY), #1 most popular Python web framework in 2025.
+       Weaknesses: Batteries not included (no auth/admin built-in), async debugging complexity, smaller ecosystem than Django.
+       URL: https://fastapi.tiangolo.com/
     
-    4. Falcon (v4.x, 2026)
-       - Ultra-minimalist framework for high-throughput REST APIs
-       - Pros: Minimal overhead, maximum throughput, ideal for low-latency APIs
-       - Cons: Small ecosystem, not for full-stack
-       - URL: https://falcon.readthedocs.io
+    2. Django (v5.2, 2025)
+       Description: "Batteries-included" full-stack framework with built-in ORM, admin panel, auth, templating. MTV architecture.
+       Strengths: Comprehensive built-in tools, secure by default (CSRF/XSS/SQL injection protection), excellent docs, mature ecosystem (DRF, CMS, etc.), LTS releases, 35% usage.
+       Weaknesses: Heavyweight for small apps/simple APIs, tightly coupled components, steeper learning curve.
+       URL: https://www.djangoproject.com/
     
-    5. Sanic (v24.x, 2026)
-       - Flask-like syntax with uvloop for extreme async concurrency
-       - Pros: Flask-like API, uvloop-based, handles thousands of concurrent connections
-       - Cons: Smaller community than FastAPI
-       - URL: https://sanic.dev
+    3. Flask (v3.1.0, 2024)
+       Description: Lightweight "microframework" based on Werkzeug + Jinja2. Minimal core, extensible via plugins.
+       Strengths: Lightweight and flexible, beginner-friendly, huge extension ecosystem, popular for data science/ML dashboards, 34% usage.
+       Weaknesses: Bring-your-own everything (no ORM/admin/auth), DIY security, can become messy in large apps without enforced patterns.
+       URL: https://flask.palletsprojects.com/
     
-    6. Tornado (v6.x, 2026)
-       - Veteran async framework designed for real-time WebSockets and long-lived connections
-       - Pros: Tens of thousands of concurrent connections, proven WebSocket support
-       - Cons: Older API style, smaller community
-       - URL: https://www.tornadoweb.org
+    === MID TIER (Specialized / Growing) ===
     
-    7. Aiohttp (v3.x, 2026)
-       - Async HTTP server AND client in one library
-       - Pros: Full control over HTTP lifecycle, works as both server and client, microservice-friendly
-       - URL: https://docs.aiohttp.org
+    4. Django REST Framework (DRF, 2024)
+       Description: Powerful toolkit for building REST APIs on top of Django.
+       Strengths: Deep Django integration, browsable API interface, flexible serialization, robust permissions system, 20% usage.
+       Weaknesses: Django-dependent, heavier setup than FastAPI.
+       URL: https://www.django-rest-framework.org/
     
-    === Lightweight / Microframeworks ===
-    8. Flask (v3.x, 2026)
-       - Minimalist micro-framework, quick to learn, highly customizable via extensions
-       - Pros: Lightweight, flexible, huge extension ecosystem, great for microservices
-       - Cons: Synchronous by default, Jinja templating lacks modern frontend power, needs add-ons for docs and scaling
-       - URL: https://flask.palletsprojects.com
-       - Used by: Airbnb, Reddit, Lyft
+    5. aiohttp (v3.11.18, 2025)
+       Description: Async HTTP client/server framework. ASGI-ready with native WebSocket handling.
+       Strengths: Async-first, WebSocket support, flexible middleware, 13% usage.
+       Weaknesses: Lower-level than FastAPI, less structured for large apps.
+       URL: https://docs.aiohttp.org/
     
-    9. Bottle (v0.13, 2026)
-       - Zero-dependency micro-framework in a single file
-       - Pros: Single file, zero deps, perfect for embedded/small tools
-       - URL: https://bottlepy.org
+    6. Starlette (2024)
+       Description: Lightweight ASGI framework. The foundation that FastAPI is built on.
+       Strengths: Exceptional performance, composable design, fine-grained routing, 8% usage (+2%).
+       Weaknesses: Requires manual integration, few built-in conveniences.
+       URL: https://www.starlette.io/
     
-    10. CherryPy (v18.x, 2026)
-        - OOP-based framework with its own production-ready multi-threaded server
-        - Pros: Self-contained, plain OOP Python, embedded server
-        - URL: https://cherrypy.dev
+    7. Sanic (v25.3, 2025)
+       Description: Flask-like async web server, written for speed.
+       Strengths: Flask-like API, async-native, high performance.
+       Weaknesses: Smaller community than FastAPI/Flask.
+       URL: https://github.com/huge-success/sanic
     
-    === Modular / Scalable ===
-    11. Pyramid (v2.x, 2026)
-        - Starts minimal like Flask, scales to complex apps with advanced config
-        - Pros: Flexible middle ground, good for evolving codebases
-        - URL: https://trypyramid.com
+    === DATA APPS / DASHBOARD FRAMEWORKS ===
     
-    === Data App / Dashboard Specialized ===
-    12. Streamlit (v1.40+, 2026)
-        - Turn data scripts into interactive web apps quickly
-        - Pros: Rapid prototyping, data viz, simple declarative syntax
-        - Cons: Full re-run on every input, limited UI, poor state management
-        - URL: https://streamlit.io
+    8. Streamlit (2025)
+       Description: Dashboard and data app builder requiring zero front-end knowledge.
+       Strengths: Fast UI prototyping, 12% usage (+4% growth fastest in data category), great for data science.
+       Weaknesses: Limited layout control, less suited for complex UIs.
+       URL: https://streamlit.io/
     
-    13. Gradio (v5.x, 2026)
-        - Build ML model interfaces quickly; Hugging Face integration
-        - Pros: Easy ML model deployment, HF Spaces integration
-        - Cons: ML-focused only, customization limited
-        - URL: https://www.gradio.app
+    9. Dash (v3.0.4, 2025)
+       Description: Framework for building ML & data science web apps (by Plotly).
+       Strengths: Production-grade dashboards, Plotly integration, enterprise-ready.
+       Weaknesses: Heavier than Streamlit for simple apps.
+       URL: https://plotly.com/dash/
     
-    14. Plotly Dash (v3.x, 2026)
-        - Analytical web apps and dashboards, Flask + React under hood
-        - Pros: Rich data components, multi-language (Python/R/Julia), Plotly.js viz
-        - Cons: Callback complexity for large apps, enterprise hosting costs
-        - URL: https://dash.plotly.com
+    === NEW / EMERGING (2026) ===
     
-    === Summary Recommendation Matrix ===
-    - Large full-stack apps: Django
-    - Full-stack Python (no JS): Reflex
-    - High-performance APIs: FastAPI, Falcon
-    - Async/concurrent APIs: FastAPI, Sanic, Aiohttp
-    - Real-time/WebSocket: Tornado, Sanic, Aiohttp
-    - Lightweight/microservices: Flask, Bottle
-    - Data dashboards: Streamlit, Dash, Reflex
-    - ML demos: Gradio, Streamlit
+    10. Reflex (v0.7.9, 2025)
+        Description: Open-source framework to build both frontend and backend in pure Python. No JS required.
+        Strengths: Full-stack Python only, AI agents for app creation, easy deployment.
+        Weaknesses: Still maturing, smaller community.
+        URL: https://reflex.dev/
     
-    Additional resources:
-    - GitHub comparison lists: https://github.com/sfermigier/awesome-python-web-frameworks
-    - Curated ranked Python web libs: https://github.com/ml-tooling/best-of-web-python
-    - Overall Python landscape: https://github.com/vinta/awesome-python
-[14:29:31] #4 recommender -> ALL
+    11. MicroPie (new 2026)
+        Description: Ultra-micro ASGI Python web framework on GitHub (230 stars).
+        Strengths: Minimal, ASGI-native, session management, WebSocket support.
+        Weaknesses: Very new, limited adoption.
+        URL: https://github.com/patx/micropie
+    
+    12. BustAPI (new 2026)
+        Description: High-performance Python web framework that integrates Rust for performance-critical paths.
+        Strengths: Rust under the hood for speed, Flask/FastAPI-like API.
+        Weaknesses: Very new, unproven in production.
+        URL: https://github.com/RUSTxPY/BustAPI
+    
+    === KEY TRENDS ===
+    - FastAPI leads with 38% usage (+9% YoY) — async-native, type-safe approach winning
+    - Django (35%) and Flask (34%) remain strong but losing relative share
+    - ASGI/async is the standard: FastAPI, Starlette, aiohttp all ASGI-native
+    - Data app frameworks (Streamlit +12%, Dash) growing fast for ML/AI use cases
+    - Type hints and auto-docs are now expected, not optional
+    - Rust-Python hybrid frameworks emerging (BustAPI, Pydantic v2 with Rust core)
+[08:22:03] #4 recommender -> ALL
     GUIDE_START
-    ## Recommended Python Web Stack (2026)
     
-    **Three tiers, one recommendation.**
+    ## 🏆 Recommended Stack: Python Web Frameworks 2026
+    
+    Based on adoption data (38% FastAPI, 35% Django, 34% Flask), ecosystem maturity, and 2026 trends, here is the definitive recommendation.
     
     ---
     
     ### Top 3 Picks
     
-    #### 1. Django — "Batteries-Included" Full-Stack
-    - **Best for**: Large production apps, content platforms, e-commerce, admin-heavy sites
-    - **Why**: Mature ORM, built-in auth, auto admin panel, 15+ years of security hardening
-    - **Pricing**: Free (BSD license), commercial support via vendors
-    - **Scale**: Instagram, Spotify, Mozilla — proven at massive scale
+    | Rank | Framework | Adoption | Best For | Verdict |
+    |------|-----------|----------|----------|---------|
+    | **#1** | **FastAPI** | 38% (+9% YoY) | APIs, microservices, AI/ML serving | Modern default — async-native, type-safe, auto-docs |
+    | **#2** | **Django** | 35% | Full-stack web apps, content sites, SaaS | Batteries-included — built-in ORM, auth, admin |
+    | **#3** | **Flask** | 34% | Prototypes, dashboards, small services | Lightweight champ — minimal core, huge plugin ecosystem |
     
-    #### 2. FastAPI — High-Performance Async APIs
-    - **Best for**: REST/GraphQL backends, microservices, real-time data pipelines, mobile backends
-    - **Why**: Automatic OpenAPI/Swagger docs, Pydantic validation, async-native (on par with Node.js/Go)
-    - **Pricing**: Free (MIT license)
-    - **Scale**: Netflix, Uber, Microsoft — battle-tested in production
+    ---
     
-    #### 3. Reflex — Pure Python Full-Stack (No JS)
-    - **Best for**: Internal tools, SaaS apps, dashboards where the team knows Python only
-    - **Why**: Frontend + backend in one Python codebase, 60+ UI components, React under the hood, Tailwind CSS, one-command deploy
-    - **Pricing**: Free (Apache 2.0), Reflex Cloud hosting available (free tier)
-    - **Scale**: Newer project (28k GitHub stars) — best for small-to-mid apps
+    ### When to Use Each
+    
+    **FastAPI** — REST/GraphQL APIs, real-time services, ML model serving, async-heavy workloads. Pairs well with React/Svelte frontends. Ideal for cloud-native/serverless deployments.
+    
+    **Django** — Content platforms (CMS, blogs), e-commerce, enterprise apps with complex data models. Ships with admin panel, auth, ORM, migrations out of the box.
+    
+    **Flask** — Quick prototypes, data science dashboards, embedded web UIs, small microservices. Best when you need minimal overhead and maximum flexibility.
     
     ---
     
     ### Comparison Table
     
-    | Feature | Django | FastAPI | Reflex |
-    |---|---|---|---|
-    | **Type** | Full-stack | Async API | Full-stack (Python only) |
-    | **Frontend** | Templates / DRF + JS | External (React, Vue, etc.) | Built-in (React via Python) |
-    | **Async** | Limited (v5.x sync ORM) | Native async/await | Async support |
-    | **ORM** | Built-in (mature) | SQLAlchemy / Tortoise | SQLAlchemy |
-    | **API Docs** | DRF + Swagger (manual) | Auto OpenAPI/Swagger | N/A (frontend-rendered) |
-    | **Admin Panel** | Built-in (Django Admin) | Third-party | Built-in (Reflex Admin) |
-    | **Performance** | Moderate | High (async, Starlette) | Good |
-    | **Learning Curve** | Medium | Low-Medium | Low (if Python-only team) |
-    | **Ecosystem** | Massive (20k+ packages) | Large (Pydantic, SQLAlchemy) | Growing (28k GitHub stars) |
-    | **Community** | Very large, long-standing | Large, fast-growing | Small but active |
-    | **Deploy** | WSGI (Gunicorn/uWSGI) | ASGI (Uvicorn) | reflex run / reflex deploy |
-    | **License** | BSD | MIT | Apache 2.0 |
-    | **Used By** | Instagram, Spotify, Mozilla | Netflix, Uber, Microsoft | Startups, indies |
-    
-    ---
+    | Feature | FastAPI | Django | Flask |
+    |---------|---------|--------|-------|
+    | Paradigm | Async-native ASGI | Sync MTV (ASGI via Channels) | Sync WSGI (ASGI via Quart) |
+    | Type Hints | Native (Pydantic) | No (optional) | No (optional) |
+    | Auto Docs | Swagger + ReDoc | DRF adds OpenAPI | Flask-RESTx adds |
+    | ORM | SQLAlchemy/ORM | Built-in ORM | SQLAlchemy/ORM |
+    | Admin Panel | SQLAdmin | Built-in admin | Flask-Admin |
+    | Auth | FastAPI Users | Built-in auth | Flask-Login |
+    | Performance | Excellent (async) | Good (sync) | Good (sync) |
+    | Ecosystem | Growing fast | Mature & vast | Huge & mature |
+    | Learning Curve | Moderate | Steep | Low |
+    | GitHub Stars | 80k+ | 81k+ | 70k+ |
+    | License | MIT | BSD-3 | BSD-3 |
+    | Pricing | Free (OSS) | Free (OSS) | Free (OSS) |
     
     ### Pros & Cons
     
-    | Framework | Pros | Cons |
-    |---|---|---|
-    | **Django** | Mature ecosystem, admin panel, ORM, security, docs | No modern frontend, sync ORM, monolithic by default |
-    | **FastAPI** | Auto docs, async, Pydantic, fast, clean code | API-only (needs separate frontend), smaller ecosystem |
-    | **Reflex** | Pure Python UI, fast prototyping, Tailwind, deploy | Young ecosystem, breaking changes possible |
+    **FastAPI** ✅ Async-native, automatic OpenAPI docs, Pydantic validation, great DX, fastest-growing framework. ❌ No built-in admin/auth/ORM, async debugging is harder.
+    
+    **Django** ✅ Everything built-in, secure by default (CSRF/XSS/SQL injection protection), excellent docs, mature ecosystem, LTS releases. ❌ Heavyweight for small apps, opinionated, steeper learning curve.
+    
+    **Flask** ✅ Minimal and flexible, beginner-friendly, massive extension ecosystem, popular for data science/ML dashboards (34% usage). ❌ BYO everything pattern, DIY security, can become messy in large apps without enforced structure.
     
     ---
     
     ### Final Verdict
     
-    **Pick Django** if you are building a traditional server-rendered web app or a content platform where "it just works" matters more than raw throughput.
+    **Pick FastAPI** for new projects targeting APIs, microservices, or AI/ML workloads — it is the 2026 standard with 38% adoption and the fastest growth curve (+9% YoY).
     
-    **Pick FastAPI** if you are building a modern async API backend — microservices, mobile backends, or any system where performance and auto-documentation are critical. This is the default choice for **new API-first projects**.
+    **Pick Django** for full-stack apps with complex data models, user management, and admin interfaces — the batteries-included approach wins for content-heavy or enterprise apps.
     
-    **Pick Reflex** if your team is **Python-only** and wants to ship a full-stack app (frontend + backend) without touching JavaScript. Ideal for internal tools, MVPs, and data-driven SaaS apps.
+    **Pick Flask** for lightweight prototypes, embedded UIs, data dashboards, or when you need absolute minimalism — but be disciplined about structure as the app grows.
     
-    **The winning combination**: FastAPI (API layer) + Reflex or Django (frontend/admin). FastAPI handles the high-throughput async endpoints, while Django or Reflex provides the admin/dashboard UI. For a greenfield project in 2026, the strongest single-framework bet is **FastAPI** — it has the best performance-to-productivity ratio and integrates with any frontend stack.
+    **For most teams**: Start with **FastAPI** for the API layer paired with a modern JS framework (Next.js/SvelteKit). Fall back to **Django** when you need the built-in admin/ORM/auth and don't want to assemble from parts. Use **Flask** only for small, self-contained services where simplicity trumps features.
     
     GUIDE_END
