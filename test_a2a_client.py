@@ -745,6 +745,27 @@ class TestA2AClient(unittest.TestCase):
             bob.recv(wait=-1)
         self.assertIn("non-negative", str(ctx.exception))
 
+    def test_recv_nan_wait_raises_value_error(self):
+        """recv() with NaN wait raises ValueError."""
+        bob = A2AClient(self.project, "bob")
+        with self.assertRaises(ValueError) as ctx:
+            bob.recv(wait=float("nan"))
+        self.assertIn("finite", str(ctx.exception))
+
+    def test_recv_inf_wait_raises_value_error(self):
+        """recv() with inf wait raises ValueError."""
+        bob = A2AClient(self.project, "bob")
+        with self.assertRaises(ValueError) as ctx:
+            bob.recv(wait=float("inf"))
+        self.assertIn("finite", str(ctx.exception))
+
+    def test_wait_for_messages_nan_timeout_raises_value_error(self):
+        """wait_for_messages with NaN timeout raises ValueError."""
+        bob = A2AClient(self.project, "bob")
+        with self.assertRaises(ValueError) as ctx:
+            bob.wait_for_messages(count=1, timeout=float("nan"))
+        self.assertIn("finite", str(ctx.exception))
+
     def test_cross_project_isolation(self):
         """Messages in project A do not leak into project B."""
         import shutil
