@@ -261,10 +261,12 @@ class A2AClientAsync:
             List of matching message dicts
 
         Raises:
-            ValueError: If query is empty
+            ValueError: If query is empty or limit is not positive
         """
         if not query or not query.strip():
             raise ValueError("search query must not be empty")
+        if limit <= 0:
+            raise ValueError("limit must be a positive integer")
         conn = await self._connect()
         cursor = await conn.execute(
             "SELECT id, sender, recipient, body, thread_id, created_at "

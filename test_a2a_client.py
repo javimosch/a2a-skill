@@ -384,12 +384,20 @@ class TestA2AClient(unittest.TestCase):
         """search with empty string raises ValueError."""
         alice = A2AClient(self.project, "alice")
         bob = A2AClient(self.project, "bob")
-        alice.send("bob", "Message one")
+
         alice.send("bob", "Message two")
         with self.assertRaises(ValueError):
             alice.search("", limit=10)
         with self.assertRaises(ValueError):
             alice.search("   ", limit=10)
+
+    def test_search_non_positive_limit_raises_value_error(self):
+        """search with non-positive limit raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.search("hello", limit=0)
+        with self.assertRaises(ValueError):
+            alice.search("hello", limit=-1)
 
     def test_search_special_characters(self):
         """search handles special characters in query."""
