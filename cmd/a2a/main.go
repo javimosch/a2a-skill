@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -317,6 +318,11 @@ func cmdSend() {
 		os.Exit(1)
 	}
 
+	if thread != "" && strings.TrimSpace(thread) == "" {
+		fmt.Fprintln(os.Stderr, "a2a: --thread must not be empty")
+		os.Exit(1)
+	}
+
 	to := args[0]
 	body := args[1]
 	if strings.TrimSpace(to) == "" {
@@ -405,6 +411,10 @@ func cmdRecv() {
 		s, err := strconv.ParseFloat(sinceStr, 64)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "a2a: invalid --since value: %v\n", err)
+			os.Exit(1)
+		}
+		if s < 0 {
+			fmt.Fprintln(os.Stderr, "a2a: --since must be a non-negative timestamp")
 			os.Exit(1)
 		}
 		since = &s
@@ -598,6 +608,15 @@ func cmdWait() {
 
 	if count <= 0 {
 		fmt.Fprintln(os.Stderr, "a2a: --count must be a positive integer")
+		os.Exit(1)
+	}
+
+	if math.IsInf(timeout, 0) || math.IsNaN(timeout) {
+		fmt.Fprintln(os.Stderr, "a2a: --timeout must be a finite number")
+		os.Exit(1)
+	}
+	if timeout < 0 {
+		fmt.Fprintln(os.Stderr, "a2a: --timeout must be a non-negative number")
 		os.Exit(1)
 	}
 
