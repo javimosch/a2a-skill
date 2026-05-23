@@ -5,6 +5,7 @@
 Provides object-oriented access to a2a messaging without shell invocation.
 """
 
+import math
 import sqlite3
 import time
 from pathlib import Path
@@ -210,6 +211,8 @@ class A2AClient:
         try:
             if wait < 0:
                 raise ValueError("wait must be a non-negative number of seconds")
+            if not math.isfinite(wait):
+                raise ValueError("wait must be a finite number")
             deadline = time.time() + wait if wait else None
             poll_interval = 0.1
 
@@ -367,6 +370,8 @@ class A2AClient:
             raise ValueError("count must be a positive integer")
         if timeout < 0:
             raise ValueError("timeout must be a non-negative number of seconds")
+        if not math.isfinite(timeout):
+            raise ValueError("timeout must be a finite number")
         deadline = time.time() + timeout
         seen = []
         while time.time() < deadline:

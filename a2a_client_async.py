@@ -8,6 +8,7 @@ Provides async/await interface for concurrent agent patterns.
 
 import aiosqlite
 import asyncio
+import math
 import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Callable
@@ -178,6 +179,8 @@ class A2AClientAsync:
         conn = await self._connect()
         if wait < 0:
             raise ValueError("wait must be a non-negative number of seconds")
+        if not math.isfinite(wait):
+            raise ValueError("wait must be a finite number")
         deadline = time.time() + wait if wait > 0 else None
 
         while True:
@@ -427,6 +430,8 @@ class A2AClientAsync:
             raise ValueError("count must be a positive integer")
         if timeout < 0:
             raise ValueError("timeout must be a non-negative number of seconds")
+        if not math.isfinite(timeout):
+            raise ValueError("timeout must be a finite number")
         deadline = time.time() + timeout
         messages = []
 
