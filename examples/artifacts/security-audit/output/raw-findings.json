@@ -1,22 +1,84 @@
 {
   "severity_counts": {
-    "Critical": 0,
+    "Critical": 2,
     "High": 0,
     "Medium": 0,
     "Low": 0,
-    "Info": 0
+    "Info": 8
   },
   "total_cves": 0,
-  "total_findings": 0,
+  "total_findings": 10,
   "categorized": {
-    "critical web framework vulnerabilities 2026 CVE": [],
-    "AI ML supply chain security vulnerabilities 2026": [],
+    "critical web framework vulnerabilities 2026 CVE": [
+      {
+        "title": "Top CVEs of 2026: Critical Vulnerabilities Every Enterprise Must Patch ...",
+        "url": "https://hive-project.com/blog/top-cves-of-2026-critical-vulnerabilities-every-enterprise-must-patch-right-now/",
+        "abstract": "From zero-day exploits to actively weaponized flaws, 2026 has already delivered high-severity CVEs targeting enterprise infrastructure. This guide bre",
+        "severity": "Critical"
+      },
+      {
+        "title": "CVE: Common Vulnerabilities and Exposures",
+        "url": "https://www.cve.org/",
+        "abstract": "At cve.org, we provide the authoritative reference method for publicly known information-security vulnerabilities and exposures",
+        "severity": "Info"
+      },
+      {
+        "title": "Database CVE, CWE, CISA KEV & Vulnerability Intelligence | CVE Find",
+        "url": "https://www.cvefind.com/",
+        "abstract": "CVE Find is a cybersecurity intelligence platform indexing CVEs, CWEs, CAPEC, CVSS, EPSS and threat data. Search, track, and analyze known vulnerabili",
+        "severity": "Info"
+      },
+      {
+        "title": "Vulnerability Summary for the Week of April 6, 2026 - CISA",
+        "url": "https://www.cisa.gov/news-events/bulletins/sb26-103",
+        "abstract": "(CVE) vulnerability naming standard and are organized according to severity, determined by the Common Vulnerability Scoring System (CVSS) standard. Th",
+        "severity": "Info"
+      },
+      {
+        "title": "FIRST Releases 2026 Vulnerability Report, Projecting Record-Breaking ...",
+        "url": "https://www.first.org/newsroom/releases/20260211",
+        "abstract": "The model accounts for the structural change in CVE publication patterns that occurred in 2017-2018, providing asymmetric confidence intervals that ac",
+        "severity": "Critical"
+      }
+    ],
+    "AI ML supply chain security vulnerabilities 2026": [
+      {
+        "title": "AI Supply Chain Security Guide 2026 \u2014 GLACIS",
+        "url": "https://www.glacis.io/guide-ai-supply-chain-security",
+        "abstract": "GLACIS \u00b7 AI security frameworks \u00b7 Supply chain \u00b7 Updated April 2026 AI supply chain security, the 2026 working playbook. Model provenance, dataset tra",
+        "severity": "Info"
+      },
+      {
+        "title": "[PDF] Artificial intelligence and machine learning Supply chain risks and ...",
+        "url": "https://media.defense.gov/2026/Mar/04/2003882809/-1/-1/0/AI_ML_SUPPLY_CHAIN_RISKS_AND_MITIGATIONS.PDF",
+        "abstract": "Adopting AI and ML systems introduces unique supply chain risks, which can threaten the cyber security of an organisation if not securely managed. Usi",
+        "severity": "Info"
+      },
+      {
+        "title": "[PDF] Eight-Nation AI/ML Supply Chain Risk and Mitigation Guidance",
+        "url": "https://labs.cloudsecurityalliance.org/wp-content/uploads/2026/03/CSA_research_note_nsa_allied_ai_supply_chain_security_guidance_20260317-csa-styled.pdf",
+        "abstract": "On March 4-5, 2026, the NSA's AI Security Center (AISC) and seven allied national cybersecurity agencies released Artificial Intelligence and Machine ",
+        "severity": "Info"
+      },
+      {
+        "title": "NSA issues guidance on AI supply chain risks and cybersecurity ...",
+        "url": "https://cadeproject.org/updates/nsa-issues-guidance-on-ai-supply-chain-risks-and-cybersecurity-vulnerabilities/",
+        "abstract": "The guidance, released in March 2026, defines the AI supply chain as a combination of components including training data, models, software, hardware, ",
+        "severity": "Info"
+      },
+      {
+        "title": "The Growing Cybersecurity Risks To The Supply Chain In The AI Era - Forbes",
+        "url": "https://www.forbes.com/sites/chuckbrooks/2026/05/22/the-growing-cybersecurity-risks-to-the-supply-chain-in-the-ai-era/",
+        "abstract": "Artificial intelligence (AI) simultaneously exacerbates vulnerabilities as it revolutionizes operations through predictive analytics, automation, and ",
+        "severity": "Info"
+      }
+    ],
     "critical Linux kernel vulnerability 2026 CVE": []
   },
   "system_checks": {
-    "disk_usage": "Filesystem                        Size  Used Avail Use% Mounted on\n/dev/mapper/pve-vm--100--disk--0   69G   26G   41G  39% /\nnone                              492K  4.0K  488K   1% /dev\nefivarfs                          192K  142K   46K  76% /sys/firmware/efi/efivars\ntmpfs                              16G  4.0K   16G   1% /dev/shm\ntmpfs                             6.3G  256K  6.3G   1% /run\ntmpfs                             5.0M     0  5.0M   0% /run/lock\ntmpfs                             3.2G   16K  3.2G   1% /run/user/0\noverlay                            69G   26G   41G  39% /var/lib/docker/rootfs/overlayfs/c631515621b48647ad30a16595926d38f38d5b14aa6f8306f1157ef41f280a02",
+    "disk_usage": "Filesystem                        Size  Used Avail Use% Mounted on\n/dev/mapper/pve-vm--100--disk--0   69G   27G   40G  40% /\nnone                              492K  4.0K  488K   1% /dev\nefivarfs                          192K  142K   46K  76% /sys/firmware/efi/efivars\ntmpfs                              16G  4.0K   16G   1% /dev/shm\ntmpfs                             6.3G  304K  6.3G   1% /run\ntmpfs                             5.0M     0  5.0M   0% /run/lock\ntmpfs                             3.2G  536K  3.2G   1% /run/user/0\noverlay                            69G   27G   40G  40% /var/lib/docker/rootfs/overlayfs/c631515621b48647ad30a16595926d38f38d5b14aa6f8306f1157ef41f280a02",
     "listening_ports": "State  Recv-Q Send-Q              Local Address:Port  Peer Address:PortProcess                                   \nLISTEN 0      5                         0.0.0.0:8080       0.0.0.0:*    users:((\"python3\",pid=88633,fd=3))       \nLISTEN 0      4096                   127.0.0.54:53         0.0.0.0:*    users:((\"systemd-resolve\",pid=222,fd=17))\nLISTEN 0      4096                127.0.0.53%lo:53         0.0.0.0:*    users:((\"systemd-resolve\",pid=222,fd=15))\nLISTEN 0      4096                      0.0.0.0:3000       0.0.0.0:*    users:((\"docker-proxy\",pid=897,fd=8))    \nLISTEN 0      4096                      0.0.0.0:2222       0.0.0.0:*    users:((\"docker-proxy\",pid=878,fd=8))    \nLISTEN 0      4096                 100.114.4.57:43040      0.0.0.0:*    users:((\"tailscaled\",pid=236,fd=29))     \nLISTEN 0      100                     127.0.0.1:25         0.0.0.0:*    users:((\"master\",pid=612,fd=13))         \nLISTEN 0      4096   [fd7a:115c:a1e0::d03a:439]:62552         [::]:*    users:((\"tailscaled\",pid=236,fd=30))     \nLISTEN 0      100                         [::1]:25            [::]:*    users:((\"master\",pid=612,fd=14))         \nLISTEN 0      4096                         [::]:3000          [::]:*    users:((\"docker-proxy\",pid=904,fd=8))    \nLISTEN 0      4096                         [::]:2222          [::]:*    users:((\"docker-proxy\",pid=884,fd=8))    \nLISTEN 0      4096                            *:22               *:*    users:((\"sshd\",pid=267,fd=3),(\"systemd\",pid=1,fd=55))",
-    "uptime": "21:53:47 up  5:46,  1 user,  load average: 0.18, 0.15, 0.30",
+    "uptime": "08:29:20 up 16:22,  1 user,  load average: 0.18, 0.28, 0.28",
     "dmesg_errors": "No recent errors"
   }
 }
