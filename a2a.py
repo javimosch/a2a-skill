@@ -58,6 +58,9 @@ CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
 
 # ---------- paths & db ----------
 
+# Max length for agent IDs (prevents SQLite/text abuse)
+MAX_ID_LENGTH = 256
+
 # Column list used in all message queries (avoids repetition and drift)
 MSG_COLS = "id, sender, recipient, body, thread_id, created_at"
 MSG_COLS_M = "m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at"
@@ -147,6 +150,11 @@ def _resolve_agent(args: argparse.Namespace) -> tuple[str, sqlite3.Connection]:
     agent = getattr(args, "as_")
     if not agent:
         die("--as <agent-id> is required")
+    agent = agent.strip()
+    if not agent:
+        die("--as agent id must not be empty")
+    if len(agent) > MAX_ID_LENGTH:
+        die(f"agent id too long ({len(agent)} chars, max {MAX_ID_LENGTH})")
     _, conn = _open(args)
     if not conn.execute("SELECT 1 FROM agents WHERE id=?", (agent,)).fetchone():
         conn.close()
@@ -176,6 +184,8 @@ def cmd_register(args) -> None:
     args.id = args.id.strip()
     if not args.id:
         die("agent id must not be empty")
+    if len(args.id) > MAX_ID_LENGTH:
+        die(f"agent id too long ({len(args.id)} chars, max {MAX_ID_LENGTH})")
     if args.pid is not None and args.pid <= 0:
         die("--pid must be a positive integer")
     if args.role and not args.role.strip():
@@ -210,6 +220,8 @@ def cmd_unregister(args) -> None:
     args.id = args.id.strip()
     if not args.id:
         die("agent id must not be empty — pass a valid registered agent id")
+    if len(args.id) > MAX_ID_LENGTH:
+        die(f"agent id too long ({len(args.id)} chars, max {MAX_ID_LENGTH})")
     _, conn = _open(args)
     cur = conn.execute("DELETE FROM agents WHERE id=?", (args.id,))
     conn.commit()
@@ -244,6 +256,14 @@ def cmd_status(args) -> None:
         die(f"invalid status '{args.state}' — must be one of: {', '.join(sorted(VALID_STATUSES))}")
     _, conn = _open(args)
     agent_id = getattr(args, "as_")
+    if agent_id:
+        agent_id = agent_id.strip()
+    if not agent_id:
+        conn.close()
+        die("--as <agent-id> is required")
+    if len(agent_id) > MAX_ID_LENGTH:
+        conn.close()
+        die(f"agent id too long ({len(agent_id)} chars, max {MAX_ID_LENGTH})")
     ts = now()
     cur = conn.execute(
         "UPDATE agents SET status=?, last_seen=? WHERE id=?",
@@ -272,6 +292,9 @@ def cmd_send(args) -> None:
     sender = getattr(args, "from_")
     if not sender or not sender.strip():
         die("--from <agent-id> is required — provide a registered agent id")
+    sender = sender.strip()
+    if len(sender) > MAX_ID_LENGTH:
+        die(f"agent id too long ({len(sender)} chars, max {MAX_ID_LENGTH})")
     if not args.to or not args.to.strip():
         die("recipient must not be empty — use 'all' for broadcast")
     _, conn = _open(args)
@@ -282,6 +305,13 @@ def cmd_send(args) -> None:
     # recipient: "all" or "*" or "broadcast" => NULL
     recipient = None if args.to.lower() in ("all", "*", "broadcast") else args.to
     if recipient is not None:
+        recipient = recipient.strip()
+        if not recipient:
+            conn.close()
+            die("recipient must not be empty — use 'all' for broadcast")
+        if len(recipient) > MAX_ID_LENGTH:
+            conn.close()
+            die(f"agent id too long ({len(recipient)} chars, max {MAX_ID_LENGTH})")
         if not conn.execute("SELECT 1 FROM agents WHERE id=?", (recipient,)).fetchone():
             conn.close()
             die(f"unknown recipient '{recipient}' — register them first")
