@@ -4,6 +4,18 @@ use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use serde::{Serialize, Deserialize};
 use std::thread;
 
+/// Error type for a2a client validation errors
+#[derive(Debug, Clone)]
+pub struct ValidationError(pub String);
+
+impl std::fmt::Display for ValidationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::error::Error for ValidationError {}
+
 /// Message in the a2a bus
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
@@ -51,20 +63,26 @@ pub struct Client {
 
 impl Client {
     /// Create new a2a client
-    pub fn new(project: impl Into<String>, agent_id: impl Into<String>) -> Self {
+    pub fn new(project: impl Into<String>, agent_id: impl Into<String>) -> Result<Self, ValidationError> {
         let project = project.into();
         let agent_id = agent_id.into();
+        if project.trim().is_empty() {
+            return Err(ValidationError("project must not be empty".to_string()));
+        }
+        if agent_id.trim().is_empty() {
+            return Err(ValidationError("agent_id must not be empty".to_string()));
+        }
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
         let db_path = PathBuf::from(home)
             .join(".a2a")
             .join(&project)
             .join("database.db");
 
-        Client {
+        Ok(Client {
             project,
             agent_id,
             db_path,
-        }
+        })
     }
 
     /// Connect to database applying the WAL invariant.
@@ -92,6 +110,13 @@ impl Client {
             return Err(rusqlite::Error::InvalidParameterName(
                 "recipient must not be empty".to_string(),
             ));
+        }
+        if let Some(ttl) = ttl_seconds {
+            if ttl <= 0 {
+                return Err(rusqlite::Error::InvalidParameterName(
+                    "ttl_seconds must be a positive number".to_string(),
+                ));
+            }
         }
         let conn = self.connect()?;
         let recipient = match to {
@@ -247,6 +272,12 @@ impl Client {
 
     /// Set agent status
     pub fn set_status(&self, status: &str) -> SqliteResult<()> {
+        let valid_statuses = ["active", "idle", "done", "blocked"];
+        if !valid_statuses.contains(&status) {
+            return Err(rusqlite::Error::InvalidParameterName(
+                format!("invalid status '{}' — must be one of: active, idle, done, blocked", status),
+            ));
+        }
         let conn = self.connect()?;
         conn.execute(
             "UPDATE agents SET status = ?1, last_seen = ?2 WHERE id = ?3",
@@ -382,14 +413,28 @@ mod tests {
 
     #[test]
     fn test_client_creation() {
-        let client = Client::new("test", "alice");
+        let client = Client::new("test", "alice").unwrap();
         assert_eq!(client.project, "test");
         assert_eq!(client.agent_id, "alice");
     }
 
     #[test]
+    fn test_client_empty_project_rejected() {
+        let result = Client::new("", "alice");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().0.contains("project must not be empty"));
+    }
+
+    #[test]
+    fn test_client_empty_agent_id_rejected() {
+        let result = Client::new("test", "");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().0.contains("agent_id must not be empty"));
+    }
+
+    #[test]
     fn test_client_db_path() {
-        let client = Client::new("myproject", "bob");
+        let client = Client::new("myproject", "bob").unwrap();
         assert!(client.db_path.to_string_lossy().contains(".a2a"));
         assert!(client.db_path.to_string_lossy().contains("myproject"));
     }
