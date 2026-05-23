@@ -113,6 +113,13 @@ def die(msg: str, code: int = 1) -> None:
     sys.exit(code)
 
 
+def _validate_finite_float(value: float | None, name: str) -> None:
+    """Reject NaN or infinity for float CLI parameters that drive blocking loops."""
+    import math
+    if value is not None and (math.isnan(value) or math.isinf(value)):
+        die(f"--{name} must be a finite number")
+
+
 def now() -> float:
     return time.time()
 
@@ -358,6 +365,8 @@ def cmd_recv(args) -> None:
         die("--limit must be a non-negative integer")
     if args.since is not None and args.since < 0:
         die("--since must be a non-negative timestamp")
+    _validate_finite_float(args.wait, "wait")
+    _validate_finite_float(args.since, "since")
 
     deadline = now() + args.wait if args.wait else None
     poll_interval = 0.5
@@ -391,12 +400,15 @@ def cmd_peek(args) -> None:
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
-    if args.limit <= 0:
+    limit = args.limit
+    if limit <= 0:
         die("--limit must be a positive integer")
+    if limit > 1000:
+        limit = 1000
     rows = conn.execute(
         f"SELECT {MSG_COLS} FROM messages "
         "ORDER BY created_at DESC LIMIT ?",
-        (args.limit,),
+        (limit,),
     ).fetchall()
     conn.close()
     rows = list(reversed(rows))
@@ -486,7 +498,7 @@ def cmd_search(args) -> None:
     raw_limit = args.limit
     if raw_limit is not None and raw_limit <= 0:
         die("--limit must be a positive integer")
-    limit = raw_limit if raw_limit is not None else 50
+    limit = min(raw_limit if raw_limit is not None else 50, 200)
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
@@ -577,6 +589,7 @@ def cmd_wait(args) -> None:
         die("--count must be a positive integer")
     if args.timeout < 0:
         die("--timeout must be a non-negative number of seconds")
+    _validate_finite_float(args.timeout, "timeout")
     agent, conn = _resolve_agent(args)
     deadline = now() + args.timeout
     while True:
