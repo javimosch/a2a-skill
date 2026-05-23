@@ -374,6 +374,32 @@ In the ascii-gallery build:
 - Reduce concurrent agent count to 2 when API quota is tight
 - Consider staggering agent spawns with a short delay between each
 
+### Stale agent log files cause false-positive health check failures
+
+The `_check_agent_health()` function in `_util.py` reads `/tmp/a2a-{agent_id}.log`
+immediately after spawn and searches for API error markers like "Key limit exceeded"
+and "403". If a log file from a **previous run** still exists at that path, the
+health check returns `False` immediately — even though the current agent is perfectly
+healthy.
+
+This happened during the web-research-report build: the researcher agent had a stale
+log from a prior session containing "403", causing `spawn_agent()` to return `None`
+even though the agent went on to successfully search ddgr and send findings to the
+analyst.
+
+**Fix:** `_check_agent_health()` should ignore log entries with timestamps older
+than the current spawn time, or the build script should rotate/delete agent logs
+at startup:
+
+```python
+import os, glob
+for log in glob.glob("/tmp/a2a-*.log"):
+    os.remove(log)
+```
+
+Alternatively, the `SpawnManager` or build script preamble should clear stale logs
+before spawning agents to avoid false positives.
+
 ### Agent build scripts need timeouts on waiting loops
 
 Build scripts that use `a2a recv --as collector --wait N` in a polling loop
