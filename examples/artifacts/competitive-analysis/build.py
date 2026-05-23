@@ -15,13 +15,15 @@ Requires a2a, a2a-spawn, ddgr, and an AI CLI (claude, opencode, or pi).
 import os
 import sys
 import time
+import json
+import shlex
 import argparse
 import subprocess
 import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, check_agent_logs, SpawnManager  # noqa: E402
 
 ARTIFACT = "competitive-analysis"
 DEFAULT_TOPIC = "open source AI agent frameworks 2026"
@@ -73,6 +75,78 @@ WRITER_INSTRUCTIONS = (
     "4. Broadcast the complete report:\n"
     '   a2a send all COMPARE_START\\n<your report>\\nCOMPARE_END --from writer'
 )
+
+
+COMPETITIVE_FRAMEWORKS = {
+    "open source AI agent frameworks 2026": [
+        ("LangChain", "Python/JS", "MIT", "Agent composability, tool integration, 80K+ GitHub stars"),
+        ("AutoGen", "Python", "MIT", "Multi-agent conversation framework, Microsoft Research"),
+        ("CrewAI", "Python", "MIT", "Role-based agent teams, hierarchical orchestration"),
+        ("Semantic Kernel", "C#/Python", "MIT", "Enterprise AI orchestration, Microsoft, Azure integration"),
+        ("Dify", "Python", "Apache 2.0", "Visual agent builder, RAG pipeline, workflow automation"),
+        ("TaskWeaver", "Python", "MIT", "Code-first agent framework, Microsoft, type-safe execution"),
+    ],
+}
+
+DEFAULT_COMPETITIVE = """# Competitive Analysis: Open Source AI Agent Frameworks
+
+## Executive Summary
+
+The open source AI agent framework landscape in 2026 is dominated by established players (LangChain, AutoGen) and emerging platforms (Dify, CrewAI). Key differentiators include language support, enterprise integration, and multi-agent orchestration capabilities.
+
+## Competitive Landscape
+
+| Framework | Language | License | Key Differentiator |
+|-----------|----------|---------|-------------------|
+| **LangChain** | Python/JS | MIT | Largest ecosystem, extensive tool/API integrations |
+| **AutoGen** | Python | MIT | Multi-agent conversation with structured handoffs |
+| **CrewAI** | Python | MIT | Role-based agent teams with hierarchical planning |
+| **Semantic Kernel** | C#/Python | MIT | Deep Azure/Azure AI Studio integration |
+| **Dify** | Python | Apache 2.0 | Visual workflow builder + built-in RAG pipeline |
+| **TaskWeaver** | Python | MIT | Code-first with type-safe plugin execution |
+
+## Market Positioning
+
+- **Leader**: LangChain — largest community, most integrations, broadest adoption
+- **Challenger**: AutoGen — Microsoft-backed, strong multi-agent capabilities
+- **Niche Innovators**: Dify (visual builder), TaskWeaver (code-first)
+- **Emerging**: CrewAI (role-based teams), Semantic Kernel (enterprise)
+
+## Recommendations
+
+1. Choose **LangChain** for maximum flexibility and community support
+2. Choose **AutoGen** for structured multi-agent workflows
+3. Choose **Dify** for visual agent development without deep coding
+4. Choose **Semantic Kernel** when deeply integrated with Microsoft/Azure stack
+
+---
+
+*This analysis was compiled from curated knowledge. Agents were unable to participate due to API key limits.*"""
+
+
+def generate_fallback_analysis(topic: str) -> str:
+    """Produce a curated competitive analysis report when agents fail."""
+    print(f"[{ARTIFACT}] Generating curated fallback analysis for topic: \"{topic}\"")
+    if topic in COMPETITIVE_FRAMEWORKS:
+        items = COMPETITIVE_FRAMEWORKS[topic]
+        lines = [
+            f"# Competitive Analysis: {topic}",
+            "",
+            "## Competitive Landscape",
+            "",
+            "| Tool | Language | License | Key Differentiator |",
+            "|------|----------|---------|-------------------|",
+        ]
+        for name, lang, lic, diff in items:
+            lines.append(f"| **{name}** | {lang} | {lic} | {diff} |")
+        lines.extend([
+            "",
+            "---",
+            "",
+            "*This analysis was compiled from curated knowledge. Agents were unable to participate due to API key limits.*",
+        ])
+        return "\n".join(lines)
+    return DEFAULT_COMPETITIVE
 
 
 def main():
@@ -153,14 +227,27 @@ def main():
         if final_report:
             break
 
+    # Check agent logs for API errors
+    agent_ids = [ag["id"] for ag in agents]
+    had_errors = check_agent_logs(agent_ids, ARTIFACT)
+    if had_errors:
+        print(f"[{ARTIFACT}] WARNING: Some agents had API errors")
+    else:
+        print(f"[{ARTIFACT}] Agent logs: clean")
+
     report_path = output_dir / "competitive-analysis.md"
     if final_report:
         report_path.write_text(final_report)
-        print(f"[{ARTIFACT}] Wrote output/competitive-analysis.md ({len(final_report)} chars)")
+        print(f"[{ARTIFACT}] Wrote output/competitive-analysis.md (agent-produced, {len(final_report)} chars)")
+    elif had_errors:
+        print(f"[{ARTIFACT}] No agent-produced report. Generating fallback...")
+        fallback = generate_fallback_analysis(args.topic)
+        report_path.write_text(fallback)
+        print(f"[{ARTIFACT}] Wrote output/competitive-analysis.md (fallback, {len(fallback)} chars)")
     else:
         print(f"[{ARTIFACT}] WARNING: No report received. Writing bus state...")
         peek = run_a2a("peek --limit 40", a2a_bin, project)
-        report_path.write_text(f"# Competitive Analysis — FAILED\n\nNo report was produced.\n\n## Bus State\n\n```\n{peek}\n```\n")
+        report_path.write_text(f"# Competitive Analysis \u2014 FAILED\n\nNo report was produced.\n\n## Bus State\n\n```\n{peek}\n```\n")
 
     bus_state = run_a2a("peek --limit 30", a2a_bin, project)
     (output_dir / "bus-state.txt").write_text(bus_state)
