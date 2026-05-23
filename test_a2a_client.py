@@ -779,5 +779,13 @@ class TestA2AClient(unittest.TestCase):
             bob.recv(wait=0, limit=-5)
         self.assertIn("non-negative", str(ctx.exception))
 
+    def test_register_non_positive_pid_raises_error(self):
+        """register() with non-positive pid raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.register("tester", pid=0)
+        with self.assertRaises(ValueError):
+            alice.register("tester", pid=-1)
+
 if __name__ == "__main__":
     unittest.main()

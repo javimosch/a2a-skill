@@ -634,6 +634,9 @@ func (c *Client) InitProject() error {
 
 // Register registers an agent. If upsert is true, updates existing.
 func (c *Client) Register(role, prompt, cli string, pid int, upsert bool) error {
+	if pid < 0 {
+		return fmt.Errorf("pid must be a positive integer")
+	}
 	db, err := c.connect()
 	if err != nil {
 		return err

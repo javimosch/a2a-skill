@@ -942,6 +942,37 @@ class TestIntegration(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("finite", result.stderr.lower())
 
+    def test_recv_limit_negative_rejected(self):
+        """recv with negative --limit is rejected."""
+        a2a("register", "alice", project=self.project)
+        result = a2a("recv", "--as", "alice", "--limit", "-1",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("limit", result.stderr.lower())
+
+    def test_recv_wait_nan_rejected(self):
+        """recv with NaN --wait is rejected."""
+        a2a("register", "alice", project=self.project)
+        result = a2a("recv", "--as", "alice", "--wait", "NaN",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("finite", result.stderr.lower())
+
+    def test_wait_timeout_nan_rejected(self):
+        """wait with NaN --timeout is rejected."""
+        a2a("register", "bob", project=self.project)
+        result = a2a("wait", "--as", "bob", "--timeout", "NaN",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("finite", result.stderr.lower())
+
+    def test_register_pid_zero_fails(self):
+        """Register with --pid 0 is rejected (must be positive)."""
+        result = a2a("register", "test-agent", "--pid", "0",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("positive integer", result.stderr.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

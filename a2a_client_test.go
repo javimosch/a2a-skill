@@ -996,3 +996,17 @@ func TestThreadEmptyIDFails(t *testing.T) {
 		t.Fatalf("expected error about thread id, got: %v", err)
 	}
 }
+
+func TestRegisterNonPositivePIDFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	// PID negative should fail
+	err := c.Register("tester", "", "", -5, false)
+	if err == nil {
+		t.Fatal("expected error for Register with PID=-5, got nil")
+	}
+	if !strings.Contains(err.Error(), "pid") {
+		t.Fatalf("expected error about pid, got: %v", err)
+	}
+}
