@@ -1556,6 +1556,49 @@ class TestEdgeCases(unittest.TestCase):
         self.assertIsNotNone(row)
         self.assertEqual(row["body"], "stdin body content")
 
+    def test_cmd_send_json_output(self):
+        """cmd_send --json produces valid JSON with expected fields."""
+        self._register("alice")
+        self._register("bob")
+        import io, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_send(a2a.argparse.Namespace(
+                project=self.project, to="bob", body="hello",
+                **{"from_": "alice", "thread": None, "json": True}
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output.strip())
+        self.assertIn("id", data)
+        self.assertIn("sender", data)
+        self.assertIn("recipient", data)
+        self.assertEqual(data["sender"], "alice")
+        self.assertEqual(data["recipient"], "bob")
+        self.assertIsInstance(data["id"], int)
+
+    def test_cmd_send_json_output_broadcast(self):
+        """cmd_send --json to 'all' shows recipient as 'ALL'."""
+        self._register("alice")
+        self._register("bob")
+        import io, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_send(a2a.argparse.Namespace(
+                project=self.project, to="all", body="broadcast test",
+                **{"from_": "alice", "thread": None, "json": True}
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output.strip())
+        self.assertEqual(data["sender"], "alice")
+        self.assertEqual(data["recipient"], "ALL")
+        self.assertIsInstance(data["id"], int)
+
     def test_cmd_peek_negative_limit_rejected(self):
         """Negative --limit is rejected."""
         conn = a2a.connect(self.project)
@@ -1593,6 +1636,34 @@ class TestEdgeCases(unittest.TestCase):
             ))
         self.assertEqual(cm.exception.code, 2,
                          "expired messages should not count toward wait")
+
+    def test_validate_finite_float_nan(self):
+        """_validate_finite_float rejects NaN."""
+        with self.assertRaises(SystemExit):
+            a2a._validate_finite_float(float("nan"), "test_param")
+
+    def test_validate_finite_float_inf(self):
+        """_validate_finite_float rejects infinity."""
+        with self.assertRaises(SystemExit):
+            a2a._validate_finite_float(float("inf"), "test_param")
+        with self.assertRaises(SystemExit):
+            a2a._validate_finite_float(float("-inf"), "test_param")
+
+    def test_validate_finite_float_none(self):
+        """_validate_finite_float allows None (optional param not provided)."""
+        try:
+            a2a._validate_finite_float(None, "optional_param")
+        except SystemExit:
+            self.fail("_validate_finite_float raised SystemExit for None")
+
+    def test_validate_finite_float_valid(self):
+        """_validate_finite_float allows valid finite floats."""
+        try:
+            a2a._validate_finite_float(0.0, "param")
+            a2a._validate_finite_float(30.5, "param")
+            a2a._validate_finite_float(-1.0, "param")
+        except SystemExit:
+            self.fail("_validate_finite_float raised SystemExit for valid float")
 
     def test_cmd_stats_json_empty(self):
         """cmd_stats --json on empty bus returns valid JSON with zero counts."""
