@@ -226,6 +226,14 @@ func cmdRegister() {
 		fmt.Fprintln(os.Stderr, "a2a: --pid must be a positive integer")
 		os.Exit(1)
 	}
+	if hasFlag("--role") && strings.TrimSpace(role) == "" {
+		fmt.Fprintln(os.Stderr, "a2a: --role must not be whitespace-only")
+		os.Exit(1)
+	}
+	if hasFlag("--cli") && strings.TrimSpace(cli) == "" {
+		fmt.Fprintln(os.Stderr, "a2a: --cli must not be whitespace-only")
+		os.Exit(1)
+	}
 	upsert := hasFlag("--upsert")
 
 	c := newClient(agentID)
