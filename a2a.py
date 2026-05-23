@@ -278,7 +278,7 @@ def cmd_send(args) -> None:
     # verify sender exists
     if not conn.execute("SELECT 1 FROM agents WHERE id=?", (sender,)).fetchone():
         conn.close()
-        die(f"unknown sender '{sender}' — register first: a2a register {sender}")
+        die(f"unknown sender '{sender}' — register first")
     # recipient: "all" or "*" or "broadcast" => NULL
     recipient = None if args.to.lower() in ("all", "*", "broadcast") else args.to
     if recipient is not None:
