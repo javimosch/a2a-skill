@@ -105,7 +105,7 @@ class A2AClient:
         role: str,
         prompt: str = "",
         cli: str = "",
-        pid: int = 0,
+        pid: int | None = None,
         upsert: bool = True,
     ) -> bool:
         """Register this agent on the bus.
@@ -114,12 +114,14 @@ class A2AClient:
             role: Agent's role description
             prompt: System prompt (optional)
             cli: CLI tool name (optional)
-            pid: Process ID (optional)
+            pid: Process ID (optional, must be > 0 if provided)
             upsert: Update existing registration if True (preserves created_at)
 
         Returns:
             True on success
         """
+        if pid is not None and pid <= 0:
+            raise ValueError("pid must be a positive integer")
         conn = self._connect()
         try:
             now = time.time()
