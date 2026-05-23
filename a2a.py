@@ -175,7 +175,7 @@ def cmd_project(args) -> None:
 def cmd_register(args) -> None:
     args.id = args.id.strip()
     if not args.id:
-        die("agent id must not be empty — pass a valid registered agent id")
+        die("agent id must not be empty")
     if args.pid is not None and args.pid <= 0:
         die("--pid must be a positive integer")
     if args.role and not args.role.strip():
