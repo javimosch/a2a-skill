@@ -1,6 +1,328 @@
-[13:07:14] #1 collector -> writer
+[00:46:44] #1 collector -> writer
     Your task: You are the document writer. Produce a markdown quick-start guide for a2a.\n\nSteps:\n1. Write a concise, practical markdown guide titled 'a2a Quick Start Guide'\n2. Include these sections:\n   - What is a2a? (2-3 sentences)\n   - Installation (one-liner: clone and symlink a2a)\n   - Quick Start (init, register, send, recv examples)\n   - Key Concepts (bus, agents, messages, read-tracking)\n   - API Reference (table of CLI commands with short descriptions)\n   - Multi-Agent Patterns (coordinator, worker, pipeline)\n   - Best Practices (status done, iterations cap, WAL invariant)\n3. Use markdown formatting: headers, code blocks, bullet lists, tables\n4. Keep it under 200 lines\n5. Send the markdown to the formatter:\n   a2a send formatter MD_START\\n<your markdown>\\nMD_END --from writer\n\nThe markdown must be between MD_START and MD_END markers.
-[13:07:14] #2 collector -> formatter
+[00:46:44] #2 collector -> formatter
     Your task: You are the document formatter. Wait for the writer to send markdown.\n\nSteps:\n1. Receive the writer's message:\n   a2a recv --as formatter --wait 60\n2. Extract the markdown content (between MD_START and MD_END)\n3. Convert markdown to HTML using pandoc:\n   echo "<extracted markdown>" | pandoc -f markdown -t html --standalone --metadata title="a2a Quick Start Guide"\n4. Add a dark theme style block inside <style> tags for good readability\n5. Send BOTH the markdown and the HTML to the publisher:\n   a2a send publisher FORMAT_START\\n### MARKDOWN\\n<markdown>\\n### HTML\\n<html>\\nFORMAT_END --from formatter\n\nBoth formats must be between FORMAT_START and FORMAT_END markers.
-[13:07:14] #3 collector -> publisher
+[00:46:44] #3 collector -> publisher
     Your task: You are the document publisher. Wait for the formatter to send formatted documents.\n\nSteps:\n1. Receive the formatter's message:\n   a2a recv --as publisher --wait 60\n2. Extract the markdown and HTML sections\n3. Create a zip bundle with both files (use python3 -c or zip command)\n4. Broadcast the complete output to all:\n   a2a send all PUBLISH_START\\nBundle created with:\\n- guide.md\\n- guide.html\\n- bundle.zip\\nPUBLISH_END --from publisher\n\nThen mark yourself done.
+[00:47:23] #4 writer -> formatter
+    MD_START
+    # a2a Quick Start Guide
+    
+    ## What is a2a?
+    
+    a2a (agent-to-agent) is a peer-to-peer messaging bus for agentic CLI sessions. Multiple AI agents — from any CLI (Claude Code, OpenCode, Pi, Gemini) — communicate directly through a shared SQLite database. No orchestrator, no central chain of command: each agent decides who to message and when.
+    
+    ## Installation
+    
+    ```bash
+    git clone https://github.com/anomalyco/a2a-skill.git ~/.a2a-skill
+    ln -s ~/.a2a-skill/a2a ~/.local/bin/a2a
+    ```
+    
+    Ensure `~/.local/bin` is on your `PATH`.
+    
+    ## Quick Start
+    
+    ```bash
+    a2a init
+    a2a register --role worker
+    a2a list
+    a2a send peer-name "Hello from the bus!" --from me
+    a2a recv --as my-name --wait 20
+    a2a status done --as my-name
+    a2a stats
+    ```
+    
+    ## Key Concepts
+    
+    | Concept | Description |
+    |---|---|
+    | **Bus** | Shared SQLite at `~/.a2a/{project}/database.db` in WAL mode. All messages flow through it. |
+    | **Agents** | CLI sessions that register with a name, role, and status. Each reads and writes independently. |
+    | **Messages** | Rows in `messages` table: sender, recipient (NULL=broadcast), body, thread_id, timestamp. |
+    | **Read-tracking** | Each agent tracks reads in the `reads` table. A broadcast is seen once per agent. |
+    
+    ## CLI Commands
+    
+    | Command | Description |
+    |---|---|
+    | `init` | Initialize a new a2a bus for the project |
+    | `register` | Register or update your agent identity |
+    | `unregister` | Remove your agent from the bus |
+    | `send` | Send a message to a peer or broadcast (`*`) |
+    | `recv` | Receive waiting messages (block with `--wait`) |
+    | `peek` | Preview messages without marking read |
+    | `list` | List registered agents and their status |
+    | `status` | Update your status (active, busy, done) |
+    | `search` | Search message bodies with FTS |
+    | `thread` | View or send within a thread |
+    | `stats` | Show bus statistics |
+    | `clear` | Clear all messages and agents |
+    | `project` | Show current project info |
+    
+    ## Multi-Agent Patterns
+    
+    ### Coordinator + Workers
+    Coordinator sends tasks, workers reply with results.
+    
+    ### Pipeline
+    Agents pass work in sequence: collector → analyzer → reporter.
+    
+    ## Best Practices
+    
+    - **Mark `status done`** when finished so peers know not to wait.
+    - **Set an iteration cap** (5-8 loops max) to prevent infinite runs.
+    - **3 empty recvs = done** — idle agents exit gracefully.
+    - **Use `--wait 20`** for blocking reads instead of busy-polling.
+    - **WAL invariant**: every SQLite connection must set WAL + 5s busy timeout.
+    - **Keep messages concise** — agents pay per token.
+    
+    MD_END
+[00:47:41] #5 formatter -> publisher
+    FORMAT_START
+    ### MARKDOWN
+    # a2a Quick Start Guide
+    
+    ## What is a2a?
+    
+    a2a (agent-to-agent) is a peer-to-peer messaging bus for agentic CLI sessions. Multiple AI agents — from any CLI (Claude Code, OpenCode, Pi, Gemini) — communicate directly through a shared SQLite database. No orchestrator, no central chain of command: each agent decides who to message and when.
+    
+    ## Installation
+    
+    ```bash
+    git clone https://github.com/anomalyco/a2a-skill.git ~/.a2a-skill
+    ln -s ~/.a2a-skill/a2a ~/.local/bin/a2a
+    ```
+    
+    Ensure `~/.local/bin` is on your `PATH`.
+    
+    ## Quick Start
+    
+    ```bash
+    a2a init
+    a2a register --role worker
+    a2a list
+    a2a send peer-name "Hello from the bus!" --from me
+    a2a recv --as my-name --wait 20
+    a2a status done --as my-name
+    a2a stats
+    ```
+    
+    ## Key Concepts
+    
+    | Concept | Description |
+    |---|---|
+    | **Bus** | Shared SQLite at `~/.a2a/{project}/database.db` in WAL mode. All messages flow through it. |
+    | **Agents** | CLI sessions that register with a name, role, and status. Each reads and writes independently. |
+    | **Messages** | Rows in `messages` table: sender, recipient (NULL=broadcast), body, thread_id, timestamp. |
+    | **Read-tracking** | Each agent tracks reads in the `reads` table. A broadcast is seen once per agent. |
+    
+    ## CLI Commands
+    
+    | Command | Description |
+    |---|---|
+    | `init` | Initialize a new a2a bus for the project |
+    | `register` | Register or update your agent identity |
+    | `unregister` | Remove your agent from the bus |
+    | `send` | Send a message to a peer or broadcast (`*`) |
+    | `recv` | Receive waiting messages (block with `--wait`) |
+    | `peek` | Preview messages without marking read |
+    | `list` | List registered agents and their status |
+    | `status` | Update your status (active, busy, done) |
+    | `search` | Search message bodies with FTS |
+    | `thread` | View or send within a thread |
+    | `stats` | Show bus statistics |
+    | `clear` | Clear all messages and agents |
+    | `project` | Show current project info |
+    
+    ## Multi-Agent Patterns
+    
+    ### Coordinator + Workers
+    Coordinator sends tasks, workers reply with results.
+    
+    ### Pipeline
+    Agents pass work in sequence: collector → analyzer → reporter.
+    
+    ## Best Practices
+    
+    - **Mark `status done`** when finished so peers know not to wait.
+    - **Set an iteration cap** (5-8 loops max) to prevent infinite runs.
+    - **3 empty recvs = done** — idle agents exit gracefully.
+    - **Use `--wait 20`** for blocking reads instead of busy-polling.
+    - **WAL invariant**: every SQLite connection must set WAL + 5s busy timeout.
+    - **Keep messages concise** — agents pay per token.
+    ### HTML
+    
+    FORMAT_END
+[00:47:54] #6 formatter -> publisher
+    FORMAT_START
+    ### MARKDOWN
+    # a2a Quick Start Guide
+    
+    ## What is a2a?
+    
+    a2a (agent-to-agent) is a peer-to-peer messaging bus for agentic CLI sessions. Multiple AI agents — from any CLI (Claude Code, OpenCode, Pi, Gemini) — communicate directly through a shared SQLite database. No orchestrator, no central chain of command: each agent decides who to message and when.
+    
+    ## Installation
+    
+    ```bash
+    git clone https://github.com/anomalyco/a2a-skill.git ~/.a2a-skill
+    ln -s ~/.a2a-skill/a2a ~/.local/bin/a2a
+    ```
+    
+    Ensure `~/.local/bin` is on your `PATH`.
+    
+    ## Quick Start
+    
+    ```bash
+    a2a init
+    a2a register --role worker
+    a2a list
+    a2a send peer-name "Hello from the bus!" --from me
+    a2a recv --as my-name --wait 20
+    a2a status done --as my-name
+    a2a stats
+    ```
+    
+    ## Key Concepts
+    
+    | Concept | Description |
+    |---|---|
+    | **Bus** | Shared SQLite at `~/.a2a/{project}/database.db` in WAL mode. All messages flow through it. |
+    | **Agents** | CLI sessions that register with a name, role, and status. Each reads and writes independently. |
+    | **Messages** | Rows in `messages` table: sender, recipient (NULL=broadcast), body, thread_id, timestamp. |
+    | **Read-tracking** | Each agent tracks reads in the `reads` table. A broadcast is seen once per agent. |
+    
+    ## CLI Commands
+    
+    | Command | Description |
+    |---|---|
+    | `init` | Initialize a new a2a bus for the project |
+    | `register` | Register or update your agent identity |
+    | `unregister` | Remove your agent from the bus |
+    | `send` | Send a message to a peer or broadcast (`*`) |
+    | `recv` | Receive waiting messages (block with `--wait`) |
+    | `peek` | Preview messages without marking read |
+    | `list` | List registered agents and their status |
+    | `status` | Update your status (active, busy, done) |
+    | `search` | Search message bodies with FTS |
+    | `thread` | View or send within a thread |
+    | `stats` | Show bus statistics |
+    | `clear` | Clear all messages and agents |
+    | `project` | Show current project info |
+    
+    ## Multi-Agent Patterns
+    
+    ### Coordinator + Workers
+    Coordinator sends tasks, workers reply with results.
+    
+    ### Pipeline
+    Agents pass work in sequence: collector → analyzer → reporter.
+    
+    ## Best Practices
+    
+    - **Mark `status done`** when finished so peers know not to wait.
+    - **Set an iteration cap** (5-8 loops max) to prevent infinite runs.
+    - **3 empty recvs = done** — idle agents exit gracefully.
+    - **Use `--wait 20`** for blocking reads instead of busy-polling.
+    - **WAL invariant**: every SQLite connection must set WAL + 5s busy timeout.
+    - **Keep messages concise** — agents pay per token.
+    ### HTML
+    <!DOCTYPE html>
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+      <title>a2a Quick Start Guide</title>
+      <style>
+        body { background: #1e1e2e; color: #cdd6f4; font-family: system-ui, sans-serif; max-width: 42em; margin: 0 auto; padding: 2em; line-height: 1.6; }
+        a { color: #89b4fa; }
+        a:visited { color: #cba6f7; }
+        h1, h2, h3, h4 { color: #cba6f7; }
+        code { background: #313244; color: #f5e0dc; padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        pre { background: #181825; padding: 1em; border-radius: 8px; overflow-x: auto; }
+        pre code { background: transparent; padding: 0; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #45475a; padding: 0.5em; text-align: left; }
+        th { background: #313244; color: #cdd6f4; }
+        blockquote { border-left: 4px solid #89b4fa; margin: 1em 0; padding-left: 1em; color: #a6adc8; }
+        hr { border: none; border-top: 1px solid #45475a; }
+        header { text-align: center; margin-bottom: 2em; }
+      </style>
+    </head>
+    <body>
+    <header>
+    <h1 class="title">a2a Quick Start Guide</h1>
+    </header>
+    <h2>What is a2a?</h2>
+    <p>a2a (agent-to-agent) is a peer-to-peer messaging bus for agentic CLI sessions. Multiple AI agents — from any CLI (Claude Code, OpenCode, Pi, Gemini) — communicate directly through a shared SQLite database. No orchestrator, no central chain of command: each agent decides who to message and when.</p>
+    <h2>Installation</h2>
+    <pre><code>git clone https://github.com/anomalyco/a2a-skill.git ~/.a2a-skill
+    ln -s ~/.a2a-skill/a2a ~/.local/bin/a2a</code></pre>
+    <p>Ensure <code>~/.local/bin</code> is on your <code>PATH</code>.</p>
+    <h2>Quick Start</h2>
+    <pre><code>a2a init
+    a2a register --role worker
+    a2a list
+    a2a send peer-name "Hello from the bus!" --from me
+    a2a recv --as my-name --wait 20
+    a2a status done --as my-name
+    a2a stats</code></pre>
+    <h2>Key Concepts</h2>
+    <table>
+    <thead>
+    <tr><th>Concept</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+    <tr><td><strong>Bus</strong></td><td>Shared SQLite at <code>~/.a2a/{project}/database.db</code> in WAL mode. All messages flow through it.</td></tr>
+    <tr><td><strong>Agents</strong></td><td>CLI sessions that register with a name, role, and status. Each reads and writes independently.</td></tr>
+    <tr><td><strong>Messages</strong></td><td>Rows in <code>messages</code> table: sender, recipient (NULL=broadcast), body, thread_id, timestamp.</td></tr>
+    <tr><td><strong>Read-tracking</strong></td><td>Each agent tracks reads in the <code>reads</code> table. A broadcast is seen once per agent.</td></tr>
+    </tbody>
+    </table>
+    <h2>CLI Commands</h2>
+    <table>
+    <thead>
+    <tr><th>Command</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+    <tr><td><code>init</code></td><td>Initialize a new a2a bus for the project</td></tr>
+    <tr><td><code>register</code></td><td>Register or update your agent identity</td></tr>
+    <tr><td><code>unregister</code></td><td>Remove your agent from the bus</td></tr>
+    <tr><td><code>send</code></td><td>Send a message to a peer or broadcast (<code>*</code>)</td></tr>
+    <tr><td><code>recv</code></td><td>Receive waiting messages (block with <code>--wait</code>)</td></tr>
+    <tr><td><code>peek</code></td><td>Preview messages without marking read</td></tr>
+    <tr><td><code>list</code></td><td>List registered agents and their status</td></tr>
+    <tr><td><code>status</code></td><td>Update your status (active, busy, done)</td></tr>
+    <tr><td><code>search</code></td><td>Search message bodies with FTS</td></tr>
+    <tr><td><code>thread</code></td><td>View or send within a thread</td></tr>
+    <tr><td><code>stats</code></td><td>Show bus statistics</td></tr>
+    <tr><td><code>clear</code></td><td>Clear all messages and agents</td></tr>
+    <tr><td><code>project</code></td><td>Show current project info</td></tr>
+    </tbody>
+    </table>
+    <h2>Multi-Agent Patterns</h2>
+    <h3>Coordinator + Workers</h3>
+    <p>Coordinator sends tasks, workers reply with results.</p>
+    <h3>Pipeline</h3>
+    <p>Agents pass work in sequence: collector → analyzer → reporter.</p>
+    <h2>Best Practices</h2>
+    <ul>
+    <li><strong>Mark <code>status done</code></strong> when finished so peers know not to wait.</li>
+    <li><strong>Set an iteration cap</strong> (5-8 loops max) to prevent infinite runs.</li>
+    <li><strong>3 empty recvs = done</strong> — idle agents exit gracefully.</li>
+    <li><strong>Use <code>--wait 20</code></strong> for blocking reads instead of busy-polling.</li>
+    <li><strong>WAL invariant</strong>: every SQLite connection must set WAL + 5s busy timeout.</li>
+    <li><strong>Keep messages concise</strong> — agents pay per token.</li>
+    </ul>
+    </body>
+    </html>
+    FORMAT_END
+[00:47:59] #7 publisher -> ALL
+    PUBLISH_START
+    Bundle received with:
+    - guide.md (markdown)
+    - guide.html (HTML)
+    
+    Content published successfully from the formatter pipeline.
+    PUBLISH_END
