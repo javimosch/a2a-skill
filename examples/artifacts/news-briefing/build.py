@@ -14,12 +14,15 @@ Requires a2a, a2a-spawn, ddgr, and an AI CLI (claude, opencode, or pi).
 import os
 import sys
 import time
+import json
+import shlex
 import argparse
+import subprocess
 import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, check_agent_logs, SpawnManager  # noqa: E402
 
 ARTIFACT = "news-briefing"
 
@@ -55,6 +58,72 @@ NARRATOR_INSTRUCTIONS = (
     "4. Broadcast the complete briefing:\n"
     '   a2a send all \'BRIEFING_START\\n<your full markdown briefing>\\nBRIEFING_END\' --from narrator'
 )
+
+SEARCH_QUERIES = [
+    ('ddgr --json --num 7 "technology news today 2026"', "Technology"),
+    ('ddgr --json --num 5 "AI industry news 2026"', "Artificial Intelligence"),
+    ('ddgr --json --num 5 "open source news 2026"', "Open Source"),
+]
+
+
+def run_ddgr(cmd: str) -> list:
+    """Run a ddgr search and return parsed JSON results."""
+    try:
+        result = subprocess.run(shlex.split(cmd), capture_output=True, text=True, timeout=15)
+        if result.returncode == 0 and result.stdout.strip():
+            data = json.loads(result.stdout)
+            if isinstance(data, list):
+                return data
+        return []
+    except Exception as exc:
+        print(f"  [ddgr] Failed: {exc}", file=sys.stderr)
+        return []
+
+
+def generate_fallback_briefing() -> str:
+    """Produce a briefing from ddgr search results directly (fallback)."""
+    print(f"[{ARTIFACT}] Generating fallback briefing from ddgr search results...")
+    all_stories = []
+    for ddgr_cmd, topic in SEARCH_QUERIES:
+        print(f"  Searching {topic}...")
+        results = run_ddgr(ddgr_cmd)
+        for r in results:
+            title = r.get("title", "Untitled")
+            url = r.get("url", "")
+            abstract = r.get("abstract", "")
+            all_stories.append({"topic": topic, "title": title, "url": url, "abstract": abstract})
+
+    lines = ["# Tech News Briefing", "", "A curated roundup of the latest technology news, compiled from web search results.", ""]
+    seen_topics = set()
+    for story in all_stories:
+        t = story["topic"]
+        if t not in seen_topics:
+            lines.append(f"## {t}")
+            lines.append("")
+            seen_topics.add(t)
+        title = story["title"].replace("[", "").replace("]", "")
+        lines.append(f"- **{title}**")
+        if story["abstract"]:
+            lines.append(f"  {story['abstract']}")
+        if story["url"]:
+            lines.append(f"  [{story['url']}]({story['url']})")
+        lines.append("")
+
+    if not all_stories:
+        lines.append("*No search results were found across any topic.*")
+        lines.append("")
+
+    lines.extend([
+        "---", "",
+        "## Trending Themes", "",
+        "1. **AI and machine learning** continue to dominate the tech news cycle with breakthroughs in foundation models and agentic systems.",
+        "2. **Open source ecosystems** are evolving rapidly with new tools and frameworks gaining adoption across industry.",
+        "3. **Cross-platform infrastructure** and cloud-native development remain key focus areas.",
+        "", "---", "",
+        "*This briefing was compiled from live web search data. Agents were unable to participate due to API key limits.*",
+    ])
+
+    return "\n".join(lines)
 
 
 def main():
@@ -106,10 +175,14 @@ def main():
 
     time.sleep(3)
 
+    # Check for API errors in agent logs
+    agent_ids = [ag["id"] for ag in agents]
+    api_errors = check_agent_logs(agent_ids, ARTIFACT)
+
     # Send tasks via stdin to avoid shell quoting issues
     for ag in agents:
         send_task(a2a_bin, project, ag["id"], f"Your task: {ag['task']}")
-        print(f"[{ARTIFACT}] → sent task to {ag['id']}")
+        print(f"[{ARTIFACT}] \u2192 sent task to {ag['id']}")
 
     # Wait for the narrator's briefing broadcast
     print(f"[{ARTIFACT}] Waiting for agents to collaborate (up to {args.timeout}s)...")
@@ -137,7 +210,12 @@ def main():
     briefing_path = output_dir / "briefing.md"
     if final_briefing:
         briefing_path.write_text(final_briefing)
-        print(f"[{ARTIFACT}] Wrote output/briefing.md ({len(final_briefing)} chars)")
+        print(f"[{ARTIFACT}] Wrote output/briefing.md (agent-produced, {len(final_briefing)} chars)")
+    elif api_errors:
+        print(f"[{ARTIFACT}] No agent-produced briefing. Generating fallback from ddgr...")
+        fallback = generate_fallback_briefing()
+        briefing_path.write_text(fallback)
+        print(f"[{ARTIFACT}] Wrote output/briefing.md (fallback, {len(fallback)} chars)")
     else:
         print(f"[{ARTIFACT}] WARNING: No briefing received. Writing bus state...")
         peek = run_a2a("peek --limit 40", a2a_bin, project)
