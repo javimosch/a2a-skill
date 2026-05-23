@@ -517,5 +517,28 @@ message that no agent can read.
 4. Validate recipient exists for non-broadcast (Python, Go, Node.js, Rust: ✓)
 5. Close the database handle on validation failure to avoid resource leaks
    (Node.js: fixed in v1.4, Rust: sqlite3 handles via Drop)
+6. Validate `thread_id` not empty/whitespace if set (Python ✓, Go ✓, Node.js ✓, Rust ✓)
+7. Support `thread_id` parameter in `send()` (Python ✓, Go ✓, Node.js ✓, Rust ✓)
+
+### Cross-client thread_id support — Node.js and Rust send() lacked thread_id parameter
+
+The Python and Go clients support sending messages with a `thread_id` to group
+related messages into threads. The Node.js and Rust clients did not accept a
+`thread_id` parameter in their `send()` methods, creating a cross-client parity
+gap for agent workflows that depend on thread-scoped communication.
+
+The Python CLI (`--thread`) and Python sync/async client libraries all support
+thread_id. The Go client library also accepts `threadID string` in `Send()`.
+Node.js and Rust were the only clients missing this.
+
+**Fix (applied in this session):**
+- **Node.js** (`a2a_client.js`): `send()` now accepts `threadId` as an optional
+  4th parameter. Empty/whitespace thread_id raises an error. INSERT statement
+  updated to persist `thread_id` column.
+- **Rust** (`src/lib.rs`): `send()` now accepts `thread_id: Option<&str>` as a
+  4th parameter. Empty/whitespace thread_id raises a validation error. INSERT
+  updated to persist `thread_id` column.
+- **Tests added:** Both Node.js and Rust test suites now include thread_id
+  storage, empty thread_id rejection, and whitespace thread_id rejection tests.
 
 
