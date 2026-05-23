@@ -57,6 +57,28 @@ def a2a(*args, project: str, expect_fail: bool = False) -> subprocess.CompletedP
     return result
 
 
+def _a2a_py(*args, project: str, expect_fail: bool = False) -> subprocess.CompletedProcess:
+    """Run a2a using the Python script directly (bypasses the Go binary)."""
+    env = os.environ.copy()
+    env["A2A_PROJECT"] = project
+    result = subprocess.run(
+        ["python3", A2A_PY] + list(args),
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=30,
+    )
+    if not expect_fail:
+        if result.returncode != 0:
+            print(f"  STDOUT: {result.stdout}", file=sys.stderr)
+            print(f"  STDERR: {result.stderr}", file=sys.stderr)
+        assert result.returncode == 0, (
+            f"a2a {' '.join(args)} failed (rc={result.returncode}):\n"
+            f"  stderr: {result.stderr}"
+        )
+    return result
+
+
 def db_path(project: str) -> str:
     """Get the database path for a project."""
     home = os.path.expanduser("~")
@@ -972,6 +994,40 @@ class TestIntegration(unittest.TestCase):
                      project=self.project, expect_fail=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("positive integer", result.stderr.lower())
+
+    def test_register_whitespace_id_rejected(self):
+        """Register with whitespace-only agent id is rejected."""
+        result = _a2a_py("register", "   ", project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("empty", result.stderr.lower())
+
+    def test_register_whitespace_role_rejected(self):
+        """Register with whitespace-only --role is rejected."""
+        result = _a2a_py("register", "valid-agent", "--role", "   ",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("role", result.stderr.lower())
+
+    def test_register_whitespace_cli_rejected(self):
+        """Register with whitespace-only --cli is rejected."""
+        result = _a2a_py("register", "valid-agent", "--cli", "   ",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cli", result.stderr.lower())
+
+    def test_send_empty_from_rejected(self):
+        """Send with empty --from is rejected."""
+        result = _a2a_py("send", "alice", "hello", "--from", "",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--from", result.stderr.lower())
+
+    def test_send_whitespace_from_rejected(self):
+        """Send with whitespace-only --from is rejected."""
+        result = _a2a_py("send", "alice", "hello", "--from", "   ",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--from", result.stderr.lower())
 
 
 if __name__ == "__main__":
