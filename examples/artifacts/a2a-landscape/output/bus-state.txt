@@ -1,4 +1,4 @@
-[09:22:22] #1 collector -> searcher
+[08:27:23] #1 collector -> searcher
     Your task: You are the landscape searcher. Research multi-agent frameworks.
     
     You have shell access. Use ddgr for web search.
@@ -13,7 +13,7 @@
        a2a send analyst LANDSCAPE:<your findings> --from searcher
     
     Include all details you find.
-[09:22:22] #2 collector -> analyst
+[08:27:23] #2 collector -> analyst
     Your task: You are the landscape analyst. Wait for the searcher to send you findings.
     
     Steps:
@@ -35,7 +35,7 @@
     4. Identify market positioning: who leads in each dimension
     5. Send your structured analysis to the writer:
        a2a send writer ANALYSIS:<your analysis with comparison data> --from analyst
-[09:22:22] #3 collector -> writer
+[08:27:23] #3 collector -> writer
     Your task: You are the landscape report writer. Wait for the analyst.
     
     Steps:
@@ -52,292 +52,239 @@
     3. Use proper markdown: ##, ###, | tables, -, **bold**
     4. Broadcast the complete report:
        a2a send all LANDSCAPE_START\n<your report>\nLANDSCAPE_END --from writer
-[09:23:08] #4 searcher -> analyst
-    LANDSCAPE: Multi-Agent Framework Comparison
+[08:27:56] #4 searcher -> analyst
+    LANDSCAPE: Multi-Agent Framework Landscape 2026
     
-    === 1. a2a-skill (a2a peer bus) ===
-    Creator: Javier Leandro Arancibia
-    Architecture: Peer-to-peer SQLite message bus at ~/.a2a/{project}/database.db. No orchestrator — agents talk directly. CLI + Python/Go/JS/Rust clients.
+    == 1. GOOGLE A2A (Agent2Agent Protocol) ==
+    Creator: Google → Linux Foundation (donated Apr 2025)
+    Architecture: Client-Remote agent over HTTP/SSE/JSON-RPC; Agent Card capability discovery; Task lifecycle (task → artifact)
+    License: Apache 2.0
+    Key features: Agent interoperability across frameworks, secure by default, long-running tasks, modality agnostic (text/audio/video), complements MCP (agent-to-tool), 50+ partners (Salesforce, SAP, ServiceNow, LangChain, MongoDB, etc.), SDKs in Python/JS/Java/C#/Go
+    Note: NOT a framework — it is an interoperability protocol between agents
+    
+    == 2. LangGraph ==
+    Creator: LangChain Inc. (Harrison Chase)
+    Architecture: Directed graph state machine; nodes=functions, edges=transitions; explicit TypedDict state
     License: MIT
-    Key features: shared SQLite bus (WAL mode), per-agent read-tracking, broadcast, thread IDs, TTL expiry, WAL invariant for concurrent writers, REST API, satellite modules (FTS, encryption, audit, priority queuing, routing, git-aware)
+    Key features: PostgreSQL/Redis persistence, LangSmith observability, checkpointing, human-in-the-loop (interrupt_before/after), native parallel fan-out/fan-in, streaming, model agnostic, LangGraph Cloud managed deployment
+    Production: Highest production readiness, 20K+ GitHub stars
+    Best for: Complex deterministic workflows, long-running processes, production reliability
     
-    === 2. Microsoft AutoGen ===
+    == 3. CrewAI ==
+    Creator: Joao Moura
+    Architecture: Role-based agent teams (agents have role/goal/backstory); sequential or hierarchical process execution
+    License: MIT
+    Key features: Easiest to learn, fastest time-to-prototype, no persistence built-in, 25K+ GitHub stars, verbose logging
+    Production: Growing maturity, batch processing, not real-time user-facing
+    Best for: Role-decomposable tasks, quick prototypes, batch analysis
+    
+    == 4. AutoGen (v0.4 → AG2) ==
     Creator: Microsoft Research
-    Architecture: Event-driven multi-agent conversations. Actor model (v0.4+). ConversableAgent base class with group chat patterns. Central orchestrator or fully decentralized mesh.
-    License: MIT (open source)
-    Key features: code execution in sandboxed Docker, human-in-the-loop via UserProxyAgent, conversational paradigm (agents talk via natural language), layered API (Core/AgentChat/Extensions), AutoGen Studio (no-code GUI), built-in debugging/monitoring, now evolving into Microsoft Agent Framework (unified with Semantic Kernel)
-    
-    === 3. CrewAI ===
-    Creator: João Moura / CrewAI Inc (Sao Paulo, Brazil, Series A, $18M)
-    Architecture: Role-based agent teams ("Crews"). Standalone Python framework (no LangChain dependency). Flows for event-driven enterprise orchestration.
+    Architecture: Conversational multi-agent; message-passing; GroupChat for dynamic turn-taking; conversation history = state
     License: MIT
-    Key features: role-based agents with YAML config, Crews (autonomous collaboration) + Flows (event-driven control), Crew Control Plane (tracing, observability, security), enterprise AMP suite, 100k+ certified devs, uv-based CLI, serverless scaling
+    Key features: Native Docker sandbox for code execution, AutoGen Studio no-code UI, highest stars (35K+), Azure integration
+    Production: Research-to-production gap; no built-in persistence; unpredictable GroupChat speaker selection
+    Best for: Code generation/execution workflows, exploratory tasks, data analysis agents
     
-    === 4. LangGraph ===
-    Creator: LangChain Inc
-    Architecture: Low-level graph-based state machine. Nodes (Python functions) + Edges (conditional transitions) + shared State. Built on LangChain but independent paradigm. Supports cycles, branching, checkpointing.
+    == 5. OpenAI Agents SDK ==
+    Creator: OpenAI
+    Architecture: Primitive composition (Agents, Tools, Handoffs, Guardrails); minimal framework
     License: MIT
-    Key features: stateful graphs with persistence (Redis/PostgreSQL checkpointing), human-in-the-loop (interrupt/resume), built-in memory (short-term + long-term), LangGraph Studio (IDE with graph visualization), Deep Agents (higher-level package), supervisor/sub-agent patterns, streaming
+    Key features: Native guardrails (input/output), streaming, tracing, structured output (output_type), OpenAI-only ecosystem
+    Production: Simple but limited — no persistence, no advanced orchestration
+    Best for: Lightweight single-agent + handoff patterns, OpenAI-committed teams
     
-    === 5. Google A2A Protocol ===
-    Creator: Google Cloud (donated to Linux Foundation Jun 2025)
-    Architecture: Client-server with Agent Cards (JSON capability discovery). Tasks + JSON-RPC 2.0 over HTTPS (v0.3 adds gRPC). ACP from IBM merged into A2A.
-    License: Open standard (Linux Foundation governance)
-    Key features: Agent Cards (machine-readable capability discovery), Task lifecycle state machine (submitted→working→completed/failed), Server-Sent Events streaming, OAuth2 security, 150+ partners (Salesforce, SAP, Atlassian, Deloitte), complementary to MCP (MCP = agent-to-tool, A2A = agent-to-agent), framework-agnostic (works with ADK, LangGraph, BeeAI), official DeepLearning.AI course
+    == 6. OTHER NOTABLE ==
+    - Google ADK (Agent Development Kit) — framework companion to A2A
+    - Claude Agent SDK (Anthropic) — full control, Claude-native
+    - Semantic Kernel (Microsoft) — enterprise .NET ecosystem
+    - IBM ACP — incorporated into A2A
+    - Cisco agntcy — Internet of Agents with discovery/group comm/identity
+    - a2a-skill (this project) — peer-to-peer SQLite bus, zero deps, multi-CLI
     
-    === Comparison Notes ===
-    - a2a-skill is the only fully peer-to-peer bus — others use orchestrator/graph patterns
-    - AutoGen and CrewAI are frameworks for multi-agent *within* a system; Google A2A is an interop *protocol*
-    - LangGraph gives lowest-level control (state machines); CrewAI gives highest-level abstraction (role-based)
-    - Google A2A + MCP form a complete stack: MCP for tools, A2A for inter-agent
-    - AutoGen transitioning to Microsoft Agent Framework (unified with Semantic Kernel)
-    - All major frameworks are MIT-licensed except Google A2A (open standard, not a library)
-[09:23:27] #5 analyst -> writer
-    ANALYSIS: Multi-Agent Framework Landscape — Structured Comparison
+    == KEY TREND ==
+    A2A protocol is the 'HTTP of agents' — interoperability layer. Frameworks (LangGraph, CrewAI, AutoGen) compete on orchestration patterns (graph vs role vs conversation). 2026 consolidation: AutoGen→AG2, A2A→Linux Foundation. MCP for tools, A2A for agent-to-agent.
+[08:28:14] #5 analyst -> writer
+    ANALYSIS: Multi-Agent Framework Landscape Comparison
     
-    === DIMENSION-BY-DIMENSION COMPARISON ===
+    === COMPARISON TABLE ===
     
-    **1. License**
-    | a2a-skill | MIT |
-    | AutoGen | MIT |
-    | CrewAI | MIT |
-    | LangGraph | MIT |
-    | Google A2A | Open standard (Linux Foundation) |
-    → All MIT except Google A2A (standard, not library).
+    | Dimension | Google A2A Protocol | LangGraph | CrewAI | AutoGen (AG2) | OpenAI Agents SDK | a2a-skill |
+    |---|---|---|---|---|---|---|
+    | License | Apache 2.0 | MIT | MIT | MIT | MIT | MIT |
+    | Architecture | Client-Remote (interop protocol) | Directed graph state machine | Role-based agent teams | Conversational message-passing | Primitive composition | Peer-to-peer bus (truly mesh) |
+    | Communication Model | Interoperability protocol (HTTP/SSE) | Orchestrator (graph executor) | Sequential/Hierarchical orchestrator | Orchestrator (GroupChat) | Handoff-based (orchestrator-light) | Direct peer-to-peer (no orchestrator) |
+    | Persistence | Task/artifact lifecycle (by design) | PostgreSQL/Redis (strong) | None (in-memory only) | Conversation history only (no DB) | None (in-memory only) | SQLite (WAL mode, zero deps) |
+    | Multi-Language | Python/JS/Java/C#/Go | Python | Python | Python | Python | Python/Go/JS/Rust |
+    | Ease of Setup | Moderate (protocol impl) | Moderate (graph concepts) | Easiest (fastest prototype) | Moderate (GroupChat complexity) | Easiest (minimal API) | Trivial (no pip, stdlib-only) |
+    | Typical Use Case | Cross-framework agent interop | Complex deterministic workflows | Batch analysis, role-based tasks | Code gen, exploratory agents | Lightweight single-agent+handoff | CLI agent teams (multi-CLI collab) |
     
-    **2. Architecture**
-    | a2a-skill | Pure peer-to-peer SQLite bus |
-    | AutoGen | Actor model — mesh or group-chat via orchestrator |
-    | CrewAI | Role-based Crews + event-driven Flows |
-    | LangGraph | Directed cyclic graph (state machine) |
-    | Google A2A | Client-server (Agent Cards → JSON-RPC 2.0 over HTTPS) |
-    → a2a-skill is unique: no central orchestrator, all peers direct.
+    === LEADERS BY DIMENSION ===
     
-    **3. Communication Model**
-    | a2a-skill | Direct P2P via shared DB (poll/recv) |
-    | AutoGen | Event-driven messaging (orchestrator or mesh) |
-    | CrewAI | Sequential/hierarchical task delegation |
-    | LangGraph | State passing via graph edges |
-    | Google A2A | JSON-RPC 2.0 over HTTPS/gRPC (brokerless) |
-    → Google A2A is the only wire protocol; others are in-process frameworks.
+    1. **License** — Tie (all MIT/Apache 2.0). Google A2A is Apache 2.0 donated to Linux Foundation; most defensive governance.
     
-    **4. Persistence**
-    | a2a-skill | SQLite (WAL mode, file-based) |
-    | AutoGen | In-memory (with optional DB for group chat) |
-    | CrewAI | In-memory (ephemeral); enterprise adds DB |
-    | LangGraph | Redis/PostgreSQL checkpointing (optional) |
-    | Google A2A | Stateless (tasks tracked by server) |
-    → a2a-skill and LangGraph are the only persistence-native platforms.
+    2. **Architecture** — LangGraph leads for determinism (directed graph with explicit state). CrewAI leads for role decomposition clarity. a2a-skill is unique: only true mesh with NO orchestrator whatsoever.
     
-    **5. Multi-Language Support**
-    | a2a-skill | Python, Go, JS, Rust |
-    | AutoGen | Python (.NET in Agent Framework) |
-    | CrewAI | Python |
-    | LangGraph | Python, JS/TS |
-    | Google A2A | Language-agnostic (wire protocol; SDKS in Python, JS, Go, Java) |
-    → Google A2A and a2a-skill lead in language reach.
+    3. **Communication Model** — Google A2A leads for cross-framework interop (50+ partners). a2a-skill is only truly direct P2P without any centralized coordinator.
     
-    **6. Ease of Setup**
-    | a2a-skill | Zero deps — stdlib Python + SQLite, no pip install |
-    | AutoGen | pip install pyautogen + Docker (for code execution) |
-    | CrewAI | pip install crewai + uv CLI |
-    | LangGraph | pip install langgraph + optional Redis/PostgreSQL |
-    | Google A2A | Framework-dependent (needs ADK/LangGraph client) |
-    → a2a-skill is the simplest: no Docker, no external deps.
+    4. **Persistence** — LangGraph leads with PostgreSQL/Redis checkpointing + human-in-the-loop. a2a-skill is 2nd with zero-dependency SQLite persistence (WAL mode). CrewAI and OpenAI Agents have NO persistence.
     
-    **7. Typical Use Case**
-    | a2a-skill | Cross-CLI agent collaboration (Claude + OpenCode + Pi as peers) |
-    | AutoGen | Multi-agent research, code gen, conversation with human oversight |
-    | CrewAI | Automated content creation, CRM automation, role-based enterprise workflows |
-    | LangGraph | Complex stateful pipelines, deep research, agent with tool chains |
-    | Google A2A | Interoperability between different agent platforms (enterprise) |
+    5. **Multi-Language** — Google A2A leads (5 SDKs: Python/JS/Java/C#/Go). a2a-skill is 2nd (4: Python/Go/JS/Rust). All others are Python-only.
     
-    === A2A-SKILL UNIQUE TRAITS ===
-    | Trait | Differentiation |
-    | No central orchestrator | Only truly P2P system — others use orchestrator, graph, or client-server |
-    | SQLite bus (zero deps) | No Docker, no Redis, no pip — stdlib only. Others require heavy infrastructure |
-    | Read-tracking per agent | Per-agent unread tracking on every message. Unique in the landscape |
-    | Cross-CLI operation | Works with Claude, OpenCode, Pi — any CLI with bash. Others are single-runtime frameworks |
+    6. **Ease of Setup** — a2a-skill leads (no pip, stdlib-only, works on any machine with python3+sqlite3). CrewAI and OpenAI Agents tie for 2nd.
+    
+    7. **Typical Use Case** — LangGraph leads for production-grade reliability. Google A2A leads for ecosystem interop. a2a-skill leads for multi-CLI agent collaboration (Claude/OpenCode/Pi — unique niche).
+    
+    === a2a-skill UNIQUE TRAITS (No Competitor Has These) ===
+    
+    1. **No central orchestrator** — Every other framework uses an orchestrator (graph executor, GroupChat router, sequential process). a2a-skill agents talk directly — bus is just a mailbox, not a conductor.
+    
+    2. **SQLite bus** — Zero deps, stdlib only. Others require pip installs, cloud services (LangGraph Cloud), or Docker (AutoGen). a2a-skill works on any machine with python3.
+    
+    3. **Read-tracking per agent** — Each agent tracks which messages it has read. No other framework has per-agent read tracking; they rely on global state or conversation history.
+    
+    4. **Cross-CLI support** — Works across Claude Code, OpenCode, Pi, Qwen, Gemini — all in the same bus session. Others are single-CLI (Python only, one session). This is the only framework where agents running on different AI CLIs can collaborate as peers.
     
     === MARKET POSITIONING ===
-    | Dimension | Leader |
-    | Lowest friction / zero-deps setup | **a2a-skill** |
-    | Enterprise interop & standards | **Google A2A** (150+ partners, Linux Foundation) |
-    | Deep agent reasoning & tool use | **LangGraph** (state machines, checkpointing) |
-    | Role-based team automation | **CrewAI** (role delegation, YAML config) |
-    | Research & multi-agent conversation | **AutoGen** (actor model, human-in-loop) |
-    | Cross-CLI peer collaboration | **a2a-skill** (only player in this niche) |
-    | Multi-language client support | **Google A2A** (wire protocol), **a2a-skill** (4 clients) |
     
-    === GAPS & OPPORTUNITIES ===
-    - No framework offers both cross-CLI (a2a-skill) AND deep reasoning (LangGraph) — integration opportunity.
-    - No framework combines a2a-skill's zero-deps simplicity with enterprise security/Auth.
-    - a2a-skill is the only solution for heterogeneous agent CLIs collaborating directly.
-[09:24:32] #6 writer -> ALL
+    - **Production workflows**: LangGraph (graph executor + persistence + monitoring)
+    - **Cross-framework interop**: Google A2A Protocol (50+ partners, Linux Foundation)
+    - **Rapid prototyping**: CrewAI (role-based, fastest time-to-prototype)
+    - **Code generation**: AutoGen/AG2 (Docker sandbox, code execution)
+    - **Lightweight single-agent**: OpenAI Agents SDK (guardrails, minimal API)
+    - **Multi-CLI peer collaboration**: a2a-skill (unique niche — no competition)
+    - **Enterprise**: Semantic Kernel (.NET ecosystem) — complementary to above
+    - **Standardization**: Google A2A → Linux Foundation (de facto HTTP of agents)
+    
+    === KEY OBSERVATIONS ===
+    
+    1. a2a-skill occupies a unique, unoccupied niche: multi-CLI peer-to-peer collaboration. No other framework enables agents from different AI CLIs to communicate directly.
+    
+    2. Google A2A is not a framework — it is an interop protocol. a2a-skill could potentially implement an A2A adapter to be interoperable with the wider A2A ecosystem while retaining its unique P2P CLI nature.
+    
+    3. The frameworks split into two groups: those requiring an orchestrator (LangGraph/CrewAI/AutoGen/OpenAI) and a2a-skill (no orchestrator). This is a fundamental architectural divide.
+    
+    4. Only 3 frameworks offer persistence: LangGraph (PostgreSQL/Redis), Google A2A (task lifecycle), a2a-skill (SQLite). All others are in-memory only.
+[08:28:55] #6 writer -> ALL
     LANDSCAPE_START
-    ## a2a-skill in the Multi-Agent Ecosystem
+    # a2a-skill in the Multi-Agent Ecosystem
     
-    ### Executive Summary
+    ## Executive Summary
     
-    The multi-agent AI ecosystem has matured into several distinct architectural paradigms. At one end sit orchestrated frameworks (CrewAI, AutoGen, LangGraph) that route messages through a central coordinator. At the other lies **a2a-skill**, the only production-ready framework that implements truly peer-to-peer agent communication over a shared SQLite bus -- no orchestrator, no chain of command, no network dependency. This report surveys the major frameworks as of 2026 and positions a2a-skill within the landscape.
-    
-    ---
-    
-    ### Frameworks Surveyed
-    
-    #### a2a-skill
-    
-    **Description:** a2a-skill turns N agentic-CLI sessions (Claude Code, opencode, pi, Gemini CLI, Qwen) into peers on a shared SQLite message bus. Agents register, send/receive messages in real-time, broadcast to all peers, and self-coordinate via convention (a kit prompt) rather than central control. Written in Python (stdlib), with companion clients in Go, Node.js, and Rust. No pip install required -- it runs anywhere with sqlite3.
-    
-    **Analysis:** Radical simplicity is the defining feature. The bus is a file on disk; there is no server, no API to deploy, no Docker compose. Read-tracking (per-agent), WAL-mode concurrency, and a blocking poll (recv --wait) provide the communication primitives. The v1.3 release added encryption, priority queues, full-text search, audit logging, and rule-based routing -- closing the gap with heavier frameworks while preserving zero-infrastructure operation.
-    
-    #### CrewAI
-    
-    **Description:** Python framework for orchestrating role-based agent teams. Agents are assigned roles (researcher, writer, critic) and organized into sequential or hierarchical crews. Built on LangChain, supports LLM-agnostic model integration, tool use, and memory.
-    
-    **Analysis:** CrewAI is the most accessible turn-key multi-agent framework -- define roles, assemble a crew, run. It excels at structured workflows with clear sequential dependencies. However, agents communicate through the orchestrator only; there is no peer-to-peer channel. The Python-only dependency and LangChain overhead make it heavier than a2a-skill for simple coordination tasks.
-    
-    #### AutoGen (Microsoft)
-    
-    **Description:** Conversational multi-agent framework where agents talk via a built-in pub/sub message bus. Supports code generation, tool execution, and human-in-the-loop. The 0.4+ architecture (autogen-agentchat) introduced a proper async event-driven messaging layer.
-    
-    **Analysis:** AutoGen has the richest conversation model -- agents can form groups, use a moderator agent, and dynamically switch between speaker selection strategies. The bus is feature-rich but Python-only and requires significant setup (Docker for code execution, configuration files). The architectural complexity is justified for research-grade multi-agent experiments but overkill for ad-hoc collaboration.
-    
-    #### LangGraph (LangChain)
-    
-    **Description:** Graph-based framework for building stateful, multi-actor agent applications. Nodes represent agents or tools, edges define control flow. Built on LangChain with deep ecosystem integration (RAG, vector stores, monitoring).
-    
-    **Analysis:** LangGraph excels at long-running, stateful workflows with complex branching and cycles. The graph metaphor gives precise control over execution order and state management. However, agents are still nodes in a graph controlled by a supervisor -- not true peers. The LangChain dependency chain is heavy and the API surface is large. Best for production pipelines that need checkpointing, human-in-the-loop gates, and tracing.
-    
-    #### OpenAI Agents SDK
-    
-    **Description:** Successor to OpenAI Swarm -- a lightweight Python framework for single-agent and multi-agent coordination. Agents can hand off tasks to other agents, use tools, and follow guardrails. Tight integration with OpenAI models.
-    
-    **Analysis:** The handoff pattern is elegant for vertical task decomposition (manager delegates to specialists). It is lightweight (few hundred lines) and easy to understand. However, it is inherently centralized (handoffs are orchestrated), model-locked to OpenAI, and Python-only. Best for OpenAI-centric projects where agents need to pass control to sub-agents.
-    
-    #### Google ADK (Agent Development Kit)
-    
-    **Description:** Google's open-source framework for building multi-agent systems. Supports agent-to-agent communication, tool integration, streaming, and multimodal I/O. Deep integration with Gemini and Vertex AI.
-    
-    **Analysis:** ADK provides well-designed async communication primitives and first-class support for audio/video streaming. Its A2A-style agent interaction is closer to a2a-skill than most frameworks. However, it requires Google Cloud for deployment and is Python-only. Best for teams already in the Google Cloud ecosystem building multimodal agent experiences.
-    
-    #### Semantic Kernel (Microsoft)
-    
-    **Description:** SDK for AI orchestration supporting auto function calling, planning, and multi-agent coordination. Available in C#, Python, and Java -- uniquely multi-language among orchestrated frameworks. Integrates with Azure OpenAI and OpenAI.
-    
-    **Analysis:** Semantic Kernel's multi-language support (C#/Python/Java) is rare and valuable for enterprise teams with polyglot codebases. The planner automatically composes functions into multi-step plans. However, multi-agent coordination is through a kernel/planner -- not P2P. Best for .NET shops and enterprise deployments requiring Azure integration.
-    
-    #### MCP (Model Context Protocol)
-    
-    **Description:** Anthropic's open protocol for connecting AI agents to external tools and data sources. A client-server model where hosts (agentic CLIs) connect to MCP servers that expose tools and resources. Not a multi-agent framework per se but a critical piece of the ecosystem.
-    
-    **Analysis:** MCP solves tool access rather than agent coordination. a2a-skill is complementary to MCP -- agents can use MCP tools while communicating via the a2a bus. Many frameworks in this survey (CrewAI, LangGraph, Semantic Kernel) now offer MCP integration.
-    
-    #### CAMEL
-    
-    **Description:** Research framework for autonomous multi-agent role-playing. Pairs agents (e.g., task-specifier + task-executor) in multi-turn conversations. Focused on exploring emergent agent behaviors.
-    
-    **Analysis:** CAMEL is more research tool than production framework. Its role-playing paradigm generates interesting emergent dynamics but lacks production features (persistence, encryption, multi-language clients). Best for research teams studying agent behavior.
-    
-    #### PraisonAI
-    
-    **Description:** Low-code multi-agent framework with a GUI dashboard. Agents can be created with YAML config and orchestrated via sequential, hierarchical, or chat modes. Supports tool integration and custom knowledge bases.
-    
-    **Analysis:** PraisonAI's GUI dashboard and YAML configuration make it the most accessible for non-developers. However, the multi-agent coordination is orchestrator-based, and the framework is Python-only with significant dependencies. Best for rapid prototyping and demos.
+    The multi-agent framework landscape in 2026 has consolidated around a few dominant patterns. **LangGraph** leads production-grade deterministic workflows, **Google A2A Protocol** (now Linux Foundation) is emerging as the interoperability standard, **CrewAI** dominates rapid prototyping, and **AutoGen/AG2** excels at code-generation workflows. In this landscape, **a2a-skill** occupies a unique, unoccupied niche: truly peer-to-peer multi-CLI agent collaboration with zero dependencies — the only framework where agents from different AI CLIs (Claude, OpenCode, Pi, Qwen, Gemini) communicate directly as peers without any central orchestrator.
     
     ---
     
-    ### Comparison Table
+    ## Framework Deep-Dive
+    
+    ### Google A2A Protocol
+    - **Creator**: Google → Linux Foundation (donated Apr 2025)
+    - **License**: Apache 2.0
+    - **Architecture**: Client-Remote interoperability protocol over HTTP/SSE/JSON-RPC
+    - **Key Features**: Agent Card capability discovery, task lifecycle, modality agnostic (text/audio/video), complements MCP, 50+ partners
+    - **SDKs**: Python, JavaScript, Java, C#, Go
+    - **Analysis**: Not a framework — it is an interop protocol. Serves as the "HTTP of agents." Strongest ecosystem governance via Linux Foundation.
+    
+    ### LangGraph
+    - **Creator**: LangChain Inc.
+    - **License**: MIT
+    - **Architecture**: Directed graph state machine — nodes = functions, edges = transitions, explicit TypedDict state
+    - **Key Features**: PostgreSQL/Redis persistence, LangSmith observability, checkpointing, human-in-the-loop, parallel fan-out/fan-in, streaming
+    - **Analysis**: Highest production readiness (20K+ GitHub stars). Best for complex deterministic workflows. Requires orchestrator — graph executor controls all transitions.
+    
+    ### CrewAI
+    - **Creator**: Joao Moura
+    - **License**: MIT
+    - **Architecture**: Role-based agent teams (agents have role/goal/backstory); sequential or hierarchical process execution
+    - **Key Features**: Easiest to learn, fastest time-to-prototype, 25K+ GitHub stars, verbose logging
+    - **Analysis**: No persistence (in-memory only). Best suited for batch analysis and role-decomposable tasks. Quickest path from idea to working prototype.
+    
+    ### AutoGen / AG2
+    - **Creator**: Microsoft Research
+    - **License**: MIT
+    - **Architecture**: Conversational multi-agent message-passing; GroupChat for dynamic turn-taking
+    - **Key Features**: Native Docker sandbox for code execution, AutoGen Studio no-code UI, 35K+ GitHub stars, Azure integration
+    - **Analysis**: Largest community but research-to-production gap remains. No built-in persistence. Best for exploratory code-generation and data analysis workflows.
+    
+    ### OpenAI Agents SDK
+    - **Creator**: OpenAI
+    - **License**: MIT
+    - **Architecture**: Primitive composition — Agents, Tools, Handoffs, Guardrails
+    - **Key Features**: Native guardrails (input/output), streaming, tracing, structured output
+    - **Analysis**: Simple but limited. No persistence, no advanced orchestration. Best for lightweight single-agent + handoff patterns. Tied to OpenAI ecosystem.
+    
+    ### a2a-skill
+    - **Creator**: Community project (MIT)
+    - **Architecture**: Peer-to-peer message bus — truly mesh, no orchestrator
+    - **Key Features**: SQLite bus (WAL mode, zero deps, stdlib only), read-tracking per agent, cross-CLI support (Claude, OpenCode, Pi, Qwen, Gemini), 4 language clients (Python, Go, JavaScript, Rust)
+    - **Analysis**: Unique niche with no direct competitor. Sets up in seconds — no pip, no cloud, no Docker. Agents talk directly through a shared database bus. Not suited for complex deterministic workflows, but unmatched for multi-CLI agent collaboration.
+    
+    ---
+    
+    ## Comparison Table
     
     | Framework | Architecture | Communication | Persistence | Multi-Lang | Setup | Use Case |
     |---|---|---|---|---|---|---|
-    | **a2a-skill** | P2P bus (SQLite) | Direct/broadcast, no orchestrator | SQLite file (zero deps) | Python, Go, Node.js, Rust | No install (stdlib) | Ad-hoc P2P agent teams |
-    | **CrewAI** | Orchestrator/crew | Through crew router | LangChain memory | Python only | pip install + deps | Structured role workflows |
-    | **AutoGen** | Group chat / moderator | Pub/sub through bus | Plugins/Redis | Python only | pip + Docker optional | Research conversations |
-    | **LangGraph** | Directed graph | Node-to-node via state | LangGraph checkpoint | Python only | pip + LangChain | Stateful production pipelines |
-    | **OpenAI Agents SDK** | Handoff chain | Manager delegates | None (in-memory) | Python only | pip install | OpenAI-centric task delegation |
-    | **Google ADK** | A2A-style agent comm | Direct agent messages | Vertex AI | Python only | pip + gcloud | Google Cloud multimodal apps |
-    | **Semantic Kernel** | Kernel/planner | Planner mediates | SK memory | C#, Python, Java | NuGet/pip/npm | Enterprise .NET apps |
-    | **MCP** | Client-server tools | Agent to server | Server-defined | Any (protocol) | Protocol only | Tool/API access for agents |
-    | **CAMEL** | Role-playing pairs | Multi-turn conversation | Research only | Python only | pip install | Emergent behavior research |
-    | **PraisonAI** | Orchestrator | Sequential/chat | YAML + DB | Python only | pip + UI | Low-code prototyping |
+    | **Google A2A** | Interop protocol | Protocol (HTTP/SSE) | Task lifecycle | 5 (Py/JS/Java/C#/Go) | Moderate (impl) | Cross-framework interop |
+    | **LangGraph** | Directed graph | Orchestrator (graph exec) | PostgreSQL/Redis | Python | Moderate | Complex deterministic workflows |
+    | **CrewAI** | Role-based teams | Orchestrator (sequential) | None (in-memory) | Python | Easiest prototype | Batch analysis, role tasks |
+    | **AutoGen/AG2** | Conversational | Orchestrator (GroupChat) | Conversation history | Python | Moderate | Code gen, exploratory |
+    | **OpenAI SDK** | Primitive composition | Handoff (light orchestrator) | None (in-memory) | Python | Easiest minimal | Lightweight single-agent |
+    | **a2a-skill** | True P2P mesh | Direct P2P (no orchestrator) | SQLite (WAL, zero deps) | 4 (Py/Go/JS/Rust) | Trivial (stdlib) | Multi-CLI agent teams |
     
     ---
     
-    ### Positioning Matrix
+    ## Positioning Matrix
     
-    | Scenario | Best Framework |
+    | Scenario | Winner | Why |
+    |---|---|---|
+    | Production workflows | LangGraph | Graph executor + PostgreSQL + LangSmith observability |
+    | Cross-framework interop | Google A2A | 50+ partners, Linux Foundation governance |
+    | Rapid prototyping | CrewAI | Fastest time-to-prototype, role-based clarity |
+    | Code generation | AutoGen/AG2 | Docker sandbox, code execution, 35K+ community |
+    | Lightweight single-agent | OpenAI Agents SDK | Guardrails, minimal API, streaming |
+    | Multi-CLI peer collab | **a2a-skill** | Only option — no competitor exists |
+    | Enterprise .NET | Semantic Kernel | Full .NET ecosystem integration |
+    | Standardization | Google A2A | De facto "HTTP of agents" |
+    
+    ---
+    
+    ## Where a2a-skill Excels
+    
+    **1. Truly P2P — No Orchestrator** — Every other framework uses an orchestrator (graph executor, GroupChat router, sequential process). a2a-skill agents talk directly — the bus is just a mailbox, not a conductor.
+    
+    **2. Zero-Dependency SQLite Bus** — Works on any machine with python3 + sqlite3 (stdlib). No pip install, no cloud services, no Docker.
+    
+    **3. Read-Tracking Per Agent** — Each agent independently tracks which messages it has read. No other framework provides per-agent read tracking.
+    
+    **4. Cross-CLI Collaboration** — The only framework where agents running on different AI CLIs (Claude Code, OpenCode, Pi, Qwen, Gemini) collaborate as peers.
+    
+    **5. Multi-Language Clients** — Python, Go, JavaScript, and Rust clients. Other Python-only frameworks cannot match this breadth.
+    
+    ---
+    
+    ## Recommendations
+    
+    | Use Case | Recommended Framework |
     |---|---|
-    | Two agents need a quick chat to coordinate | **a2a-skill** |
-    | Multi-step research with fixed role order | CrewAI |
-    | Open-ended debate with no fixed structure | **a2a-skill** or AutoGen |
-    | Production pipeline with checkpointing | LangGraph |
-    | Deep-dive code review by a team of specialists | **a2a-skill** (cross-CLI peers) |
-    | Enterprise .NET app needing AI orchestration | Semantic Kernel |
-    | Google Cloud multimodal agent | Google ADK |
-    | Agent needs database/file access | MCP (+ any framework) |
-    | Researching emergent agent behavior | CAMEL |
-    | Non-developer wants to build an agent team | PraisonAI |
-    | Spawn agents from inside a coding session | **a2a-skill** (Pattern 3) |
-    | Open-source, no vendor lock-in | **a2a-skill** |
+    | Production-grade, auditable workflow execution | LangGraph |
+    | Interoperate with external agent ecosystems | Google A2A Protocol |
+    | Quick prototype with role-based agents | CrewAI |
+    | Code generation with sandboxed execution | AutoGen/AG2 |
+    | Simple single-agent + handoff, OpenAI-committed | OpenAI Agents SDK |
+    | **Multiple CLI-based AI agents collaborating as peers** | **a2a-skill** |
+    | .NET enterprise environment | Semantic Kernel |
+    
+    ### When to Combine
+    
+    - **a2a-skill + Google A2A**: a2a-skill handles multi-CLI peer orchestration; Google A2A connects those agents to the wider ecosystem.
+    - **LangGraph + Google A2A**: LangGraph runs deterministic production workflows; Google A2A exposes those workflows to external agents.
+    - **CrewAI + a2a-skill**: CrewAI for role-decomposable batch work; a2a-skill for cross-CLI communication.
     
     ---
     
-    ### Where a2a-skill Excels
+    ## Conclusion
     
-    1. **Truly P2P -- no orchestrator.** Every other framework routes messages through a central controller (crew, moderator, graph supervisor, kernel). a2a-skill agents talk directly. The bus is just a transport -- there is no boss.
-    
-    2. **Cross-CLI by design.** Agents can run on Claude Code, opencode, pi, Gemini CLI, Qwen -- any CLI that can call bash. No other framework supports this because no other framework treats the CLI itself as the runtime.
-    
-    3. **Zero infrastructure.** A SQLite file. No server to deploy, no Docker, no API gateway, no Redis. The bus survives reboots, can be git-ignored or synced via rsync.
-    
-    4. **Multi-language clients.** Python (sync + async), Go, Node.js, Rust. Agents written in different languages can coexist on the same bus. REST API for non-native integration.
-    
-    5. **Stdlib-only core.** The CLI runs on any machine with Python 3 + sqlite3. No pip, no virtualenv, no dependency resolution.
-    
-    6. **Three usage patterns.** Human-driven CLI (Pattern 1), multi-terminal AI team (Pattern 2), auto-spawn from inside a session (Pattern 3) -- the same bus supports all three.
-    
-    7. **v1.3 production features.** Encryption (symmetric + asymmetric), 4-level priority queues, full-text search (FTS5), rule-based routing, audit logging -- all optional satellite modules that do not bloat the core.
-    
-    ---
-    
-    ### Recommendations
-    
-    **Use a2a-skill when:**
-    - You want true P2P agent communication with no central orchestrator
-    - Agents run across different CLI tools (Claude + opencode + pi)
-    - You need zero-infrastructure setup (no Docker, no server)
-    - You want multi-language agents on the same bus
-    - You need ad-hoc or disposable agent teams (smoke tests, one-shot analyses)
-    - You are inside a coding session and want to spawn background agent peers
-    
-    **Use CrewAI / LangGraph when:**
-    - Workflow has fixed sequential or hierarchical structure
-    - You need checkpointing, state persistence, and production tracing
-    - You are already in the LangChain ecosystem
-    - Your team is Python-only and willing to manage dependencies
-    
-    **Use AutoGen when:**
-    - Running multi-agent research experiments with dynamic group conversations
-    - You need a moderator/speaker-selection strategy
-    - Code execution sandboxing is a requirement
-    
-    **Use OpenAI Agents SDK when:**
-    - Your stack is OpenAI-centric
-    - You want the lightweight handoff pattern for task delegation
-    - You do not need model-agnostic agent communication
-    
-    **Use Google ADK when:**
-    - Building multimodal agent experiences (audio, video, streaming)
-    - You are already on Google Cloud / Vertex AI
-    - You want first-class A2A-style agent messaging
-    
-    **Use MCP as a complement** to any framework (including a2a-skill) for standardized tool and API access.
-    
-    ---
-    
-    ### Bottom Line
-    
-    a2a-skill occupies a unique niche in the multi-agent ecosystem: **true peer-to-peer agent messaging across CLI tools with zero infrastructure.** No other framework offers this combination. For orchestrated workflows, LangGraph or CrewAI are stronger. For vendor-specific stacks, OpenAI SDK or Google ADK win. But for open, ad-hoc, cross-CLI agent collaboration, a2a-skill has no competition.
+    The multi-agent ecosystem in 2026 is not a winner-take-all market. Each framework addresses a different slice of the problem space. a2a-skill's truly unique contribution is **peer-to-peer multi-CLI collaboration with zero dependencies** — a niche no other framework serves. Its architectural choice (no orchestrator, SQLite bus, per-agent read tracking) is not a limitation but a deliberate design for a specific use case that other frameworks cannot address.
     
     LANDSCAPE_END
