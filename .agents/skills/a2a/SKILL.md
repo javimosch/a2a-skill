@@ -25,7 +25,7 @@ The default project name is the basename of the current working directory. Set
 `A2A_PROJECT` or pass `--project NAME` to override.
 
 For the full list of CLI commands and their usage (Python & Go binaries), see
-[CLI_REFERENCE.md](CLI_REFERENCE.md).
+[docs/GO_CLI_REFERENCE.md](../docs/GO_CLI_REFERENCE.md).
 
 ## When to use
 

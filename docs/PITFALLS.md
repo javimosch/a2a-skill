@@ -467,6 +467,27 @@ regardless of agent availability:
 3. `output/brand/logo.txt` — ASCII art logo
 4. `output/brand/bus-state.txt` — collaboration log
 
+### Python and Go binaries have different validation coverage
+
+The `a2a` binary is the Go-compiled companion CLI. The `a2a.py` script is the
+Python source. Both are designed to be interchangeable, but **validation logic
+must be ported to both** when hardening:
+
+- The Go binary already trimmed agent IDs and validated PID before the Python
+  script did (commits in late v1.3).
+- Python-only whitespace/strip validations (e.g., `--role`, `--cli` empty checks)
+  added in later hardening do not apply to the Go binary until ported.
+
+Test helpers in `test_integration.py` now include a `_a2a_py()` helper that
+bypasses the Go binary for validation-specific asserts. Use this when testing
+Python-only validation rules.
+
+**Fix:** When adding CLI validation:
+1. Add to `a2a.py` first (fastest iteration)
+2. Port the same validation to Go `cmd/a2a/main.go`
+3. Rebuild the Go binary: `go build -o a2a ./cmd/a2a/`
+4. Use `_a2a_py()` in tests for Python-only rules
+
 This multi-tier approach (agent path → fallback path) ensures the
-artifact always produces output even when API keys are exhausted.`
+artifact always produces output even when API keys are exhausted.
 
