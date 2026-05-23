@@ -261,8 +261,26 @@
   validate, and Rust client did not validate.
   **Fixed:** Python `A2AClient.search()` and `A2AClientAsync.search()` now
   reject `limit <= 0`. Rust `Client.search()` rejects `limit <= 0`.
-   254|
-   255|**Fix:** When adding a new validation check to `a2a.py`, add the equivalent
+- TTL validation in `Send()`: Python client rejects `ttl_seconds <= 0`. Go
+  client library used to accept non-positive TTL values without error.
+  **Fixed:** Go `Client.Send()` now rejects `ttl_seconds <= 0` at the library
+  level, matching Python and Node.js client behavior.
+- Limit validation in `Recv()`: Python client rejects `limit < 0`. Go client
+  library used to pass negative limits to SQLite (which treats them as no limit).
+  **Fixed:** Go `Client.Recv()` now rejects negative limits at the library
+  level, matching Python client behavior.
+- `--since` NaN/Inf in Go CLI: Python CLI rejects NaN/Inf `--since` values
+  via `_validate_finite_float`. Go CLI `cmdRecv()` parsed `--since` without
+  checking for NaN/Inf — `inf` and `NaN` would silently pass through (Inf
+  comparison with `< 0` is always false).
+  **Fixed:** Go CLI `cmdRecv()` now rejects `--since` values that are
+  infinite or NaN, matching Python CLI behavior.
+- `--pid` negative in Go CLI: Python CLI rejects `--pid < 0`. Go CLI
+  `cmdRegister()` did not validate negative PID values.
+  **Fixed:** Go CLI `cmdRegister()` now rejects `--pid < 0`, matching Python
+  CLI behavior.
+
+**Fix:** When adding a new validation check to `a2a.py`, add the equivalent
    256|check to `cmd/a2a/main.go` at the same time. Run both test suites before
    257|committing.
    258|
