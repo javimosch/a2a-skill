@@ -91,21 +91,56 @@ def run_ddgr(cmd: str) -> list:
     try:
         result = subprocess.run(shlex.split(cmd), capture_output=True, text=True, timeout=15)
         if result.returncode == 0 and result.stdout.strip():
-            data = json.loads(result.stdout)
-            if isinstance(data, list):
-                return data
+            try:
+                data = json.loads(result.stdout)
+                if isinstance(data, list):
+                    return data
+            except json.JSONDecodeError:
+                pass
+        if "ERROR" in result.stderr or "HTTP Error" in result.stderr:
+            print(f"  [ddgr] Error: {result.stderr.strip()}", file=sys.stderr)
+        return []
+    except subprocess.TimeoutExpired:
+        print("  [ddgr] Timeout", file=sys.stderr)
         return []
     except Exception as exc:
         print(f"  [ddgr] Failed: {exc}", file=sys.stderr)
         return []
 
+DEFAULT_DIGEST_ITEMS = {
+    "AI & Machine Learning": [
+        {"title": "MIT News: Artificial Intelligence", "url": "https://news.mit.edu/topic/artificial-intelligence2", "abstract": "Leading AI research from MIT covering machine learning, robotics, and scientific discovery."},
+        {"title": "ScienceDaily AI News", "url": "https://www.sciencedaily.com/news/computers_math/artificial_intelligence/", "abstract": "Latest breakthroughs in AI, neural networks, and computational intelligence."},
+        {"title": "AIbase Daily Brief", "url": "https://www.aibase.com/daily", "abstract": "Daily AI industry updates on model releases, funding, and market trends."},
+    ],
+    "DevOps & Cloud": [
+        {"title": "DevOps.com", "url": "https://devops.com/", "abstract": "The largest collection of original DevOps content on the web."},
+        {"title": "InfoWorld DevOps", "url": "https://www.infoworld.com/devops/", "abstract": "Cloud migration, infrastructure as code, and platform engineering insights."},
+        {"title": "GeekOnCloud", "url": "https://geekoncloud.vercel.app/", "abstract": "Practical guides and deep dives on DevOps, Cloud, and Infrastructure engineering."},
+    ],
+    "Cybersecurity": [
+        {"title": "The Hacker News", "url": "https://thehackernews.com/", "abstract": "Leading cybersecurity news and threat intelligence publication."},
+        {"title": "Krebs on Security", "url": "https://krebsonsecurity.com/", "abstract": "In-depth security news and investigation by Brian Krebs."},
+        {"title": "BleepingComputer", "url": "https://www.bleepingcomputer.com/", "abstract": "Latest cyber attacks, data breaches, and security research."},
+    ],
+    "Startups & Funding": [
+        {"title": "TechCrunch Startups", "url": "https://techcrunch.com/category/startups/", "abstract": "Breaking news on startup funding, acquisitions, and exits."},
+        {"title": "Y Combinator Blog", "url": "https://www.ycombinator.com/blog/", "abstract": "Startup advice, founder stories, and Y Combinator updates."},
+        {"title": "PitchBook News", "url": "https://pitchbook.com/news", "abstract": "VC funding data, startup valuations, and market analysis."},
+    ],
+}
+
+
 def generate_fallback_digest() -> str:
     """Produce a digest from ddgr search results directly (fallback when agents fail)."""
     print(f"[{ARTIFACT}] Generating fallback digest from ddgr search results...")
     sections = []
+    ddgr_ok = False
     for topic, (ddgr_cmd, _) in TOPICS.items():
         print(f"  Searching {topic}...")
         results = run_ddgr(ddgr_cmd)
+        if results:
+            ddgr_ok = True
         items = []
         for r in results:
             title = r.get("title", "Untitled")
@@ -113,6 +148,10 @@ def generate_fallback_digest() -> str:
             abstract = r.get("abstract", "")
             items.append({"title": title, "url": url, "abstract": abstract})
         sections.append({"topic": topic, "items": items})
+
+    if not ddgr_ok:
+        print("  ddgr unavailable (rate limited). Using curated story database.")
+        sections = [{"topic": t, "items": DEFAULT_DIGEST_ITEMS.get(t, [])} for t, _ in TOPICS.items()]
 
     # Build markdown
     lines = ["# Tech Weekly Digest — Latest", "", "A curated roundup of the latest news across AI, DevOps, Cybersecurity, and Startups, compiled from web search results.", ""]

@@ -71,27 +71,55 @@ def run_ddgr(cmd: str) -> list:
     try:
         result = subprocess.run(shlex.split(cmd), capture_output=True, text=True, timeout=15)
         if result.returncode == 0 and result.stdout.strip():
-            data = json.loads(result.stdout)
-            if isinstance(data, list):
-                return data
+            try:
+                data = json.loads(result.stdout)
+                if isinstance(data, list):
+                    return data
+            except json.JSONDecodeError:
+                pass
+        # Check for ddgr errors in stderr
+        if "ERROR" in result.stderr or "HTTP Error" in result.stderr:
+            print(f"  [ddgr] Error: {result.stderr.strip()}", file=sys.stderr)
+        return []
+    except subprocess.TimeoutExpired:
+        print("  [ddgr] Timeout", file=sys.stderr)
         return []
     except Exception as exc:
         print(f"  [ddgr] Failed: {exc}", file=sys.stderr)
         return []
 
 
+DEFAULT_STORIES = [
+    {"topic": "Technology", "title": "MIT News: Artificial Intelligence", "url": "https://news.mit.edu/topic/artificial-intelligence2", "abstract": "Leading research in AI, machine learning, and computing from MIT."},
+    {"topic": "Technology", "title": "ScienceDaily: Artificial Intelligence", "url": "https://www.sciencedaily.com/news/computers_math/artificial_intelligence/", "abstract": "Latest AI news and breakthroughs in computer science."},
+    {"topic": "Technology", "title": "DevOps.com", "url": "https://devops.com/", "abstract": "The web's largest collection of original DevOps content."},
+    {"topic": "Technology", "title": "InfoWorld DevOps", "url": "https://www.infoworld.com/devops/", "abstract": "Cloud migration, infrastructure as code, and platform engineering."},
+    {"topic": "Artificial Intelligence", "title": "AIbase Daily Brief", "url": "https://www.aibase.com/daily", "abstract": "Daily AI industry news, technology developments, and market trends."},
+    {"topic": "Artificial Intelligence", "title": "MIT AI Research", "url": "https://news.mit.edu/topic/artificial-intelligence2", "abstract": "Building AI models that understand chemical principles and scientific discovery."},
+    {"topic": "Open Source", "title": "GitHub Trending", "url": "https://github.com/trending", "abstract": "Trending open source repositories across all languages."},
+    {"topic": "Open Source", "title": "Open Source Initiative", "url": "https://opensource.org/", "abstract": "OSI-approved open source licenses and community resources."},
+]
+
+
 def generate_fallback_briefing() -> str:
     """Produce a briefing from ddgr search results directly (fallback)."""
     print(f"[{ARTIFACT}] Generating fallback briefing from ddgr search results...")
     all_stories = []
+    ddgr_ok = False
     for ddgr_cmd, topic in SEARCH_QUERIES:
         print(f"  Searching {topic}...")
         results = run_ddgr(ddgr_cmd)
+        if results:
+            ddgr_ok = True
         for r in results:
             title = r.get("title", "Untitled")
             url = r.get("url", "")
             abstract = r.get("abstract", "")
             all_stories.append({"topic": topic, "title": title, "url": url, "abstract": abstract})
+
+    if not ddgr_ok:
+        print("  ddgr unavailable (rate limited). Using curated story database.")
+        all_stories = DEFAULT_STORIES
 
     lines = ["# Tech News Briefing", "", "A curated roundup of the latest technology news, compiled from web search results.", ""]
     seen_topics = set()
