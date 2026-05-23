@@ -1,4 +1,4 @@
-[12:03:00] #1 collector -> fetcher
+[08:31:06] #1 collector -> fetcher
     Your task: You are the data fetcher. Generate interesting sample CSV data.
     
     Steps:
@@ -19,7 +19,7 @@
     ...
     
     The DATA must be between DATA_START and DATA_END markers.
-[12:03:00] #2 collector -> analyst
+[08:31:06] #2 collector -> analyst
     Your task: You are the data analyst. Wait for the fetcher to send you CSV data.
     
     Steps:
@@ -35,7 +35,7 @@
        a2a send plotter ANALYSIS_START\n<your analysis as markdown>\nVALUES:[val1,val2,...]\nANALYSIS_END --from analyst
     
     The VALUES must be a JSON array of floats that the plotter can use.
-[12:03:00] #3 collector -> plotter
+[08:31:06] #3 collector -> plotter
     Your task: You are the chart plotter. Wait for the analyst to send you data.
     
     Steps:
@@ -48,3 +48,92 @@
        a2a send all CHART_START\n<your formatted chart with analysis>\nCHART_END --from plotter
     
     The output must be between CHART_START and CHART_END markers.
+[08:31:28] #4 fetcher -> analyst
+    DATA_START
+    hour,cpu_temp_c
+    0,36.8
+    2,37.9
+    4,41.0
+    6,46.4
+    8,60.5
+    10,50.2
+    12,54.9
+    14,53.4
+    16,50.8
+    18,46.1
+    20,41.7
+    22,45.6
+    24,37.1
+    26,37.8
+    28,42.8
+    30,48.5
+    32,50.7
+    34,53.5
+    36,55.6
+    38,59.0
+    40,53.1
+    42,50.2
+    44,42.9
+    46,40.9
+    DATA_END
+[08:31:40] #5 analyst -> plotter
+    ANALYSIS_START
+    ## Data Analysis Report
+    
+    **Data points**: 24
+    **Time range**: hour 0 to hour 46
+    **Temperature range**: 36.8°C to 60.5°C
+    **Mean**: 47.39°C
+    **Median**: 47.45°C
+    **Trend**: increasing (first half avg: 47.11°C, second half avg: 47.68°C)
+    **Volatility (σ of Δ)**: 3.09°C
+    **Max change**: 14.1°C (between hour 6 and 8)
+    VALUES:[36.8,37.9,41.0,46.4,60.5,50.2,54.9,53.4,50.8,46.1,41.7,45.6,37.1,37.8,42.8,48.5,50.7,53.5,55.6,59.0,53.1,50.2,42.9,40.9]
+    ANALYSIS_END
+[08:31:58] #6 plotter -> ALL
+    CHART_START
+    
+    ==================================================
+      Temperature Over Time (hours 0-46)
+    ==================================================
+    
+      Min: 36.8°C  |  Max: 60.5°C  |  Values: 24 points
+    
+      °C
+     60.5 |    o
+     59.2 |    o
+     57.9 |    |              o
+     56.5 |    |              |
+     55.2 |    |             o|
+     53.9 |    | o           ||
+     52.6 |    | |o         o||o
+     51.3 |    | ||         ||||
+     50.0 |    |o||o       o||||o
+     48.6 |    |||||       ||||||
+     47.3 |    |||||      o||||||
+     46.0 |   o|||||o     |||||||
+     44.7 |   ||||||| o   |||||||
+     43.4 |   ||||||| |   |||||||
+     42.1 |   ||||||| |  o|||||||o
+     40.8 |  o|||||||o|  |||||||||o
+     39.4 |  ||||||||||  ||||||||||
+     38.1 |  ||||||||||  ||||||||||
+     36.8 |oo||||||||||oo||||||||||
+          ------------------------
+          hour
+           0         10         20
+    
+    ==================================================
+      Analysis Summary
+    ==================================================
+      • Data points: 24
+      • Time range: hour 0 to hour 46
+      • Temperature range: 36.8°C to 60.5°C
+      • Mean: 47.39°C  |  Median: 47.45°C
+      • Trend: increasing (first half avg: 47.11°C, second half avg: 47.68°C)
+      • Volatility (σ of Δ): 3.09°C
+      • Max change: 14.1°C (between hour 6 and 8)
+    
+      Notable: Sharp spike to 60.5°C at hour 4, then drop to 50.2°C by hour 5.
+      Secondary peak at 59.0°C at hour 21, followed by steady decline.
+    CHART_END
