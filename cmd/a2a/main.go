@@ -212,6 +212,10 @@ func cmdRegister() {
 	prompt := getFlagValue("--prompt")
 	cli := getFlagValue("--cli")
 	pid := getFlagInt("--pid")
+	if hasFlag("--pid") && pid < 0 {
+		fmt.Fprintln(os.Stderr, "a2a: --pid must be a positive integer")
+		os.Exit(1)
+	}
 	upsert := hasFlag("--upsert")
 
 	c := newClient(agentID)
@@ -416,6 +420,10 @@ func cmdRecv() {
 		s, err := strconv.ParseFloat(sinceStr, 64)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "a2a: invalid --since value: %v\n", err)
+			os.Exit(1)
+		}
+		if math.IsInf(s, 0) || math.IsNaN(s) {
+			fmt.Fprintln(os.Stderr, "a2a: --since must be a finite number")
 			os.Exit(1)
 		}
 		if s < 0 {

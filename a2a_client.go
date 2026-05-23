@@ -173,6 +173,9 @@ type RecvOpts struct {
 
 // Recv receives messages with full options. Calls CleanupExpired and Touch at start.
 func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
+	if opts.Limit < 0 {
+		return nil, fmt.Errorf("limit must be a non-negative integer")
+	}
 	c.CleanupExpired()
 	c.Touch()
 
