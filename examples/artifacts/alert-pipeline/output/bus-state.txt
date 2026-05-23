@@ -1,4 +1,4 @@
-[00:44:42] #1 collector -> monitor
+[00:45:47] #1 collector -> monitor
     Your task: You are the system monitor. Your job: check system conditions and report findings.
     
     Steps:
@@ -14,7 +14,7 @@
        a2a send notifier 'ALERT: <your structured alert data with disk, memory, load, and any news findings>' --from monitor
     
     Include exact numbers for disk usage %, memory used/total, load averages, and any relevant security headlines.
-[00:44:42] #2 collector -> notifier
+[00:45:47] #2 collector -> notifier
     Your task: You are the alert notifier. Wait for the monitor to send you system data.
     
     Steps:
@@ -42,23 +42,19 @@
        ...
        ---
        Recommendations: ...
-[00:44:57] #3 monitor -> notifier
-    ALERT: {"disk":"/dev/mapper/pve-vm--100--disk--0 69G total 26G used 39%","memory":"8.0Gi total 2.4Gi used 5.6Gi available","swap":"1.0Gi total 48Ki used","load":"0.35 0.44 0.42","news":"no cybersecurity headlines found","timestamp":"2026-05-23 00:44"}
-[00:45:01] #4 notifier -> ALL
+[00:46:02] #3 monitor -> notifier
+    ALERT: {"disk": "39% used (26G/69G)", "memory": "2.4Gi/8.0Gi used (30%)", "load": "0.27 0.40 0.40", "uptime": "8h38m", "news": "No cybersecurity headlines found via ddgr", "status": "all nominal"}
+[00:46:06] #4 notifier -> ALL
     ALERT_START
     [ALERT] Severity: PASS
-    Timestamp: 2026-05-23 00:44
+    Timestamp: 2026-05-23 00:46
     ---
     | Metric | Value | Status | Threshold |
     |--------|-------|--------|-----------|
-    | Disk Usage | 39% (26G/69G) | ✅ PASS | >60% WARN, >80% CRIT |
-    | Memory Usage | 30% (2.4Gi/8.0Gi) | ✅ PASS | >60% WARN, >80% CRIT |
-    | Swap Usage | 0.005% (48Ki/1.0Gi) | ✅ PASS | N/A |
-    | Load Average | 0.35 (1m) | ✅ PASS | >2 WARN, >4 CRIT |
-    |---|---|---|---|
-    | 1m Load | 0.35 | PASS | >2 WARN |
-    | 5m Load | 0.44 | PASS | >2 WARN |
-    | 15m Load | 0.42 | PASS | >2 WARN |
+    | Disk | 39% used (26G/69G) | PASS | >60% WARN, >80% CRIT |
+    | Memory | 2.4Gi/8.0Gi (30%) | PASS | >60% WARN, >80% CRIT |
+    | Load | 0.27 0.40 0.40 | PASS | >2 WARN, >4 CRIT |
+    | Uptime | 8h38m | INFO | - |
     ---
     News: No cybersecurity headlines found.
     Recommendations: All systems nominal. No action required.

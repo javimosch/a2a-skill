@@ -147,10 +147,10 @@ def main():
             break
 
     # Write output
-    alert_path = output_dir / "alert.log"
+    alert_path = output_dir / "alert.txt"
     if final_alert:
         alert_path.write_text(final_alert)
-        print(f"[{ARTIFACT}] Wrote output/alert.log ({len(final_alert)} chars)")
+        print(f"[{ARTIFACT}] Wrote output/alert.txt ({len(final_alert)} chars)")
     else:
         print(f"[{ARTIFACT}] WARNING: No alert received. Writing bus state...")
         peek = run_a2a("peek --limit 30", a2a_bin, project)

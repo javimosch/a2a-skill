@@ -32,7 +32,7 @@ python3 examples/artifacts/alert-pipeline/build.py --cli opencode
 
 ## Output
 
-- `output/alert.log` — formatted system alert with threshold evaluation
+- `output/alert.txt` — formatted system alert with threshold evaluation
 - `output/bus-state.txt` — `a2a peek --limit 30` snapshot of the agent conversation
 
 ## What makes this different
