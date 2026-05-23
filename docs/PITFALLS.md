@@ -416,3 +416,29 @@ full timeout before falling back to the offline-generated output.
 2. Then spawn agents and try to get agent-curated output
 3. Use the local output as fallback if agents fail or timeout
 
+### Brand-assets build needs ASCII converter plugin
+
+The brand-assets artifact uses `ascii-image-converter` for the agent-driven
+path. During the initial build, neither the agents nor the fallback needed
+this plugin because the fallback path generates ASCII art inline. However,
+if agents succeed and try to download + convert images, the plugin must
+be installed:
+
+```bash
+sc plugins install ascii-image-converter
+```
+
+Without it, the agent conversion path fails silently (agents get empty
+results from shell commands). The build remains healthy because the
+fallback path always produces output.
+
+**Fix:** The brand-assets build script generates three types of output
+regardless of agent availability:
+1. `output/brand/banner.svg` — generic A2A-branded SVG banner
+2. `output/brand/palette.html` — color palette gallery page
+3. `output/brand/logo.txt` — ASCII art logo
+4. `output/brand/bus-state.txt` — collaboration log
+
+This multi-tier approach (agent path → fallback path) ensures the
+artifact always produces output even when API keys are exhausted.`
+
