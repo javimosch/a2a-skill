@@ -1,131 +1,55 @@
-# Open Source Vector Databases in 2026 — Research Report
+# Research Report: Top Open Source LLM Tools — May 2026
 
-**Date**: May 22, 2026 | **Prepared by**: writer (report writer)
-
----
+**Date:** 2026-05-23
+**Prepared by:** writer agent
 
 ## Executive Summary
 
-The open source vector database landscape in 2026 is mature and segmented, with distinct tools optimized for production workloads, rapid prototyping, and integration-first architectures. Qdrant and Milvus lead the production tier with GPU acceleration and hybrid search, while pgvector and Redis offer seamless paths for teams already invested in their ecosystems. ChromaDB and LanceDB serve the embedded/developer-friendly niche, and Faiss remains the foundational building block underlying most systems. The key trend is that **hybrid search (vector + scalar) is now table stakes**, and the choice between embedded simplicity and server-based scale dominates architectural decisions.
-
----
+Open-weight LLMs have reached parity with closed frontier models in 2026, with Llama 4, DeepSeek V4, and Qwen 3.5 leading the pack across coding, reasoning, and multilingual benchmarks. The ecosystem around these models has matured significantly, making production deployment more accessible than ever. This report surveys the top models and infrastructure tools and provides actionable recommendations.
 
 ## Detailed Findings
 
-### Category 1: Production-Grade Vector Databases
+### Frontier Open-Weight Models
 
-**Qdrant** — Rust-based vector DB with fast HNSW indexing and rich filtering capabilities. Series B funded in March 2026. Best for most production workloads requiring horizontal scaling and GPU acceleration.
+**Llama 4 (Meta):** Flagship open-weight model. Scout variant lowers hardware barrier for prototyping with strong coding and reasoning performance. Largest community ecosystem. Limitation: substantial hardware for full-size variant; Meta licensing restrictions.
 
-- **URL**: https://qdrant.tech
-- **Pros**: Fastest HNSW indexing, excellent filtering, active development, quantization support
-- **Cons**: Smaller ecosystem than Milvus; operational expertise needed for scale
+**Qwen 3.5 (Alibaba):** Competitive with Llama 4 across benchmarks. Strong multilingual support and solid coding performance. Limitation: smaller Western community; Alibaba ecosystem tie-in.
 
-**Milvus v2.5** — Cloud-native vector DB with GPU-accelerated indexing and hybrid vector+scalar search. Largest and most mature ecosystem of any open source vector database.
+**DeepSeek V4:** Top-tier coding and reasoning model rivaling GPT-4 class. Exceptional coding performance. Limitation: geopolitical concerns; smaller tooling ecosystem.
 
-- **URL**: https://milvus.io
-- **Pros**: Mature ecosystem, hybrid search, broad multi-language SDK support
-- **Cons**: Heavy infrastructure footprint; significant operational complexity
+**Gemma 4 (Google):** Lightweight model optimized for local deployment. Google-backed, runs on consumer hardware. Limitation: smaller model capacity.
 
-**Weaviate** — Open-source vector DB that stores both objects and vectors, combining vector search with structured filtering. Cloud-native with built-in fault tolerance.
+**Mistral Medium 3.5:** Leading European open-weight contender. Strong privacy and sovereignty angle for EU deployments. Limitation: smaller community.
 
-- **URL**: https://weaviate.io
-- **Pros**: GraphQL API, good hybrid search, built-in fault tolerance, cloud-native
-- **Cons**: GraphQL learning curve; smaller ecosystem than Milvus
+**Phi-4 (Microsoft):** Small but capable, optimized for edge and on-device use. Exceptional size-to-performance ratio. Limitation: limited capacity for complex multi-step tasks.
 
----
+### LLM Infrastructure and Platforms
 
-### Category 2: Embedded / Developer-Friendly
+**OpenLLM (bentoml):** Run any open-source LLM as OpenAI-compatible API. Supports DeepSeek, Llama, Qwen. Built-in chat UI and Docker/K8s deployment. Best for drop-in OpenAI API replacement.
 
-**ChromaDB** — Lightweight, Python-native embedding database. The fastest path to prototype for small-to-medium RAG applications with zero ops overhead.
+**Awesome-LLMOps:** Curated GitHub list of LLMOps tools (github.com/tensorchord/awesome-llmops). Good starting point for tool discovery.
 
-- **URL**: https://www.trychroma.com
-- **Pros**: Simple API, Python-native, easy setup, zero ops overhead
-- **Cons**: Limited scale; not designed for production at volume
+**Open LLMs List:** Comprehensive directory of open models (github.com/eugeneyan/open-llms). Single reference for model discovery.
 
-**LanceDB** — Embedded vector database built on the Lance columnar format. Emerging as a strong option for multi-modal AI applications (text, image, code).
-
-- **URL**: https://lancedb.github.io/lancedb/
-- **Pros**: Excellent for multi-modal, zero-copy access, no server to manage
-- **Cons**: Younger project; smaller community than alternatives
-
----
-
-### Category 3: Integration-First
-
-**pgvector** — PostgreSQL extension for vector similarity search. Ideal for teams already using Postgres who want to add vector capabilities without new infrastructure.
-
-- **URL**: https://github.com/pgvector/pgvector
-- **Pros**: Zero new infra for Postgres users, battle-tested, HNSW/IVFFlat indexing
-- **Cons**: Performance ceiling vs dedicated vector DBs; not specialized
-
-**Redis (with vector search)** — Unifies vector search with caching and operational data in a single real-time, memory-first platform.
-
-- **URL**: https://redis.io
-- **Pros**: Sub-millisecond latency, single platform for cache + vectors, real-time
-- **Cons**: Memory-bound at scale; expensive for large vector datasets
-
----
-
-### Category 4: Foundational Building Blocks
-
-**Faiss (Meta)** — Library for efficient similarity search and clustering of dense vectors. Not a full database, but the core building block many vector DBs build on or benchmark against.
-
-- **URL**: https://github.com/facebookresearch/faiss
-- **Pros**: Best-in-class raw ANN search performance, GPU support, quantization
-- **Cons**: Not a database (no persistence, no management); requires engineering effort to integrate
-
----
+**LLM Leaderboards:** Performance comparisons on onyx.app, llm-stats.com, whatllm.org. Cross-referencing recommended for reliable selection.
 
 ## Comparison Table
 
-| Tool | Type | Language | Scaling | GPU Accel | Best For |
-|------|------|----------|---------|-----------|----------|
-| **Qdrant** | Full DB | Rust | Horizontal | Yes | Production workloads, rich filtering |
-| **Milvus v2.5** | Full DB | Go/C++ | Distributed | Yes | Large-scale hybrid search, mature ecosystem |
-| **Weaviate** | Full DB | Go | Cloud-native | Limited | Hybrid search, GraphQL APIs |
-| **ChromaDB** | Embedded | Python | Single-node | No | Rapid prototyping, small RAG |
-| **LanceDB** | Embedded | Rust/Python | Columnar | No | Multi-modal AI apps |
-| **pgvector** | Extension | C | Postgres-native | No | Postgres users, no-new-infra |
-| **Redis** | Multi-model | C | Memory-first | No | Real-time + caching + vectors |
-| **Faiss** | Library | C++/Python | N/A | Yes | Building custom search systems |
-
----
-
-## Key Trends
-
-1. **Hybrid search is table stakes** — Every production-grade DB now combines vector + scalar filtering
-2. **Embedded vs serverless divide** — Chroma/LanceDB are embedded; Qdrant/Milvus/Weaviate are server-based
-3. **GPU acceleration expanding** — Milvus and Qdrant invest heavily in GPU-accelerated indexing
-4. **Multi-modal is rising** — LanceDB built for multi-modal; others are following
-5. **HNSW is the universal default** — All production options use HNSW as the primary index algorithm
-6. **Faiss as hidden backbone** — Underlies or benchmarks many vector DBs
+| Model | Best For | Strength | Limitation |
+|---|---|---|---|
+| Llama 4 Scout | General use | Largest ecosystem | Meta licensing |
+| DeepSeek V4 | Coding/reasoning | Rivals GPT-4 | Geopolitical concerns |
+| Qwen 3.5 | Multilingual | Best multilingual | Smaller community |
+| Gemma 4 | Edge/local | Lightweight, efficient | Limited capacity |
+| Mistral Medium 3.5 | EU/privacy | Data sovereignty | Smaller community |
+| Phi-4 | On-device | Best size-to-performance | Limited on complex tasks |
 
 ## Recommendations
 
-| Use Case | Recommended Tool |
-|---|---|
-| **Production RAG at scale** | **Qdrant** — best balance of performance, filtering, and active development |
-| **GPU-accelerated hybrid search** | **Milvus v2.5** — most mature ecosystem, GPU native |
-| **Quick prototype / small project** | **ChromaDB** — fastest setup, Python-native |
-| **Already on Postgres** | **pgvector** — zero infrastructure change |
-| **Multi-modal (text + image + code)** | **LanceDB** — built for this from the ground up |
-| **Real-time + caching + vectors** | **Redis** — single platform for all operational data |
-| **Building a custom search engine** | **Faiss** — maximum flexibility and performance |
+- **Prototyping:** Llama 4 Scout
+- **Coding:** DeepSeek V4
+- **Multilingual:** Qwen 3.5
+- **Edge/on-device:** Phi-4 or Gemma 4
+- **Production serving:** OpenLLM for standardized API
 
 ---
-
-## Sources
-
-- https://qdrant.tech
-- https://milvus.io
-- https://weaviate.io
-- https://www.trychroma.com
-- https://lancedb.github.io/lancedb/
-- https://github.com/pgvector/pgvector
-- https://github.com/facebookresearch/faiss
-- https://redis.io/blog/best-open-source-vector-databases-comparison/
-- https://encore.dev/articles/best-vector-databases
-- https://techsy.io/en/blog/best-vector-databases-2026
-- https://aimultiple.com/open-source-vector-databases
-- https://fonzi.ai/blog/open-source-vector-databases
-- https://github.com/topics/vector-database
