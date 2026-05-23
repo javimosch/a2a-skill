@@ -110,7 +110,8 @@ match client.list_peers() {
 
 ### set_status(status) -> Result<()>
 
-Update agent status (active/idle/done/blocked).
+Update agent status (active/idle/done/blocked). Returns an error if the
+status is not one of the valid values.
 
 ```rust
 client.set_status("done")?;
@@ -129,7 +130,8 @@ match client.get_status(Some("bob")) {
 
 ### search(query, limit) -> Result<Vec<Message>>
 
-Search messages by substring (case-insensitive).
+Search messages by substring (case-insensitive). Returns an error if the
+query is empty or limit is not a positive integer.
 
 ```rust
 match client.search("important", 100) {

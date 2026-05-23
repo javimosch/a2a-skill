@@ -127,9 +127,11 @@ for _, p := range peers {
 }
 ```
 
-### SetStatus(status string) error
+### SetStatus(status string) (float64, error)
 
-Update agent status (active/idle/done/blocked).
+Update agent status (active/idle/done/blocked). Returns last_seen timestamp.
+Returns an error if the status is not one of the valid values or if the agent
+is not registered.
 
 ```go
 client.SetStatus("done")
@@ -145,7 +147,8 @@ status, err := client.GetStatus("bob")
 
 ### Search(query string, limit int) ([]Message, error)
 
-Search messages by substring (case-insensitive).
+Search messages by substring (case-insensitive). Returns an error if the
+query is empty or limit is not a positive integer.
 
 ```go
 results, err := client.Search("important", 100)

@@ -245,12 +245,22 @@
    245|  `limit <= 0` at the library level, matching the Python CLI behavior.
    246|- Non-positive count in `Wait`: Go CLI validated, but Go client library did
    247|  not. **Fixed:** Go `Wait()` now rejects `count <= 0` at the library level.
-   248|- Empty project/agentId in constructor: Node.js client did not validate.
-   249|  **Fixed:** Node.js `A2AClient` constructor now throws on empty project or
-   250|  agentId, matching Python behavior.
-   251|- Invalid status in `setStatus`: Node.js client accepted any string.
-   252|  **Fixed:** Node.js `setStatus()` now validates against the known status
-   253|  values (`active`, `idle`, `done`, `blocked`), matching Python behavior.
+- Empty project/agentId in constructor: Node.js client did not validate.
+  **Fixed:** Node.js `A2AClient` constructor now throws on empty project or
+  agentId, matching Python behavior.
+- Invalid status in `setStatus`: Node.js client accepted any string.
+  **Fixed:** Node.js `setStatus()` now validates against the known status
+  values (`active`, `idle`, `done`, `blocked`), matching Python behavior.
+- Non-positive limit in `Search()`: Go client library did not validate.
+  **Fixed:** Go `Search()` now rejects `limit <= 0` at the library level,
+  matching Python/Node.js/Rust client behavior.
+- Invalid status in `SetStatus()`: Go client library did not validate.
+  **Fixed:** Go `SetStatus()` now validates against the known status values
+  (`active`, `idle`, `done`, `blocked`), matching Node.js/Rust behavior.
+- Non-positive limit in `search()`: Python sync and async clients did not
+  validate, and Rust client did not validate.
+  **Fixed:** Python `A2AClient.search()` and `A2AClientAsync.search()` now
+  reject `limit <= 0`. Rust `Client.search()` rejects `limit <= 0`.
    254|
    255|**Fix:** When adding a new validation check to `a2a.py`, add the equivalent
    256|check to `cmd/a2a/main.go` at the same time. Run both test suites before

@@ -42,7 +42,8 @@ All methods are async (return Promises).
 
 ### send(to, message, ttlSeconds)
 
-Send a message to a peer.
+Send a message to a peer. Returns the message ID. Raises an error if the
+recipient is empty or ttlSeconds is not a positive number.
 
 ```javascript
 const msgId = await client.send('bob', 'Hello', 3600);
