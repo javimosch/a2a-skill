@@ -22,7 +22,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, check_agent_logs, SpawnManager  # noqa: E402
 
 ARTIFACT = "web-research-report"
 DEFAULT_TOPIC = "best open source LLM tools 2026"
@@ -172,6 +172,14 @@ def main():
     bus_state = run_a2a("peek --limit 30", a2a_bin, project)
     (output_dir / "bus-state.txt").write_text(bus_state)
     print(f"[{ARTIFACT}] Wrote output/bus-state.txt")
+
+    # Check agent logs for API errors
+    agent_ids = [ag["id"] for ag in agents]
+    had_errors = check_agent_logs(agent_ids, ARTIFACT)
+    if had_errors:
+        print(f"[{ARTIFACT}] WARNING: Some agents had API errors (see output/report.md)")
+    else:
+        print(f"[{ARTIFACT}] Agent logs: clean")
 
     run_a2a("status done --as collector", a2a_bin, project)
     print(f"[{ARTIFACT}] Done.")
