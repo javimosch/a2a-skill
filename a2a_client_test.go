@@ -880,6 +880,41 @@ func TestSearchEmptyQueryFails(t *testing.T) {
 	}
 }
 
+func TestSearchNonPositiveLimitFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	_, err := c.Search("hello", 0)
+	if err == nil {
+		t.Fatal("expected error for Search with limit=0, got nil")
+	}
+	_, err = c.Search("hello", -1)
+	if err == nil {
+		t.Fatal("expected error for Search with negative limit, got nil")
+	}
+}
+
+func TestSetStatusInvalidStatusFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "tester"
+	c.Register("checker", "", "", 0, false)
+
+	_, err := c.SetStatus("invalid-status")
+	if err == nil {
+		t.Fatal("expected error for invalid status, got nil")
+	}
+	if !strings.Contains(err.Error(), "invalid status") {
+		t.Fatalf("expected error about invalid status, got: %v", err)
+	}
+
+	_, err = c.SetStatus("")
+	if err == nil {
+		t.Fatal("expected error for empty status, got nil")
+	}
+}
+
 func TestWaitNonPositiveCountFails(t *testing.T) {
 	c, cleanup := setupTestProject(t)
 	defer cleanup()

@@ -348,6 +348,10 @@ func (c *Client) AgentExists(agentID string) (bool, error) {
 
 // SetStatus updates agent status. Returns (lastSeen, error). Errors if agent doesn't exist.
 func (c *Client) SetStatus(status string) (float64, error) {
+	validStatuses := map[string]bool{"active": true, "idle": true, "done": true, "blocked": true}
+	if !validStatuses[status] {
+		return 0, fmt.Errorf("invalid status '%s' — must be one of active, idle, done, blocked", status)
+	}
 	db, err := c.connect()
 	if err != nil {
 		return 0, err
@@ -393,6 +397,9 @@ func (c *Client) GetStatus(agentID string) (string, error) {
 func (c *Client) Search(query string, limit int) ([]Message, error) {
 	if strings.TrimSpace(query) == "" {
 		return nil, fmt.Errorf("search query must not be empty")
+	}
+	if limit <= 0 {
+		return nil, fmt.Errorf("limit must be a positive integer")
 	}
 	db, err := c.connect()
 	if err != nil {
