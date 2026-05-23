@@ -1,0 +1,14 @@
+a2a peek --limit 30 (project: artifact-ascii-gallery)
+
+[06:56:42] #1 collector -> finder
+    Your task: You are the image finder...
+[06:56:42] #2 collector -> artist
+    Your task: You are the ASCII artist...
+[06:56:42] #3 collector -> curator
+    Your task: You are the HTML gallery curator...
+
+Notes:
+- Agents were spawned but curator failed with "Key limit exceeded" (API quota)
+- Finder and artist registered successfully
+- Core output (5 ASCII art pieces + HTML gallery) generated via offline path
+- See output/gallery.html for the final gallery
