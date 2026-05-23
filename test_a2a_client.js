@@ -102,6 +102,55 @@ test('send() returns positive message ID', async () => {
   assert.ok(Number(id) > 0, `id=${id} should be > 0`);
 });
 
+test('send() with thread_id stores thread_id', async () => {
+  const { alice, dbPath } = makeClients('send-thread');
+  await alice.send('bob', 'Threaded msg', null, 'thread-abc');
+  const db = new DatabaseSync(dbPath);
+  const row = db.prepare('SELECT thread_id FROM messages WHERE body=?').get('Threaded msg');
+  db.close();
+  assert.strictEqual(row.thread_id, 'thread-abc');
+});
+
+test('send() with empty thread_id rejects', async () => {
+  const { alice } = makeClients('send-thread-empty');
+  try {
+    await alice.send('bob', 'msg', null, '');
+    assert.fail('expected error for empty thread_id');
+  } catch (e) {
+    assert.ok(e.message.includes('thread_id must not be empty'));
+  }
+  // Also test whitespace-only
+  try {
+    await alice.send('bob', 'msg', null, '   ');
+    assert.fail('expected error for whitespace thread_id');
+  } catch (e) {
+    assert.ok(e.message.includes('thread_id must not be empty'));
+  }
+});
+
+// --- send with TTL ---
+
+test('send() with TTL stores ttl_seconds', async () => {
+  const { alice, dbPath } = makeClients('send-ttl');
+  await alice.send('bob', 'TTL msg', 300);
+  const db = new DatabaseSync(dbPath);
+  const row = db.prepare('SELECT ttl_seconds FROM messages WHERE body=?').get('TTL msg');
+  db.close();
+  assert.strictEqual(row.ttl_seconds, 300);
+});
+
+test('send() with non-positive TTL rejects', async () => {
+  const { alice } = makeClients('send-ttl-bad');
+  for (const ttl of [0, -1, -100]) {
+    try {
+      await alice.send('bob', 'bad', ttl);
+      assert.fail('expected error for TTL=' + ttl);
+    } catch (e) {
+      assert.ok(e.message.includes('ttl_seconds must be a positive number'));
+    }
+  }
+});
+
 test('send() to "all" creates broadcast (recipient=null)', async () => {
   const { alice, dbPath } = makeClients('send-broadcast');
   await alice.send('all', 'Broadcast!');
