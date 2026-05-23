@@ -46,12 +46,13 @@ class A2AClient {
 
   /**
    * Send a message.
-   * @param {string}  to         - Recipient ID or "all"/"*" for broadcast
-   * @param {string}  message    - Message body
-   * @param {number}  [ttlSeconds] - Optional TTL
+   * @param {string}  to            - Recipient ID or "all"/"*" for broadcast
+   * @param {string}  message       - Message body
+   * @param {number}  [ttlSeconds]  - Optional TTL
+   * @param {string}  [threadId]     - Optional thread ID
    * @returns {Promise<number>} Message ID
    */
-  async send(to, message, ttlSeconds = null) {
+  async send(to, message, ttlSeconds = null, threadId = null) {
     if (!to || !to.trim()) {
       throw new Error('recipient must not be empty');
     }
@@ -59,6 +60,9 @@ class A2AClient {
       if (typeof ttlSeconds !== 'number' || !Number.isFinite(ttlSeconds) || ttlSeconds <= 0) {
         throw new Error('ttl_seconds must be a positive number');
       }
+    }
+    if (threadId !== null && threadId !== undefined && !threadId.trim()) {
+      throw new Error('thread_id must not be empty');
     }
     const db = this._connect();
     // Validate sender exists
@@ -78,9 +82,9 @@ class A2AClient {
     }
     const now = Date.now() / 1000;
     const stmt = db.prepare(
-      'INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) VALUES (?, ?, ?, ?, ?, ?)'
     );
-    const result = stmt.run(this.agentId, recipient, message, ttlSeconds, now);
+    const result = stmt.run(this.agentId, recipient, message, threadId, ttlSeconds, now);
     db.close();
     return result.lastInsertRowid;
   }
