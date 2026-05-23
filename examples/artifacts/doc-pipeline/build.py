@@ -27,7 +27,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, check_agent_logs, SpawnManager  # noqa: E402
 
 ARTIFACT = "doc-pipeline"
 
@@ -75,7 +75,6 @@ PUBLISHER_INSTRUCTIONS = (
     '   a2a send all PUBLISH_START\\\\nBundle created with:\\\\n- guide.md\\\\n- guide.html\\\\n- bundle.zip\\\\nPUBLISH_END --from publisher\\n\\n'
     "Then mark yourself done."
 )
-
 
 def generate_fallback_output(output_dir: Path) -> tuple:
     """Generate markdown, HTML, and zip directly (fallback when agents fail)."""
@@ -219,7 +218,6 @@ One agent sends to all agents simultaneously for announcements or questions.
 
     return markdown, html, str(zip_path)
 
-
 def _markdown_to_html(markdown_text: str) -> str:
     """Convert markdown to HTML using pandoc."""
     try:
@@ -259,26 +257,6 @@ def _markdown_to_html(markdown_text: str) -> str:
         "<title>a2a Quick Start Guide</title></head><body>"
         f"<pre>{markdown_text}</pre></body></html>"
     )
-
-
-def check_agent_logs(agent_ids: list) -> bool:
-    """Check agent logs for API errors."""
-    had_errors = False
-    for aid in agent_ids:
-        log_path = f"/tmp/a2a-{aid}.log"
-        try:
-            with open(log_path) as f:
-                content = f.read()
-            for marker in ["Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
-                           "401", "402", "429", "403"]:
-                if marker in content:
-                    print(f"[{ARTIFACT}] WARNING: Agent '{aid}' log shows '{marker}' — API key may be exhausted.")
-                    had_errors = True
-                    break
-        except (FileNotFoundError, OSError):
-            pass
-    return had_errors
-
 
 def main():
     parser = argparse.ArgumentParser(description="Build doc-pipeline artifact via agent collaboration")
@@ -335,7 +313,7 @@ def main():
     time.sleep(2)
 
     # Check for API errors in agent logs
-    api_errors = check_agent_logs(agent_ids)
+    api_errors = check_agent_logs(agent_ids, ARTIFACT)
 
     if not spawned_ok or api_errors:
         print(f"[{ARTIFACT}] Agents have API/startup issues. Sending tasks anyway...")
@@ -404,7 +382,6 @@ def main():
 
     run_a2a("status done --as collector", a2a_bin, project)
     print(f"[{ARTIFACT}] Done.")
-
 
 if __name__ == "__main__":
     main()

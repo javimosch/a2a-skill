@@ -27,7 +27,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager, ascii_chart, compute_analysis  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, check_agent_logs, SpawnManager, ascii_chart, compute_analysis  # noqa: E402
 
 ARTIFACT = "data-to-chart"
 
@@ -80,7 +80,6 @@ PLOTTER_INSTRUCTIONS = (
     "The output must be between CHART_START and CHART_END markers."
 )
 
-
 def generate_sample_data(kind="temperature"):
     """Generate realistic sample data."""
     random.seed(42)  # Deterministic for reproducibility
@@ -120,7 +119,6 @@ def generate_sample_data(kind="temperature"):
             price = max(price + change, 50)
             values.append(round(price, 2))
         return values, "stock_price", "Simulated Stock Price (USD) over 25 days"
-
 
 def generate_fallback_output() -> tuple:
     """Generate data, analysis, and chart directly (fallback when agents fail)."""
@@ -190,26 +188,6 @@ def generate_fallback_output() -> tuple:
 
     return charts_text, "\n".join(md_lines)
 
-
-def check_agent_logs(agent_ids: list) -> bool:
-    """Check agent logs for API errors. Returns True if any agent has errors."""
-    had_errors = False
-    for aid in agent_ids:
-        log_path = f"/tmp/a2a-{aid}.log"
-        try:
-            with open(log_path) as f:
-                content = f.read()
-            for marker in ["Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
-                            "401", "402", "429", "403"]:
-                if marker in content:
-                    print(f"[{ARTIFACT}] WARNING: Agent '{aid}' log shows '{marker}' — API key may be exhausted.")
-                    had_errors = True
-                    break
-        except (FileNotFoundError, OSError):
-            pass
-    return had_errors
-
-
 def main():
     parser = argparse.ArgumentParser(description="Build data-to-chart artifact via agent collaboration")
     parser.add_argument("--project", default=None)
@@ -265,7 +243,7 @@ def main():
     time.sleep(2)
 
     # Check for API errors in agent logs
-    api_errors = check_agent_logs(agent_ids)
+    api_errors = check_agent_logs(agent_ids, ARTIFACT)
 
     if not spawned_ok or api_errors:
         print(f"[{ARTIFACT}] Agents have API/startup issues. Sending tasks anyway in case some agents work...")
@@ -323,7 +301,6 @@ def main():
 
     run_a2a("status done --as collector", a2a_bin, project)
     print(f"[{ARTIFACT}] Done.")
-
 
 if __name__ == "__main__":
     main()

@@ -498,3 +498,26 @@ def compute_analysis(values: list) -> dict:
         "trend": trend,
         "volatility": volatility,
     }
+
+
+def check_agent_logs(agent_ids: list, artifact: str = "artifact") -> bool:
+    """Check agent log files for API errors.
+
+    Returns True if any agent has errors (Key limit exceeded, quota, rate limit,
+    401, 402, 429, 403).
+    """
+    had_errors = False
+    for aid in agent_ids:
+        log_path = f"/tmp/a2a-{aid}.log"
+        try:
+            with open(log_path) as f:
+                content = f.read()
+            for marker in ["Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
+                           "401", "402", "429", "403"]:
+                if marker in content:
+                    print(f"[{artifact}] WARNING: Agent '{aid}' log shows '{marker}'")
+                    had_errors = True
+                    break
+        except (FileNotFoundError, OSError):
+            pass
+    return had_errors

@@ -26,7 +26,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, check_agent_logs, SpawnManager  # noqa: E402
 
 ARTIFACT = "weekly-digest"
 TOPICS = {
@@ -86,7 +86,6 @@ EDITOR_INSTRUCTIONS = (
     "   The digest must be between DIGEST_START and DIGEST_END markers."
 )
 
-
 def run_ddgr(cmd: str) -> list:
     """Run a ddgr search and return parsed JSON results."""
     try:
@@ -99,7 +98,6 @@ def run_ddgr(cmd: str) -> list:
     except Exception as exc:
         print(f"  [ddgr] Failed: {exc}", file=sys.stderr)
         return []
-
 
 def generate_fallback_digest() -> str:
     """Produce a digest from ddgr search results directly (fallback when agents fail)."""
@@ -145,26 +143,6 @@ def generate_fallback_digest() -> str:
     lines.append("*This digest was compiled from live web search data. Agents were unable to participate due to API key limits; the build script produced this directly as a fallback.*")
 
     return "\n".join(lines)
-
-
-def check_agent_logs(agent_ids: list) -> bool:
-    """Check agent logs for API errors. Returns True if any agent has errors."""
-    had_errors = False
-    for aid in agent_ids:
-        log_path = f"/tmp/a2a-{aid}.log"
-        try:
-            with open(log_path) as f:
-                content = f.read()
-            for marker in ["Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
-                            "401", "402", "429", "403"]:
-                if marker in content:
-                    print(f"[{ARTIFACT}] WARNING: Agent '{aid}' log shows '{marker}' — API key may be exhausted.")
-                    had_errors = True
-                    break
-        except (FileNotFoundError, OSError):
-            pass
-    return had_errors
-
 
 def main():
     parser = argparse.ArgumentParser(description="Build a weekly tech news digest via agent collaboration")
@@ -221,7 +199,7 @@ def main():
     time.sleep(2)
 
     # Check for API errors in agent logs
-    api_errors = check_agent_logs(agent_ids)
+    api_errors = check_agent_logs(agent_ids, ARTIFACT)
 
     if not spawned_ok or api_errors:
         print(f"[{ARTIFACT}] Agents have API/startup issues. Sending tasks anyway in case some agents work...")
@@ -271,7 +249,6 @@ def main():
 
     run_a2a("status done --as collector", a2a_bin, project)
     print(f"[{ARTIFACT}] Done.")
-
 
 if __name__ == "__main__":
     main()

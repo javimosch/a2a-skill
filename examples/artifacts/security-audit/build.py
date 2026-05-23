@@ -29,7 +29,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, check_agent_logs, SpawnManager  # noqa: E402
 
 ARTIFACT = "security-audit"
 
@@ -74,7 +74,6 @@ REPORTER_INSTRUCTIONS = (
     '   a2a send all "REPORT_START\\n<full report>\\nREPORT_END" --from reporter'
 )
 
-
 def run_ddgr(query: str) -> list:
     """Run a ddgr search and return parsed JSON results."""
     try:
@@ -89,7 +88,6 @@ def run_ddgr(query: str) -> list:
     except Exception as exc:
         print(f"  [ddgr] Failed: {exc}", file=sys.stderr)
         return []
-
 
 def run_system_checks() -> dict:
     """Run basic system security checks and return results."""
@@ -121,13 +119,11 @@ def run_system_checks() -> dict:
 
     return checks
 
-
 CATEGORIES = [
     "critical web framework vulnerabilities 2026 CVE",
     "AI ML supply chain security vulnerabilities 2026",
     "critical Linux kernel vulnerability 2026 CVE",
 ]
-
 
 def run_scanner_fallback() -> dict:
     """Run ddgr searches and system checks directly as fallback."""
@@ -148,7 +144,6 @@ def run_scanner_fallback() -> dict:
         findings[category] = filtered[:5]
     findings["system_checks"] = run_system_checks()
     return findings
-
 
 def classify_severity(findings: dict) -> dict:
     """Classify findings by severity."""
@@ -200,7 +195,6 @@ def classify_severity(findings: dict) -> dict:
         "categorized": categorized,
         "system_checks": findings.get("system_checks", {}),
     }
-
 
 def generate_report(data: dict) -> str:
     """Generate the formatted security report markdown."""
@@ -396,26 +390,6 @@ def generate_report(data: dict) -> str:
 
     return "\n".join(lines)
 
-
-def check_agent_logs(agent_ids: list) -> bool:
-    """Check agent logs for API errors. Returns True if any agent has errors."""
-    had_errors = False
-    for aid in agent_ids:
-        log_path = f"/tmp/a2a-{aid}.log"
-        try:
-            with open(log_path) as f:
-                content = f.read()
-            for marker in ["Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
-                            "401", "402", "429", "403"]:
-                if marker in content:
-                    print(f"[{ARTIFACT}] WARNING: Agent '{aid}' log shows '{marker}' — API key may be exhausted.")
-                    had_errors = True
-                    break
-        except (FileNotFoundError, OSError):
-            pass
-    return had_errors
-
-
 def main():
     parser = argparse.ArgumentParser(description="Build security posture report via agent collaboration")
     parser.add_argument("--project", default=None)
@@ -470,7 +444,7 @@ def main():
     time.sleep(2)
 
     # Check for API errors in agent logs
-    api_errors = check_agent_logs(agent_ids)
+    api_errors = check_agent_logs(agent_ids, ARTIFACT)
     all_agents_failed = not spawned_ok or api_errors
     final_report = None
 
@@ -530,7 +504,6 @@ def main():
 
     run_a2a("status done --as collector", a2a_bin, project)
     print(f"[{ARTIFACT}] Done.")
-
 
 if __name__ == "__main__":
     main()

@@ -28,7 +28,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, SpawnManager  # noqa: E402
+from _util import find_a2a, find_spawn, run_a2a, run_a2a_json, spawn_agent, make_kit, send_task, check_agent_logs, SpawnManager  # noqa: E402
 
 ARTIFACT = "brand-assets"
 
@@ -150,25 +150,6 @@ def generate_ascii_logo():
    ╚═══════════════════════════════════╝"""
 
 
-def check_agent_logs(agent_ids):
-    """Check agent logs for API errors. Returns True if any agent has errors."""
-    had_errors = False
-    for aid in agent_ids:
-        log_path = f"/tmp/a2a-{aid}.log"
-        try:
-            with open(log_path) as f:
-                content = f.read()
-            for marker in ["Key limit exceeded", "insufficient_quota", "rate_limit_exceeded",
-                           "401", "402", "429", "403"]:
-                if marker in content:
-                    print(f"[{ARTIFACT}] WARNING: Agent '{aid}' log shows '{marker}'")
-                    had_errors = True
-                    break
-        except (FileNotFoundError, OSError):
-            pass
-    return had_errors
-
-
 def main():
     parser = argparse.ArgumentParser(description="Build brand assets via agent collaboration")
     parser.add_argument("--project", default=None)
@@ -223,8 +204,7 @@ def main():
 
     time.sleep(2)
 
-    # Check for API errors
-    api_errors = check_agent_logs(agent_ids)
+    api_errors = check_agent_logs(agent_ids, ARTIFACT)
     all_agents_failed = not spawned_ok or api_errors
     agent_output = None
 
