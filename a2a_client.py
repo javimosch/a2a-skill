@@ -326,12 +326,19 @@ class A2AClient:
         """Block until N unread messages or timeout.
 
         Args:
-            count: Number of unread messages to wait for
-            timeout: Max seconds to wait
+            count: Number of unread messages to wait for (must be positive)
+            timeout: Max seconds to wait (must be non-negative)
 
         Returns:
             True if got N messages, False on timeout
+
+        Raises:
+            ValueError: If count is not a positive integer or timeout is negative
         """
+        if not isinstance(count, int) or count <= 0:
+            raise ValueError("count must be a positive integer")
+        if timeout < 0:
+            raise ValueError("timeout must be a non-negative number of seconds")
         deadline = time.time() + timeout
         while time.time() < deadline:
             messages = self.recv(unread_only=True)
@@ -370,11 +377,16 @@ class A2AClient:
         """Get all messages in a thread.
 
         Args:
-            thread_id: Thread ID
+            thread_id: Thread ID (must not be empty)
 
         Returns:
             List of message dicts in thread, ordered by creation time
+
+        Raises:
+            ValueError: If thread_id is empty or whitespace-only
         """
+        if not thread_id or not thread_id.strip():
+            raise ValueError("thread_id must not be empty")
         conn = self._connect()
         try:
             rows = conn.execute(
