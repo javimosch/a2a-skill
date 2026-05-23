@@ -46,8 +46,7 @@ output to `output/`.
 || `security-audit/` | scanner, reporter | `output/report.md`, `output/raw-findings.json`, `output/bus-state.txt` | 2 agents research CVEs across web/AI/OS categories and produce a system security posture report |
 || `local-discovery/` | researcher, mapper | `output/report.md`, `output/businesses.json`, `output/bus-state.txt` | 2 agents discover and document businesses in a category using ddgr, producing structured JSON + formatted report |
 || `alert-pipeline/` | monitor, notifier | `output/alert.txt`, `output/bus-state.txt` | 2 agents check real system metrics (disk, memory, load) and produce a formatted alert with threshold evaluation |
-
-## Requirements
+|| `infra-compliance/` | designer, scanner, fixer | `output/compliance-report.md`, `output/raw-scan.json`, `output/bus-state.txt` | 3 agents produce a Terraform compliance report with checkov scanning, severity breakdown, and remediation recommendations |\n\n## Requirements
 
 To run an artifact build script, you need:
 
