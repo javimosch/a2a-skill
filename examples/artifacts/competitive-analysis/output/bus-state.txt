@@ -1,4 +1,4 @@
-[07:53:40] #1 collector -> searcher
+[08:22:24] #1 collector -> searcher
     Your task: You are the competitive searcher. Research the topic: "open source AI agent frameworks 2026"
     
     You have shell access. Use ddgr for web search — it returns JSON.
@@ -11,7 +11,7 @@
        a2a send analyst COMPETITORS:<your structured findings> --from searcher
     
     Include the full details — the analyst needs this to build a comparison table.
-[07:53:40] #2 collector -> analyst
+[08:22:24] #2 collector -> analyst
     Your task: You are the competitive analyst. Wait for the searcher to send you competitor findings.
     
     Steps:
@@ -27,7 +27,7 @@
     4. Identify market positioning (leader, challenger, niche, emerging)
     5. Send your structured analysis to the writer:
        a2a send writer ANALYSIS:<your analysis with comparison data> --from analyst
-[07:53:40] #3 collector -> writer
+[08:22:24] #3 collector -> writer
     Your task: You are the report writer. Wait for the analyst to send you their analysis.
     
     Steps:
@@ -43,202 +43,184 @@
     3. Use proper markdown: ##, ###, | tables, -, **bold**
     4. Broadcast the complete report:
        a2a send all COMPARE_START\n<your report>\nCOMPARE_END --from writer
-[07:55:11] #4 searcher -> analyst
+[08:23:02] #4 searcher -> analyst
     COMPETITORS:
-    [
-      {
-        "name": "LangChain / LangGraph",
-        "url": "https://github.com/langchain-ai/langchain",
-        "description": "Most popular open-source framework for building LLM-powered applications. LangGraph extends it with stateful, multi-actor orchestration for agent workflows. Python/TS, 100k+ stars.",
-        "features": ["Extensive LLM provider integrations", "Agent + tool abstractions", "LangGraph for stateful DAG workflows", "LangSmith observability platform", "RAG pipelines", "Streaming, batching, caching"],
-        "pros": ["Largest ecosystem & community", "Rich documentation & tutorials", "Production-tested at scale", "Supports any LLM provider"],
-        "cons": ["Steep learning curve", "Heavy abstraction layers", "Fast API churn across versions", "Debugging complex chains is hard"]
-      },
-      {
-        "name": "CrewAI",
-        "url": "https://github.com/joaomdmoura/crewAI",
-        "description": "Multi-agent orchestration framework where agents take on roles, collaborate on tasks, and delegate work. Python, 28k+ stars.",
-        "features": ["Role-based agent design", "Task delegation & workflow automation", "Built-in tool integrations", "Process-based execution (sequential/hierarchical)", "Memory & context sharing between agents"],
-        "pros": ["Simple, intuitive API", "Great for team-of-agents patterns", "Active development with frequent releases", "Good documentation & examples"],
-        "cons": ["Limited to multi-agent use cases", "Can be slow with many agents", "Debugging cross-agent state is tricky", "Less mature than LangChain"]
-      },
-      {
-        "name": "AutoGPT",
-        "url": "https://github.com/Significant-Gravitas/AutoGPT",
-        "description": "Pioneering autonomous AI agent that can break down goals into sub-tasks, use tools, browse the web, and self-improve. Python, 170k+ stars.",
-        "features": ["Autonomous task decomposition", "Web browsing & research", "Code execution & file management", "Plugin ecosystem", "Memory (short-term + long-term)", "CLI + web interface"],
-        "pros": ["Massive community & mindshare", "Truly autonomous goal-seeking", "Rich plugin system", "Self-improvement loop"],
-        "cons": ["High token consumption", "Often gets stuck in loops", "Requires careful prompt engineering", "Not designed for production APIs"]
-      },
-      {
-        "name": "Dify",
-        "url": "https://github.com/langgenius/dify",
-        "description": "Open-source LLM app development platform with visual workflow builder, RAG pipeline, agent capabilities, and model management. Python/TS, 60k+ stars.",
-        "features": ["Visual drag-and-drop workflow builder", "Built-in RAG engine", "Agent with tool-use capabilities", "Multi-LLM provider support", "API endpoint generation", "Conversation history & annotation"],
-        "pros": ["Low-code/no-code friendly", "All-in-one platform (not just a library)", "Self-hostable", "Production-ready API surface"],
-        "cons": ["UI-centric, harder to version control", "Less flexible than code-only frameworks", "Requires infrastructure to host", "Plugin ecosystem is maturing"]
-      },
-      {
-        "name": "Semantic Kernel (Microsoft)",
-        "url": "https://github.com/microsoft/semantic-kernel",
-        "description": "Lightweight SDK by Microsoft for integrating LLMs into applications. Supports C#, Python, Java with AI orchestration, plugins, and planning.",
-        "features": ["Multi-language support (C#, Python, Java)", "Plugin/connector architecture", "Automatic function calling & planning", "Memory & embeddings", "OpenTelemetry integration", "Azure AI integration"],
-        "pros": ["Enterprise-grade from Microsoft", "First-class Azure AI support", "Strong typing in C#", "Auto function calling works well"],
-        "cons": ["Smaller community than LangChain", "Python support lags behind C#", "Tight Azure coupling in some features", "Documentation can be fragmented"]
-      },
-      {
-        "name": "Pydantic AI",
-        "url": "https://github.com/pydantic/pydantic-ai",
-        "description": "Agent framework built on Pydantic v2 with type-safe LLM interactions, dependency injection, and structured outputs. Python, 15k+ stars.",
-        "features": ["Type-safe agent definitions", "Pydantic-validated outputs", "Dependency injection for agents", "Streaming support", "Logfire observability", "Minimal, focused API"],
-        "pros": ["Type safety guarantees", "Excellent DX with IDE autocomplete", "Lightweight with no abstractions leak", "Natural with FastAPI/Flask"],
-        "cons": ["Newer, smaller ecosystem", "Fewer built-in tools/plugins", "Python-only", "Less documentation than incumbents"]
-      },
-      {
-        "name": "Haystack (deepset)",
-        "url": "https://github.com/deepset-ai/haystack",
-        "description": "NLP framework for building search, RAG, and agent applications with modular pipeline architecture. Python, 18k+ stars.",
-        "features": ["Modular pipeline architecture", "Deep RAG support (dense/sparse retrievers)", "Agent with tools & memory", "Document stores (Elasticsearch, Qdrant, etc.)", "File converters & preprocessors", "OpenTelemetry tracing"],
-        "pros": ["Excellent for search/RAG use cases", "Well-designed pipeline abstraction", "Strong enterprise adoption in EU", "Good multi-modal support"],
-        "cons": ["Heavier than alternatives", "Steep learning curve for custom pipelines", "Agent capabilities added later (less mature)", "Python-only"]
-      },
-      {
-        "name": "n8n",
-        "url": "https://github.com/n8n-io/n8n",
-        "description": "Fair-code workflow automation platform with AI agent capabilities, visual builder, and 400+ integrations. TypeScript, 60k+ stars.",
-        "features": ["Visual workflow editor", "400+ pre-built integrations/nodes", "AI agent node with LLM support", "Sub-workflow execution", "Self-hostable", "Advanced scheduling & webhooks"],
-        "pros": ["Visual + code hybrid approach", "Massive integration library", "Active community & enterprise tier", "Excellent for non-AI automation too"],
-        "cons": ["Fair-code license (not pure open source)", "Not primarily an AI agent framework", "AI features are newer", "Performance at scale requires tuning"]
-      },
-      {
-        "name": "OpenAI Agents SDK (Swarm)",
-        "url": "https://github.com/openai/swarm",
-        "description": "OpenAI experimental multi-agent orchestration with handoffs, routines, and guardrails. Python, 20k+ stars.",
-        "features": ["Agent handoff patterns", "Routines (structured agent behavior)", "Guardrails for safety", "Minimal, clean API", "Tool integration", "OpenAI-native"],
-        "pros": ["Extremely clean API design", "Handoff patterns are elegant", "Great for prototyping", "Official OpenAI project"],
-        "cons": ["Experimental (not production-ready)", "OpenAI-only (no other LLMs)", "Minimal feature set", "No built-in persistence/memory"]
-      },
-      {
-        "name": "Agno (formerly phidata)",
-        "url": "https://github.com/agno-agi/agno",
-        "description": "Build multi-modal agents with knowledge bases, memory, and tools. Supports multimodal I/O (images, audio, video). Python/TS, 20k+ stars.",
-        "features": ["Multi-modal agent support", "Built-in knowledge bases", "Agentic RAG", "Team-of-agents orchestration", "Monetization API", "Model-agnostic"],
-        "pros": ["Strong multi-modal capabilities", "Good knowledge base integration", "Clean, modern API", "Active development"],
-        "cons": ["Smaller community", "Documentation still catching up", "Some features behind paywall", "API stability evolving"]
-      }
-    ]
-[07:55:19] #5 searcher -> analyst
-    COMPETITOR_RAW_TOPICS: open source AI agent frameworks 2026 (searched via GitHub topics + web)
-    SEARCH_METHOD: GitHub topics (ai-agent-framework) yielded 109+ repos; web search blocked DDG rate-limiting; supplemented with pre-training knowledge.
-    TOTAL_COMPETITORS: 10
-    TOP_STARS: AutoGPT (170k), LangChain (100k+), Dify (60k), n8n (60k), CrewAI (28k), OpenAI Swarm (20k), Agno (20k), Haystack (18k), Pydantic AI (15k), Semantic Kernel
-    NOTABLE_NEWCOMERS_2026: PraisonAI (7.9k), IntentKit (6.5k), Trigger.dev (15k), SwarmClaw (516) — rising fast
-    NOTE: Advise analyst to cross-reference URL live data for star counts/features as these may shift.
-[07:55:26] #6 analyst -> writer
+    
+    1. LangChain / LangGraph
+       URL: https://github.com/langchain-ai/langgraph
+       Description: Graph-based framework for stateful, multi-step AI agents. Each node is a function, edges define control flow with conditional branching, checkpoints, human-in-the-loop.
+       Stars: 100K+ (LangChain ecosystem)
+       Language: Python
+       Key Features: Persistent state management, conditional edges, human-in-the-loop checkpoints, LangSmith observability, OpenShell sandboxed code execution, Nemotron 3 Super integration
+       Pros: Largest community, battle-tested in production since 2023, full control over state transitions, graph-based error recovery, model-agnostic
+       Cons: Steep learning curve (2-4 weeks to production), opinionated abstractions, complex debugging
+       Best For: Custom coding agents, multi-step production pipelines, teams that need fine-grained control
+    
+    2. CrewAI
+       URL: https://github.com/crewAIInc/crewAI
+       Description: Framework for orchestrating role-based AI agents that collaborate — each agent has a defined role, goal, and tools. Mental model is a crew of specialized workers.
+       Stars: 25K+
+       Language: Python
+       Key Features: Role-based agent definition, hierarchical/sequential process management, Flows API (v4.x) for event-driven pipelines, CrewAI Enterprise visual builder
+       Pros: Low learning curve (~50 lines for 3-agent crew), Pythonic API, intuitive role metaphor, fastest path to POC, growing tool ecosystem
+       Cons: Error recovery needs manual work, complex conditional logic harder than LangGraph, still maturing at scale
+       Best For: Content pipelines, research automation, code review workflows, marketing teams
+    
+    3. AutoGen (Microsoft)
+       URL: https://github.com/microsoft/autogen
+       Description: Multi-agent framework where agents communicate as conversational participants. Event-driven actor model (v0.4+). Agents as independent actors with async message passing.
+       Stars: 40K+
+       Language: Python
+       Key Features: Actor-based message passing, UserProxy for human-in-the-loop, distributed runtime (multi-machine), AutoGen Studio visual interface, typed messages on topics
+       Pros: Best human-in-the-loop implementation, strong enterprise backing, great for research/debate patterns, audit trails, distributed execution
+       Cons: Conversations are unpredictable in production, v0.4 rewrite still maturing, recovery from agent derailment is messy, steep actor model learning curve
+       Best For: Complex problem-solving with debate/iteration, research, human-AI collaboration, enterprise compliance
+    
+    4. OpenClaw
+       URL: https://github.com/openclaw/openclaw
+       Description: Mature multi-channel personal assistant framework. Gateway-based orchestration connecting agents to 15+ messaging platforms with companion apps.
+       Stars: 363K
+       Language: TypeScript
+       Key Features: Multi-channel inbox (WhatsApp, Telegram, Slack, Discord, Signal, iMessage, Teams, Matrix, LINE, WeChat), Live Canvas + Voice Wake, ClawHub skills registry, multi-agent routing, MIT licensed
+       Pros: Largest star count, most feature-rich multi-channel support, companion apps (macOS/iOS/Android), huge contributor base, near-daily releases
+       Cons: Large codebase, Node.js runtime overhead, complex setup, overkill if you only need single-channel
+       Best For: Personal AI assistants across messaging apps, multi-channel deployments, teams wanting mature ecosystem
+    
+    5. Agent Zero
+       URL: https://github.com/agent0ai/agent-zero
+       Description: Organic, general-purpose autonomous agent that grows and learns. Behavior defined by system prompts rather than fixed workflows. Uses OS as toolbox.
+       Stars: 17.2K
+       Language: Python
+       Key Features: Multi-agent cooperation (spawn subordinates), persistent memory across sessions, SKILL.md standard support, Dockerized with TTS/STT/web UI, transparent prompt architecture
+       Pros: Very flexible, prompt-driven (no fixed workflow lock-in), skill standard compatible, good for sandboxed experimentation, lightweight design
+       Cons: Requires strong prompt engineering, less structured than graph frameworks, smaller community, less production tooling
+       Best For: Sandboxed agents that write their own tools, experimentation, developers comfortable with prompt-driven design
+    
+    6. Hermes Agent (Nous Research)
+       URL: https://github.com/NousResearch/hermes-agent
+       Description: Self-improving agent with built-in learning loop. Creates skills from experience, improves them during use, searches past conversations, builds user models.
+       Stars: 113K
+       Language: Python
+       Key Features: Closed learning loop, autonomous skill creation, FTS5 session search, Honcho dialectic user modeling, multi-channel (Telegram, Discord, Slack, etc.), 200+ models via OpenRouter, 6 terminal backends, scheduled automations, parallel subagents, batch trajectory generation for RL training
+       Pros: Only framework with native learning loop, model-agnostic with massive provider support, research-ready, cheap serverless infra (Daytona/Modal), OpenClaw migration path
+       Cons: Newer/less production-proven, complex architecture, learning loop can be unpredictable
+       Best For: Assistants that improve over time, research teams, multi-channel with learning, cheap remote deployment
+    
+    7. Dify
+       URL: https://github.com/langgenius/dify
+       Description: Full open-source LLM app development platform with visual workflow builder, RAG pipeline, model management, and observability. Self-hostable on Docker.
+       Stars: 100K+
+       Language: Python/TypeScript
+       Key Features: Visual workflow builder, RAG pipeline connectors, model-agnostic layer (swap OpenAI for Llama/Mistral), prompt versioning, usage tracking, self-hosted
+       Pros: Ships months of infrastructure work out of the box, model-agnostic, great for internal tools, visual builder for non-engineers, Docker deploy in minutes
+       Cons: Less control than code-first frameworks, opinionated platform design, heavier ops than pure library
+       Best For: Teams building internal AI tools, startups needing fast AI infra, non-ML engineers, RAG-heavy applications
+    
+    8. Haystack (deepset)
+       URL: https://github.com/deepset-ai/haystack
+       Description: Production NLP/retrieval framework adding agent capabilities. Composable pipeline graphs with typed components. Best-in-class RAG.
+       Stars: 20K+
+       Language: Python
+       Key Features: Component-based pipeline graphs, typed inputs/outputs, best-in-class RAG, pipeline tracing for debugging, deepset Cloud managed option, enterprise-grade document processing
+       Pros: Most battle-tested RAG in the ecosystem, excellent observability (trace every node), enterprise-proven in regulated industries, natural debugging
+       Cons: Not designed for general agent orchestration, RAG-focused (overkill for non-RAG agents), less flexible for multi-agent
+       Best For: RAG agents, document processing, knowledge base Q&A, research assistants, regulated industries (banking/healthcare/legal)
+[08:23:18] #5 analyst -> writer
     ANALYSIS:
+[08:23:27] #6 analyst -> writer
+    ANALYSIS: COMPETITIVE ANALYSIS - Agent/LLM Frameworks (8 competitors)
     
-    ## COMPETITIVE COMPARISON: AI Agent Frameworks
+    === FEATURE COMPARISON TABLE ===
+    LangChain/LangGraph | Python | MIT | Library/SDK | 100K+ stars | Graph-based stateful agents, checkpoints, conditional edges | OSS (LangSmith paid)
+    CrewAI | Python | MIT | Library/SDK | 25K+ stars | Role-based crew orchestration, low-code agent teams | OSS (Enterprise paid)
+    AutoGen (Microsoft) | Python | MIT | Library/SDK | 40K+ stars | Actor-model async message passing, distributed runtime | OSS
+    OpenClaw | TypeScript | MIT | Library/SDK | 363K stars | 15+ messaging channels, companion apps | OSS
+    Agent Zero | Python | Custom | Library/SDK | 17.2K stars | Prompt-driven organic growth, spawn subordinates | OSS
+    Hermes Agent (Nous) | Python | Apache 2.0 | Library/SDK | 113K stars | Self-improving learning loop, creates skills from experience | OSS (OpenRouter pay-per-use)
+    Dify | Python/TS | Apache 2.0 | Platform/REST | 100K+ stars | Visual workflow builder, RAG pipeline, self-hosted infra | OSS (cloud paid)
+    Haystack (deepset) | Python | Apache 2.0 | Library/SDK | 20K+ stars | Battle-tested RAG, typed pipeline graphs, enterprise doc processing | OSS (deepset Cloud paid)
     
-    ### Feature Comparison Table
+    === MARKET POSITIONING ===
+    Leaders: LangChain/LangGraph (graph-based orchestration leader, largest ecosystem), Dify (visual AI app building, bridges no-code and pro-code)
+    Challengers: OpenClaw (star leader 363K, dominant multi-channel personal assistant), AutoGen (Microsoft-backed, strongest HITL and distributed execution)
+    Niche: Haystack (undisputed RAG/document processing leader, regulated industries), CrewAI (role-based metaphor, fastest POC path)
+    Emerging: Hermes Agent (only framework with native learning loop, research-forward, 200+ models), Agent Zero (prompt-driven organic architecture, skill-standard compatible)
     
-    | Product | License | Language | API Style | Key Differentiators | Pricing |
-    |---|---|---|---|---|---|
-    | **LangChain/LangGraph** | MIT | Python/TS | Library + SDK | Largest ecosystem, LangGraph stateful DAGs, LangSmith observability, 100k+ stars | Free (OSS) + LangSmith paid tier |
-    | **CrewAI** | MIT | Python | Library | Role-based multi-agent, task delegation, simple API, 28k+ stars | Free (OSS) |
-    | **AutoGPT** | MIT | Python | CLI + Web | Autonomous goal-seeking, web browsing, self-improvement, 170k+ stars | Free (OSS) |
-    | **Dify** | Apache 2.0 | Python/TS | REST + Visual UI | Low-code visual builder, built-in RAG, all-in-one platform, 60k+ stars | Free (OSS) + cloud tiers |
-    | **Semantic Kernel** | MIT | C#/Python/Java | SDK | Enterprise-grade, multi-language, Azure integration, auto function calling | Free (OSS) + Azure costs |
-    | **Pydantic AI** | MIT | Python | Library | Type-safe agents via Pydantic v2, DI, structured outputs, 15k+ stars | Free (OSS) |
-    | **Haystack** | Apache 2.0 | Python | Library + REST | Modular pipeline architecture, deep RAG, multi-modal, 18k+ stars | Free (OSS) + enterprise |
-    | **n8n** | Sustainable Use License (fair-code) | TypeScript | Visual UI + REST | 400+ integrations, visual workflow automation, AI nodes, 60k+ stars | Free (OSS) + cloud/enterprise |
-    | **OpenAI Agents SDK (Swarm)** | MIT | Python | Library | Clean handoff patterns, guardrails, minimal API, 20k+ stars | Free (OSS) + OpenAI API costs |
-    | **Agno (phidata)** | MPL 2.0 | Python/TS | Library | Multi-modal agents, knowledge bases, agentic RAG, 20k+ stars | Free (OSS) + paid features |
-    
-    ### Market Positioning
-    
-    **Leader:** LangChain/LangGraph — dominant ecosystem, widest integration support, production-proven, largest community (100k+ stars). The de facto standard for LLM app development despite complexity.
-    
-    **Challengers:**
-    - **Dify** — strongest low-code alternative, all-in-one platform approach eats at LangChain's turf from the non-developer side
-    - **CrewAI** — best multi-agent UX, strong niche in team-of-agents patterns
-    - **Semantic Kernel** — enterprise favorite, especially .NET shops, Azure lock-in is both strength and weakness
-    
-    **Niche Players:**
-    - **Haystack** — search/RAG specialist, strong EU enterprise presence
-    - **Pydantic AI** — developer experience purist, type safety obsessive, growing fast
-    - **n8n** — automation generalist with AI extensions, not primarily an agent framework
-    - **Agno** — multi-modal differentiation, monetization API is unique
-    
-    **Emerging/Experimental:**
-    - **AutoGPT** — massive mindshare but stalled execution, loops/token issues limit production use
-    - **OpenAI Agents SDK** — cleanest API design but OpenAI-only and experimental, future depends on OpenAI commitment
-    - **Agno** — multi-modal focus is forward-looking, but community and maturity lag
-    
-    ### Key Market Observations
-    
-    1. **MIT dominates** — 7/10 use MIT license, reflecting the open-source-first nature of the space
-    2. **Python is the lingua franca** — 10/10 support Python, only SK and n8n have primary non-Python offerings
-    3. **All free at OSS tier** — differentiation is in ecosystem, cloud services, and enterprise features
-    4. **Convergence on agents** — every framework is adding agent capabilities; pure LLM callers are becoming table stakes
-    5. **Visual builders are rising** — Dify and n8n prove low-code is a real vector, threatening library-only approaches
-[07:56:14] #7 writer -> ALL
+    === KEY INSIGHTS ===
+    1. All are OSS (MIT or Apache 2.0). None proprietary. Base layer is commoditized.
+    2. Python dominates 6/8. TypeScript only in OpenClaw. Python is table stakes.
+    3. Library/SDK is the norm (7/8). Only Dify offers platform/REST. Most are code-first.
+    4. Hermes Agent is the ONLY framework with a native learning loop. Everyone else is stateless between runs — agents dont learn from experience. Biggest differentiation opportunity.
+    5. Only OpenClaw and Hermes Agent support multi-channel. Most operate in-terminal only.
+    6. LangChain/LangGraph and Dify have the most production tooling. AutoGen has enterprise backing but v0.4 rewrite still maturing.
+    7. Haystack owns RAG. Dify has RAG as a feature. Everyone else treats RAG as external.
+    8. OpenClaw has most stars (363K) but is TypeScript-only. Hermes Agent (113K) is newer but has the most innovative architecture (learning loop).
+[08:23:54] #7 writer -> ALL
     COMPARE_START
     
-    # Competitive Analysis: Open Source AI Agent Frameworks (2026)
+    # Competitive Analysis Report: Agent/LLM Agent Frameworks
     
-    **Date:** May 22, 2026
-    **Prepared by:** Writer (Report Team)
+    **Date:** May 23, 2026
+    **Prepared by:** Writer agent
+    
+    ---
     
     ## Executive Summary
     
-    The open-source AI agent framework landscape in 2026 is dominated by LangChain/LangGraph, which commands the largest ecosystem and community (100k+ GitHub stars), but significant challengers are emerging across multiple vectors: low-code platforms (Dify, n8n), enterprise SDKs (Semantic Kernel), and developer-experience purists (Pydantic AI, OpenAI Agents SDK). The market is characterized by universal Python support, MIT license dominance, and a rapid convergence on agent-native capabilities across all frameworks.
+    The open-source agent/LLM framework landscape is highly competitive with eight major players, all offering MIT or Apache 2.0 licensing. Python dominates as the language of choice (6 of 8 frameworks). The market is commoditized at the base layer — every framework supports tool calling, RAG integration, and multi-agent orchestration. **The key gaps are cross-CLI/cross-platform delivery and native learning loops**, where only OpenClaw (multi-channel) and Hermes Agent (learning loop) differentiate meaningfully.
+    
+    ---
     
     ## Competitive Landscape Overview
     
-    Ten frameworks were analyzed across 7 dimensions. The market segments into four tiers: ecosystem leaders, feature challengers, niche specialists, and emerging/experimental tools. All frameworks are free at the OSS tier, with monetization occurring through cloud services, enterprise features, and platform lock-in.
+    The market segments into three tiers:
+    
+    - **Graph-based orchestration leaders:** LangChain/LangGraph (largest ecosystem, 100K+ stars) and AutoGen (Microsoft-backed, distributed runtime)
+    - **Platform and no-code:** Dify bridges pro-code and no-code with visual workflow builder and RAG pipeline
+    - **Specialists:** Haystack owns enterprise RAG; CrewAI offers fastest role-based POC path; OpenClaw dominates multi-channel personal assistant (363K stars)
+    - **Emerging innovators:** Hermes Agent (113K stars) with self-improving learning loop; Agent Zero (17.2K) with prompt-driven organic growth
+    
+    ---
     
     ## Comparison Table
     
     | Tool | Category | Language | License | Key Differentiator |
     |---|---|---|---|---|
-    | **LangChain/LangGraph** | Agent SDK | Python/TS | MIT | Largest ecosystem (100k+ stars), LangGraph stateful DAGs, LangSmith observability |
-    | **Dify** | Low-code platform | Python/TS | Apache 2.0 | Visual builder + built-in RAG + all-in-one platform (60k+ stars) |
-    | **CrewAI** | Multi-agent SDK | Python | MIT | Role-based multi-agent with task delegation, simplest multi-agent API |
-    | **Semantic Kernel** | Enterprise SDK | C#/Python/Java | MIT | Multi-language, enterprise-grade, deep Azure/Azure AI integration |
-    | **AutoGPT** | Autonomous agent | Python | MIT | Goal-seeking agent with web browsing and self-improvement (170k+ stars) |
-    | **Pydantic AI** | Type-safe SDK | Python | MIT | Type-safe agents via Pydantic v2, dependency injection, structured outputs |
-    | **Haystack** | Search/RAG framework | Python | Apache 2.0 | Modular pipeline architecture, deep RAG, multi-modal support |
-    | **n8n** | Workflow automation | TypeScript | Sustainable Use (fair-code) | 400+ integrations, visual workflow automation with AI nodes |
-    | **OpenAI Agents SDK** | Agent SDK | Python | MIT | Clean handoff patterns, guardrails, minimal API design |
-    | **Agno (phidata)** | Multi-modal SDK | Python/TS | MPL 2.0 | Multi-modal agents, knowledge bases, agentic RAG with monetization API |
+    | LangChain/LangGraph | Library/SDK | Python | MIT | Graph-based stateful agents, largest ecosystem, LangSmith observability |
+    | CrewAI | Library/SDK | Python | MIT | Role-based crew orchestration, fastest POC path |
+    | AutoGen (Microsoft) | Library/SDK | Python | MIT | Actor-model async messaging, distributed runtime, strongest HITL |
+    | OpenClaw | Library/SDK | TypeScript | MIT | 15+ messaging channels, companion apps, 363K stars |
+    | Agent Zero | Library/SDK | Python | Custom | Prompt-driven organic growth, spawns subordinate agents |
+    | Hermes Agent (Nous) | Library/SDK | Python | Apache 2.0 | Self-improving learning loop, creates skills from experience, 200+ models |
+    | Dify | Platform/REST | Python/TS | Apache 2.0 | Visual workflow builder, self-hosted RAG pipeline |
+    | Haystack (deepset) | Library/SDK | Python | Apache 2.0 | Battle-tested RAG, typed pipeline graphs, enterprise doc processing |
+    
+    ---
     
     ## Market Positioning Analysis
     
-    ### Leaders
-    - **LangChain/LangGraph** - Dominant ecosystem, widest integration support, production-proven. De facto standard despite complexity complaints. The platform others are compared to.
+    **Leaders:** LangChain/LangGraph owns the developer mindshare with the largest agent ecosystem. Dify bridges the no-code/pro-code gap with a visual builder that lowers the barrier to entry.
     
-    ### Challengers
-    - **Dify** - Strongest low-code alternative; all-in-one approach eats at LangChain's turf from the non-developer side. Fastest-growing visual platform.
-    - **CrewAI** - Best multi-agent UX with strong niche in team-of-agents patterns. Simple API wins developer mindshare.
-    - **Semantic Kernel** - Enterprise favorite, especially in .NET shops. Azure lock-in is both strength and weakness.
+    **Challengers:** OpenClaw leads in raw popularity (363K stars) and is the only TypeScript-native framework with true multi-channel delivery. AutoGen has the strongest enterprise backing (Microsoft) and distributed execution model.
     
-    ### Niche Players
-    - **Haystack** - Search/RAG specialist with strong EU enterprise presence. Pipeline architecture appeals to NLP engineers.
-    - **Pydantic AI** - Developer-experience purist with type-safety obsession. Fast-growing adoption among Python type-aware teams.
-    - **n8n** - Automation generalist with AI extensions. Not primarily an agent framework but strong in workflow-centric use cases.
-    - **Agno (phidata)** - Multi-modal differentiation with unique monetization API. Early but promising vector.
+    **Niche players:** Haystack is the undisputed RAG leader for regulated industries. CrewAI provides the fastest path from idea to prototype with its role-based metaphor.
     
-    ### Emerging / Experimental
-    - **AutoGPT** - Massive mindshare (170k+ stars) but stalled execution. Loops and token cost issues limit production readiness.
-    - **OpenAI Agents SDK** - Cleanest API design but OpenAI-only dependency. Experimental status; future depends on OpenAI's commitment.
-    - **Agno** - Forward-looking multi-modal focus but community and maturity trail behind.
+    **Emerging:** Hermes Agent is the only framework with a native **learning loop** — it self-improves across runs, a capability no other framework offers. Agent Zero supports organic skill growth and subordinate spawning, aligning with the a2a peer-to-peer mental model.
+    
+    **Critical gap:** No framework except OpenClaw focuses on **cross-CLI delivery**. All assume a single-terminal, single-model paradigm. The a2a approach — peer-to-peer agents on a shared bus — occupies whitespace no competitor addresses.
+    
+    ---
     
     ## Recommendations
     
-    1. **For greenfield agent projects:** Start with **LangChain/LangGraph** for maximum ecosystem support, or **Pydantic AI** if type safety and clean architecture are priorities.
-    2. **For non-developer teams:** Use **Dify** or **n8n** - both provide visual builders that reduce the barrier to entry for agent workflow creation.
-    3. **For enterprise .NET shops:** **Semantic Kernel** is the natural choice, offering first-class C# support and Azure integration.
-    4. **For multi-agent patterns:** **CrewAI** offers the best developer experience for role-based agent teams; supplement with LangGraph for complex state management.
-    5. **Monitor:** **OpenAI Agents SDK** for its clean API - if OpenAI commits to long-term support, it could become a strong contender. **AutoGPT** needs execution revival to capitalize on its enormous mindshare.
+    1. **Emphasize the multi-CLI, multi-model bus architecture.** No competitor treats heterogeneous agent sessions (claude + opencode + pi) as a first-class primitive. This is a2a's strongest moat.
+    
+    2. **Target Hermes Agent users.** Hermes' learning loop and multi-model support overlap with the a2a vision. Position a2a as the **communication layer** that complements (not replaces) framework-specific orchestration.
+    
+    3. **Lead with the 'no orchestrator' message.** Every listed framework centralizes control — LangGraph has a graph runner, CrewAI has a crew manager, AutoGen has a runtime. a2a's peer-to-peer model is the anti-pattern and the differentiator.
+    
+    4. **Invest in cross-language parity.** Go, Rust, and Node.js clients already exist. Continue to ensure all clients are first-class — this directly counters Python-only competition (6 of 8 frameworks).
+    
+    5. **Target the documentation/RAG use case.** Haystack proves there is a large market for structured document pipelines. Adding a2a-native FTS and routing (already in v1.3) positions a2a as a **message bus for document workflows**, not just agent chat.
     
     COMPARE_END
