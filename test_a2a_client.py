@@ -589,11 +589,23 @@ class TestA2AClient(unittest.TestCase):
         bodies = [m["body"] for m in messages]
         self.assertNotIn("ttl will expire", bodies)
 
-    def test_wait_for_messages_count_zero_returns_immediately(self):
-        """wait_for_messages(count=0) returns True immediately without blocking."""
+    def test_wait_for_messages_count_zero_raises_error(self):
+        """wait_for_messages(count=0) raises ValueError (must be positive)."""
         bob = A2AClient(self.project, "bob")
-        result = bob.wait_for_messages(count=0, timeout=5)
-        self.assertTrue(result)
+        with self.assertRaises(ValueError):
+            bob.wait_for_messages(count=0, timeout=5)
+
+    def test_wait_for_messages_negative_count_raises_error(self):
+        """wait_for_messages with negative count raises ValueError."""
+        bob = A2AClient(self.project, "bob")
+        with self.assertRaises(ValueError):
+            bob.wait_for_messages(count=-1, timeout=5)
+
+    def test_wait_for_messages_negative_timeout_raises_error(self):
+        """wait_for_messages with negative timeout raises ValueError."""
+        bob = A2AClient(self.project, "bob")
+        with self.assertRaises(ValueError):
+            bob.wait_for_messages(count=1, timeout=-1)
 
     def test_list_peers_empty(self):
         """list_peers() returns all registered agents on the bus."""
@@ -631,11 +643,17 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(len(msgs[0]["body"]), 10000)
         self.assertEqual(msgs[0]["body"], long_body)
 
-    def test_thread_empty_string_id(self):
-        """thread() returns [] when thread_id is an empty string."""
+    def test_thread_empty_string_id_raises_error(self):
+        """thread() raises ValueError when thread_id is an empty string."""
         alice = A2AClient(self.project, "alice")
-        result = alice.thread("")
-        self.assertEqual(result, [])
+        with self.assertRaises(ValueError):
+            alice.thread("")
+
+    def test_thread_whitespace_id_raises_error(self):
+        """thread() raises ValueError when thread_id is whitespace."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.thread("   ")
 
     def test_search_special_chars_query(self):
         """search() handles special LIKE characters in the query string."""
