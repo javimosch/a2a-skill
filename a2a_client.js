@@ -246,6 +246,9 @@ class A2AClient {
    * @returns {Promise<Array>}
    */
   async thread(threadId) {
+    if (!threadId || !threadId.trim()) {
+      throw new Error('thread id must not be empty');
+    }
     const db = this._connect();
     const rows = db.prepare(
       'SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE thread_id = ? ORDER BY created_at ASC'
