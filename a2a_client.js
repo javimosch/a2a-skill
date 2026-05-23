@@ -61,7 +61,21 @@ class A2AClient {
       }
     }
     const db = this._connect();
+    // Validate sender exists
+    const senderRow = db.prepare('SELECT 1 FROM agents WHERE id=?').get(this.agentId);
+    if (!senderRow) {
+      db.close();
+      throw new Error(`unknown sender '${this.agentId}' — register first`);
+    }
     const recipient = ['all', '*', 'broadcast'].includes(to.toLowerCase()) ? null : to;
+    // Validate recipient exists (for non-broadcast)
+    if (recipient !== null) {
+      const recipRow = db.prepare('SELECT 1 FROM agents WHERE id=?').get(recipient);
+      if (!recipRow) {
+        db.close();
+        throw new Error(`unknown recipient '${recipient}' — register them first`);
+      }
+    }
     const now = Date.now() / 1000;
     const stmt = db.prepare(
       'INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) VALUES (?, ?, ?, ?, ?)'
