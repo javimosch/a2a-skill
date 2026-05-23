@@ -334,6 +334,27 @@ class TestA2AClientAsync(unittest.TestCase):
         with self.assertRaises(ValueError):
             run_async(client.send("   ", "whitespace"))
 
+    def test_send_ttl_non_positive_rejected(self):
+        """send() with ttl <= 0 raises ValueError (async)."""
+        from a2a_client_async import A2AClientAsync
+        client = A2AClientAsync(self.project, "alice")
+        run_async(self.alice.register("tester"))
+        for bad_ttl in (0, -1, -5):
+            with self.assertRaises(ValueError):
+                run_async(client.send("bob", "bad ttl", ttl_seconds=bad_ttl))
+
+    def test_send_empty_body(self):
+        """send() with empty body creates a message with empty content (async)."""
+        from a2a_client_async import A2AClientAsync
+        run_async(self.alice.register("tester"))
+        client = A2AClientAsync(self.project, "alice")
+        run_async(self.bob.register("tester"))
+        msg_id = run_async(client.send("bob", ""))
+        self.assertGreater(msg_id, 0)
+        msgs = run_async(self.bob.recv(wait=1))
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(msgs[0]["body"], "")
+
 
 @unittest.skipUnless(HAS_AIOSQLITE, SKIP_MSG)
 class TestPriorityClientAsync(unittest.TestCase):
