@@ -105,7 +105,7 @@ impl Client {
     }
 
     /// Send a message
-    pub fn send(&self, to: &str, message: &str, ttl_seconds: Option<i64>) -> SqliteResult<i64> {
+    pub fn send(&self, to: &str, message: &str, ttl_seconds: Option<i64>, thread_id: Option<&str>) -> SqliteResult<i64> {
         if to.trim().is_empty() {
             return Err(rusqlite::Error::InvalidParameterName(
                 "recipient must not be empty".to_string(),
@@ -115,6 +115,13 @@ impl Client {
             if ttl <= 0 {
                 return Err(rusqlite::Error::InvalidParameterName(
                     "ttl_seconds must be a positive number".to_string(),
+                ));
+            }
+        }
+        if let Some(tid) = thread_id {
+            if tid.trim().is_empty() {
+                return Err(rusqlite::Error::InvalidParameterName(
+                    "thread_id must not be empty".to_string(),
                 ));
             }
         }
@@ -152,8 +159,8 @@ impl Client {
         }
 
         conn.execute(
-            "INSERT INTO messages(sender, recipient, body, ttl_seconds, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![&self.agent_id, recipient, message, ttl_seconds, Self::now()],
+            "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![&self.agent_id, recipient, message, thread_id, ttl_seconds, Self::now()],
         )?;
 
         Ok(conn.last_insert_rowid())
@@ -544,5 +551,43 @@ mod tests {
 
         let result = client.search("hello", -1);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_send_rejects_empty_recipient() {
+        let client = Client::new("test_send_recipient", "tester").unwrap();
+        let result = client.send("", "hello", None, None);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("recipient must not be empty"));
+    }
+
+    #[test]
+    fn test_send_rejects_whitespace_recipient() {
+        let client = Client::new("test_send_ws_recip", "tester").unwrap();
+        let result = client.send("   ", "hello", None, None);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("recipient must not be empty"));
+    }
+
+    #[test]
+    fn test_send_rejects_non_positive_ttl() {
+        let client = Client::new("test_send_ttl", "tester").unwrap();
+        for ttl in &[Some(0), Some(-1), Some(-100)] {
+            let result = client.send("bob", "hello", *ttl, None);
+            assert!(result.is_err());
+            assert!(result.unwrap_err().to_string().contains("ttl_seconds must be a positive number"));
+        }
+    }
+
+    #[test]
+    fn test_send_rejects_empty_thread_id() {
+        let client = Client::new("test_send_thread", "tester").unwrap();
+        let result = client.send("bob", "hello", None, Some(""));
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("thread_id must not be empty"));
+
+        let result = client.send("bob", "hello", None, Some("   "));
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("thread_id must not be empty"));
     }
 }
