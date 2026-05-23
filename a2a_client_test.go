@@ -976,6 +976,22 @@ func TestRecvNegativeLimitFails(t *testing.T) {
 	}
 }
 
+func TestRecvNegativeWaitFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "tester"
+	c.Register("receiver", "", "", 0, false)
+
+	_, err := c.Recv(RecvOpts{Wait: -1})
+	if err == nil {
+		t.Fatal("expected error for Recv with negative wait, got nil")
+	}
+	if !strings.Contains(err.Error(), "wait") {
+		t.Fatalf("expected error about wait, got: %v", err)
+	}
+}
+
 func TestThreadEmptyIDFails(t *testing.T) {
 	c, cleanup := setupTestProject(t)
 	defer cleanup()

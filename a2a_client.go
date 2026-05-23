@@ -176,6 +176,9 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 	if opts.Limit < 0 {
 		return nil, fmt.Errorf("limit must be a non-negative integer")
 	}
+	if opts.Wait < 0 {
+		return nil, fmt.Errorf("wait must be a non-negative number of seconds")
+	}
 	c.CleanupExpired()
 	c.Touch()
 
