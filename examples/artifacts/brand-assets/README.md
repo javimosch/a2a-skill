@@ -44,4 +44,14 @@ python3 examples/artifacts/brand-assets/build.py --cli opencode
 
 ## Fallback
 
-If agents encounter API errors, the build script generates fallback assets directly — a gradient SVG banner, an ASCII logo, and a color palette HTML page — ensuring output is always produced.
+The build script uses a two-tier approach to guarantee output:
+
+1. **Agent path** — Designer proposes a brand identity, reviewer critiques, converter generates assets
+2. **Fallback path** — If agents are unavailable (API errors, key limits), the script generates assets directly
+
+Fallback output includes:
+- `banner.svg` — Gradient SVG banner with A2A branding (always produced)
+- `palette.html` — Color palette gallery page with brand guidelines (always produced)
+- `logo.txt` — ASCII art logo (always produced)
+
+This ensures the artifact always produces output regardless of AI CLI availability.
