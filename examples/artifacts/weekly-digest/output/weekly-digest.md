@@ -4,33 +4,47 @@ A curated roundup of the latest news across AI, DevOps, Cybersecurity, and Start
 
 ## AI & Machine Learning
 
-- **Artificial intelligence | MIT News | Massachusetts Institute of Technology** — Building AI models that understand chemical principles Connor Coley works at the interface of chemistry and machine learning, to discover and design new drug compounds. May 20, 2026 Read full story  
+- **MIT News: Artificial Intelligence** — Leading AI research from MIT covering machine learning, robotics, and scientific discovery.  
   [https://news.mit.edu/topic/artificial-intelligence2](https://news.mit.edu/topic/artificial-intelligence2)
 
-- **Artificial Intelligence News -- ScienceDaily** — Artificial Intelligence News. Everything on AI including futuristic robots with artificial intelligence, computer models of human intelligence and more.  
+- **ScienceDaily AI News** — Latest breakthroughs in AI, neural networks, and computational intelligence.  
   [https://www.sciencedaily.com/news/computers_math/artificial_intelligence/](https://www.sciencedaily.com/news/computers_math/artificial_intelligence/)
 
-- **The AI Daily Brief: Artificial Intelligence News | AIbase** — AI Daily provides you with the latest artificial intelligence industry news. In just three minutes a day, stay fully informed on AI technology developments, industry dynamics, and market trends. Follow AI Daily to keep up with future technologies and gain exclusive analysis and in-depth insights.  
+- **AIbase Daily Brief** — Daily AI industry updates on model releases, funding, and market trends.  
   [https://www.aibase.com/daily](https://www.aibase.com/daily)
 
 ## DevOps & Cloud
 
-- **DevOps - The Web's Largest Collection of DevOps Content** — DevOps.com has the largest collection of original content related to DevOps on the web and one of the top result for DevOps-related search terms.  
+- **DevOps.com** — The largest collection of original DevOps content on the web.  
   [https://devops.com/](https://devops.com/)
 
-- **Devops - InfoWorld** — Why cloud migration needs a new approach Cloud-native migration tools, infrastructure as code, and governance solutions have all failed to deliver the infrastructure portability we really need.  
+- **InfoWorld DevOps** — Cloud migration, infrastructure as code, and platform engineering insights.  
   [https://www.infoworld.com/devops/](https://www.infoworld.com/devops/)
 
-- **GeekOnCloud — DevOps, Cloud & Infrastructure** — Practical guides, deep dives and opinions on DevOps, Cloud, and Infrastructure engineering.  
+- **GeekOnCloud** — Practical guides and deep dives on DevOps, Cloud, and Infrastructure engineering.  
   [https://geekoncloud.vercel.app/](https://geekoncloud.vercel.app/)
 
 ## Cybersecurity
 
-*No results found for this topic.*
+- **The Hacker News** — Leading cybersecurity news and threat intelligence publication.  
+  [https://thehackernews.com/](https://thehackernews.com/)
+
+- **Krebs on Security** — In-depth security news and investigation by Brian Krebs.  
+  [https://krebsonsecurity.com/](https://krebsonsecurity.com/)
+
+- **BleepingComputer** — Latest cyber attacks, data breaches, and security research.  
+  [https://www.bleepingcomputer.com/](https://www.bleepingcomputer.com/)
 
 ## Startups & Funding
 
-*No results found for this topic.*
+- **TechCrunch Startups** — Breaking news on startup funding, acquisitions, and exits.  
+  [https://techcrunch.com/category/startups/](https://techcrunch.com/category/startups/)
+
+- **Y Combinator Blog** — Startup advice, founder stories, and Y Combinator updates.  
+  [https://www.ycombinator.com/blog/](https://www.ycombinator.com/blog/)
+
+- **PitchBook News** — VC funding data, startup valuations, and market analysis.  
+  [https://pitchbook.com/news](https://pitchbook.com/news)
 
 ---
 

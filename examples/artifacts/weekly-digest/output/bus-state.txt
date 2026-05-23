@@ -1,4 +1,4 @@
-[21:58:46] #1 collector -> scout
+[22:15:13] #1 collector -> scout
     Your task: You are the news scout. Research the latest tech news across multiple topics.
     
     You have shell access. Use ddgr for web search — it returns JSON.
@@ -15,7 +15,7 @@
        a2a send curator SCOUT_DATA:<your structured findings with all topics and URLs> --from scout
     
     Important: Include the search results grouped by topic. Format each entry with a title and URL.
-[21:58:46] #2 collector -> curator
+[22:15:13] #2 collector -> curator
     Your task: You are the news curator. Wait for the scout to send you search data.
     
     Steps:
@@ -30,7 +30,7 @@
     5. Organize selections by topic, with the most important topic first
     6. Send curated list to the editor:
        a2a send editor CURATED:<your curated list with topic groupings, summaries, and source URLs> --from curator
-[21:58:46] #3 collector -> editor
+[22:15:13] #3 collector -> editor
     Your task: You are the digest editor. Wait for the curator to send you the curated stories.
     
     Steps:
