@@ -102,6 +102,9 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 	if strings.TrimSpace(to) == "" {
 		return 0, fmt.Errorf("recipient must not be empty")
 	}
+	if ttlSeconds != nil && *ttlSeconds <= 0 {
+		return 0, fmt.Errorf("ttl_seconds must be a positive number of seconds")
+	}
 	db, err := c.connect()
 	if err != nil {
 		return 0, err
