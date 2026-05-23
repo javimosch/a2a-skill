@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sqlite3
 import sys
@@ -115,7 +116,6 @@ def die(msg: str, code: int = 1) -> None:
 
 def _validate_finite_float(value: float | None, name: str) -> None:
     """Reject NaN or infinity for float CLI parameters that drive blocking loops."""
-    import math
     if value is not None and (math.isnan(value) or math.isinf(value)):
         die(f"--{name} must be a finite number")
 
