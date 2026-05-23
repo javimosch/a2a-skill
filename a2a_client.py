@@ -19,6 +19,21 @@ def _validate_project_name(name: str) -> None:
         raise ValueError(f"invalid project name {name!r} — must not contain path separators or start with '.'")
 
 
+# Max lengths for input validation
+_MAX_AGENT_ID_LENGTH = 256
+_MAX_THREAD_ID_LENGTH = 256
+_MAX_BODY_LENGTH = 100_000
+
+
+def _validate_agent_id(agent_id: str, label: str = "agent_id") -> None:
+    """Validate agent ID is not empty and not too long."""
+    if not agent_id or not agent_id.strip():
+        raise ValueError(f"{label} must not be empty")
+    agent_id = agent_id.strip()
+    if len(agent_id) > _MAX_AGENT_ID_LENGTH:
+        raise ValueError(f"{label} too long ({len(agent_id)} chars, max {_MAX_AGENT_ID_LENGTH})")
+
+
 class A2AClient:
     """Client for a2a peer-to-peer messaging."""
 
@@ -37,6 +52,7 @@ class A2AClient:
         if not agent_id or not agent_id.strip():
             raise ValueError("agent_id must not be empty")
         _validate_project_name(project)
+        _validate_agent_id(agent_id, "agent_id")
         self.project = project
         self.agent_id = agent_id
         self.db_path = Path.home() / ".a2a" / project / "database.db"
@@ -88,6 +104,12 @@ class A2AClient:
                 raise ValueError("recipient must not be empty")
             if ttl_seconds is not None and ttl_seconds <= 0:
                 raise ValueError("ttl_seconds must be a positive number of seconds")
+            if thread_id is not None and not thread_id.strip():
+                raise ValueError("thread_id must not be empty")
+            if thread_id is not None and len(thread_id) > _MAX_THREAD_ID_LENGTH:
+                raise ValueError(f"thread_id too long ({len(thread_id)} chars, max {_MAX_THREAD_ID_LENGTH})")
+            if len(message) > _MAX_BODY_LENGTH:
+                raise ValueError(f"message body too long ({len(message)} chars, max {_MAX_BODY_LENGTH})")
             recipient = None if to.lower() in ("all", "*", "broadcast") else to
             cur = conn.execute(
                 "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "

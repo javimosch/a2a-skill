@@ -60,6 +60,10 @@ CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
 
 # Max length for agent IDs (prevents SQLite/text abuse)
 MAX_ID_LENGTH = 256
+# Max length for thread IDs
+MAX_THREAD_ID_LENGTH = 256
+# Max length for message bodies (prevents abuse, ~100KB)
+MAX_BODY_LENGTH = 100_000
 
 # Column list used in all message queries (avoids repetition and drift)
 MSG_COLS = "id, sender, recipient, body, thread_id, created_at"
@@ -326,6 +330,10 @@ def cmd_send(args) -> None:
     thread_id = getattr(args, "thread", None)
     if thread_id is not None and not thread_id.strip():
         die("--thread must not be empty")
+    if thread_id is not None and len(thread_id) > MAX_THREAD_ID_LENGTH:
+        die(f"--thread too long ({len(thread_id)} chars, max {MAX_THREAD_ID_LENGTH})")
+    if len(body) > MAX_BODY_LENGTH:
+        die(f"message body too long ({len(body)} chars, max {MAX_BODY_LENGTH})")
     cur = conn.execute(
         "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
         "VALUES (?,?,?,?,?,?)",
