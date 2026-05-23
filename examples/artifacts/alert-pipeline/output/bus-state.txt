@@ -1,0 +1,65 @@
+[00:44:42] #1 collector -> monitor
+    Your task: You are the system monitor. Your job: check system conditions and report findings.
+    
+    Steps:
+    1. First, run: df -h /app/agent/data 2>/dev/null || df -h / 2>/dev/null
+       to check disk usage. Extract the 'Use%' value (e.g., '23%').
+    2. Run: free -h | head -3 2>/dev/null || cat /proc/meminfo | head -5
+       to check memory usage.
+    3. Run: uptime 2>/dev/null
+       to see system load.
+    4. Run: ddgr --json --num 3 'latest cybersecurity alerts 2026' 2>/dev/null || true
+       to check for real news.
+    5. Compile findings and send to the notifier:
+       a2a send notifier 'ALERT: <your structured alert data with disk, memory, load, and any news findings>' --from monitor
+    
+    Include exact numbers for disk usage %, memory used/total, load averages, and any relevant security headlines.
+[00:44:42] #2 collector -> notifier
+    Your task: You are the alert notifier. Wait for the monitor to send you system data.
+    
+    Steps:
+    1. Receive the monitor's message:
+       a2a recv --as notifier --wait 60
+    2. Extract the system metrics from the ALERT message
+    3. Evaluate each metric against thresholds:
+       - Disk > 80% = CRITICAL, > 60% = WARNING
+       - Memory > 80% = CRITICAL, > 60% = WARNING
+       - Load > 4 = CRITICAL, > 2 = WARNING
+    4. If any news was found, include a news section
+    5. Write a formatted alert log with:
+       - Timestamp and severity banner
+       - System health table (metric | value | status | threshold)
+       - Recommendations section
+    6. Broadcast the complete alert:
+       a2a send all 'ALERT_START\n<your formatted alert log>\nALERT_END' --from notifier
+    
+    Use the format:
+       [ALERT] Severity: <PASS/WARNING/CRITICAL>
+       Timestamp: <date>
+       ---
+       | Metric | Value | Status | Threshold |
+       |---
+       ...
+       ---
+       Recommendations: ...
+[00:44:57] #3 monitor -> notifier
+    ALERT: {"disk":"/dev/mapper/pve-vm--100--disk--0 69G total 26G used 39%","memory":"8.0Gi total 2.4Gi used 5.6Gi available","swap":"1.0Gi total 48Ki used","load":"0.35 0.44 0.42","news":"no cybersecurity headlines found","timestamp":"2026-05-23 00:44"}
+[00:45:01] #4 notifier -> ALL
+    ALERT_START
+    [ALERT] Severity: PASS
+    Timestamp: 2026-05-23 00:44
+    ---
+    | Metric | Value | Status | Threshold |
+    |--------|-------|--------|-----------|
+    | Disk Usage | 39% (26G/69G) | ✅ PASS | >60% WARN, >80% CRIT |
+    | Memory Usage | 30% (2.4Gi/8.0Gi) | ✅ PASS | >60% WARN, >80% CRIT |
+    | Swap Usage | 0.005% (48Ki/1.0Gi) | ✅ PASS | N/A |
+    | Load Average | 0.35 (1m) | ✅ PASS | >2 WARN, >4 CRIT |
+    |---|---|---|---|
+    | 1m Load | 0.35 | PASS | >2 WARN |
+    | 5m Load | 0.44 | PASS | >2 WARN |
+    | 15m Load | 0.42 | PASS | >2 WARN |
+    ---
+    News: No cybersecurity headlines found.
+    Recommendations: All systems nominal. No action required.
+    ALERT_END
