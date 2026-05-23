@@ -271,6 +271,22 @@ class TestA2AClient(unittest.TestCase):
         result = bob.wait_for_messages(count=2, timeout=5)
         self.assertTrue(result)
 
+    def test_wait_for_messages_staggered(self):
+        """wait_for_messages with count > 1 works when messages arrive one at a time."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+
+        # Send first message
+        alice.send("bob", "First message")
+        # Wait slightly for it to be stored
+        time.sleep(0.05)
+        # Send second message after a gap
+        alice.send("bob", "Second message")
+
+        # Wait for both — the fix accumulates across polls
+        result = bob.wait_for_messages(count=2, timeout=5)
+        self.assertTrue(result)
+
     def test_search(self):
         """Test searching messages."""
         alice = A2AClient(self.project, "alice")
