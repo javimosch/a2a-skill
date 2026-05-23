@@ -38,22 +38,32 @@ func getFlagValue(name string) string {
 }
 
 // getFlagInt returns int value for --name.
+// Exits with error if the value is present but not a valid integer.
 func getFlagInt(name string) int {
 	v := getFlagValue(name)
 	if v == "" {
 		return 0
 	}
-	n, _ := strconv.Atoi(v)
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "a2a: --%s must be an integer\n", name)
+		os.Exit(1)
+	}
 	return n
 }
 
 // getFlagFloat returns float64 for --name.
+// Exits with error if the value is present but not a valid float.
 func getFlagFloat(name string) float64 {
 	v := getFlagValue(name)
 	if v == "" {
 		return 0
 	}
-	n, _ := strconv.ParseFloat(v, 64)
+	n, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "a2a: --%s must be a number\n", name)
+		os.Exit(1)
+	}
 	return n
 }
 
@@ -212,7 +222,7 @@ func cmdRegister() {
 	prompt := getFlagValue("--prompt")
 	cli := getFlagValue("--cli")
 	pid := getFlagInt("--pid")
-	if hasFlag("--pid") && pid < 0 {
+	if hasFlag("--pid") && pid <= 0 {
 		fmt.Fprintln(os.Stderr, "a2a: --pid must be a positive integer")
 		os.Exit(1)
 	}
@@ -649,7 +659,7 @@ func cmdWait() {
 
 func cmdClear() {
 	if !hasFlag("--yes") {
-		fmt.Fprintln(os.Stderr, "a2a: refusing without --yes")
+		fmt.Fprintln(os.Stderr, "a2a: refusing without --yes: this deletes the entire project database and all messages. pass --yes to confirm")
 		os.Exit(1)
 	}
 	c := newClient("")
