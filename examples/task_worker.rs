@@ -66,7 +66,7 @@ fn main() {
                                 .as_secs_f64()
                         });
 
-                        if let Err(e) = client.send("coordinator", &result.to_string(), None) {
+                        if let Err(e) = client.send("coordinator", &result.to_string(), None, None) {
                             eprintln!("Failed to send result: {}", e);
                         } else {
                             println!("Result sent for task {}", task.id);
