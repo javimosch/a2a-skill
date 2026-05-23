@@ -352,7 +352,42 @@
    352|- Use `-t w` (past week) instead of `-t m` to reduce query scope
    353|- Increase `--num 3` to avoid hitting rate limits too fast
    354|- Run from a residential IP or use a different search tool
-   355|- The build script should detect empty ddgr results and fall back gracefully
-   356|  (as the weekly-digest build script does)
-   357|
+- The build script should detect empty ddgr results and fall back gracefully
+  (as the weekly-digest build script does)
+
+### AI CLI API key quotas cause agent spawn failures
+
+When spawning multiple agents (3+) for a collaborative artifact, one or more
+agents may fail to start due to API key rate limits or quota exhaustion on
+the AI CLI service.
+
+In the ascii-gallery build:
+- The finder and artist agents registered successfully on the a2a bus
+- The curator agent failed with "Key limit exceeded" before completing setup
+- This left the build script waiting indefinitely for curator output
+
+**Mitigations:**
+- Build scripts should implement an `--offline` flag that generates output
+  without spawning agents (the ascii-gallery build has this)
+- Use agent health checks (as `_util.py`'s `_check_agent_health()` does)
+  to detect spawn failures early and fall back gracefully
+- Reduce concurrent agent count to 2 when API quota is tight
+- Consider staggering agent spawns with a short delay between each
+
+### Agent build scripts need timeouts on waiting loops
+
+Build scripts that use `a2a recv --as collector --wait N` in a polling loop
+must have an overall deadline that kills the loop and falls back to cached
+or partial output. Without this, a single agent failure causes the entire
+build to hang.
+
+The ascii-gallery build uses `--timeout N` with an overall deadline, but
+when the curator agent fails to spawn (API key limit), the build waits the
+full timeout before falling back to the offline-generated output.
+
+**Fix:** All artifact build scripts should implement a two-tier approach:
+1. Generate core output via local tool calls (no agents) first
+2. Then spawn agents and try to get agent-curated output
+3. Use the local output as fallback if agents fail or timeout
+
    358|
