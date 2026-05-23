@@ -356,12 +356,24 @@ def extract_first_code_block(body: str) -> str:
 
 
 def send_task(a2a_bin: str, project: str, agent_id: str, body: str,
-              timeout: int = 30) -> bool:
+              timeout: int = 30, sender: str = "collector") -> bool:
     """Send a message body via stdin to avoid shell quoting issues.
 
     Uses subprocess directly (not run_a2a) to pass the body through stdin
     rather than embedding it in a shell command, which would break on any
     single quotes or double quotes in the body text.
+
+    Attempts to register the sender agent first if it may not be registered.
+    The sender is auto-registered as a build-script agent so that the a2a
+    'send' command does not reject it as an unknown sender.
+
+    Args:
+        a2a_bin: Path to a2a binary
+        project: Project name
+        agent_id: Destination agent
+        body: Message body
+        timeout: Subprocess timeout
+        sender: Sender agent ID (default: 'collector')
 
     Returns True on success, False on failure.
     """
@@ -369,8 +381,14 @@ def send_task(a2a_bin: str, project: str, agent_id: str, body: str,
     env = os.environ.copy()
     env["A2A_PROJECT"] = project
     try:
+        # Ensure sender is registered so a2a send doesn't reject it
+        subprocess.run(
+            [a2a_bin, "register", sender, "--role", "build-script",
+             "--cli", "python", "--upsert"],
+            capture_output=True, timeout=timeout, env=env,
+        )
         proc = subprocess.run(
-            [a2a_bin, "send", agent_id, "-", "--from", "collector"],
+            [a2a_bin, "send", agent_id, "-", "--from", sender],
             input=body.encode(), capture_output=True, timeout=timeout, env=env,
         )
         if proc.returncode != 0:
