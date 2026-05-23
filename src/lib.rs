@@ -326,6 +326,11 @@ impl Client {
 
     /// Get thread
     pub fn thread(&self, thread_id: &str) -> SqliteResult<Vec<Message>> {
+        if thread_id.trim().is_empty() {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "thread id must not be empty".to_string(),
+            ));
+        }
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             "SELECT id, sender, recipient, body, thread_id, created_at FROM messages \
