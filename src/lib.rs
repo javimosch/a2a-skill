@@ -303,6 +303,11 @@ impl Client {
                 "search query must not be empty".to_string(),
             ));
         }
+        if limit <= 0 {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "limit must be a positive integer".to_string(),
+            ));
+        }
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             "SELECT id, sender, recipient, body, thread_id, created_at FROM messages \
@@ -493,5 +498,24 @@ mod tests {
         assert_eq!(stats.messages, 100);
         assert_eq!(stats.direct_messages, 80);
         assert_eq!(stats.broadcasts, 20);
+    }
+
+    #[test]
+    fn test_search_rejects_empty_query() {
+        let client = Client::new("test_search_query", "tester").unwrap();
+        let result = client.search("", 10);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("query must not be empty"));
+    }
+
+    #[test]
+    fn test_search_rejects_non_positive_limit() {
+        let client = Client::new("test_search_limit", "tester").unwrap();
+        let result = client.search("hello", 0);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("limit must be a positive integer"));
+
+        let result = client.search("hello", -1);
+        assert!(result.is_err());
     }
 }
