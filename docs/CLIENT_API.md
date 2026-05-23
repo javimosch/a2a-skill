@@ -273,7 +273,10 @@ Search all messages by content substring (case-insensitive).
 
 **Parameters:**
 - `query`: Search substring (case-insensitive)
-- `limit`: Max messages to return
+- `limit`: Max messages to return (must be positive)
+
+**Raises:**
+- `ValueError`: If query is empty or limit is not a positive integer
 
 **Returns:** List of matching message dicts (sorted by creation time, newest first)
 
