@@ -279,6 +279,14 @@
   `cmdRegister()` did not validate negative PID values.
   **Fixed:** Go CLI `cmdRegister()` now rejects `--pid < 0`, matching Python
   CLI behavior.
+- `recv(wait)` and `wait_for_messages(timeout)` NaN/Inf in Python clients:
+  Python sync and async client libraries accepted NaN and Inf for `wait`
+  and `timeout` parameters, which could cause infinite loops in the recv
+  polling loop (e.g. `deadline = inf` makes `time.time() >= deadline`
+  always False).
+  **Fixed:** Both `A2AClient.recv()` and `A2AClientAsync.recv()` now reject
+  NaN/Inf `wait` via `math.isfinite()`. Both `wait_for_messages()` methods
+  reject NaN/Inf `timeout`, matching the CLI's `_validate_finite_float()`. 
 
 **Fix:** When adding a new validation check to `a2a.py`, add the equivalent
    256|check to `cmd/a2a/main.go` at the same time. Run both test suites before
