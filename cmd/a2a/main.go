@@ -391,6 +391,11 @@ func cmdRecv() {
 		os.Exit(1)
 	}
 
+	if hasFlag("--wait") && (math.IsInf(waitSec, 0) || math.IsNaN(waitSec)) {
+		fmt.Fprintln(os.Stderr, "a2a: --wait must be a finite number")
+		os.Exit(1)
+	}
+
 	if limit < 0 {
 		fmt.Fprintln(os.Stderr, "a2a: --limit must be a non-negative integer")
 		os.Exit(1)
