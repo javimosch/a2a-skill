@@ -491,3 +491,31 @@ Python-only validation rules.
 This multi-tier approach (agent path → fallback path) ensures the
 artifact always produces output even when API keys are exhausted.
 
+### Cross-client send() validation — Node.js and Rust need sender/recipient existence checks
+
+The Python and Go clients verify that both the sender and recipient agents
+exist in the `agents` table before inserting a message. The Node.js and Rust
+clients did not perform these checks (fixed in v1.4), silently inserting messages
+from unregistered senders or to unknown recipients.
+
+This matters because agent build scripts that use the Python `a2a_client.py`
+or Go library expect these validation errors. A script sending via the Node.js
+or Rust client would not get the expected error and would proceed with a broken
+message that no agent can read.
+
+**Fix (applied in v1.4 across all clients):**
+- **Node.js** (`a2a_client.js`): `send()` now queries `agents` table for sender
+  and recipient existence before INSERT. Closes the database handle on error.
+- **Rust** (`src/lib.rs`): `send()` uses `query_row` with `COUNT(1)` to check
+  sender and recipient existence before INSERT. New tests added for unknown
+  sender and unknown recipient rejection.
+
+**Checklist when hardening client `send()`:**
+1. Validate `to` not empty/whitespace (all clients: ✓)
+2. Validate `ttl_seconds > 0` if set (all clients: ✓)
+3. Validate sender exists in `agents` table (Python, Go, Node.js, Rust: ✓)
+4. Validate recipient exists for non-broadcast (Python, Go, Node.js, Rust: ✓)
+5. Close the database handle on validation failure to avoid resource leaks
+   (Node.js: fixed in v1.4, Rust: sqlite3 handles via Drop)
+
+
