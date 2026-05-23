@@ -1,0 +1,290 @@
+[00:41:41] #1 collector -> researcher
+    Your task: You are the web researcher. Topic: "best AI developer tools startups 2026"
+    
+    You have shell access. Use ddgr for web search — it returns JSON.
+    Example: ddgr --json --num 10 "your search query"
+    
+    Steps:
+    1. Search: ddgr --json --num 10 "best AI developer tools startups 2026"
+    2. Search again: ddgr --json --num 10 --site techcrunch.com "AI developer tools 2026"
+    3. Read the JSON output carefully — extract business names, descriptions, URLs
+    4. For each result extract: name, description, URL, key features/focus area
+    5. Send your findings to the mapper:
+       a2a send mapper 'FINDINGS: <structured list with name, description, url, focus>' --from researcher
+    
+    Important: Send structured text (not raw JSON). Include company/business name, what they do, their URL, and their primary focus area.
+[00:41:41] #2 collector -> mapper
+    Your task: You are the data mapper. Wait for the researcher to send you findings.
+    
+    Steps:
+    1. Receive the researcher's data:
+       a2a recv --as mapper --wait 60
+    2. Extract each business/organization from the researcher's FINDINGS
+    3. Format into a structured JSON array with fields: name, description, url, focus_area
+    4. Compute stats: total count, focus areas breakdown
+    5. Write a markdown report with:
+       - Title and date
+       - Executive summary (how many found, variety of focus areas)
+       - Table of each entry (name | description | focus | URL)
+       - Statistics section
+    6. Broadcast the complete report:
+       a2a send all 'REPORT_START\n<your full markdown report>\nJSON_START\n<JSON array>\nJSON_END\nREPORT_END' --from mapper
+    
+    The report must be between REPORT_START and REPORT_END markers, with the JSON data between JSON_START and JSON_END markers.
+[00:42:58] #3 researcher -> mapper
+    FINDINGS: Top AI Developer Tools Startups 2026
+    
+    === AI CODING AGENTS & CLI TOOLS ===
+    1. Anthropic (Claude Code) - Terminal-based AI coding agent with deep codebase understanding. URL: claude.ai. Focus: AI coding agent/CLI
+    2. Cognition (Devin AI) - Autonomous AI software engineer that plans, codes, debugs, and deploys end-to-end. URL: devin.ai. Focus: Autonomous coding
+    3. Anysphere (Cursor) - AI-first code editor with advanced autocompletion and codebase-aware chat. URL: cursor.sh. Focus: AI code editor
+    4. StackBlitz (Bolt.new) - Build, edit, deploy full-stack web apps in browser from natural language. URL: bolt.new. Focus: AI app builder
+    5. Replit (Replit Agent) - Builds complete applications from natural language descriptions. URL: replit.com/agent. Focus: AI app builder
+    6. Codeium (Windsurf) - AI code editor with Cascade deep contextual coding agent. URL: windsurf.com. Focus: AI code editor
+    7. Lovable (fka GPT Engineer) - Create and deploy web apps from a single prompt. URL: lovable.dev. Focus: AI app builder
+    8. Augment Code - AI coding platform with cross-repo codebase understanding for enterprise. URL: augmentcode.com. Focus: Enterprise AI coding
+    9. Magic.dev - AI software engineer platform handling complex dev tasks autonomously. URL: magic.dev. Focus: Autonomous coding
+    10. Factory.ai - AI platform automating repetitive coding tasks at scale. URL: factory.ai. Focus: AI coding automation
+    11. Sourcegraph (Cody) - AI assistant for code understanding and generation across entire codebases. URL: sourcegraph.com/cody. Focus: Code understanding AI
+    12. Kilo Code - Open-source VS Code extension supporting 500+ models at zero markup. URL: kilocode.ai. Focus: Open-source AI coding
+    13. Aider - Terminal-based AI pair programming with deep git integration. URL: aider.chat. Focus: AI pair programming
+    14. Plandex - Open-source AI coding agent for large projects. URL: github.com/plandex-ai/plandex. Focus: Open-source AI coding
+    15. Continue - Open-source pluggable AI code completion for VS Code/JetBrains. URL: continue.dev. Focus: Open-source AI completion
+    16. Supermaven - Ultra-fast AI code completion with 1M token context. URL: supermaven.com. Focus: AI code completion
+    
+    === CODE REVIEW & QUALITY ===
+    17. CodeRabbit - AI-driven contextual pull request reviews with actionable feedback. URL: coderabbit.ai. Focus: AI PR review
+    18. Qodo (CodiumAI) - Code review and automated test generation platform. URL: qodo.ai. Focus: AI code review + testing
+    19. Sourcery - AI code reviewer supporting 30+ languages. URL: sourcery.ai. Focus: AI code review
+    20. Greptile - AI bot for in-depth code review and PR analysis. URL: greptile.com. Focus: AI PR analysis
+    21. What The Diff - AI tool for summarizing and analyzing code diffs. URL: whatthediff.ai. Focus: AI diff analysis
+    
+    === TESTING & QA ===
+    22. Meticulous - AI-driven visual and functional testing. URL: meticulous.ai. Focus: AI visual testing
+    23. Checksum AI - AI automated software testing and validation. URL: checksum.ai. Focus: AI software testing
+    24. OctoMind - AI-powered end-to-end testing automation. URL: octomind.dev. Focus: AI e2e testing
+    25. KushoAI - AI-driven API testing. URL: kusho.ai. Focus: AI API testing
+    
+    === SECURITY ===
+    26. Nullify.ai - AI-powered security vulnerability detection. URL: nullify.ai. Focus: AI security scanning
+    27. Pixee - AI bot for security-focused PR reviews and automatic fixes. URL: pixee.ai. Focus: AI security fixes
+    28. Gecko Security - AI security analysis for code. URL: gecko.security. Focus: AI code security
+    29. Corgea - AI-native application security. URL: corgea.com. Focus: AI app security
+    
+    === PRODUCTIVITY & DEV TOOLS ===
+    30. Raycast - AI-powered productivity launcher with coding capabilities. URL: raycast.com. Focus: AI productivity
+    31. SpecStory - Cursor/VS Code extension for summarizing AI chat context. URL: specstory.com. Focus: AI context sharing
+    32. CodeCosts - Compare pricing across AI coding tools. URL: codecosts.pages.dev. Focus: AI cost comparison
+    33. Meticulous - AI visual/functional testing platform. URL: meticulous.ai. Focus: AI testing
+    
+    === APP BUILDERS & UI GENERATORS ===
+    34. Vercel (v0.dev) - Generate UI components and full pages from text prompts. URL: v0.dev. Focus: AI UI generation
+    35. Create.xyz - AI-powered app creation from natural language. URL: create.xyz. Focus: AI app creation
+    36. Dyad.sh - Free, local, open-source AI app builder. URL: dyad.sh. Focus: Open-source AI app builder
+    37. Bolt.diy - Open-source fork of Bolt.new supporting any LLM. URL: github.com/stackblitz-labs/bolt.diy. Focus: Open-source AI app builder
+    38. Capacity - Agentic platform using Claude Code for full-stack web apps. URL: capacity.so. Focus: AI web app builder
+    39. Mage - Generate full-stack apps from natural language prompts. URL: usemage.ai. Focus: AI full-stack generation
+    
+    === NOTABLE OPEN-SOURCE CODING AGENTS ===
+    40. OpenCode - Open-source terminal AI agent, 95K+ stars, 75+ providers. URL: github.com/opencode-ai/opencode. Focus: Open-source terminal AI agent
+    41. OpenHands (OpenDevin) - Open-source AI software engineer. URL: opendevin.ai. Focus: Open-source autonomous coding
+    42. Roo Code - Popular open-source VS Code extension with multi-model support. URL: roocode.com. Focus: Open-source VS Code AI
+    43. Cline (Claude Dev) - VS Code extension with full file system access. URL: github.com/cline/cline. Focus: Open-source VS Code AI
+    44. Gemini CLI - Googles terminal coding agent with 1M token context. URL: github.com/google-gemini/gemini-cli. Focus: Terminal AI agent
+    45. OpenAI Codex CLI - CLI coding agent with cloud sandboxed execution. URL: openai.com/blog/openai-codex. Focus: Terminal AI agent
+    46. Wiggum CLI - Open-source agent scanning codebases and running autonomous coding loops. URL: wiggum.app. Focus: Open-source coding agent
+    47. AgentsMesh - Self-hostable AI agent workforce platform for orchestrating agents. URL: agentsmesh.ai. Focus: Multi-agent orchestration
+    48. Fine.dev - AI dev agent that autonomously writes and iterates code. URL: fine.dev. Focus: Autonomous dev agent
+    
+    === AI FRAMEWORKS & PLATFORMS ===
+    49. LangChain - Framework for building LLM-powered applications. URL: langchain.com. Focus: AI framework
+    50. Vercel AI SDK - TypeScript toolkit for AI-powered UIs. URL: sdk.vercel.ai. Focus: AI SDK
+    51. LiteLLM - Unified API proxy for 100+ LLM providers. URL: github.com/BerriAI/litellm. Focus: LLM API proxy
+    52. CrewAI - Multi-agent orchestration platform. URL: crewai.com. Focus: Multi-agent framework
+    53. AutoGen (Microsoft) - Multi-agent framework for AI agent teams. URL: github.com/microsoft/autogen. Focus: Multi-agent framework
+[00:43:18] #4 researcher -> mapper
+    FINDINGS ADDENDUM: TechCrunch & Market Intelligence on AI Dev Tools 2026
+    
+    === KEY MARKET TRENDS & NEWS (TechCrunch 2025-2026) ===
+    1. Cognition acquires Windsurf (Jul 2025) - Devin AI maker bought Codeium/Windsurf in major consolidation play. URL: techcrunch.com/2025/07/14. Trend: Consolidation in AI coding tools
+    2. Vercel IPO readiness (Apr 2026) - v0.dev parent sees AI agents fuel revenue surge, signals IPO. URL: techcrunch.com/2026/04/13. Trend: AI UI generation commercial success
+    3. a16z AI infra funding (Feb 2026) - What a16z is funding vs ignoring in AI infrastructure. URL: techcrunch.com/2026/02/04. Trend: VC focus in AI dev tools
+    4. Tokenmaxxing harms productivity (Apr 2026) - Too much AI code generation reduces developer productivity. URL: techcrunch.com/2026/04/17. Trend: AI code quality concerns
+    5. 55 AI startups raised $100M+ in 2025 (Jan 2026) - Comprehensive list of well-funded AI startups. URL: techcrunch.com/2026/01/19. Trend: Massive VC investment in AI
+    6. YC Demo Day Mar 2026 - 8 notable startups including AI dev tools, from moon hotels to cattle herding. URL: techcrunch.com/2026/03/28. Trend: YC-backed AI startups
+    7. OpenAI launches agent-building tools (Mar 2025) - New APIs/SDKs for business AI agents. URL: techcrunch.com/2025/03/11. Trend: Platform AI agent tools
+    8. Enterprise AI adoption growing (Dec 2025) - VCs predict strong enterprise AI adoption. URL: techcrunch.com/2025/12/29. Trend: Enterprise AI adoption
+    
+    === NOTABLE AI DEV TOOL STARTUPS (from YC, HN, and curated lists) ===
+    9. Superset (YC P26) - IDE for the agents era, just launched on HN. URL: github.com/superset-sh. Focus: Agent-era IDE
+    10. Exa (YC S21) - The web as a database for AI agents. URL: exa.ai. Focus: Web data for AI agents
+    11. Parsagon (YC W21) - AI for public affairs and government relations. URL: parsagon.ai. Focus: AI for government
+    12. Reality Defender (YC W22) - API for deepfake and GenAI detection. URL: realitydefender.com. Focus: AI security/deepfake detection
+    13. Kilo Code (Kilo-Org) - Open-source VS Code extension supporting 500+ models, 19.5K stars. URL: github.com/Kilo-Org/kilocode. Focus: Open-source AI coding
+    14. ralph-orchestrator - AI agent orchestration framework, 2.9K stars. URL: github.com/mikeyobrien/ralph-orchestrator. Focus: AI agent orchestration
+    15. Genie (automagik-dev) - CLI agent that interviews, plans, dispatches parallel agents. URL: github.com/automagik-dev/genie. Focus: Parallel AI agent coding
+    16. Gryph (safedep) - Security layer for AI coding agents. URL: github.com/safedep/gryph. Focus: AI coding agent security
+    
+    === KEY MARKET OBSERVATIONS ===
+    - Consolidation accelerating: Cognition bought Windsurf, major players acquiring
+    - Open-source boom: Kilo, OpenCode, Plandex, Continue all growing rapidly
+    - Enterprise shift: Augment Code, Qodo targeting large codebases
+    - Security gap: New startups (Gryph, Nullify, Pixee) focused on AI-generated code security
+    - Agent orchestration: Ralph, Genie, CrewAI, AutoGen all enabling multi-agent workflows
+    - Cost optimization: CodeCosts, LiteLLM addressing AI API cost management
+    - Privacy/local-first: Tabby, Continue, Ollama enabling self-hosted AI coding
+    - Browser-based IDEs: Bolt.new, Lovable, Replit Agent competing on zero-setup experience
+[00:43:50] #5 mapper -> ALL
+    REPORT_START
+    # AI Developer Tools Startups 2026 — Mapped Report
+    **Date:** 2026-05-23 | **Generated by:** mapper (data mapper agent)
+    
+    ## Executive Summary
+    The researcher identified **52 unique organizations** across **39 distinct focus areas** in the AI developer tools ecosystem. The landscape spans coding agents, code editors, app builders, testing/QA, security, code review, and multi-agent frameworks. The largest clusters are in AI coding agents/CLIs, open-source AI tools, and AI app builders.
+    
+    ## Directory
+    
+    | # | Name | Description | Focus Area | URL |
+    |---|---|---|---|---|
+    | 1 | Claude Code | Terminal-based AI coding agent from Anthropic | AI coding agent/CLI | https://claude.ai |
+    | 2 | Devin AI | Autonomous AI software engineer from Cognition | Autonomous coding | https://devin.ai |
+    | 3 | Cursor | AI-first code editor from Anysphere | AI code editor | https://cursor.sh |
+    | 4 | Bolt.new | Full-stack web apps from natural language by StackBlitz | AI app builder | https://bolt.new |
+    | 5 | Replit Agent | Complete app builder from natural language | AI app builder | https://replit.com/agent |
+    | 6 | Windsurf | AI code editor by Codeium with Cascade agent | AI code editor | https://windsurf.com |
+    | 7 | Lovable | Web app creation from single prompt | AI app builder | https://lovable.dev |
+    | 8 | Augment Code | Enterprise AI coding with cross-repo understanding | Enterprise AI coding | https://augmentcode.com |
+    | 9 | Magic.dev | Autonomous AI software engineer | Autonomous coding | https://magic.dev |
+    | 10 | Factory.ai | AI coding automation at scale | AI coding automation | https://factory.ai |
+    | 11 | Cody | Code understanding and generation AI by Sourcegraph | Code understanding AI | https://sourcegraph.com/cody |
+    | 12 | Kilo Code | Open-source VS Code extension, 500+ models | Open-source AI coding | https://kilocode.ai |
+    | 13 | Aider | Terminal AI pair programming with git integration | AI pair programming | https://aider.chat |
+    | 14 | Plandex | Open-source coding agent for large projects | Open-source AI coding | https://github.com/plandex-ai/plandex |
+    | 15 | Continue | Open-source pluggable AI code completion | Open-source AI completion | https://continue.dev |
+    | 16 | Supermaven | Ultra-fast AI code completion, 1M token context | AI code completion | https://supermaven.com |
+    | 17 | CodeRabbit | AI contextual PR review | AI PR review | https://coderabbit.ai |
+    | 18 | Qodo | Code review and automated test generation | AI code review + testing | https://qodo.ai |
+    | 19 | Sourcery | AI code reviewer, 30+ languages | AI code review | https://sourcery.ai |
+    | 20 | Greptile | AI bot for code review and PR analysis | AI PR analysis | https://greptile.com |
+    | 21 | What The Diff | AI diff summarization and analysis | AI diff analysis | https://whatthediff.ai |
+    | 22 | Meticulous | AI-driven visual and functional testing | AI visual testing | https://meticulous.ai |
+    | 23 | Checksum AI | AI automated software testing | AI software testing | https://checksum.ai |
+    | 24 | OctoMind | AI-powered end-to-end testing automation | AI e2e testing | https://octomind.dev |
+    | 25 | KushoAI | AI-driven API testing | AI API testing | https://kusho.ai |
+    | 26 | Nullify.ai | AI-powered security vulnerability detection | AI security scanning | https://nullify.ai |
+    | 27 | Pixee | AI bot for security PR reviews and auto-fixes | AI security fixes | https://pixee.ai |
+    | 28 | Gecko Security | AI security analysis for code | AI code security | https://gecko.security |
+    | 29 | Corgea | AI-native application security | AI app security | https://corgea.com |
+    | 30 | Raycast | AI-powered productivity launcher | AI productivity | https://raycast.com |
+    | 31 | SpecStory | AI chat context sharing for Cursor/VS Code | AI context sharing | https://specstory.com |
+    | 32 | CodeCosts | AI coding tool pricing comparison | AI cost comparison | https://codecosts.pages.dev |
+    | 33 | v0.dev | UI component generation from text by Vercel | AI UI generation | https://v0.dev |
+    | 34 | Create.xyz | AI-powered app creation from natural language | AI app creation | https://create.xyz |
+    | 35 | Dyad.sh | Free local open-source AI app builder | Open-source AI app builder | https://dyad.sh |
+    | 36 | Bolt.diy | Open-source Bolt.new fork any LLM | Open-source AI app builder | https://github.com/stackblitz-labs/bolt.diy |
+    | 37 | Capacity | Agentic platform using Claude Code | AI web app builder | https://capacity.so |
+    | 38 | Mage | Full-stack generation from natural language | AI full-stack generation | https://usemage.ai |
+    | 39 | OpenCode | Open-source terminal AI agent 95K+ stars | Open-source terminal AI agent | https://github.com/opencode-ai/opencode |
+    | 40 | OpenHands | Open-source AI software engineer | Open-source autonomous coding | https://opendevin.ai |
+    | 41 | Roo Code | Open-source VS Code extension multi-model | Open-source VS Code AI | https://roocode.com |
+    | 42 | Cline | VS Code extension with full FS access | Open-source VS Code AI | https://github.com/cline/cline |
+    | 43 | Gemini CLI | Google terminal coding agent 1M context | Terminal AI agent | https://github.com/google-gemini/gemini-cli |
+    | 44 | OpenAI Codex CLI | CLI coding agent with cloud sandbox | Terminal AI agent | https://openai.com/blog/openai-codex |
+    | 45 | Wiggum CLI | Open-source autonomous coding loop agent | Open-source coding agent | https://wiggum.app |
+    | 46 | AgentsMesh | Self-hostable multi-agent workforce | Multi-agent orchestration | https://agentsmesh.ai |
+    | 47 | Fine.dev | Autonomous dev agent | Autonomous dev agent | https://fine.dev |
+    | 48 | LangChain | Framework for LLM-powered apps | AI framework | https://langchain.com |
+    | 49 | Vercel AI SDK | TypeScript toolkit for AI UIs | AI SDK | https://sdk.vercel.ai |
+    | 50 | LiteLLM | Unified API proxy for 100+ LLM providers | LLM API proxy | https://github.com/BerriAI/litellm |
+    | 51 | CrewAI | Multi-agent orchestration platform | Multi-agent framework | https://crewai.com |
+    | 52 | AutoGen | Microsoft multi-agent framework | Multi-agent framework | https://github.com/microsoft/autogen |
+    
+    ## Statistics
+    
+    - **Total unique organizations:** 52
+    - **Total entries found by researcher:** 53 (1 duplicate: Meticulous)
+    - **Distinct focus areas:** 39
+    
+    ### Top Focus Areas
+    | Focus Area | Count |
+    |---|---|
+    | AI app builder | 3 |
+    | AI code editor | 2 |
+    | Autonomous coding | 2 |
+    | Open-source AI app builder | 2 |
+    | Open-source AI coding | 2 |
+    | Open-source VS Code AI | 2 |
+    | Terminal AI agent | 2 |
+    | Multi-agent framework | 2 |
+    | (31 other areas with 1 each) | 31 |
+    
+    ### Category Breakdown
+    | Category | Count |
+    |---|---|
+    | AI Coding Agents and CLI Tools | 16 |
+    | Code Review and Quality | 5 |
+    | Testing and QA | 4 |
+    | Security | 4 |
+    | App Builders and UI Generators | 6 |
+    | Open-Source Coding Agents | 9 |
+    | AI Frameworks and Platforms | 5 |
+    | Productivity and Dev Tools | 3 |
+    
+    REPORT_END
+    
+    JSON_START
+    [
+      {"name":"Claude Code","description":"Terminal-based AI coding agent from Anthropic","url":"https://claude.ai","focus_area":"AI coding agent/CLI"},
+      {"name":"Devin AI","description":"Autonomous AI software engineer from Cognition","url":"https://devin.ai","focus_area":"Autonomous coding"},
+      {"name":"Cursor","description":"AI-first code editor from Anysphere","url":"https://cursor.sh","focus_area":"AI code editor"},
+      {"name":"Bolt.new","description":"Full-stack web apps from natural language by StackBlitz","url":"https://bolt.new","focus_area":"AI app builder"},
+      {"name":"Replit Agent","description":"App builder from natural language","url":"https://replit.com/agent","focus_area":"AI app builder"},
+      {"name":"Windsurf","description":"AI code editor by Codeium with Cascade agent","url":"https://windsurf.com","focus_area":"AI code editor"},
+      {"name":"Lovable","description":"Web app creation from single prompt","url":"https://lovable.dev","focus_area":"AI app builder"},
+      {"name":"Augment Code","description":"Enterprise AI coding with cross-repo understanding","url":"https://augmentcode.com","focus_area":"Enterprise AI coding"},
+      {"name":"Magic.dev","description":"Autonomous AI software engineer","url":"https://magic.dev","focus_area":"Autonomous coding"},
+      {"name":"Factory.ai","description":"AI coding automation at scale","url":"https://factory.ai","focus_area":"AI coding automation"},
+      {"name":"Cody","description":"Code understanding AI by Sourcegraph","url":"https://sourcegraph.com/cody","focus_area":"Code understanding AI"},
+      {"name":"Kilo Code","description":"Open-source VS Code extension 500+ models","url":"https://kilocode.ai","focus_area":"Open-source AI coding"},
+      {"name":"Aider","description":"Terminal AI pair programming with git","url":"https://aider.chat","focus_area":"AI pair programming"},
+      {"name":"Plandex","description":"Open-source coding agent for large projects","url":"https://github.com/plandex-ai/plandex","focus_area":"Open-source AI coding"},
+      {"name":"Continue","description":"Open-source pluggable AI code completion","url":"https://continue.dev","focus_area":"Open-source AI completion"},
+      {"name":"Supermaven","description":"Ultra-fast AI code completion 1M tokens","url":"https://supermaven.com","focus_area":"AI code completion"},
+      {"name":"CodeRabbit","description":"AI contextual PR review","url":"https://coderabbit.ai","focus_area":"AI PR review"},
+      {"name":"Qodo","description":"Code review and test generation","url":"https://qodo.ai","focus_area":"AI code review + testing"},
+      {"name":"Sourcery","description":"AI code reviewer 30+ languages","url":"https://sourcery.ai","focus_area":"AI code review"},
+      {"name":"Greptile","description":"AI PR analysis bot","url":"https://greptile.com","focus_area":"AI PR analysis"},
+      {"name":"What The Diff","description":"AI diff analysis tool","url":"https://whatthediff.ai","focus_area":"AI diff analysis"},
+      {"name":"Meticulous","description":"AI visual and functional testing","url":"https://meticulous.ai","focus_area":"AI visual testing"},
+      {"name":"Checksum AI","description":"AI automated software testing","url":"https://checksum.ai","focus_area":"AI software testing"},
+      {"name":"OctoMind","description":"AI end-to-end testing automation","url":"https://octomind.dev","focus_area":"AI e2e testing"},
+      {"name":"KushoAI","description":"AI-driven API testing","url":"https://kusho.ai","focus_area":"AI API testing"},
+      {"name":"Nullify.ai","description":"AI security vulnerability detection","url":"https://nullify.ai","focus_area":"AI security scanning"},
+      {"name":"Pixee","description":"AI bot for security PRs and fixes","url":"https://pixee.ai","focus_area":"AI security fixes"},
+      {"name":"Gecko Security","description":"AI code security analysis","url":"https://gecko.security","focus_area":"AI code security"},
+      {"name":"Corgea","description":"AI-native application security","url":"https://corgea.com","focus_area":"AI app security"},
+      {"name":"Raycast","description":"AI productivity launcher","url":"https://raycast.com","focus_area":"AI productivity"},
+      {"name":"SpecStory","description":"AI chat context sharing","url":"https://specstory.com","focus_area":"AI context sharing"},
+      {"name":"CodeCosts","description":"AI coding tool price comparison","url":"https://codecosts.pages.dev","focus_area":"AI cost comparison"},
+      {"name":"v0.dev","description":"UI generation from text by Vercel","url":"https://v0.dev","focus_area":"AI UI generation"},
+      {"name":"Create.xyz","description":"AI-powered app creation","url":"https://create.xyz","focus_area":"AI app creation"},
+      {"name":"Dyad.sh","description":"Free local open-source AI app builder","url":"https://dyad.sh","focus_area":"Open-source AI app builder"},
+      {"name":"Bolt.diy","description":"Open-source Bolt.new fork any LLM","url":"https://github.com/stackblitz-labs/bolt.diy","focus_area":"Open-source AI app builder"},
+      {"name":"Capacity","description":"Agentic Claude Code platform","url":"https://capacity.so","focus_area":"AI web app builder"},
+      {"name":"Mage","description":"Full-stack generation from prompts","url":"https://usemage.ai","focus_area":"AI full-stack generation"},
+      {"name":"OpenCode","description":"Open-source terminal AI agent 95K+ stars","url":"https://github.com/opencode-ai/opencode","focus_area":"Open-source terminal AI agent"},
+      {"name":"OpenHands","description":"Open-source AI software engineer","url":"https://opendevin.ai","focus_area":"Open-source autonomous coding"},
+      {"name":"Roo Code","description":"Open-source VS Code multi-model","url":"https://roocode.com","focus_area":"Open-source VS Code AI"},
+      {"name":"Cline","description":"VS Code extension full FS access","url":"https://github.com/cline/cline","focus_area":"Open-source VS Code AI"},
+      {"name":"Gemini CLI","description":"Google terminal coding agent 1M context","url":"https://github.com/google-gemini/gemini-cli","focus_area":"Terminal AI agent"},
+      {"name":"OpenAI Codex CLI","description":"CLI coding agent cloud sandbox","url":"https://openai.com/blog/openai-codex","focus_area":"Terminal AI agent"},
+      {"name":"Wiggum CLI","description":"Open-source autonomous coding agent","url":"https://wiggum.app","focus_area":"Open-source coding agent"},
+      {"name":"AgentsMesh","description":"Self-hostable multi-agent platform","url":"https://agentsmesh.ai","focus_area":"Multi-agent orchestration"},
+      {"name":"Fine.dev","description":"Autonomous dev agent","url":"https://fine.dev","focus_area":"Autonomous dev agent"},
+      {"name":"LangChain","description":"Framework for LLM apps","url":"https://langchain.com","focus_area":"AI framework"},
+      {"name":"Vercel AI SDK","description":"TypeScript toolkit for AI UIs","url":"https://sdk.vercel.ai","focus_area":"AI SDK"},
+      {"name":"LiteLLM","description":"Unified API proxy 100+ LLMs","url":"https://github.com/BerriAI/litellm","focus_area":"LLM API proxy"},
+      {"name":"CrewAI","description":"Multi-agent orchestration platform","url":"https://crewai.com","focus_area":"Multi-agent framework"},
+      {"name":"AutoGen","description":"Microsoft multi-agent framework","url":"https://github.com/microsoft/autogen","focus_area":"Multi-agent framework"}
+    ]
+    JSON_END

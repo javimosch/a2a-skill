@@ -1,0 +1,314 @@
+[
+  {
+    "name": "Claude Code",
+    "description": "Terminal-based AI coding agent from Anthropic",
+    "url": "https://claude.ai",
+    "focus_area": "AI coding agent/CLI"
+  },
+  {
+    "name": "Devin AI",
+    "description": "Autonomous AI software engineer from Cognition",
+    "url": "https://devin.ai",
+    "focus_area": "Autonomous coding"
+  },
+  {
+    "name": "Cursor",
+    "description": "AI-first code editor from Anysphere",
+    "url": "https://cursor.sh",
+    "focus_area": "AI code editor"
+  },
+  {
+    "name": "Bolt.new",
+    "description": "Full-stack web apps from natural language by StackBlitz",
+    "url": "https://bolt.new",
+    "focus_area": "AI app builder"
+  },
+  {
+    "name": "Replit Agent",
+    "description": "App builder from natural language",
+    "url": "https://replit.com/agent",
+    "focus_area": "AI app builder"
+  },
+  {
+    "name": "Windsurf",
+    "description": "AI code editor by Codeium with Cascade agent",
+    "url": "https://windsurf.com",
+    "focus_area": "AI code editor"
+  },
+  {
+    "name": "Lovable",
+    "description": "Web app creation from single prompt",
+    "url": "https://lovable.dev",
+    "focus_area": "AI app builder"
+  },
+  {
+    "name": "Augment Code",
+    "description": "Enterprise AI coding with cross-repo understanding",
+    "url": "https://augmentcode.com",
+    "focus_area": "Enterprise AI coding"
+  },
+  {
+    "name": "Magic.dev",
+    "description": "Autonomous AI software engineer",
+    "url": "https://magic.dev",
+    "focus_area": "Autonomous coding"
+  },
+  {
+    "name": "Factory.ai",
+    "description": "AI coding automation at scale",
+    "url": "https://factory.ai",
+    "focus_area": "AI coding automation"
+  },
+  {
+    "name": "Cody",
+    "description": "Code understanding AI by Sourcegraph",
+    "url": "https://sourcegraph.com/cody",
+    "focus_area": "Code understanding AI"
+  },
+  {
+    "name": "Kilo Code",
+    "description": "Open-source VS Code extension 500+ models",
+    "url": "https://kilocode.ai",
+    "focus_area": "Open-source AI coding"
+  },
+  {
+    "name": "Aider",
+    "description": "Terminal AI pair programming with git",
+    "url": "https://aider.chat",
+    "focus_area": "AI pair programming"
+  },
+  {
+    "name": "Plandex",
+    "description": "Open-source coding agent for large projects",
+    "url": "https://github.com/plandex-ai/plandex",
+    "focus_area": "Open-source AI coding"
+  },
+  {
+    "name": "Continue",
+    "description": "Open-source pluggable AI code completion",
+    "url": "https://continue.dev",
+    "focus_area": "Open-source AI completion"
+  },
+  {
+    "name": "Supermaven",
+    "description": "Ultra-fast AI code completion 1M tokens",
+    "url": "https://supermaven.com",
+    "focus_area": "AI code completion"
+  },
+  {
+    "name": "CodeRabbit",
+    "description": "AI contextual PR review",
+    "url": "https://coderabbit.ai",
+    "focus_area": "AI PR review"
+  },
+  {
+    "name": "Qodo",
+    "description": "Code review and test generation",
+    "url": "https://qodo.ai",
+    "focus_area": "AI code review + testing"
+  },
+  {
+    "name": "Sourcery",
+    "description": "AI code reviewer 30+ languages",
+    "url": "https://sourcery.ai",
+    "focus_area": "AI code review"
+  },
+  {
+    "name": "Greptile",
+    "description": "AI PR analysis bot",
+    "url": "https://greptile.com",
+    "focus_area": "AI PR analysis"
+  },
+  {
+    "name": "What The Diff",
+    "description": "AI diff analysis tool",
+    "url": "https://whatthediff.ai",
+    "focus_area": "AI diff analysis"
+  },
+  {
+    "name": "Meticulous",
+    "description": "AI visual and functional testing",
+    "url": "https://meticulous.ai",
+    "focus_area": "AI visual testing"
+  },
+  {
+    "name": "Checksum AI",
+    "description": "AI automated software testing",
+    "url": "https://checksum.ai",
+    "focus_area": "AI software testing"
+  },
+  {
+    "name": "OctoMind",
+    "description": "AI end-to-end testing automation",
+    "url": "https://octomind.dev",
+    "focus_area": "AI e2e testing"
+  },
+  {
+    "name": "KushoAI",
+    "description": "AI-driven API testing",
+    "url": "https://kusho.ai",
+    "focus_area": "AI API testing"
+  },
+  {
+    "name": "Nullify.ai",
+    "description": "AI security vulnerability detection",
+    "url": "https://nullify.ai",
+    "focus_area": "AI security scanning"
+  },
+  {
+    "name": "Pixee",
+    "description": "AI bot for security PRs and fixes",
+    "url": "https://pixee.ai",
+    "focus_area": "AI security fixes"
+  },
+  {
+    "name": "Gecko Security",
+    "description": "AI code security analysis",
+    "url": "https://gecko.security",
+    "focus_area": "AI code security"
+  },
+  {
+    "name": "Corgea",
+    "description": "AI-native application security",
+    "url": "https://corgea.com",
+    "focus_area": "AI app security"
+  },
+  {
+    "name": "Raycast",
+    "description": "AI productivity launcher",
+    "url": "https://raycast.com",
+    "focus_area": "AI productivity"
+  },
+  {
+    "name": "SpecStory",
+    "description": "AI chat context sharing",
+    "url": "https://specstory.com",
+    "focus_area": "AI context sharing"
+  },
+  {
+    "name": "CodeCosts",
+    "description": "AI coding tool price comparison",
+    "url": "https://codecosts.pages.dev",
+    "focus_area": "AI cost comparison"
+  },
+  {
+    "name": "v0.dev",
+    "description": "UI generation from text by Vercel",
+    "url": "https://v0.dev",
+    "focus_area": "AI UI generation"
+  },
+  {
+    "name": "Create.xyz",
+    "description": "AI-powered app creation",
+    "url": "https://create.xyz",
+    "focus_area": "AI app creation"
+  },
+  {
+    "name": "Dyad.sh",
+    "description": "Free local open-source AI app builder",
+    "url": "https://dyad.sh",
+    "focus_area": "Open-source AI app builder"
+  },
+  {
+    "name": "Bolt.diy",
+    "description": "Open-source Bolt.new fork any LLM",
+    "url": "https://github.com/stackblitz-labs/bolt.diy",
+    "focus_area": "Open-source AI app builder"
+  },
+  {
+    "name": "Capacity",
+    "description": "Agentic Claude Code platform",
+    "url": "https://capacity.so",
+    "focus_area": "AI web app builder"
+  },
+  {
+    "name": "Mage",
+    "description": "Full-stack generation from prompts",
+    "url": "https://usemage.ai",
+    "focus_area": "AI full-stack generation"
+  },
+  {
+    "name": "OpenCode",
+    "description": "Open-source terminal AI agent 95K+ stars",
+    "url": "https://github.com/opencode-ai/opencode",
+    "focus_area": "Open-source terminal AI agent"
+  },
+  {
+    "name": "OpenHands",
+    "description": "Open-source AI software engineer",
+    "url": "https://opendevin.ai",
+    "focus_area": "Open-source autonomous coding"
+  },
+  {
+    "name": "Roo Code",
+    "description": "Open-source VS Code multi-model",
+    "url": "https://roocode.com",
+    "focus_area": "Open-source VS Code AI"
+  },
+  {
+    "name": "Cline",
+    "description": "VS Code extension full FS access",
+    "url": "https://github.com/cline/cline",
+    "focus_area": "Open-source VS Code AI"
+  },
+  {
+    "name": "Gemini CLI",
+    "description": "Google terminal coding agent 1M context",
+    "url": "https://github.com/google-gemini/gemini-cli",
+    "focus_area": "Terminal AI agent"
+  },
+  {
+    "name": "OpenAI Codex CLI",
+    "description": "CLI coding agent cloud sandbox",
+    "url": "https://openai.com/blog/openai-codex",
+    "focus_area": "Terminal AI agent"
+  },
+  {
+    "name": "Wiggum CLI",
+    "description": "Open-source autonomous coding agent",
+    "url": "https://wiggum.app",
+    "focus_area": "Open-source coding agent"
+  },
+  {
+    "name": "AgentsMesh",
+    "description": "Self-hostable multi-agent platform",
+    "url": "https://agentsmesh.ai",
+    "focus_area": "Multi-agent orchestration"
+  },
+  {
+    "name": "Fine.dev",
+    "description": "Autonomous dev agent",
+    "url": "https://fine.dev",
+    "focus_area": "Autonomous dev agent"
+  },
+  {
+    "name": "LangChain",
+    "description": "Framework for LLM apps",
+    "url": "https://langchain.com",
+    "focus_area": "AI framework"
+  },
+  {
+    "name": "Vercel AI SDK",
+    "description": "TypeScript toolkit for AI UIs",
+    "url": "https://sdk.vercel.ai",
+    "focus_area": "AI SDK"
+  },
+  {
+    "name": "LiteLLM",
+    "description": "Unified API proxy 100+ LLMs",
+    "url": "https://github.com/BerriAI/litellm",
+    "focus_area": "LLM API proxy"
+  },
+  {
+    "name": "CrewAI",
+    "description": "Multi-agent orchestration platform",
+    "url": "https://crewai.com",
+    "focus_area": "Multi-agent framework"
+  },
+  {
+    "name": "AutoGen",
+    "description": "Microsoft multi-agent framework",
+    "url": "https://github.com/microsoft/autogen",
+    "focus_area": "Multi-agent framework"
+  }
+]
