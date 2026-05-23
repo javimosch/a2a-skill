@@ -325,6 +325,18 @@ class TestA2AClientAsync(unittest.TestCase):
             run_async(self.bob.recv(wait=-1))
         self.assertIn("non-negative", str(ctx.exception))
 
+    def test_recv_nan_wait_raises_value_error(self):
+        """recv(wait=nan) raises ValueError (must match sync client)."""
+        with self.assertRaises(ValueError) as ctx:
+            run_async(self.bob.recv(wait=float("nan")))
+        self.assertIn("finite", str(ctx.exception))
+
+    def test_recv_inf_wait_raises_value_error(self):
+        """recv(wait=inf) raises ValueError (must match sync client)."""
+        with self.assertRaises(ValueError) as ctx:
+            run_async(self.bob.recv(wait=float("inf")))
+        self.assertIn("finite", str(ctx.exception))
+
     def test_send_to_empty_string_raises_value_error(self):
         """send() with empty recipient raises ValueError (async)."""
         from a2a_client_async import A2AClientAsync
