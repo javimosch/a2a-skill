@@ -55,6 +55,11 @@ class A2AClient {
     if (!to || !to.trim()) {
       throw new Error('recipient must not be empty');
     }
+    if (ttlSeconds !== null && ttlSeconds !== undefined) {
+      if (typeof ttlSeconds !== 'number' || !Number.isFinite(ttlSeconds) || ttlSeconds <= 0) {
+        throw new Error('ttl_seconds must be a positive number');
+      }
+    }
     const db = this._connect();
     const recipient = ['all', '*', 'broadcast'].includes(to.toLowerCase()) ? null : to;
     const now = Date.now() / 1000;
@@ -75,6 +80,12 @@ class A2AClient {
    * @returns {Promise<Array>}
    */
   async recv(wait = 0, unreadOnly = true, includeSelf = false, limit = 0) {
+    if (wait !== 0 && (typeof wait !== 'number' || !Number.isFinite(wait) || wait < 0)) {
+      throw new Error('wait must be a non-negative number');
+    }
+    if (limit !== 0 && (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 0)) {
+      throw new Error('limit must be a non-negative integer');
+    }
     const deadline = wait ? Date.now() + wait * 1000 : null;
 
     while (true) {
@@ -133,7 +144,7 @@ class A2AClient {
    * @returns {Promise<Array>}
    */
   async peek(limit = 20) {
-    if (limit <= 0) {
+    if (typeof limit !== 'number' || !Number.isInteger(limit) || limit <= 0) {
       throw new Error('limit must be a positive integer');
     }
     const db = this._connect();
@@ -193,6 +204,12 @@ class A2AClient {
    * @returns {Promise<boolean>}
    */
   async waitForMessages(count = 1, timeout = 60) {
+    if (!Number.isInteger(count) || count <= 0) {
+      throw new Error('count must be a positive integer');
+    }
+    if (typeof timeout !== 'number' || !Number.isFinite(timeout) || timeout < 0) {
+      throw new Error('timeout must be a non-negative number');
+    }
     const deadline = Date.now() + timeout * 1000;
     while (Date.now() < deadline) {
       const messages = await this.recv(1, true);
@@ -211,6 +228,9 @@ class A2AClient {
   async search(query, limit = 50) {
     if (!query || !query.trim()) {
       throw new Error('search query must not be empty');
+    }
+    if (limit !== undefined && limit !== null && limit <= 0) {
+      throw new Error('limit must be a positive integer');
     }
     const db = this._connect();
     const rows = db.prepare(
