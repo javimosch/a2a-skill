@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Add artifacts dir to path
 sys.path.insert(0, str(Path(__file__).parent / "examples" / "artifacts"))
-from _util import strip_html_preamble, strip_code_fence, extract_first_code_block, make_kit, send_task, ascii_chart, compute_analysis
+from _util import strip_html_preamble, strip_code_fence, extract_first_code_block, make_kit, send_task, run_a2a, ascii_chart, compute_analysis
 
 
 class TestStripHtmlPreamble(unittest.TestCase):
@@ -203,6 +203,20 @@ class TestMakeKit(unittest.TestCase):
         """Kit prompt includes the status done example."""
         kit = make_kit("test-agent", "tester", "do the thing", "myproject")
         self.assertIn("status done", kit)
+
+
+class TestRunA2A(unittest.TestCase):
+    """Test the run_a2a() helper."""
+
+    def test_run_a2a_fails_with_missing_bin(self):
+        """run_a2a returns empty string when binary doesn't exist."""
+        result = run_a2a("list --json", "/nonexistent/a2a", "test-proj")
+        self.assertEqual(result, "")
+
+    def test_run_a2a_timeout_on_hung_command(self):
+        """run_a2a times out when the command does not complete."""
+        result = run_a2a("list --json", "/bin/sleep", "test-proj", timeout=1)
+        self.assertEqual(result, "")
 
 
 class TestSendTask(unittest.TestCase):

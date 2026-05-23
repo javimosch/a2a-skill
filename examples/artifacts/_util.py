@@ -63,21 +63,38 @@ def find_spawn(script_dir: str) -> str | None:
     return None
 
 
-def run_a2a(cmd: str, a2a_bin: str, project: str) -> str:
+def run_a2a(cmd: str, a2a_bin: str, project: str, timeout: int = 30) -> str:
     """Run an a2a CLI command and return stdout.
 
     Uses shlex.split() + subprocess.run() without shell=True to avoid
     shell interpretation of backticks, $, and other special characters
     that may appear in task prompts or message bodies.
+
+    Args:
+        cmd: a2a command and arguments (e.g. "list --json")
+        a2a_bin: Path to a2a binary
+        project: Project name
+        timeout: Max seconds to wait for the command (default: 30)
+
+    Returns:
+        stdout text, or empty string on failure/timeout
     """
     env = os.environ.copy()
     env["A2A_PROJECT"] = project
     args = [a2a_bin] + shlex.split(cmd)
-    result = subprocess.run(args, capture_output=True, text=True, env=env)
-    if result.returncode != 0:
-        print(f"[a2a] FAILED ({result.returncode}): {a2a_bin} {cmd}", file=sys.stderr)
-        print(f"[a2a] stderr: {result.stderr}", file=sys.stderr)
-    return result.stdout.strip()
+    try:
+        result = subprocess.run(args, capture_output=True, text=True, env=env,
+                                timeout=timeout)
+        if result.returncode != 0:
+            print(f"[a2a] FAILED ({result.returncode}): {a2a_bin} {cmd}", file=sys.stderr)
+            print(f"[a2a] stderr: {result.stderr}", file=sys.stderr)
+        return result.stdout.strip()
+    except subprocess.TimeoutExpired:
+        print(f"[a2a] TIMEOUT after {timeout}s: {a2a_bin} {cmd}", file=sys.stderr)
+        return ""
+    except FileNotFoundError:
+        print(f"[a2a] BINARY NOT FOUND: {a2a_bin}", file=sys.stderr)
+        return ""
 
 
 def run_a2a_json(cmd: str, a2a_bin: str, project: str) -> list | dict:
