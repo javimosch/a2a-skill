@@ -1,18 +1,18 @@
-[08:16:38] #1 collector -> researcher
-    Your task: You are the web researcher. Topic to research: "best open source LLM tools for local deployment 2026"
+[22:22:24] #1 collector -> researcher
+    Your task: You are the web researcher. Topic to research: "best open source LLM tools 2026"
     
     You have shell access. Use ddgr for web search — it returns JSON.
     Example: ddgr --json --num 10 "your search query"
     
     Steps:
-    1. Search: ddgr --json --num 10 "best open source LLM tools for local deployment 2026"
+    1. Search: ddgr --json --num 10 "best open source LLM tools 2026"
     2. Also try: ddgr --json --num 5 --site github.com "open source LLM tools"
     3. Read the JSON output carefully — extract key tools, descriptions, and URLs
     4. Send your findings to the analyst:
        a2a send analyst 'FINDINGS: <your structured findings with tool names, descriptions, URLs>' --from researcher
     
     Important: Send the findings as structured text (not raw JSON). Include: for each tool/result — name, description, URL, key features.
-[08:16:38] #2 collector -> analyst
+[22:22:24] #2 collector -> analyst
     Your task: You are the data analyst. Wait for the researcher to send you search findings.
     
     Steps:
@@ -26,7 +26,7 @@
        - Notable trends or patterns
     5. Send your analysis to the writer:
        a2a send writer 'ANALYSIS: <your structured analysis>' --from analyst
-[08:16:38] #3 collector -> writer
+[22:22:24] #3 collector -> writer
     Your task: You are the report writer. Wait for the analyst to send you their analysis.
     
     Steps:
@@ -43,232 +43,3 @@
     5. Broadcast the complete report:
        a2a send all 'REPORT_START\n<your full markdown report>\nREPORT_END' --from writer
        The report must be between REPORT_START and REPORT_END markers.
-[08:17:21] #4 researcher -> analyst
-    FINDINGS: Best Open Source LLM Tools for Local Deployment 2026
-    
-    === CORE INFERENCE TOOLS ===
-    
-    1. Ollama
-       URL: https://ollama.ai
-       Description: The most popular local LLM runner. One-command pull-and-run for models. Supports Llama, Mistral, Qwen, DeepSeek, and 100+ models. Minimal configuration, REST API, GPU acceleration.
-       Key features: Simplest UX, model library, cross-platform, GGUF support, OpenAI-compatible API
-    
-    2. vLLM
-       URL: https://github.com/vllm-project/vllm
-       Description: High-throughput, low-latency inference engine with PagedAttention. Best for production/serving scenarios with high concurrency. Industry-standard for LLM serving.
-       Key features: PagedAttention, continuous batching, tensor parallelism, OpenAI-compatible API, best for serving
-    
-    3. LM Studio
-       URL: https://lmstudio.ai
-       Description: Desktop GUI for discovering, downloading, and running local LLMs. Built-in model browser, chat interface. Ideal for non-developers and exploration.
-       Key features: GUI-based, model browser, built-in inference, CPU/GPU support, local server
-    
-    4. llama.cpp
-       URL: https://github.com/ggerganov/llama.cpp
-       Description: Pure C/C++ LLM inference (no Python deps). The backbone behind most local LLM tools. GGUF quantization format. Runs on consumer hardware including CPU-only.
-       Key features: GGUF format, CPU-first, minimal deps, quantized models, mobile/server capable
-    
-    5. GPT4All
-       URL: https://github.com/nomic-ai/gpt4all
-       Description: Desktop app by Nomic AI. Focus on running LLMs on consumer CPUs. Local document search + RAG built-in. Privacy-first.
-       Key features: CPU-optimized, local RAG, no GPU needed, built-in model downloads
-    
-    6. Jan
-       URL: https://jan.ai
-       Description: Open-source, offline-first desktop app for local LLMs. Cross-platform, extensible with plugins. User-friendly interface.
-       Key features: Offline-first, plugin system, hardware acceleration, model explorer
-    
-    7. AnythingLLM
-       URL: https://github.com/Mintplex-Labs/anything-llm
-       Description: Open-source desktop AI app for chatting with documents, running AI agents. Keeps all data local. Supports multiple LLM backends.
-       Key features: Document chat, AI agents, multi-model support, fully local
-    
-    8. LocalAI
-       URL: https://github.com/mudler/LocalAI
-       Description: Self-hosted, OpenAI-compatible API for local LLMs, image gen, audio. Docker-first deployment. Multi-modal.
-       Key features: OpenAI API drop-in, Docker-native, multi-modal (text/image/audio)
-    
-    === TOP OPEN-WEIGHT MODEL FAMILIES (mentioned across sources) ===
-    - Llama 4 (Meta) - Best general purpose
-    - DeepSeek V3/R1 - Strong reasoning/coding
-    - Qwen 2.5/3 (Alibaba) - Strong multilingual
-    - Mistral / Mixtral - Efficient, great for deployment
-    - Phi-4 (Microsoft) - Small, efficient for edge
-    
-    === CURATED RESOURCES ===
-    1. awesome-local-ai (152 tools) - github.com/ethicals7s/awesome-local-ai
-    2. Awesome Local LLM - github.com/rafska/Awesome-local-LLM
-    3. Self-Hosted LLM Leaderboard - onyx.app/self-hosted-llm-leaderboard
-    
-    === KEY TRENDS (from articles) ===
-    - Ollama is the default choice for ease of use in 2026
-    - vLLM leads for production serving (API, batching, performance)
-    - GGUF (llama.cpp) remains the dominant quantization format
-    - Consumer hardware can now run 70B+ models with 4-bit quantization
-    - No cloud, no API keys, fully private is the driving motivation
-[08:17:43] #5 analyst -> writer
-    ANALYSIS: Open Source LLM Tools for Local Deployment — Structured Analysis
-    
-    ## Category 1: Local LLM Runners (Ease-of-Use Tier)
-    
-    ### Ollama
-    - Description: Most popular local LLM runner. One-command pull-and-run. Supports 100+ models. REST API, GPU acceleration.
-    - Key features: Simplest UX, model library, cross-platform, GGUF support, OpenAI-compatible API
-    - Pros: Lowest barrier to entry, huge model library, strong community, active development
-    - Cons: Limited advanced serving features, less optimized than vLLM for high concurrency
-    
-    ### LM Studio
-    - Description: Desktop GUI for discovering, downloading, and running local LLMs. Built-in model browser and chat interface.
-    - Key features: GUI-based, model browser, built-in inference, CPU/GPU support, local server
-    - Pros: Great for non-developers, visual model browsing, all-in-one
-    - Cons: Less flexible than CLI tools, heavier than Ollama for server use
-    
-    ### GPT4All
-    - Description: Desktop app by Nomic AI. Focus on consumer CPU usage. Built-in local document search + RAG.
-    - Key features: CPU-optimized, local RAG, no GPU needed, built-in model downloads
-    - Pros: Runs on CPU-only machines, privacy-first, built-in RAG
-    - Cons: Limited model selection, slower than GPU-accelerated options
-    
-    ### Jan
-    - Description: Open-source, offline-first desktop app. Cross-platform with plugin system.
-    - Key features: Offline-first, plugin system, hardware acceleration, model explorer
-    - Pros: Fully offline, extensible via plugins, modern UI
-    - Cons: Smaller community, fewer models out of box
-    
-    ### llama.cpp
-    - Description: Pure C/C++ LLM inference (no Python deps). Backbone behind most local LLM tools. Created GGUF format.
-    - Key features: GGUF format, CPU-first, minimal deps, quantized models, mobile/server capable
-    - Pros: Zero Python dependencies, runs anywhere, GGUF is industry standard, extremely lightweight
-    - Cons: No built-in UI, command-line only, steeper learning curve
-    
-    ## Category 2: Production/Serving Inference
-    
-    ### vLLM
-    - Description: High-throughput, low-latency inference engine with PagedAttention. Industry standard for LLM serving.
-    - Key features: PagedAttention, continuous batching, tensor parallelism, OpenAI-compatible API
-    - Pros: Best throughput for production, efficient memory via PagedAttention, supports multi-GPU
-    - Cons: Requires GPU, heavier setup, overkill for single-user use
-    
-    ### LocalAI
-    - Description: Self-hosted, OpenAI-compatible API. Docker-first. Multi-modal (text, image, audio).
-    - Key features: OpenAI API drop-in replacement, Docker-native, multi-modal support
-    - Pros: Drop-in OpenAI replacement, Docker simplicity, multi-modal
-    - Cons: Docker dependency, less mature than vLLM for text-only serving
-    
-    ## Category 3: Desktop AI Apps (RAG + Agent Focus)
-    
-    ### AnythingLLM
-    - Description: Open-source desktop app for chatting with documents and running AI agents. All data local.
-    - Key features: Document chat, AI agents, multi-model backend support, fully local
-    - Pros: Strong RAG/document features, agent support, multiple backend support
-    - Cons: Heavier than minimal runners, still maturing
-    
-    ## Category 4: Open-Weight Model Families
-    
-    | Model | Creator | Strength | Best For |
-    |-------|---------|----------|----------|
-    | Llama 4 | Meta | Best general purpose | General tasks |
-    | DeepSeek V3/R1 | DeepSeek | Strong reasoning/coding | Logical/code tasks |
-    | Qwen 2.5/3 | Alibaba | Strong multilingual | Non-English use |
-    | Mistral/Mixtral | Mistral AI | Efficient | Deployment |
-    | Phi-4 | Microsoft | Small/efficient | Edge devices |
-    
-    ## Notable Trends & Patterns
-    
-    1. Ollama dominates ease-of-use in 2026 — default recommendation for most users
-    2. vLLM leads production serving with PagedAttention and continuous batching
-    3. GGUF (llama.cpp) is the dominant quantization format across the ecosystem
-    4. Consumer hardware now runs 70B+ parameter models via 4-bit quantization
-    5. Fully local, private, no-cloud motivation is the primary driver for adoption
-    6. Most tools expose OpenAI-compatible APIs — ecosystem convergence on standard
-    7. Curated resource lists track 152+ tools and growing rapidly (awesome-local-ai)
-    8. Desktop apps adding RAG and agent capabilities — blurring line between inference and application
-[08:17:59] #6 writer -> ALL
-    REPORT_START
-    # Open Source LLM Tools for Local Deployment — Research Report
-    
-    **Date:** 2026-05-23
-    **Author:** writer agent
-    **Source:** Analysis by collector/analyst agents
-    
-    ## Executive Summary
-    
-    The open-source LLM ecosystem offers a rich landscape of tools for local deployment, ranging from one-command runners like Ollama to production-grade serving engines like vLLM. The dominant pattern across the ecosystem is convergence on OpenAI-compatible APIs and the GGUF quantization format, enabling seamless interoperability. Consumer hardware can now run 70B+ parameter models at 4-bit quantization, making local, private, no-cloud AI a practical reality for most users.
-    
-    ## Detailed Findings
-    
-    ### Local LLM Runners (Ease-of-Use Tier)
-    
-    #### Ollama
-    The most popular local LLM runner, offering a one-command pull-and-run experience for 100+ models. Features GPU acceleration, a REST API, and an OpenAI-compatible API. Its simplicity and huge model library make it the default recommendation for most users in 2026. **Best for:** Users who want the lowest barrier to entry.
-    
-    #### LM Studio
-    A desktop GUI application for discovering, downloading, and running local LLMs. Includes a built-in model browser and chat interface. Designed for non-developers who prefer visual interaction over CLI tools. **Best for:** Non-developers, visual-first users.
-    
-    #### GPT4All (Nomic AI)
-    CPU-optimized desktop application with built-in local document search and RAG capabilities. Runs on machines without a GPU, making it the most accessible option for privacy-first, hardware-constrained environments. **Best for:** CPU-only machines, privacy-first deployments.
-    
-    #### Jan
-    An open-source, offline-first desktop app with a plugin system and hardware acceleration. Fully offline capable with a modern UI and extensible architecture. **Best for:** Users who need full offline operation with extensibility.
-    
-    #### llama.cpp
-    Pure C/C++ inference engine with zero Python dependencies. Created the GGUF format, now the dominant quantization standard across the ecosystem. Extremely lightweight, runs on everything from servers to mobile devices. **Best for:** Developers needing lightweight, dependency-free inference anywhere.
-    
-    ### Production/Serving Inference
-    
-    #### vLLM
-    High-throughput, low-latency inference engine using PagedAttention for efficient memory management. Industry standard for production LLM serving with continuous batching and tensor parallelism. **Best for:** Production deployments with GPU infrastructure.
-    
-    #### LocalAI
-    Self-hosted, Docker-first, OpenAI-compatible API supporting text, image, and audio. Designed as a drop-in OpenAI replacement that runs locally. **Best for:** Users wanting a Docker-native OpenAI-compatible server.
-    
-    ### Desktop AI Apps (RAG + Agent Focus)
-    
-    #### AnythingLLM
-    Open-source desktop app for chatting with documents and running AI agents with full local data control. Features strong RAG/document capabilities and multi-model backend support. **Best for:** Document-heavy workflows and local agent usage.
-    
-    ## Comparison Table
-    
-    | Tool | Category | Setup Complexity | GPU Required | Key Differentiator |
-    |------|----------|-----------------|-------------|-------------------|
-    | **Ollama** | Runner | Minimal | No | One-command UX, largest model library |
-    | **LM Studio** | Runner | Minimal | No | Desktop GUI, model browser |
-    | **GPT4All** | Runner | Minimal | No | CPU-optimized, built-in RAG |
-    | **Jan** | Runner | Low | No | Fully offline, plugin system |
-    | **llama.cpp** | Runner (engine) | Medium | No | Zero Python deps, GGUF creator |
-    | **vLLM** | Production serving | High | Yes | Best throughput, PagedAttention |
-    | **LocalAI** | Production serving | Medium | No | OpenAI drop-in, multi-modal |
-    | **AnythingLLM** | Desktop app | Low | No | Document RAG + agents |
-    
-    ## Open-Weight Model Families
-    
-    | Model Family | Creator | Strength | Best For |
-    |-------------|---------|----------|----------|
-    | **Llama 4** | Meta | Best general purpose | General tasks |
-    | **DeepSeek V3/R1** | DeepSeek | Strong reasoning/coding | Logic and code tasks |
-    | **Qwen 2.5/3** | Alibaba | Strong multilingual | Non-English use |
-    | **Mistral/Mixtral** | Mistral AI | Efficient deployment | Resource-constrained serving |
-    | **Phi-4** | Microsoft | Small and efficient | Edge devices |
-    
-    ## Key Trends
-    
-    1. **Ollama dominates ease-of-use** — default recommendation for most local LLM users in 2026
-    2. **vLLM leads production serving** with PagedAttention and continuous batching
-    3. **GGUF (llama.cpp) is the dominant quantization format** across the ecosystem
-    4. **Consumer hardware runs 70B+ models** at 4-bit quantization
-    5. **Ecosystem convergence on OpenAI-compatible APIs** — all major tools support it
-    6. **Desktop apps adding RAG + agent capabilities** — blurring inference/application boundary
-    7. **Privacy-first motivation** is the primary driver for local adoption
-    
-    ## Recommendations
-    
-    - **For beginners / non-developers:** Start with Ollama (CLI) or LM Studio (GUI)
-    - **For CPU-only machines:** Use GPT4All or llama.cpp (GGUF quantized models)
-    - **For production serving:** Deploy vLLM on GPU infrastructure
-    - **For Docker-native workflows:** Use LocalAI as an OpenAI drop-in
-    - **For RAG / document workflows:** Use AnythingLLM or GPT4All
-    - **For edge / embedded:** Use llama.cpp or Phi-4 with 4-bit quantization
-    - **For multilingual needs:** Prefer Qwen model family
-    
-    *Curated resource: awesome-local-ai list tracks 152+ tools and growing.*
-    REPORT_END
