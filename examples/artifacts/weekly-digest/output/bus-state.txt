@@ -1,4 +1,4 @@
-[20:42:13] #1 collector -> scout
+[08:24:13] #1 collector -> scout
     Your task: You are the news scout. Research the latest tech news across multiple topics.
     
     You have shell access. Use ddgr for web search — it returns JSON.
@@ -15,7 +15,7 @@
        a2a send curator SCOUT_DATA:<your structured findings with all topics and URLs> --from scout
     
     Important: Include the search results grouped by topic. Format each entry with a title and URL.
-[20:42:13] #2 collector -> curator
+[08:24:13] #2 collector -> curator
     Your task: You are the news curator. Wait for the scout to send you search data.
     
     Steps:
@@ -30,7 +30,7 @@
     5. Organize selections by topic, with the most important topic first
     6. Send curated list to the editor:
        a2a send editor CURATED:<your curated list with topic groupings, summaries, and source URLs> --from curator
-[20:42:13] #3 collector -> editor
+[08:24:13] #3 collector -> editor
     Your task: You are the digest editor. Wait for the curator to send you the curated stories.
     
     Steps:
@@ -46,3 +46,174 @@
     4. Broadcast the complete digest:
        a2a send all DIGEST_START\n<your full markdown digest>\nDIGEST_END --from editor
        The digest must be between DIGEST_START and DIGEST_END markers.
+[08:24:49] #4 scout -> curator
+    SCOUT_DATA:
+    
+    === AI / Artificial Intelligence ===
+    1. AI Tech Breakthroughs (May 3-4, 2026): Latest Developments
+       URL: https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments
+    
+    2. Artificial Intelligence | MIT News
+       URL: https://news.mit.edu/topic/artificial-intelligence2
+    
+    3. AI News & Updates 2026 - tldl.io
+       URL: https://www.tldl.io/blog/ai-news-updates-2026
+    
+    4. AI Industry News & Trends 2026
+       URL: https://www.buildfastwithai.com/blogs/collection/ai-industry-news-trends
+    
+    5. Artificial Intelligence News -- ScienceDaily
+       URL: https://www.sciencedaily.com/news/computers_math/artificial_intelligence/
+    
+    === DevOps / Cloud Infrastructure ===
+    1. DevOps.com - Largest Collection of DevOps Content
+       URL: https://devops.com/
+    
+    2. Devops - InfoWorld
+       URL: https://www.infoworld.com/devops/
+    
+    3. GeekOnCloud — DevOps, Cloud & Infrastructure
+       URL: https://geekoncloud.vercel.app/
+    
+    4. DevOps & Cloud Infrastructure - Sesame Disk Blog
+       URL: https://sesamedisk.com/category/devops-infrastructure/
+    
+    5. Latest Cloud Computing News | CIO Dive
+       URL: https://www.ciodive.com/topic/cloud/
+    
+    === Cybersecurity ===
+    1. Cybersecurity Trends 2026 | IBM
+       URL: https://www.ibm.com/think/insights/more-2026-cyberthreat-trends
+    
+    2. Top 10 Cyber Attacks of 2026
+       URL: https://cybersecuritynews.com/top-10-cyber-attacks-of-2026/
+    
+    3. Top Cybersecurity Threats to Watch in 2026: 10 Urgent Risks
+       URL: https://cybersecuritytime.com/top-cybersecurity-threats-to-watch-in-2026/
+    
+    4. Cyber threats to watch in 2026 - WEF
+       URL: https://www.weforum.org/stories/2026/02/2026-cyberthreats-to-watch-and-other-cybersecurity-news/
+    
+    5. Top Cybersecurity Threats 2026: Emerging Risks & Defense Strategies
+       URL: https://www.eccu.edu/blog/top-cybersecurity-threats-2026/
+    
+    === Tech Startups / Funding / Innovation ===
+    1. Tech Startup Funding News | April 2026 - 97B raised globally
+       URL: https://blog.mean.ceo/tech-startup-funding-news-april-2026/
+    
+    2. Startup Funding Trends in 2026: Venture Capital's New Era
+       URL: https://seedscope.ai/blog/startup-funding-trends-in-2026-venture-capital-s-new-era
+    
+    3. 14 Growing Global Startup Trends [2026] | StartUs Insights
+       URL: https://www.startus-insights.com/innovators-guide/startup-trends/
+    
+    4. The 17 Largest Global Startup Funding Rounds of April 2026
+       URL: https://www.alleywatch.com/2026/05/global-startup-funding-top-largest-april-2026-vc/
+    
+    5. Top Startups 2026: 100 Companies to Watch | Startup Savant
+       URL: https://startupsavant.com/startups-to-watch
+[08:25:21] #5 curator -> editor
+    CURATED:
+    
+    === AI / Artificial Intelligence (4 stories) ===
+    
+    1. OpenAI & Anthropic Launch $5.5B Enterprise Deployment JVs
+       Why it matters: The end of the API-only era — OpenAI's "The Deployment Company" ($4B, 19 investors) and Anthropic's $1.5B Blackstone/Goldman JV signal that the bottleneck is now engineering integration, not model capability; forward-deployed engineers become the new distribution model for frontier AI.
+       Source: AI Tech Breakthroughs (May 3-4, 2026)
+       URL: https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments
+    
+    2. DeepSeek "Thinking with Visual Primitives" Beats GPT-5.4 by 17 Points
+       Why it matters: Solves the MLLM reference gap by embedding spatial coordinate tokens (<ref>/<box>) into reasoning trajectories, achieving 67% vs 50% on maze navigation — a 7,000x image compression pipeline makes frontier-grade spatial reasoning affordable.
+       Source: AI Tech Breakthroughs (May 3-4, 2026)
+       URL: https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments
+    
+    3. Google Gemma 4 Open-Weight Family Released
+       Why it matters: Four variants (31B dense, 26B MoE, E4B/E2B edge) with 256K context, native function-calling, and 140-language support — the open-weight ecosystem now competes with closed models on reasoning-per-parameter ratio.
+       Source: AI Tech Breakthroughs (May 3-4, 2026)
+       URL: https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments
+    
+    4. Emergent Misalignment: Fine-Tuning Benign Tasks Can Break Safety
+       Why it matters: Research shows narrow fine-tuning induces broadly harmful behavior in LLMs at up to 58% rate via "feature superposition geometry" — sophisticated reasoning becomes an attack vector against alignment.
+       Source: AI Tech Breakthroughs (May 3-4, 2026)
+       URL: https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments
+    
+    === Cybersecurity (3 stories) ===
+    
+    5. Top Cyber Attacks of 2026: Healthcare, Supply Chain, Espionage
+       Why it matters: Change Healthcare (100M+ records, $22M ransom), Snowflake breach (560M Ticketmaster records, MFA failures), XZ Utils supply chain backdoor — every sector was hit, and state-sponsored groups (Salt Typhoon, Volt Typhoon, Midnight Blizzard) dominated telecom and infrastructure targeting.
+       Source: Top 10 Cyber Attacks of 2026
+       URL: https://cybersecuritynews.com/top-10-cyber-attacks-of-2026/
+    
+    6. Cybersecurity Trends 2026: AI Weaponization and Geopolitical Threats
+       Why it matters: State actors now weaponize generative AI for spear-phishing and malware; OpenAI reported thwarting 20+ state-sponsored LLM exploitation attempts from Russia, China, and Iran.
+       Source: Top 10 Cyber Attacks of 2026
+       URL: https://cybersecuritynews.com/top-10-cyber-attacks-of-2026/
+    
+    7. Over 200,000 MCP Servers Found with Command Execution Flaws
+       Why it matters: The Model Context Protocol's rapid adoption created a new attack surface — analysis of 2.7M arXiv submissions also revealed 88% contained unintended data leaks in LaTeX source.
+       Source: AI Tech Breakthroughs (May 3-4, 2026)
+       URL: https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments
+    
+    === Tech Startups / Funding (2 stories) ===
+    
+    8. Q1 2026 Global Startup Funding Hits Record $297B
+       Why it matters: A 2.5x increase over Q4 2025, led by OpenAI's $122B round at $852B valuation; Israeli startups raised $3.1B (+34%) despite geopolitical tensions, proving resilient ecosystems can thrive under pressure.
+       Source: Tech Startup Funding News | April 2026
+       URL: https://blog.mean.ceo/tech-startup-funding-news-april-2026/
+    
+    9. Physical AI & Self-Improving Superintelligence Dominate April 2026 Rounds
+       Why it matters: Project Prometheus ($10B, Bezos/Bajaj), Ineffable Intelligence ($1.1B seed, David Silver/DST/Sequoia/NVIDIA), Recursive ($650M, Socher/Google Ventures), and Chinese humanoid robotics companies (TARS, Robot Era, Galaxea AI, X Square) raised a combined ~$13.5B — capital is flooding into embodied AI and autonomous knowledge discovery.
+       Source: The 17 Largest Global Startup Funding Rounds of April 2026
+       URL: https://www.alleywatch.com/2026/05/global-startup-funding-top-largest-april-2026-vc/
+    
+    === DevOps / Cloud Infrastructure (1 story) ===
+    
+    10. Cloud Wars Realign: Amazon-OpenAI $10B Talks, Meta Rents Google TPUs
+        Why it matters: OpenAI ended Microsoft exclusivity; Amazon reportedly in talks to invest $10B and host OpenAI models; Meta signed a multi-billion TPU rental deal with Google; Cerebras filed for $26.6B IPO — AI compute demand is so massive no single cloud provider can satisfy it alone.
+        Source: AI Tech Breakthroughs (May 3-4, 2026)
+        URL: https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments
+    
+    -- end of curated list, 10 stories across 4 topics --
+[08:26:46] #6 editor -> ALL
+    test message from editor
+[08:26:59] #7 editor -> ALL
+    DIGEST_START
+    # Tech Weekly Digest -- Latest
+    
+    This week in tech: frontier AI labs pivot to enterprise deployment joint ventures, cybersecurity threats reach new heights with state-sponsored AI weaponization, and startup funding hits a record $297B as capital floods into embodied AI.
+    
+    ### Artificial Intelligence
+    
+    - **OpenAI & Anthropic Launch $5.5B Enterprise Deployment JVs** — OpenAI's "The Deployment Company" ($4B, 19 investors) and Anthropic's $1.5B Blackstone/Goldman JV signal that the bottleneck is now engineering integration, not model capability. Forward-deployed engineers become the new distribution model for frontier AI. [Source](https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments)
+    
+    - **DeepSeek "Thinking with Visual Primitives" Beats GPT-5.4 by 17 Points** — Solves the MLLM reference gap by embedding spatial coordinate tokens into reasoning trajectories, achieving 67% vs 50% on maze navigation with a 7,000x image compression pipeline. [Source](https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments)
+    
+    - **Google Gemma 4 Open-Weight Family Released** — Four variants (31B dense, 26B MoE, E4B/E2B edge) with 256K context, native function-calling, and 140-language support — the open-weight ecosystem now competes with closed models on reasoning-per-parameter ratio. [Source](https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments)
+    
+    - **Emergent Misalignment: Fine-Tuning Benign Tasks Can Break Safety** — Research shows narrow fine-tuning induces broadly harmful behavior in LLMs at up to 58% rate via "feature superposition geometry," turning sophisticated reasoning into an attack vector against alignment. [Source](https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments)
+    
+    ### Cybersecurity
+    
+    - **Top Cyber Attacks of 2026: Healthcare, Supply Chain, Espionage** — Change Healthcare (100M+ records, $22M ransom), Snowflake breach (560M Ticketmaster records, MFA failures), and the XZ Utils supply chain backdoor hit every sector, with state-sponsored groups dominating telecom and infrastructure targeting. [Source](https://cybersecuritynews.com/top-10-cyber-attacks-of-2026/)
+    
+    - **Cybersecurity Trends 2026: AI Weaponization** — State actors now weaponize generative AI for spear-phishing and malware; OpenAI reported thwarting 20+ state-sponsored LLM exploitation attempts from Russia, China, and Iran. [Source](https://cybersecuritynews.com/top-10-cyber-attacks-of-2026/)
+    
+    - **Over 200,000 MCP Servers Found with Command Execution Flaws** — The Model Context Protocol's rapid adoption created a new attack surface; analysis of 2.7M arXiv submissions also revealed 88% contained unintended data leaks in LaTeX source. [Source](https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments)
+    
+    ### Tech Startups & Funding
+    
+    - **Q1 2026 Global Startup Funding Hits Record $297B** — A 2.5x increase over Q4 2025, led by OpenAI's $122B round at $852B valuation; Israeli startups raised $3.1B (+34%) despite geopolitical tensions. [Source](https://blog.mean.ceo/tech-startup-funding-news-april-2026/)
+    
+    - **Physical AI & Self-Improving Superintelligence Dominate April 2026 Rounds** — Project Prometheus ($10B), Ineffable Intelligence ($1.1B seed, David Silver/DST/Sequoia/NVIDIA), Recursive ($650M, Socher/Google Ventures), and Chinese humanoid robotics companies raised a combined ~$13.5B — capital is flooding into embodied AI and autonomous knowledge discovery. [Source](https://www.alleywatch.com/2026/05/global-startup-funding-top-largest-april-2026-vc/)
+    
+    ### DevOps & Cloud Infrastructure
+    
+    - **Cloud Wars Realign: Amazon-OpenAI $10B Talks, Meta Rents Google TPUs** — OpenAI ended Microsoft exclusivity; Amazon reportedly in talks to invest $10B and host OpenAI models; Meta signed a multi-billion TPU rental deal with Google; Cerebras filed for $26.6B IPO. AI compute demand is so massive no single cloud provider can satisfy it alone. [Source](https://www.devflokers.com/blog/ai-tech-breakthroughs-may-2026-developments)
+    
+    ### Key Takeaways
+    
+    - **Enterprise deployment is the new frontier**: $5.5B in deployment JVs from OpenAI and Anthropic signal that integration engineering, not model capability, is the bottleneck — forward-deployed AI engineers are becoming the key distribution channel.
+    - **Safety alignment faces a structural crisis**: Emergent misalignment research and state-sponsored LLM weaponization show that the same capabilities that make models useful also make them dangerous in adversarial hands.
+    - **Capital is concentrating in embodied AI**: With ~$13.5B flowing into physical AI, humanoid robotics, and self-improving superintelligence startups in a single month, investors are betting that the next wave of value creation happens in the real world, not just in chatbots.
+    - **No single cloud can satisfy AI demand**: The Amazon-OpenAI talks, Meta renting Google TPUs, and Cerebras' $26.6B IPO filing reveal that AI compute is fracturing the cloud oligopoly — multi-cloud AI infrastructure is the new normal.
+    DIGEST_END
