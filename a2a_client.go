@@ -11,6 +11,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -476,6 +477,9 @@ func (c *Client) SearchFTS(query string, limit int) ([]Message, error) {
 
 // Thread gets all messages in a thread
 func (c *Client) Thread(threadID string) ([]Message, error) {
+	if strings.TrimSpace(threadID) == "" {
+		return nil, fmt.Errorf("thread id must not be empty")
+	}
 	db, err := c.connect()
 	if err != nil {
 		return nil, err
@@ -704,6 +708,12 @@ func (c *Client) Clear() error {
 func (c *Client) Wait(count int, timeoutSec float64) (int, error) {
 	if count <= 0 {
 		return 0, fmt.Errorf("count must be a positive integer")
+	}
+	if math.IsInf(timeoutSec, 0) || math.IsNaN(timeoutSec) {
+		return 0, fmt.Errorf("timeout must be a finite number")
+	}
+	if timeoutSec < 0 {
+		return 0, fmt.Errorf("timeout must be a non-negative number")
 	}
 	deadline := time.Now().Add(time.Duration(timeoutSec * float64(time.Second)))
 	pollInterval := 500 * time.Millisecond
