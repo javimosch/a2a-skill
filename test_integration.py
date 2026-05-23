@@ -922,6 +922,26 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(len(msgs), 0,
                          "search with no match should return empty list")
 
+    def test_register_negative_pid_fails(self):
+        """Register with negative --pid fails."""
+        result = a2a("register", "test-agent", "--pid", "-1",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("positive integer", result.stderr.lower())
+
+    def test_recv_since_inf_fails(self):
+        """recv --since inf fails."""
+        a2a("register", "alice", project=self.project)
+        result = a2a("recv", "--as", "alice", "--since", "inf",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("finite", result.stderr.lower())
+        # Also test --since NaN
+        result = a2a("recv", "--as", "alice", "--since", "NaN",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("finite", result.stderr.lower())
+
 
 if __name__ == "__main__":
     unittest.main()
