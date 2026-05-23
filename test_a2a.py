@@ -2109,6 +2109,105 @@ class TestEdgeCases(unittest.TestCase):
                 pid=-1, upsert=False
             ))
 
+    def test_recv_nan_wait_rejected(self):
+        """recv with --wait NaN is rejected."""
+        self._register("alice")
+        with self.assertRaises(SystemExit):
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, **{"as_": "alice"},
+                wait=float("nan"), limit=0, all=False, since=None,
+                include_self=False, peek=False, json=False
+            ))
+
+    def test_recv_inf_wait_rejected(self):
+        """recv with --wait inf is rejected."""
+        self._register("alice")
+        with self.assertRaises(SystemExit):
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, **{"as_": "alice"},
+                wait=float("inf"), limit=0, all=False, since=None,
+                include_self=False, peek=False, json=False
+            ))
+
+    def test_recv_nan_since_rejected(self):
+        """recv with --since NaN is rejected."""
+        self._register("alice")
+        with self.assertRaises(SystemExit):
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, **{"as_": "alice"},
+                wait=0, limit=0, all=False, since=float("nan"),
+                include_self=False, peek=False, json=False
+            ))
+
+    def test_wait_nan_timeout_rejected(self):
+        """cmd_wait with --timeout NaN is rejected."""
+        self._register("alice")
+        with self.assertRaises(SystemExit):
+            a2a.cmd_wait(a2a.argparse.Namespace(
+                project=self.project, as_="alice",
+                timeout=float("nan"), count=1
+            ))
+
+    def test_wait_inf_timeout_rejected(self):
+        """cmd_wait with --timeout inf is rejected."""
+        self._register("alice")
+        with self.assertRaises(SystemExit):
+            a2a.cmd_wait(a2a.argparse.Namespace(
+                project=self.project, as_="alice",
+                timeout=float("inf"), count=1
+            ))
+
+    def test_peek_limit_capped_at_1000(self):
+        """peek with --limit > 1000 is capped to 1000, not rejected."""
+        conn = a2a.connect(self.project, create=True)
+        for i in range(5):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (f"agent{i}", "active", a2a.now(), a2a.now())
+            )
+            conn.execute(
+                "INSERT INTO messages(sender, body, created_at) VALUES (?,?,?)",
+                (f"agent{i}", f"message {i}", a2a.now())
+            )
+        conn.commit()
+        conn.close()
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_peek(a2a.argparse.Namespace(
+            project=self.project, limit=9999, json=False
+        ))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        # Should only show up to 1000 messages (we only have 5)
+        self.assertIn("message 0", output)
+
+    def test_search_limit_capped_at_200(self):
+        """search with --limit > 200 is capped to 200."""
+        conn = a2a.connect(self.project, create=True)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        for i in range(10):
+            conn.execute(
+                "INSERT INTO messages(sender, body, created_at) VALUES (?,?,?)",
+                ("alice", f"searchable message {i}", a2a.now())
+            )
+        conn.commit()
+        conn.close()
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        a2a.cmd_search(a2a.argparse.Namespace(
+            project=self.project, query="searchable",
+            limit=999, json=False, fts=False
+        ))
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        # Should find all 10 messages (well under 200 cap)
+        self.assertIn("searchable message 9", output)
+
 
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
