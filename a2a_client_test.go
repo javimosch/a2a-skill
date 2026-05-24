@@ -1026,3 +1026,106 @@ func TestRegisterNonPositivePIDFails(t *testing.T) {
 		t.Fatalf("expected error about pid, got: %v", err)
 	}
 }
+
+func TestRegisterMaxIDLengthFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	longID := strings.Repeat("a", MaxAgentIDLength+1)
+	c.AgentID = longID
+	err := c.Register("tester", "", "", 0, false)
+	if err == nil {
+		t.Fatal("expected error for Register with too-long ID, got nil")
+	}
+	if !strings.Contains(err.Error(), "too long") {
+		t.Fatalf("expected error about 'too long', got: %v", err)
+	}
+}
+
+func TestSendMaxSenderIDLengthFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	// Sender ID too long
+	longID := strings.Repeat("b", MaxAgentIDLength+1)
+	c.AgentID = longID
+	_, err := c.Send("alice", "hello", "", nil)
+	if err == nil {
+		t.Fatal("expected error for Send with too-long sender ID, got nil")
+	}
+	if !strings.Contains(err.Error(), "too long") {
+		t.Fatalf("expected error about 'too long', got: %v", err)
+	}
+}
+
+func TestSendMaxRecipientIDLengthFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	// Recipient ID too long (not broadcast)
+	longID := strings.Repeat("b", MaxAgentIDLength+1)
+	_, err := c.Send(longID, "hello", "", nil)
+	if err == nil {
+		t.Fatal("expected error for Send with too-long recipient ID, got nil")
+	}
+	if !strings.Contains(err.Error(), "too long") {
+		t.Fatalf("expected error about 'too long', got: %v", err)
+	}
+}
+
+func TestSendMaxThreadIDLengthFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	// Thread ID too long
+	longThread := strings.Repeat("t", MaxThreadIDLength+1)
+	_, err := c.Send("alice", "hello", longThread, nil)
+	if err == nil {
+		t.Fatal("expected error for Send with too-long thread ID, got nil")
+	}
+	if !strings.Contains(err.Error(), "too long") {
+		t.Fatalf("expected error about 'too long', got: %v", err)
+	}
+}
+
+func TestSendMaxBodyLengthFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	// Body too long
+	longBody := strings.Repeat("x", MaxBodyLength+1)
+	_, err := c.Send("alice", longBody, "", nil)
+	if err == nil {
+		t.Fatal("expected error for Send with too-long body, got nil")
+	}
+	if !strings.Contains(err.Error(), "too long") {
+		t.Fatalf("expected error about 'too long', got: %v", err)
+	}
+}
+
+func TestSendMaxBodyLengthBoundaryOk(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	c.Register("planner", "", "", 0, false)
+
+	// Body at max length should succeed
+	exactBody := strings.Repeat("x", MaxBodyLength)
+	_, err := c.Send("alice", exactBody, "", nil)
+	if err != nil {
+		t.Fatalf("expected body at max length to succeed, got: %v", err)
+	}
+}
