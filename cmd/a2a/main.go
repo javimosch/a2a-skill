@@ -15,6 +15,14 @@ import (
 
 const Version = "1.0.0"
 
+// Max length limits matching a2a.py constants — validated at Go CLI entry points
+// before delegating to the client library.
+const (
+	maxCLIAgentIDLength  = 256
+	maxCLIThreadIDLength = 256
+	maxCLIBodyLength     = 100000
+)
+
 var _ = strconv.Itoa // ensure import
 
 // hasFlag checks if a flag (--name) is present in os.Args[2:].
@@ -198,6 +206,16 @@ func printJSON(v interface{}) {
 
 // ---------- commands ----------
 
+// validateMaxLength checks that the given value does not exceed maxLen.
+// Returns true if valid, false and prints error + exits if invalid.
+func validateMaxLength(value string, maxLen int, name string) bool {
+	if len(value) > maxLen {
+		fmt.Fprintf(os.Stderr, "a2a: %s too long (%d chars, max %d)\n", name, len(value), maxLen)
+		os.Exit(1)
+	}
+	return true
+}
+
 func cmdInit() {
 	c := newClient("")
 	if err := c.InitProject(); err != nil {
@@ -218,6 +236,7 @@ func cmdRegister() {
 		fmt.Fprintln(os.Stderr, "a2a: agent id must not be empty — pass a valid registered agent id")
 		os.Exit(1)
 	}
+	validateMaxLength(agentID, maxCLIAgentIDLength, "agent id")
 	role := getFlagValue("--role")
 	prompt := getFlagValue("--prompt")
 	cli := getFlagValue("--cli")
@@ -259,6 +278,7 @@ func cmdUnregister() {
 		fmt.Fprintln(os.Stderr, "a2a: agent id must not be empty — pass a valid registered agent id")
 		os.Exit(1)
 	}
+	validateMaxLength(agentID, maxCLIAgentIDLength, "agent id")
 	c := newClient(agentID)
 	if err := c.Unregister(); err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: unregister error: %v\n", err)
@@ -305,6 +325,7 @@ func cmdStatus() {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a status <state> --as <id> [--json]")
 		os.Exit(1)
 	}
+	validateMaxLength(agentID, maxCLIAgentIDLength, "--as agent id")
 	state := args[0]
 
 	c := newClient(agentID)
@@ -339,10 +360,14 @@ func cmdSend() {
 		fmt.Fprintln(os.Stderr, "a2a: --from agent id must not be empty")
 		os.Exit(1)
 	}
+	validateMaxLength(from, maxCLIAgentIDLength, "--from agent id")
 
 	if thread != "" && strings.TrimSpace(thread) == "" {
 		fmt.Fprintln(os.Stderr, "a2a: --thread must not be empty")
 		os.Exit(1)
+	}
+	if thread != "" {
+		validateMaxLength(thread, maxCLIThreadIDLength, "--thread")
 	}
 
 	to := args[0]
@@ -351,6 +376,10 @@ func cmdSend() {
 		fmt.Fprintln(os.Stderr, "a2a: recipient must not be empty")
 		os.Exit(1)
 	}
+	if to != "all" && to != "*" && to != "broadcast" {
+		validateMaxLength(to, maxCLIAgentIDLength, "recipient")
+	}
+	validateMaxLength(body, maxCLIBodyLength, "message body")
 	if body == "-" {
 		stdin, _ := os.ReadFile(os.Stdin.Name())
 		body = strings.TrimSpace(string(stdin))
@@ -415,6 +444,7 @@ func cmdRecv() {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a recv --as <id> [--wait N] [--limit N] [--all] [--include-self] [--peek] [--since TS] [--json]")
 		os.Exit(1)
 	}
+	validateMaxLength(agentID, maxCLIAgentIDLength, "--as agent id")
 
 	if hasFlag("--wait") && (math.IsInf(waitSec, 0) || math.IsNaN(waitSec)) {
 		fmt.Fprintln(os.Stderr, "a2a: --wait must be a finite number")
@@ -639,6 +669,7 @@ func cmdWait() {
 		fmt.Fprintln(os.Stderr, "a2a: usage: a2a wait --as <id> [--count N] [--timeout N]")
 		os.Exit(1)
 	}
+	validateMaxLength(agentID, maxCLIAgentIDLength, "--as agent id")
 
 	if count <= 0 {
 		fmt.Fprintln(os.Stderr, "a2a: --count must be a positive integer")

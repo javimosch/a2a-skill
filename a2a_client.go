@@ -20,6 +20,15 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// Max length limits matching a2a.py's MAX_ID_LENGTH, MAX_THREAD_ID_LENGTH,
+// and MAX_BODY_LENGTH. These prevent SQLite/text abuse and ensure parity
+// between Go and Python validation.
+const (
+	MaxAgentIDLength   = 256
+	MaxThreadIDLength  = 256
+	MaxBodyLength      = 100000
+)
+
 // Client represents an a2a messaging client
 type Client struct {
 	Project  string
@@ -99,6 +108,9 @@ func (c *Client) connect() (*sql.DB, error) {
 // Send sends a message to a peer (or broadcast if recipient is "all"/"*"/"broadcast").
 // threadID may be empty string for no thread. ttlSeconds may be nil for no expiry.
 func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, error) {
+	if len(c.AgentID) > MaxAgentIDLength {
+		return 0, fmt.Errorf("sender agent id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
+	}
 	if strings.TrimSpace(to) == "" {
 		return 0, fmt.Errorf("recipient must not be empty")
 	}
@@ -119,6 +131,9 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 
 	var recip *string
 	if to != "all" && to != "*" && to != "broadcast" {
+		if len(to) > MaxAgentIDLength {
+			return 0, fmt.Errorf("recipient agent id too long (%d chars, max %d)", len(to), MaxAgentIDLength)
+		}
 		// Validate recipient exists
 		if err := db.QueryRow("SELECT COUNT(1) FROM agents WHERE id=?", to).Scan(&count); err != nil || count == 0 {
 			return 0, fmt.Errorf("unknown recipient '%s'", to)
@@ -129,7 +144,14 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 
 	var tid *string
 	if threadID != "" {
+		if len(threadID) > MaxThreadIDLength {
+			return 0, fmt.Errorf("thread id too long (%d chars, max %d)", len(threadID), MaxThreadIDLength)
+		}
 		tid = &threadID
+	}
+
+	if len(message) > MaxBodyLength {
+		return 0, fmt.Errorf("message body too long (%d chars, max %d)", len(message), MaxBodyLength)
 	}
 
 	result, err := db.Exec(
@@ -637,6 +659,9 @@ func (c *Client) InitProject() error {
 
 // Register registers an agent. If upsert is true, updates existing.
 func (c *Client) Register(role, prompt, cli string, pid int, upsert bool) error {
+	if len(c.AgentID) > MaxAgentIDLength {
+		return fmt.Errorf("agent id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
+	}
 	if pid < 0 {
 		return fmt.Errorf("pid must be a positive integer")
 	}
