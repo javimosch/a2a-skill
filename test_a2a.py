@@ -2360,6 +2360,97 @@ class TestEdgeCases(unittest.TestCase):
                 a2a.argparse.Namespace(project=self.project, id="b" * 300)
             )
 
+    def test_cmd_clear_empty_bus(self):
+        """Clear on a bus with no database prints notice and does not crash."""
+        import io, sys
+        # Use a project that has never been initialized
+        phantom_project = f"phantom-{os.getpid()}"
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_clear(
+                a2a.argparse.Namespace(project=phantom_project, yes=True)
+            )
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("nothing to clear", output.lower())
+
+    def test_cmd_list_json_empty(self):
+        """list --json on a bus with no agents returns valid JSON empty array."""
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_list(
+                a2a.argparse.Namespace(project=self.project, json=True)
+            )
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 0)
+
+    def test_recv_all_shows_all_messages(self):
+        """recv --all shows messages to agent even after they've been read."""
+        conn = a2a.connect(self.project)
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (agent_id, "active", a2a.now(), a2a.now())
+            )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", "bob", "message for bob", a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO reads(agent_id, message_id, read_at) VALUES (?,?,?)",
+            ("bob", 1, a2a.now())
+        )
+        conn.commit()
+        conn.close()
+
+        # recv without --all should NOT show already-read message
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, as_="bob", wait=0, all=False,
+                peek=False, limit=None, since=None, json=True, include_self=False
+            ))
+            output_no_all = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        # Should be empty (no unread messages)
+        import json
+        data_no_all = json.loads(output_no_all) if output_no_all.strip() else []
+        self.assertEqual(len(data_no_all), 0, "recv without --all should not return already-read msgs")
+
+        # recv with --all shows all messages regardless of read status
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, as_="bob", wait=0, all=True,
+                peek=False, limit=None, since=None, json=True, include_self=False
+            ))
+            output_all = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data_all = json.loads(output_all) if output_all.strip() else []
+        self.assertGreaterEqual(len(data_all), 1, "recv --all should return already-read msgs")
+        self.assertIn("message for bob", [m["body"] for m in data_all])
+
+    def test_recv_all_requires_as(self):
+        """recv --all without --as raises SystemExit."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, as_=None, wait=0, all=True,
+                peek=False, limit=None, since=None, json=False, include_self=False
+            ))
+
 
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
