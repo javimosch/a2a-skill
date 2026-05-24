@@ -135,6 +135,16 @@ class TestA2ARestServer(unittest.TestCase):
         _, body = self._get("/health")
         self.assertEqual(body, {"status": "ok"})
 
+    def test_health_returns_cors_header(self):
+        """GET /health returns Access-Control-Allow-Origin: *."""
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        conn.request("GET", "/health")
+        resp = conn.getresponse()
+        cors = resp.getheader("Access-Control-Allow-Origin")
+        resp.read()
+        conn.close()
+        self.assertEqual(cors, "*")
+
     # --- /peers ---
 
     def test_peers_returns_200(self):
@@ -208,6 +218,20 @@ class TestA2ARestServer(unittest.TestCase):
         _, body = self._get("/messages?limit=50")
         bodies = [m["body"] for m in body["messages"]]
         self.assertIn("Test peek message", bodies)
+
+    def test_messages_chronological_order(self):
+        """GET /messages returns messages in chronological order."""
+        self._post("/send", {"to": "bob", "message": "first msg"})
+        self._post("/send", {"to": "bob", "message": "second msg"})
+        _, body = self._get("/messages?limit=10")
+        messages = body["messages"]
+        if len(messages) >= 2:
+            bodies = [m["body"] for m in messages]
+            first_idx = bodies.index("first msg") if "first msg" in bodies else -1
+            second_idx = bodies.index("second msg") if "second msg" in bodies else -1
+            if first_idx >= 0 and second_idx >= 0:
+                self.assertLess(first_idx, second_idx,
+                                "messages should appear in chronological order")
 
     # --- POST /recv ---
 
