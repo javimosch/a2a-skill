@@ -549,4 +549,25 @@ Node.js and Rust were the only clients missing this.
 - **Tests added:** Both Node.js and Rust test suites now include thread_id
   storage, empty thread_id rejection, and whitespace thread_id rejection tests.
 
+### Agent ID, thread ID, and body max length validation (Go parity)
+
+The Python CLI (`a2a.py`) has enforced `MAX_ID_LENGTH=256`, `MAX_THREAD_ID_LENGTH=256`,
+and `MAX_BODY_LENGTH=100000` since v1.3.2. The Go client library and Go CLI did not
+validate any of these limits, allowing oversized inputs that could cause SQLite/text
+abuse.
+
+**Fixed (this session):**
+- **Go client library** (`a2a_client.go`): Added `MaxAgentIDLength`, `MaxThreadIDLength`,
+  `MaxBodyLength` exported constants. `Register()` rejects agent IDs > 256 chars.
+  `Send()` rejects sender IDs, recipient IDs, thread IDs, and body content exceeding
+  their respective limits.
+- **Go CLI** (`cmd/a2a/main.go`): All commands that accept agent IDs (`register`,
+  `unregister`, `send`, `status`, `recv`, `wait`) now validate max length at the
+  CLI entry point before delegating to the client library.
+- **Tests added:**
+  - 7 Go client library tests (register max length, send max sender/recipient/thread/body,
+    body boundary test, send max sender length)
+  - 9 Python integration tests (register max length + boundary, send max from/recipient/
+    thread, unregister max length, status max --as, recv max --as, wait max --as)
+
 
