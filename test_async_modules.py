@@ -340,28 +340,34 @@ class TestA2AClientAsync(unittest.TestCase):
     def test_send_to_empty_string_raises_value_error(self):
         """send() with empty recipient raises ValueError (async)."""
         from a2a_client_async import A2AClientAsync
-        client = A2AClientAsync(self.project, "alice")
-        with self.assertRaises(ValueError):
-            run_async(client.send("", "empty"))
-        with self.assertRaises(ValueError):
-            run_async(client.send("   ", "whitespace"))
+        async def _test():
+            async with A2AClientAsync(self.project, "alice") as client:
+                with self.assertRaises(ValueError):
+                    await client.send("", "empty")
+                with self.assertRaises(ValueError):
+                    await client.send("   ", "whitespace")
+        run_async(_test())
 
     def test_send_ttl_non_positive_rejected(self):
         """send() with ttl <= 0 raises ValueError (async)."""
         from a2a_client_async import A2AClientAsync
-        client = A2AClientAsync(self.project, "alice")
         run_async(self.alice.register("tester"))
-        for bad_ttl in (0, -1, -5):
-            with self.assertRaises(ValueError):
-                run_async(client.send("bob", "bad ttl", ttl_seconds=bad_ttl))
+        async def _test():
+            async with A2AClientAsync(self.project, "alice") as client:
+                for bad_ttl in (0, -1, -5):
+                    with self.assertRaises(ValueError):
+                        await client.send("bob", "bad ttl", ttl_seconds=bad_ttl)
 
     def test_send_empty_body(self):
         """send() with empty body creates a message with empty content (async)."""
         from a2a_client_async import A2AClientAsync
         run_async(self.alice.register("tester"))
-        client = A2AClientAsync(self.project, "alice")
         run_async(self.bob.register("tester"))
-        msg_id = run_async(client.send("bob", ""))
+        async def _do():
+            async with A2AClientAsync(self.project, "alice") as client:
+                msg_id = await client.send("bob", "")
+                return msg_id
+        msg_id = run_async(_do())
         self.assertGreater(msg_id, 0)
         msgs = run_async(self.bob.recv(wait=1))
         self.assertEqual(len(msgs), 1)
