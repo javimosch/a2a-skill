@@ -570,4 +570,27 @@ abuse.
   - 9 Python integration tests (register max length + boundary, send max from/recipient/
     thread, unregister max length, status max --as, recv max --as, wait max --as)
 
+### Peek and search limit capping in Go CLI (Python→Go parity)
+
+The Python CLI caps `peek --limit` at 1000 and `search --limit` at 200, silently
+reducing any value above the cap to the maximum. The Go CLI used to pass the
+raw limit directly to SQLite without capping, allowing `peek --limit 9999` to
+attempt a 9999-row query. While SQLite handles this fine for small buses, the
+behavior was inconsistent with Python and caused different output for the same
+command line.
+
+**Fixed (this session):**
+- **Go CLI** (`cmd/a2a/main.go`): `cmdPeek()` now caps `--limit` at 1000.
+  `cmdSearch()` now caps `--limit` at 200. Both match Python behavior exactly.
+- **Tests added:** 2 Python integration tests (`test_peek_limit_over_max_does_not_error`,
+  `test_search_limit_over_max_does_not_error`) that verify large limit values
+  return all available messages without error.
+
+**Checklist when adding Go CLI parity:**
+1. Check Python `cmd_*` function for limit caps, rejection ranges, and edge cases.
+2. Add equivalent check in Go `cmd*` function — same error message, same exit code.
+3. Add integration test that exercises the check via the Go binary.
+4. Rebuild the Go binary: `go build -o a2a ./cmd/a2a/`
+5. Run both test suites before committing.
+
 
