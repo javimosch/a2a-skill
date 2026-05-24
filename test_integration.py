@@ -1070,6 +1070,38 @@ class TestIntegration(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("too long", result.stderr.lower())
 
+    def test_unregister_max_id_length_rejected(self):
+        """Unregister with agent ID > 256 chars is rejected."""
+        long_id = "u" * 257
+        result = a2a("unregister", long_id, project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("too long", result.stderr.lower())
+
+    def test_status_max_as_id_length_rejected(self):
+        """Status with --as > 256 chars is rejected."""
+        a2a("register", "tester", project=self.project)
+        long_id = "s" * 257
+        result = a2a("status", "done", "--as", long_id,
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("too long", result.stderr.lower())
+
+    def test_recv_max_as_id_length_rejected(self):
+        """Recv with --as > 256 chars is rejected."""
+        long_id = "r" * 257
+        result = a2a("recv", "--as", long_id, "--wait", "0",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("too long", result.stderr.lower())
+
+    def test_wait_max_as_id_length_rejected(self):
+        """Wait with --as > 256 chars is rejected."""
+        long_id = "w" * 257
+        result = a2a("wait", "--as", long_id, "--count", "1", "--timeout", "1",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("too long", result.stderr.lower())
+
 
 if __name__ == "__main__":
     unittest.main()
