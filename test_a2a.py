@@ -564,6 +564,17 @@ class TestEdgeCases(unittest.TestCase):
         with self.assertRaises(SystemExit):
             a2a.cmd_send(args)
 
+    def test_send_unknown_sender(self):
+        """Sending from an unregistered agent fails gracefully."""
+        # Register recipient but not sender
+        self._register("bob")
+        args = a2a.argparse.Namespace(
+            project=self.project, to="bob", body="hi",
+            **{"from_": "unregistered-sender", "thread": None}
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(args)
+
     def test_send_with_thread(self):
         """Send with --thread stores thread_id on the message."""
         self._register("alice")
