@@ -379,11 +379,15 @@ func cmdSend() {
 	if to != "all" && to != "*" && to != "broadcast" {
 		validateMaxLength(to, maxCLIAgentIDLength, "recipient")
 	}
-	validateMaxLength(body, maxCLIBodyLength, "message body")
 	if body == "-" {
-		stdin, _ := os.ReadFile(os.Stdin.Name())
-		body = strings.TrimSpace(string(stdin))
+		stdin, err := os.ReadFile(os.Stdin.Name())
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "a2a: failed to read stdin: %v\n", err)
+			os.Exit(1)
+		}
+		body = string(stdin)
 	}
+	validateMaxLength(body, maxCLIBodyLength, "message body")
 	if strings.TrimSpace(body) == "" {
 		fmt.Fprintln(os.Stderr, "a2a: warning: sending empty message body")
 	}
