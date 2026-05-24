@@ -1029,6 +1029,47 @@ class TestIntegration(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("--from", result.stderr.lower())
 
+    # --- Max length validation tests ---
+
+    def test_register_max_id_length_rejected(self):
+        """Register with agent ID > 256 chars is rejected."""
+        long_id = "a" * 257
+        result = a2a("register", long_id, project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("too long", result.stderr.lower())
+
+    def test_register_max_id_length_boundary_ok(self):
+        """Register with agent ID = 256 chars succeeds."""
+        exact_id = "a" * 256
+        a2a("register", exact_id, project=self.project)
+
+    def test_send_max_from_id_length_rejected(self):
+        """Send with --from > 256 chars is rejected."""
+        long_id = "b" * 257
+        result = a2a("send", "alice", "hello", "--from", long_id,
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("too long", result.stderr.lower())
+
+    def test_send_max_recipient_id_length_rejected(self):
+        """Send with recipient > 256 chars is rejected."""
+        a2a("register", "sender", project=self.project)
+        long_id = "c" * 257
+        result = a2a("send", long_id, "hello", "--from", "sender",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("too long", result.stderr.lower())
+
+    def test_send_max_thread_length_rejected(self):
+        """Send with --thread > 256 chars is rejected."""
+        a2a("register", "sender", project=self.project)
+        long_thread = "t" * 257
+        result = a2a("send", "sender", "hello", "--from", "sender",
+                     "--thread", long_thread,
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("too long", result.stderr.lower())
+
 
 if __name__ == "__main__":
     unittest.main()
