@@ -72,13 +72,13 @@ a2a-skill/
 ├── verify_json_parity.sh Go vs Python JSON cross-verify
 ├── a2a_client.js         Node.js client
 ├── src/lib.rs            Rust client
-├── test_a2a.py           unit tests (138)
-├── test_a2a_client.py    Python client tests (70)
+├── test_a2a.py           unit tests (143)
+├── test_a2a_client.py    Python client tests (72)
 ├── test_integration.py   integration tests (92)
 ├── test_v13_features.py  v1.3 satellite module tests (108)
 ├── test_git_aware.py     git-aware module tests (40)
 ├── test_server.py        REST API tests (47)
-├── test_async_modules.py async client tests (39, 16 skip-guarded)  ← 534 tests total
+├── test_async_modules.py async client tests (39, 16 skip-guarded)  ← 541 tests total
 ├── benchmark.py
 ├── dashboard.py
 ├── examples/             AGENTS.md documents patterns
@@ -194,7 +194,7 @@ is the agents' rulebook. When changing it:
 
 ## Running the tests
 
-### Unit tests (138 tests, stdlib only)
+### Unit tests (143 tests, stdlib only)
 
 ```bash
 python3 test_a2a.py -v
@@ -204,7 +204,7 @@ Covers: DB schema, WAL mode, agent registration & upsert, send/recv,
 read-tracking, broadcast, self-message filtering, `--include-self`,
 `--ttl` expiry & cleanup, thread IDs, status transitions, project info.
 
-### Python client tests (70 tests)
+### Python client tests (72 tests)
 
 ```bash
 python3 test_a2a_client.py -v

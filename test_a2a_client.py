@@ -843,5 +843,36 @@ class TestA2AClient(unittest.TestCase):
         with self.assertRaises(ValueError):
             alice.register("tester", pid=-1)
 
+    def test_recv_unread_only_false_returns_read_messages(self):
+        """recv with unread_only=False returns already-read messages."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+
+        alice.send("bob", "message to read")
+        # First recv reads and marks as read
+        first = bob.recv(wait=1)
+        self.assertEqual(len(first), 1)
+        # Second recv with unread_only=False should still return it
+        second = bob.recv(wait=0, unread_only=False)
+        self.assertGreaterEqual(len(second), 1)
+        self.assertIn("message to read", [m["body"] for m in second])
+
+    def test_send_ttl_with_thread_combined(self):
+        """send with both ttl_seconds and thread_id works together."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        msg_id = alice.send("bob", "threaded ttl msg", thread_id="ttl-thread-1", ttl_seconds=3600)
+        self.assertGreater(msg_id, 0)
+        # Verify thread and TTL were stored
+        import sqlite3
+        conn = sqlite3.connect(str(alice.db_path))
+        row = conn.execute(
+            "SELECT thread_id, ttl_seconds FROM messages WHERE id=?", (msg_id,)
+        ).fetchone()
+        conn.close()
+        self.assertEqual(row[0], "ttl-thread-1")
+        self.assertEqual(row[1], 3600)
+
+
 if __name__ == "__main__":
     unittest.main()
