@@ -1272,6 +1272,20 @@ class TestEdgeCases(unittest.TestCase):
         sys.stdout = old_stdout
         self.assertIn("no messages in thread", output)
 
+    def test_cmd_thread_id_too_long_raises_error(self):
+        """cmd_thread with thread ID > 256 chars raises SystemExit."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_thread(a2a.argparse.Namespace(
+                project=self.project, id="t" * 300, json=False
+            ))
+
+    def test_cmd_thread_whitespace_id_raises_error(self):
+        """cmd_thread with whitespace-only thread ID raises SystemExit."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_thread(a2a.argparse.Namespace(
+                project=self.project, id="   ", json=False
+            ))
+
     def test_cmd_search_limit(self):
         """Search with --limit caps results to at most N messages."""
         conn = a2a.connect(self.project)

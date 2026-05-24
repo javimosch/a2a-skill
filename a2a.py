@@ -469,6 +469,8 @@ def cmd_thread(args) -> None:
     """Show all messages in a thread."""
     if not args.id or not args.id.strip():
         die("thread id must not be empty")
+    if len(args.id) > MAX_THREAD_ID_LENGTH:
+        die(f"--thread too long ({len(args.id)} chars, max {MAX_THREAD_ID_LENGTH})")
     _, conn = _open(args)
     cleanup_expired(conn)
     conn.commit()
