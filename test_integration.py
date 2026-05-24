@@ -837,6 +837,31 @@ class TestIntegration(unittest.TestCase):
         msgs = json.loads(result.stdout)
         self.assertLessEqual(len(msgs), 2)
 
+    def test_peek_limit_over_max_does_not_error(self):
+        """peek with --limit > 1000 is capped to 1000, not rejected or errored."""
+        a2a("register", "alice", project=self.project)
+        a2a("send", "alice", "msg1", "--from", "alice",
+            project=self.project)
+        a2a("send", "alice", "msg2", "--from", "alice",
+            project=self.project)
+        # Large limit should not crash and should return all available messages
+        result = a2a("peek", "--json", "--limit", "9999", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 2)
+
+    def test_search_limit_over_max_does_not_error(self):
+        """search with --limit > 200 is capped to 200, not rejected or errored."""
+        a2a("register", "alice", project=self.project)
+        a2a("send", "alice", "findable 1", "--from", "alice",
+            project=self.project)
+        a2a("send", "alice", "findable 2", "--from", "alice",
+            project=self.project)
+        # Large limit should not crash and should return all available messages
+        result = a2a("search", "findable", "--limit", "999", "--json",
+                     project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 2)
+
     def test_list_json_valid_empty_after_clear(self):
         """list --json returns valid [] after bus is cleared."""
         a2a("register", "alice", project=self.project)

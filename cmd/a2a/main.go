@@ -284,7 +284,7 @@ func cmdUnregister() {
 		fmt.Fprintf(os.Stderr, "a2a: unregister error: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("removed agent '%s'\n", args[0])
+	fmt.Printf("removed agent '%s'\n", agentID)
 }
 
 func cmdList() {
@@ -543,6 +543,9 @@ func cmdPeek() {
 		fmt.Fprintln(os.Stderr, "a2a: --limit must be a positive integer")
 		os.Exit(1)
 	}
+	if limit > 1000 {
+		limit = 1000
+	}
 	jsonFlag := hasFlag("--json")
 
 	c := newClient("")
@@ -594,6 +597,9 @@ func cmdSearch() {
 	if limit <= 0 {
 		fmt.Fprintln(os.Stderr, "a2a: --limit must be a positive integer")
 		os.Exit(1)
+	}
+	if limit > 200 {
+		limit = 200
 	}
 	jsonFlag := hasFlag("--json")
 	args := positionalArgs()
