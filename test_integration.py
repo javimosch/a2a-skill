@@ -441,6 +441,11 @@ class TestIntegration(unittest.TestCase):
         msgs = json.loads(result.stdout)
         self.assertEqual(len(msgs), 0)
 
+    def test_thread_max_id_length_rejected(self):
+        """a2a thread with thread ID > 256 chars is rejected."""
+        result = a2a("thread", "t" * 300, project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+
     # ---- stats ----
     def test_stats_command(self):
         """a2a stats returns correct counts."""

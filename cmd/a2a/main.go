@@ -573,6 +573,7 @@ func cmdThread() {
 		fmt.Fprintln(os.Stderr, "a2a: thread id must not be empty")
 		os.Exit(1)
 	}
+	validateMaxLength(threadID, maxCLIThreadIDLength, "thread id")
 
 	c := newClient("")
 	msgs, err := c.Thread(threadID)
