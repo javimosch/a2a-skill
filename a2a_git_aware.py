@@ -23,7 +23,12 @@ class GitAwareClient:
         Args:
             agent_id: This agent's ID
             repo_path: Path to git repository (defaults to cwd)
+
+        Raises:
+            ValueError: If agent_id is empty or whitespace-only
         """
+        if not agent_id or not agent_id.strip():
+            raise ValueError("agent_id must not be empty")
         self.agent_id = agent_id
         self.repo_path = Path(repo_path or ".")
 
