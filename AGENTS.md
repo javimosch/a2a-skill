@@ -72,13 +72,13 @@ a2a-skill/
 ├── verify_json_parity.sh Go vs Python JSON cross-verify
 ├── a2a_client.js         Node.js client
 ├── src/lib.rs            Rust client
-├── test_a2a.py           unit tests (43)
-├── test_a2a_client.py    Python client tests (29)
-├── test_integration.py   integration tests (39)
-├── test_v13_features.py  v1.3 satellite module tests (100)
-├── test_git_aware.py     git-aware module tests (29)
-├── test_server.py        REST API tests (38)
-├── test_async_modules.py async client tests (25, 23 skip-guarded)  ← 303 tests total
+├── test_a2a.py           unit tests (138)
+├── test_a2a_client.py    Python client tests (70)
+├── test_integration.py   integration tests (92)
+├── test_v13_features.py  v1.3 satellite module tests (108)
+├── test_git_aware.py     git-aware module tests (40)
+├── test_server.py        REST API tests (47)
+├── test_async_modules.py async client tests (39, 16 skip-guarded)  ← 534 tests total
 ├── benchmark.py
 ├── dashboard.py
 ├── examples/             AGENTS.md documents patterns
@@ -194,7 +194,7 @@ is the agents' rulebook. When changing it:
 
 ## Running the tests
 
-### Unit tests (43 tests, stdlib only)
+### Unit tests (138 tests, stdlib only)
 
 ```bash
 python3 test_a2a.py -v
@@ -204,7 +204,7 @@ Covers: DB schema, WAL mode, agent registration & upsert, send/recv,
 read-tracking, broadcast, self-message filtering, `--include-self`,
 `--ttl` expiry & cleanup, thread IDs, status transitions, project info.
 
-### Python client tests (29 tests)
+### Python client tests (70 tests)
 
 ```bash
 python3 test_a2a_client.py -v
@@ -213,7 +213,7 @@ python3 test_a2a_client.py -v
 Tests the A2AClient library directly (no subprocess): send, recv, search, thread,
 stats, peek, WAL invariant.
 
-### Integration tests (39 tests)
+### Integration tests (92 tests)
 
 ```bash
 python3 test_integration.py -v
@@ -222,13 +222,13 @@ python3 test_integration.py -v
 Shells out to the `a2a` binary and verifies full workflows: register→send→recv,
 TTL expiry, broadcast, cross-project isolation, concurrent agents.
 
-### v1.3 satellite module tests (100 + 29 + 38 + 25 tests)
+### v1.3 satellite module tests (108 + 40 + 47 + 39 tests)
 
 ```bash
 python3 test_v13_features.py -v   # encryption, FTS, audit, priority, routing
 python3 test_git_aware.py -v      # git-state-aware bus queries
 python3 test_server.py -v         # REST API endpoints
-python3 test_async_modules.py -v  # async clients (23 skip-guarded — needs aiosqlite)
+python3 test_async_modules.py -v  # async clients (16 skip-guarded — needs aiosqlite)
 ```
 
 ### Smoke tests
