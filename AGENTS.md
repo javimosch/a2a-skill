@@ -312,6 +312,21 @@ Access them via the global skill:
 **Boundary rule:** `docs/` is for users of a2a. `~/ai/a2a-dev/` is for contributors.
 Nothing development-process-related goes in `docs/` or `.agents/skills/` (except `.agents/skills/a2a/`).
 
+## ## Cross-references to sub-directory AGENTS.md files
+
+Several sub-directories have their own `AGENTS.md` with scoped guidance.
+When working in those areas, read the corresponding file first.
+
+| Directory | File | Scope |
+|-----------|------|-------|
+| `docs/` | `docs/AGENTS.md` | Doc file ownership table, rules for adding new docs |
+| `examples/` | `examples/AGENTS.md` | Example agent patterns, client choice guide, adding new examples |
+| `completion/` | `completion/AGENTS.md` | Shell completion scripts for Bash and Zsh |
+| `src/` | `src/AGENTS.md` | Rust library API surface, WAL invariant, build instructions |
+
+All files listed above must be kept accurate — they are the primary entry
+points for agents entering those sub-systems.
+
 ## When you ship a change
 
 1. Run **both** smoke tests on a clean bus (`./a2a clear --yes`).
@@ -319,6 +334,17 @@ Nothing development-process-related goes in `docs/` or `.agents/skills/` (except
 3. Update relevant files in `docs/` if documentation changed.
 4. Update `SKILL.md` if agent-facing behavior changed.
 5. Add a row to "Common pitfalls" if you hit (and fixed) a new one.
+6. Update `CHANGELOG.md` — follow the existing versioned format.
+
+## CHANGELOG maintenance
+
+`CHANGELOG.md` at the project root tracks all notable changes per version.
+
+- Every PR that changes user-visible behavior must add a changelog entry.
+- Format: `## [M.m.p] — YYYY-MM-DD` with `### Added`, `### Fixed`, `### Changed` sections.
+- Version bumps happen at release time, not per-commit.
+- The current release is referenced in `AGENTS.md` section headers and
+  `README.md` — keep those in sync when bumping.
 
 ## Author & license
 
