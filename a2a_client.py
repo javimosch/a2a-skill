@@ -105,6 +105,8 @@ class A2AClient:
                 raise ValueError("recipient must not be empty")
             if ttl_seconds is not None and ttl_seconds <= 0:
                 raise ValueError("ttl_seconds must be a positive number of seconds")
+            if ttl_seconds is not None and (math.isnan(ttl_seconds) or math.isinf(ttl_seconds)):
+                raise ValueError("ttl_seconds must be a finite number")
             if thread_id is not None and not thread_id.strip():
                 raise ValueError("thread_id must not be empty")
             if thread_id is not None and len(thread_id) > _MAX_THREAD_ID_LENGTH:
@@ -145,6 +147,12 @@ class A2AClient:
         """
         if pid is not None and pid <= 0:
             raise ValueError("pid must be a positive integer")
+        if len(role) > _MAX_AGENT_ID_LENGTH:
+            raise ValueError(f"role too long ({len(role)} chars, max {_MAX_AGENT_ID_LENGTH})")
+        if len(cli) > 128:
+            raise ValueError(f"cli too long ({len(cli)} chars, max 128)")
+        if len(prompt) > _MAX_BODY_LENGTH:
+            raise ValueError(f"prompt too long ({len(prompt)} chars, max {_MAX_BODY_LENGTH})")
         conn = self._connect()
         try:
             now = time.time()

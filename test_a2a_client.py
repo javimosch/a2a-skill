@@ -880,6 +880,38 @@ class TestA2AClient(unittest.TestCase):
         self.assertIsInstance(results, list)
         self.assertEqual(len(results), 0)
 
+    def test_send_nan_ttl_raises_value_error(self):
+        """send with NaN ttl raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        alice.register("tester")
+        with self.assertRaises(ValueError):
+            alice.send("bob", "hello", ttl_seconds=float("nan"))
+
+    def test_send_inf_ttl_raises_value_error(self):
+        """send with inf ttl raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        alice.register("tester")
+        with self.assertRaises(ValueError):
+            alice.send("bob", "hello", ttl_seconds=float("inf"))
+
+    def test_register_role_too_long_raises_value_error(self):
+        """register with role > 256 chars raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.register(role="x" * 300)
+
+    def test_register_cli_too_long_raises_value_error(self):
+        """register with cli > 128 chars raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.register(role="tester", cli="c" * 200)
+
+    def test_register_prompt_too_long_raises_value_error(self):
+        """register with prompt > 100K chars raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.register(role="tester", prompt="p" * 100_001)
+
 
 if __name__ == "__main__":
     unittest.main()
