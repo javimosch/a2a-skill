@@ -35,6 +35,13 @@ All notable changes to a2a-skill are documented here.
 - README: added links to GO_CLI_REFERENCE, PITFALLS, SECURITY_HARDENING, TROUBLESHOOTING
 - AGENTS.md: test counts updated to 616 total, test_artifacts_util.py added to layout
 - CHANGELOG: v1.3.2 section added (this entry)
+- README, AGENTS.md: test counts synced to current (800 total)
+- GO_CLI_REFERENCE.md: noted Go CLI version command difference
+- GO_CLIENT_API.md: fixed Quick Start compile errors
+- RUST_CLIENT_API.md: added thread_id to send() sig and examples
+- NODE_CLIENT_API.md: removed npm dep note (uses node:sqlite), added threadId
+- CLIENT_API.md: added missing unregister() method doc
+- REST_API.md: added missing POST /register and /unregister endpoints
 
 ---
 
