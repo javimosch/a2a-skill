@@ -155,8 +155,9 @@ Comprehensive guides for different use cases:
 
 **Client Libraries:**
 - **[docs/CLIENT_API.md](docs/CLIENT_API.md)** — Python client library reference
-- **[docs/NODE_CLIENT_API.md](docs/NODE_CLIENT_API.md)** — Node.js client library reference
 - **[docs/GO_CLIENT_API.md](docs/GO_CLIENT_API.md)** — Go client library reference
+- **[docs/GO_CLI_REFERENCE.md](docs/GO_CLI_REFERENCE.md)** — Go binary CLI flags and commands
+- **[docs/NODE_CLIENT_API.md](docs/NODE_CLIENT_API.md)** — Node.js client library reference
 - **[docs/RUST_CLIENT_API.md](docs/RUST_CLIENT_API.md)** — Rust client library reference
 - **[docs/REST_API.md](docs/REST_API.md)** — HTTP REST interface for microservices
 - **[docs/INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md)** — Multi-interface coordination examples
@@ -172,6 +173,9 @@ Comprehensive guides for different use cases:
 **Advanced Topics:**
 - **[docs/ADVANCED_PATTERNS.md](docs/ADVANCED_PATTERNS.md)** — Performance optimization, monitoring, error recovery
 - **[docs/GIT_AWARE.md](docs/GIT_AWARE.md)** — Work-collision prevention with git state tracking
+- **[docs/PITFALLS.md](docs/PITFALLS.md)** — Lessons from artifact smoke testing and agent behavior
+- **[docs/SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md)** — Enterprise security and production hardening
+- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** — Common issues, diagnosis, and solutions
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — Docker, Kubernetes, systemd, and security
 - **[`.agents/skills/a2a/SKILL.md`](.agents/skills/a2a/SKILL.md)** — `/a2a` skill architecture and spawn protocol (canonical)
 - **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development
