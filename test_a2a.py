@@ -2545,7 +2545,25 @@ class TestEdgeCases(unittest.TestCase):
             sys.stdout = old_stdout
         self.assertEqual(output, "")
 
-    
+    def test_recv_wait_zero_empty_bus(self):
+        """recv with --wait=0 on empty bus returns immediately with no messages."""
+        self._register("alice")
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, as_="alice", wait=0, all=True,
+                peek=False, limit=None, since=None, json=True, include_self=False
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output) if output.strip() else []
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 0)
+
+
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
     def setUp(self):
