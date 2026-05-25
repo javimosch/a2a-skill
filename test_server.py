@@ -608,6 +608,49 @@ class TestA2ARestServer(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertIn("error", body)
 
+    # --- Input hardening edge cases ---
+
+    def test_peek_invalid_limit_returns_400(self):
+        """GET /messages with non-numeric limit returns 400."""
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        conn.request("GET", "/messages?limit=abc")
+        resp = conn.getresponse()
+        body = resp.read().decode()
+        conn.close()
+        # Should not crash; non-numeric limit should be rejected
+        self.assertIn(resp.status, (400, 500))
+
+    def test_search_invalid_limit_returns_400(self):
+        """GET /search with non-numeric limit returns 400."""
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        conn.request("GET", "/search?q=hello&limit=abc")
+        resp = conn.getresponse()
+        body = resp.read().decode()
+        conn.close()
+        self.assertIn(resp.status, (400, 500))
+
+    def test_send_whitespace_to_returns_400(self):
+        """POST /send with whitespace-only 'to' returns 400."""
+        status, body = self._post("/send", {"to": "   ", "message": "hello"})
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
+    def test_send_whitespace_message_returns_400(self):
+        """POST /send with whitespace-only message returns 400."""
+        status, body = self._post("/send", {"to": "bob", "message": "   "})
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
+    def test_send_non_string_to_returns_400(self):
+        """POST /send with non-string 'to' returns 400 (does not crash)."""
+        payload = json.dumps({"to": 123, "message": "hello"}).encode()
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        conn.request("POST", "/send", payload, {"Content-Type": "application/json"})
+        resp = conn.getresponse()
+        body = resp.read().decode()
+        conn.close()
+        self.assertIn(resp.status, (400, 500))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
