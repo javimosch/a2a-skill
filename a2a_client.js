@@ -12,6 +12,9 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
+const _MAX_BODY_LENGTH = 100_000;
+const _MAX_THREAD_ID_LENGTH = 256;
+
 class A2AClient {
   /**
    * @param {string} project  - Project name
@@ -20,6 +23,9 @@ class A2AClient {
   constructor(project, agentId) {
     if (!project || !project.trim()) {
       throw new Error('project must not be empty');
+    }
+    if (project.includes('/') || project.includes('\\') || project.startsWith('.')) {
+      throw new Error(`invalid project name — must not contain path separators or start with '.'`);
     }
     if (!agentId || !agentId.trim()) {
       throw new Error('agent_id must not be empty');
@@ -56,13 +62,24 @@ class A2AClient {
     if (!to || !to.trim()) {
       throw new Error('recipient must not be empty');
     }
+    if (!message || !message.trim()) {
+      throw new Error('message body must not be empty');
+    }
+    if (typeof message === 'string' && message.length > _MAX_BODY_LENGTH) {
+      throw new Error(`message body too long (${message.length} chars, max ${_MAX_BODY_LENGTH})`);
+    }
     if (ttlSeconds !== null && ttlSeconds !== undefined) {
       if (typeof ttlSeconds !== 'number' || !Number.isFinite(ttlSeconds) || ttlSeconds <= 0) {
         throw new Error('ttl_seconds must be a positive number');
       }
     }
-    if (threadId !== null && threadId !== undefined && !threadId.trim()) {
-      throw new Error('thread_id must not be empty');
+    if (threadId !== null && threadId !== undefined) {
+      if (!threadId.trim()) {
+        throw new Error('thread_id must not be empty');
+      }
+      if (threadId.length > _MAX_THREAD_ID_LENGTH) {
+        throw new Error(`thread_id too long (${threadId.length} chars, max ${_MAX_THREAD_ID_LENGTH})`);
+      }
     }
     const db = this._connect();
     // Validate sender exists
