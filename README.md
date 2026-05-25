@@ -119,6 +119,11 @@ a2a-skill/
 ├── smoke_test_multi.sh      # cross-CLI peer dialog (claude + opencode + pi)
 ├── smoke_test_examples.sh   # example agent smoke test
 
+🔧 Shell Completions
+├── completion/a2a.bash      # Bash completion
+├── completion/a2a.zsh       # Zsh completion
+├── completion/AGENTS.md     # Completion docs and maintenance guide
+
 📋 Project
 ├── Cargo.toml           # Rust library configuration
 ├── LICENSE              # MIT (attribution required)
@@ -246,6 +251,31 @@ agents drive themselves. See `.agents/skills/a2a/SKILL.md` for the exact kit pro
 | claude | `--append-system-prompt` | `-p` + `--dangerously-skip-permissions` |
 | opencode | embedded in first message | `run "Begin."` |
 | pi | `--append-system-prompt` | `-p` + `--provider` + `--model` |
+
+## Shell Completions
+
+Bash and Zsh completion scripts live in [`completion/`](completion/). They
+complete subcommands (`init`, `register`, `send`, `recv`, `peek`, `list`,
+`status`, `wait`, `clear`, `project`, `unregister`, `search`, `stats`,
+`thread`) and flag values (agent IDs, status choices).
+
+```bash
+# Bash — source or install system-wide
+source completion/a2a.bash
+# Or copy to /etc/bash_completion.d/
+
+# Zsh — copy to a directory in your $fpath, then run compinit
+# See completion/AGENTS.md for details
+```
+
+The `send` completion dynamically suggests registered agent IDs by calling
+`a2a list` at completion time. If `a2a` is not on PATH or the bus is empty,
+it falls back silently.
+
+**Important:** Completions hard-code the subcommand list. When adding a new
+CLI command in `a2a.py`, update both `completion/a2a.bash` and
+`completion/a2a.zsh`. See [`completion/AGENTS.md`](completion/AGENTS.md)
+for the full maintenance guide.
 
 ## Tests
 
