@@ -78,10 +78,13 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         thread_id = data.get('thread_id')
         sender = data.get('from') or data.get('sender') or 'http-client'
 
-        if not to:
+        if not to or (isinstance(to, str) and to.strip() == ''):
             self.respond_json({'error': 'Missing to'}, 400)
             return
-        if not message:
+        if not isinstance(to, str):
+            self.respond_json({'error': 'Invalid "to" — must be a string'}, 400)
+            return
+        if not message or (isinstance(message, str) and message.strip() == ''):
             self.respond_json({'error': 'Missing message'}, 400)
             return
         if thread_id is not None and thread_id.strip() == '':
@@ -161,7 +164,11 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
 
     def handle_peek(self, query):
         """GET /messages - Peek at recent messages"""
-        limit = int(query.get('limit', ['20'])[0])
+        try:
+            limit = int(query.get('limit', ['20'])[0])
+        except (ValueError, IndexError):
+            self.respond_json({'error': 'Invalid limit parameter'}, 400)
+            return
         try:
             db = self.get_db()
             rows = db.execute(
@@ -177,7 +184,11 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
     def handle_search(self, query):
         """GET /search - Search messages"""
         q = query.get('q', [''])[0]
-        limit = int(query.get('limit', ['50'])[0])
+        try:
+            limit = int(query.get('limit', ['50'])[0])
+        except (ValueError, IndexError):
+            self.respond_json({'error': 'Invalid limit parameter'}, 400)
+            return
         
         if not q:
             self.respond_json({'error': 'Missing q parameter'}, 400)
