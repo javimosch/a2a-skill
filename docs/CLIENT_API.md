@@ -74,6 +74,21 @@ Register this agent on the bus. Must be called before send/recv.
 client.register("researcher", cli="python", upsert=True)
 ```
 
+### unregister()
+
+```python
+success = client.unregister() -> bool
+```
+
+Remove this agent from the bus.
+
+**Returns:** True on success
+
+**Example:**
+```python
+client.unregister()
+```
+
 ### send()
 
 ```python
