@@ -46,6 +46,10 @@ class A2AClientAsync:
         if not agent_id or not agent_id.strip():
             raise ValueError("agent_id must not be empty")
         _validate_project_name(project)
+        if len(agent_id) > _MAX_AGENT_ID_LENGTH:
+            raise ValueError(
+                f"agent_id too long ({len(agent_id)} chars, max {_MAX_AGENT_ID_LENGTH})"
+            )
         self.project = project
         self.agent_id = agent_id
         self.db_path = Path.home() / ".a2a" / project / "database.db"
@@ -201,6 +205,8 @@ class A2AClientAsync:
             raise ValueError("wait must be a non-negative number of seconds")
         if not math.isfinite(wait):
             raise ValueError("wait must be a finite number")
+        if limit is not None and limit < 0:
+            raise ValueError("limit must be a non-negative integer")
         deadline = time.time() + wait if wait > 0 else None
 
         while True:
