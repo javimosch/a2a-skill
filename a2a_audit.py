@@ -91,6 +91,12 @@ class AuditClient:
         Returns:
             True if logged successfully
         """
+        if not agent_id or not agent_id.strip():
+            print("Error logging operation: agent_id must not be empty")
+            return False
+        if not operation or not operation.strip():
+            print("Error logging operation: operation must not be empty")
+            return False
         conn = self._connect()
         try:
             details_json = json.dumps(details) if details else None
@@ -129,6 +135,15 @@ class AuditClient:
         Returns:
             List of audit log entries
         """
+        if not agent_id or not agent_id.strip():
+            print("Error: agent_id must not be empty")
+            return []
+        if limit <= 0:
+            print("Error: limit must be a positive integer")
+            return []
+        if days <= 0:
+            print("Error: days must be a positive integer")
+            return []
         conn = self._connect()
         try:
             cutoff_time = (
@@ -197,6 +212,9 @@ class AuditClient:
         Returns:
             List of matching audit log entries
         """
+        if limit <= 0:
+            print("Error: limit must be a positive integer")
+            return []
         conn = self._connect()
         try:
             query = "SELECT id, timestamp, agent_id, operation, message_id, details, result FROM audit_log WHERE 1=1"
@@ -239,6 +257,8 @@ class AuditClient:
         Returns:
             Dict with audit statistics
         """
+        if days <= 0:
+            return {"error": "days must be a positive integer"}
         conn = self._connect()
         try:
             cutoff_time = (
@@ -350,6 +370,9 @@ class AuditClient:
         Returns:
             Number of rows deleted
         """
+        if days <= 0:
+            print("Error: days must be a positive integer")
+            return 0
         conn = self._connect()
         try:
             cutoff_time = (
