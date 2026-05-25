@@ -149,7 +149,7 @@ class GitAwareClient:
                 )
 
             # Overlapping file changes
-            other_files = set(other.get("changed_files", []))
+            other_files = set(other.get("changed_files") or [])
             overlap = my_files & other_files
             if overlap:
                 collisions["warnings"].append(
@@ -160,7 +160,7 @@ class GitAwareClient:
                 )
 
             # Duplicate commits
-            other_commits = {c["hash"] for c in other.get("commits", [])}
+            other_commits = {c["hash"] for c in (other.get("commits") or [])}
             duplicate = set(my_commits.keys()) & other_commits
             if duplicate:
                 collisions["warnings"].append(
