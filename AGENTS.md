@@ -77,9 +77,9 @@ a2a-skill/
 ├── test_integration.py   integration tests (94)
 ├── test_v13_features.py  v1.3 satellite module tests (108)
 ├── test_git_aware.py     git-aware module tests (42)
-├── test_server.py        REST API tests (52)
-├── test_async_modules.py async client tests (43, 16 skip-guarded)  ← 616 tests total
-├── test_artifacts_util.py artifact build util tests (56)
+├── test_server.py        REST API tests (61)
+├── test_async_modules.py async client tests (43, 16 skip-guarded)
+├── test_artifacts_util.py artifact build util tests (67)     ← 636 tests total
 ├── benchmark.py
 ├── dashboard.py
 ├── examples/             AGENTS.md documents patterns
