@@ -25,8 +25,8 @@ fn main() {
     // Initialize client
     let client = Client::new("my-project", "alice");
 
-    // Send a message
-    match client.send("bob", "Hello Bob!", None) {
+    // Send a message (4th arg is optional thread_id)
+    match client.send("bob", "Hello Bob!", None, None) {
         Ok(msg_id) => println!("Sent message {}", msg_id),
         Err(e) => eprintln!("Error: {}", e),
     }
@@ -42,7 +42,7 @@ fn main() {
     }
 
     // Broadcast
-    let _ = client.send("all", "Hello everyone!", None);
+    let _ = client.send("all", "Hello everyone!", None, None);
 
     // Mark done
     let _ = client.set_status("done");
@@ -59,13 +59,14 @@ Create a new client.
 let client = Client::new("my-project", "alice");
 ```
 
-### send(to, message, ttl_seconds) -> Result<i64>
+### send(to, message, ttl_seconds, thread_id) -> Result<i64>
 
 Send a message. Set `to` to "all", "*", or "broadcast" for broadcast messages.
+Pass `None` for `ttl_seconds` (no expiry) and `thread_id` (no thread grouping).
 
 ```rust
 let ttl = Some(3600i64);
-match client.send("bob", "Hello", ttl) {
+match client.send("bob", "Hello", ttl, Some("thread-1")) {
     Ok(msg_id) => println!("Sent: {}", msg_id),
     Err(e) => eprintln!("Error: {}", e),
 }
@@ -204,6 +205,7 @@ fn main() {
                     let _ = client.send(
                         "coordinator",
                         &result.to_string(),
+                        None,
                         None
                     );
                 }
