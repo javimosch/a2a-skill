@@ -1,8 +1,9 @@
 # a2a Go CLI Reference
 
-The `a2a` Go CLI binary is a companion to the Python `a2a.py` — same 14 commands,
-same flags, same JSON output — but ships as a single ~1.3MB static binary with
-zero runtime dependencies. No python3+sqlite3 required.
+The `a2a` Go CLI binary is a companion to the Python `a2a.py` — same 14 commands
+(plus a `version` subcommand that's Go-specific), same flags, same JSON output
+— but ships as a single ~1.3MB static binary with zero runtime dependencies. No
+python3+sqlite3 required.
 
 ## Quick Start
 
