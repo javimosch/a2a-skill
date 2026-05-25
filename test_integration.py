@@ -1100,6 +1100,27 @@ class TestIntegration(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("too long", result.stderr.lower())
 
+    def test_send_json_output(self):
+        """send --json outputs valid JSON with id, sender, recipient."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        result = a2a("send", "bob", "hello", "--from", "alice", "--json",
+                     project=self.project)
+        data = json.loads(result.stdout)
+        self.assertIn("id", data)
+        self.assertIn("sender", data)
+        self.assertIn("recipient", data)
+        self.assertEqual(data["sender"], "alice")
+        self.assertEqual(data["recipient"], "bob")
+
+    def test_send_json_output_broadcast(self):
+        """send --json with broadcast outputs recipient 'ALL'."""
+        a2a("register", "alice", project=self.project)
+        result = a2a("send", "all", "broadcast msg", "--from", "alice", "--json",
+                     project=self.project)
+        data = json.loads(result.stdout)
+        self.assertEqual(data["recipient"], "ALL")
+
     def test_unregister_max_id_length_rejected(self):
         """Unregister with agent ID > 256 chars is rejected."""
         long_id = "u" * 257
