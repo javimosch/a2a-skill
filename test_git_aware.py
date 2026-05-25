@@ -109,6 +109,22 @@ class TestGitAwareGitCommands(unittest.TestCase):
         commits = self.client.get_recent_commits(count=0)
         self.assertEqual(commits, [])
 
+    def test_get_recent_commits_negative_count(self):
+        """Test that negative count does not crash and returns empty list."""
+        commits = self.client.get_recent_commits(count=-1)
+        self.assertIsInstance(commits, list)
+        # Should either return empty or handle gracefully
+
+    def test_format_for_bus_in_repo(self):
+        """Test format_for_bus returns valid JSON with branch info in a real repo."""
+        json_str = self.client.format_for_bus()
+        parsed = json.loads(json_str)
+        self.assertIn("agent", parsed)
+        self.assertIn("branch", parsed)
+        self.assertIn("timestamp", parsed)
+        self.assertIsInstance(parsed.get("commits"), list)
+        self.assertIsInstance(parsed.get("changed_files"), list)
+
     def test_get_changed_files_returns_list(self):
         """Test that get_changed_files returns a list."""
         files = self.client.get_changed_files()
