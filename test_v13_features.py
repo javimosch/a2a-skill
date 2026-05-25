@@ -304,21 +304,32 @@ class TestSearchQueryBuilder(unittest.TestCase):
         """__str__ returns same output as build()."""
         b = self.builder_class().add_term("error").must_contain("critical")
         self.assertEqual(str(b), b.build())
-
     def test_chaining_all_methods(self):
-        """All builder methods can be chained together."""
-        q = (
-            self.builder_class()
-            .add_term("deploy")
-            .add_phrase("service down")
+        """Test chaining all query builder methods."""
+        builder = self.builder_class()
+        query = (
+            builder
+            .add_term("error")
+            .add_phrase("critical failure")
             .must_contain("urgent")
             .must_not_contain("resolved")
             .build()
         )
-        self.assertIn("deploy", q)
-        self.assertIn('"service down"', q)
-        self.assertIn("urgent", q)
-        self.assertIn("-resolved", q)
+        self.assertIn("error", query)
+        self.assertIn('"critical failure"', query)
+        self.assertIn("urgent", query)
+        self.assertIn("-resolved", query)
+
+    def test_empty_builder_returns_empty_string(self):
+        """SearchQueryBuilder.build() on empty builder returns '*' wildcard."""
+        builder = self.builder_class()
+        self.assertEqual(builder.build(), "*")
+
+    def test_builder_whitespace_term(self):
+        """SearchQueryBuilder with whitespace-only term includes the term."""
+        builder = self.builder_class()
+        query = builder.add_term("   ").build()
+        self.assertIn("   ", query)
 
 
 class TestAuditLogging(unittest.TestCase):
@@ -607,6 +618,20 @@ class TestErrorHandling(unittest.TestCase):
         """Test priority enum boundaries."""
         self.assertEqual(Priority.LOW, 1)
         self.assertEqual(Priority.CRITICAL, 4)
+
+    def test_crypto_empty_string_encrypt(self):
+        """CryptoClient.wrap_encrypted_message handles empty string."""
+        crypto = CryptoClient("test", "alice", key_dir=tempfile.mkdtemp())
+        public_key, _ = crypto.generate_keypair()
+        wrapped = crypto.wrap_encrypted_message("", public_key)
+        self.assertIsInstance(wrapped, str)
+        self.assertGreater(len(wrapped), 0)
+
+    def test_crypto_empty_string_decrypt(self):
+        """CryptoClient.decrypt_message raises ValueError on empty encrypted data."""
+        crypto = CryptoClient("test", "alice", key_dir=tempfile.mkdtemp())
+        with self.assertRaises(ValueError):
+            crypto.decrypt_message("", "invalid_key")
 
 
 class TestAuditClientWithDB(unittest.TestCase):
@@ -1348,6 +1373,21 @@ class TestPriorityQueueWithDB(unittest.TestCase):
         self.alice.send("bob", "just info", priority=Priority.NORMAL)
         msgs = self.queue.peek_critical()
         self.assertEqual(msgs, [])
+
+    def test_poll_empty_bus_returns_empty_list(self):
+        """PriorityQueue.poll() with no messages returns empty list."""
+        msgs = self.queue.poll(wait=0)
+        self.assertEqual(msgs, [])
+
+    def test_poll_with_limit_caches_remaining(self):
+        """PriorityQueue.poll(limit=N) caches surplus messages for next poll."""
+        self.alice.send("bob", "msg1", priority=Priority.NORMAL)
+        self.alice.send("bob", "msg2", priority=Priority.NORMAL)
+        self.alice.send("bob", "msg3", priority=Priority.NORMAL)
+        first = self.queue.poll(wait=0, limit=2)
+        self.assertEqual(len(first), 2)
+        second = self.queue.poll(wait=0)
+        self.assertEqual(len(second), 1)
 
 
 def run_tests():
