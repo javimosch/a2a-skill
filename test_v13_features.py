@@ -855,6 +855,99 @@ class TestAuditClientWithDB(unittest.TestCase):
             pass
 
 
+class TestAuditValidation(unittest.TestCase):
+    """Input validation tests for AuditClient that do not need a pre-existing DB."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        import os
+        import a2a
+        self.project = f"audit-validation-test-{os.getpid()}-{id(self)}"
+        conn = a2a.connect(self.project, create=True)
+        conn.commit()
+        conn.close()
+        self.audit = AuditClient(self.project)
+        self.audit.init_audit_table()
+
+    def tearDown(self):
+        import a2a
+        try:
+            conn = a2a.connect(self.project)
+            conn.execute("DROP TABLE IF EXISTS audit_log")
+            conn.execute("DROP TABLE IF EXISTS messages")
+            conn.execute("DROP TABLE IF EXISTS agents")
+            conn.execute("DROP TABLE IF EXISTS reads")
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+    def test_log_operation_empty_agent_id_returns_false(self):
+        """log_operation with empty agent_id returns False."""
+        result = self.audit.log_operation("", "send")
+        self.assertFalse(result)
+
+    def test_log_operation_whitespace_agent_id_returns_false(self):
+        """log_operation with whitespace-only agent_id returns False."""
+        result = self.audit.log_operation("   ", "send")
+        self.assertFalse(result)
+
+    def test_log_operation_empty_operation_returns_false(self):
+        """log_operation with empty operation returns False."""
+        result = self.audit.log_operation("alice", "")
+        self.assertFalse(result)
+
+    def test_get_agent_audit_trail_empty_agent_id_returns_empty(self):
+        """get_agent_audit_trail with empty agent_id returns []."""
+        result = self.audit.get_agent_audit_trail("")
+        self.assertEqual(result, [])
+
+    def test_get_agent_audit_trail_zero_limit_returns_empty(self):
+        """get_agent_audit_trail with limit=0 returns []."""
+        result = self.audit.get_agent_audit_trail("alice", limit=0)
+        self.assertEqual(result, [])
+
+    def test_get_agent_audit_trail_negative_limit_returns_empty(self):
+        """get_agent_audit_trail with negative limit returns []."""
+        result = self.audit.get_agent_audit_trail("alice", limit=-5)
+        self.assertEqual(result, [])
+
+    def test_get_agent_audit_trail_negative_days_returns_empty(self):
+        """get_agent_audit_trail with negative days returns []."""
+        result = self.audit.get_agent_audit_trail("alice", days=-1)
+        self.assertEqual(result, [])
+
+    def test_search_audit_logs_zero_limit_returns_empty(self):
+        """search_audit_logs with limit=0 returns []."""
+        result = self.audit.search_audit_logs(limit=0)
+        self.assertEqual(result, [])
+
+    def test_search_audit_logs_negative_limit_returns_empty(self):
+        """search_audit_logs with negative limit returns []."""
+        result = self.audit.search_audit_logs(limit=-10)
+        self.assertEqual(result, [])
+
+    def test_get_audit_stats_negative_days_returns_error(self):
+        """get_audit_stats with negative days returns error dict."""
+        result = self.audit.get_audit_stats(days=-1)
+        self.assertIn("error", result)
+
+    def test_get_audit_stats_zero_days_returns_error(self):
+        """get_audit_stats with zero days returns error dict."""
+        result = self.audit.get_audit_stats(days=0)
+        self.assertIn("error", result)
+
+    def test_cleanup_old_logs_negative_days_returns_zero(self):
+        """cleanup_old_logs with negative days returns 0."""
+        result = self.audit.cleanup_old_logs(days=-1)
+        self.assertEqual(result, 0)
+
+    def test_cleanup_old_logs_zero_days_returns_zero(self):
+        """cleanup_old_logs with zero days returns 0."""
+        result = self.audit.cleanup_old_logs(days=0)
+        self.assertEqual(result, 0)
+
+
 class TestPriorityClientWithDB(unittest.TestCase):
     """Real-database tests for PriorityClient send/recv."""
 
@@ -1016,7 +1109,17 @@ class TestPriorityClientWithDB(unittest.TestCase):
 
     def test_recv_cleanup_expired_before_query(self):
         """recv() calls _cleanup_expired so TTL-expired messages are not returned."""
-        self.alice.send("bob", "expired msg", priority=Priority.NORMAL, ttl_seconds=-1)
+        import time as _time
+        import a2a as _a2a
+        # Insert expired message directly to bypass send() validation
+        conn = _a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, priority, ttl_seconds, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            ("alice", "bob", "expired msg", Priority.NORMAL, -1, _time.time()),
+        )
+        conn.commit()
+        conn.close()
         # Force TTL cleanup by sending a second message to trigger _cleanup_expired
         self.alice.send("bob", "fresh msg", priority=Priority.NORMAL)
         msgs = self.bob.recv(wait=0, unread_only=False, priority_aware=True)
@@ -1026,7 +1129,16 @@ class TestPriorityClientWithDB(unittest.TestCase):
 
     def test_recv_by_priority_cleanup_expired_before_query(self):
         """recv_by_priority() calls _cleanup_expired so TTL-expired messages are not returned."""
-        self.alice.send("bob", "expired high", priority=Priority.HIGH, ttl_seconds=-1)
+        import time as _time
+        import a2a as _a2a
+        conn = _a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, priority, ttl_seconds, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            ("alice", "bob", "expired high", Priority.HIGH, -1, _time.time()),
+        )
+        conn.commit()
+        conn.close()
         self.alice.send("bob", "fresh high", priority=Priority.HIGH)
         msgs = self.bob.recv_by_priority(Priority.HIGH, wait=0)
         bodies = [m["body"] for m in msgs]
@@ -1035,12 +1147,121 @@ class TestPriorityClientWithDB(unittest.TestCase):
 
     def test_recv_above_priority_cleanup_expired_before_query(self):
         """recv_above_priority() calls _cleanup_expired so TTL-expired messages are not returned."""
-        self.alice.send("bob", "expired critical", priority=Priority.CRITICAL, ttl_seconds=-1)
+        import time as _time
+        import a2a as _a2a
+        conn = _a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, priority, ttl_seconds, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            ("alice", "bob", "expired critical", Priority.CRITICAL, -1, _time.time()),
+        )
+        conn.commit()
+        conn.close()
         self.alice.send("bob", "fresh critical", priority=Priority.CRITICAL)
         msgs = self.bob.recv_above_priority(Priority.CRITICAL, wait=0)
         bodies = [m["body"] for m in msgs]
         self.assertNotIn("expired critical", bodies)
         self.assertIn("fresh critical", bodies)
+
+
+class TestPriorityClientSendValidation(unittest.TestCase):
+    """Input validation tests for PriorityClient.send()."""
+
+    def setUp(self):
+        import os
+        import a2a
+        self.project = f"priority-send-validation-{os.getpid()}-{id(self)}"
+        conn = a2a.connect(self.project, create=True)
+        conn.execute(
+            "INSERT INTO agents(id, role, status, created_at, last_seen) "
+            "VALUES (?,?,?,?,?)",
+            ("alice", "tester", "active", 1000.0, 1000.0),
+        )
+        conn.commit()
+        conn.close()
+        self.alice = PriorityClient(self.project, "alice")
+        self.assertTrue(self.alice.init_priority_table())
+
+    def tearDown(self):
+        import a2a
+        try:
+            conn = a2a.connect(self.project)
+            conn.execute("DELETE FROM messages")
+            conn.execute("DELETE FROM agents")
+            conn.execute("DELETE FROM reads")
+            conn.execute("DROP TABLE IF EXISTS audit_log")
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+    def test_send_empty_recipient_raises(self):
+        """send() with empty recipient raises ValueError."""
+        with self.assertRaises(ValueError):
+            self.alice.send("", "hello")
+
+    def test_send_whitespace_recipient_raises(self):
+        """send() with whitespace recipient raises ValueError."""
+        with self.assertRaises(ValueError):
+            self.alice.send("   ", "hello")
+
+    def test_send_body_too_long_raises(self):
+        """send() with body > 100K chars raises ValueError."""
+        with self.assertRaises(ValueError):
+            self.alice.send("bob", "x" * 100_001)
+
+    def test_send_body_max_length_ok(self):
+        """send() with body = 100K chars succeeds."""
+        msg_id = self.alice.send("bob", "x" * 100_000)
+        self.assertIsInstance(msg_id, int)
+        self.assertGreater(msg_id, 0)
+
+    def test_send_negative_ttl_raises(self):
+        """send() with negative ttl raises ValueError."""
+        with self.assertRaises(ValueError):
+            self.alice.send("bob", "hello", ttl_seconds=-1)
+
+    def test_send_zero_ttl_raises(self):
+        """send() with zero ttl raises ValueError."""
+        with self.assertRaises(ValueError):
+            self.alice.send("bob", "hello", ttl_seconds=0)
+
+    def test_send_nan_ttl_raises(self):
+        """send() with NaN ttl raises ValueError."""
+        import math
+        with self.assertRaises(ValueError):
+            self.alice.send("bob", "hello", ttl_seconds=float("nan"))
+
+    def test_send_inf_ttl_raises(self):
+        """send() with Inf ttl raises ValueError."""
+        import math
+        with self.assertRaises(ValueError):
+            self.alice.send("bob", "hello", ttl_seconds=float("inf"))
+
+    def test_send_invalid_priority_zero_raises(self):
+        """send() with priority=0 raises ValueError."""
+        with self.assertRaises(ValueError):
+            self.alice.send("bob", "hello", priority=0)
+
+    def test_send_invalid_priority_negative_raises(self):
+        """send() with negative priority raises ValueError."""
+        with self.assertRaises(ValueError):
+            self.alice.send("bob", "hello", priority=-1)
+
+    def test_send_invalid_priority_above_max_raises(self):
+        """send() with priority > 4 raises ValueError."""
+        with self.assertRaises(ValueError):
+            self.alice.send("bob", "hello", priority=5)
+
+    def test_send_valid_priority_low_ok(self):
+        """send() with priority=Priority.LOW succeeds."""
+        msg_id = self.alice.send("bob", "low", priority=Priority.LOW)
+        self.assertGreater(msg_id, 0)
+
+    def test_send_valid_priority_critical_ok(self):
+        """send() with priority=Priority.CRITICAL succeeds."""
+        msg_id = self.alice.send("bob", "critical", priority=Priority.CRITICAL)
+        self.assertGreater(msg_id, 0)
 
 
 class TestRoutingClientWithDB(unittest.TestCase):
