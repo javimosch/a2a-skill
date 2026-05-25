@@ -2,6 +2,40 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.3] — 2026-05-25 (Multi-Client Audit & Fixes)
+
+### Added
+- **a2a_client.js: `register()` and `unregister()`** — Critical gap: Node.js client had
+  no way to register an agent, making `send()` impossible (sender validation rejects
+  unknown agents). Now matches Python API surface.
+- **src/lib.rs: `register()` and `unregister()`** — Same critical gap in Rust client.
+  Both methods follow the INSERT OR IGNORE + UPDATE pattern for upsert.
+- **AGENTS.md: New common pitfalls** — `register()` gap, kit design deadlock,
+  claude permissions env var, INSERT OR REPLACE hazard, Rust TTL gap,
+  cross-client drift.
+
+### Fixed
+- **a2a_client.py: TTL cleanup now commits** — `_cleanup_expired()` in `peek()` and
+  the `recv()` polling loop lacked `conn.commit()`, causing the DELETE to be silently
+  rolled back by SQLite's implicit transaction on `conn.close()`.
+- **a2a_client_async.py: `register(upsert=True)` preserves `created_at`** — Was using
+  `INSERT OR REPLACE` which destroys the original created_at. Now uses INSERT OR IGNORE
+  + UPDATE, matching the sync client's pattern.
+- **src/lib.rs: `search()` case-insensitive matching** — Changed `WHERE body LIKE ?1`
+  to `WHERE LOWER(body) LIKE ?1` with `query.to_lowercase()`. All other clients already
+  used `lower()`.
+- **src/lib.rs: TTL cleanup in `recv()` and `peek()`** — Both methods now delete
+  expired messages before fetching. Previously, Rust was the only client that skipped
+  cleanup entirely, returning stale messages to callers.
+- **a2a_client.go: `pid <= 0` validation** — Changed `pid < 0` to `pid != nil && *pid <= 0`,
+  rejecting pid=0 which would overwrite a valid PID via SQLite COALESCE.
+- **a2a_client_test.go, cmd/a2a/main.go** — Updated for `*int` PID parameter matching
+  the Go library's new signature.
+
+### Changed
+- **Go `Client.Register()` signature** — `pid` parameter changed from `int` to `*int`
+  (pointer-to-int, nil = no PID), matching Python's `Optional[int]`.
+
 ## [1.3.2] — 2026-05-25 (Hardening & Cross-Client Parity)
 
 ### Added
