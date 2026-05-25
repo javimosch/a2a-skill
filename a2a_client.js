@@ -336,6 +336,57 @@ class A2AClient {
       top_senders: senderRows.map(r => ({ agent: r.sender, count: r.c })),
     };
   }
+
+  /**
+   * Register this agent on the bus.
+   * @param {string}  role           - Agent's role description
+   * @param {string}  [prompt='']    - System prompt (optional)
+   * @param {string}  [cli='']       - CLI tool name (optional)
+   * @param {number}  [pid=null]     - Process ID (optional, must be positive if provided)
+   * @param {boolean} [upsert=true]  - Update existing registration, preserving created_at
+   * @returns {Promise<boolean>}
+   */
+  async register(role = '', prompt = '', cli = '', pid = null, upsert = true) {
+    if (pid !== null && pid !== undefined && (!Number.isInteger(pid) || pid <= 0)) {
+      throw new Error('pid must be a positive integer');
+    }
+    if (typeof role === 'string' && role.length > _MAX_AGENT_ID_LENGTH) {
+      throw new Error(`role too long (${role.length} chars, max ${_MAX_AGENT_ID_LENGTH})`);
+    }
+    if (typeof cli === 'string' && cli.length > 128) {
+      throw new Error(`cli too long (${cli.length} chars, max 128)`);
+    }
+    if (typeof prompt === 'string' && prompt.length > _MAX_BODY_LENGTH) {
+      throw new Error(`prompt too long (${prompt.length} chars, max ${_MAX_BODY_LENGTH})`);
+    }
+    const db = this._connect();
+    const now = Date.now() / 1000;
+    if (upsert) {
+      db.prepare(
+        'INSERT OR IGNORE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).run(this.agentId, role, prompt, cli, 'active', pid, now, now);
+      db.prepare(
+        "UPDATE agents SET role=COALESCE(?,role), prompt=COALESCE(?,prompt), cli=COALESCE(?,cli), pid=COALESCE(?,pid), status='active', last_seen=? WHERE id=?"
+      ).run(role, prompt, cli, pid, now, this.agentId);
+    } else {
+      db.prepare(
+        'INSERT INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).run(this.agentId, role, prompt, cli, 'active', pid, now, now);
+    }
+    db.close();
+    return true;
+  }
+
+  /**
+   * Remove this agent from the bus.
+   * @returns {Promise<boolean>}
+   */
+  async unregister() {
+    const db = this._connect();
+    db.prepare('DELETE FROM agents WHERE id=?').run(this.agentId);
+    db.close();
+    return true;
+  }
 }
 
 module.exports = A2AClient;

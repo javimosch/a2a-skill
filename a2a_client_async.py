@@ -155,15 +155,25 @@ class A2AClientAsync:
         if len(prompt) > _MAX_BODY_LENGTH:
             raise ValueError(f"prompt too long ({len(prompt)} chars, max {_MAX_BODY_LENGTH})")
         conn = await self._connect()
-        sql = (
-            "INSERT OR REPLACE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-            if upsert else
-            "INSERT INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-        )
         now = time.time()
-        await conn.execute(sql, (self.agent_id, role, prompt, cli, "active", pid, now, now))
+        if upsert:
+            await conn.execute(
+                "INSERT OR IGNORE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (self.agent_id, role, prompt, cli, "active", pid, now, now),
+            )
+            await conn.execute(
+                "UPDATE agents SET role=COALESCE(?,role), prompt=COALESCE(?,prompt), "
+                "cli=COALESCE(?,cli), pid=COALESCE(?,pid), status='active', last_seen=? "
+                "WHERE id=?",
+                (role, prompt, cli, pid, now, self.agent_id),
+            )
+        else:
+            await conn.execute(
+                "INSERT INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (self.agent_id, role, prompt, cli, "active", pid, now, now),
+            )
         await conn.commit()
         return True
 

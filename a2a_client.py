@@ -226,6 +226,7 @@ class A2AClient:
 
             while True:
                 self._cleanup_expired(conn)
+                conn.commit()
                 # Build query
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
@@ -288,6 +289,7 @@ class A2AClient:
         conn = self._connect()
         try:
             self._cleanup_expired(conn)
+            conn.commit()
             rows = conn.execute(
                 "SELECT id, sender, recipient, body, thread_id, created_at "
                 "FROM messages ORDER BY created_at DESC LIMIT ?",

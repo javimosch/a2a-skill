@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+func intPtr(v int) *int {
+	return &v
+}
+
 func setupTestProject(t *testing.T) (*Client, func()) {
 	t.Helper()
 	// Unique project per test prevents stale-data collisions when tests share the same DB path.
@@ -51,17 +55,17 @@ func TestRegister(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	if err := c.Register("planner", "plan things", "claude", 123, false); err != nil {
+	if err := c.Register("planner", "plan things", "claude", intPtr(123), false); err != nil {
 		t.Fatalf("Register: %v", err)
 	}
 
 	// Double registration should fail without upsert
-	if err := c.Register("planner", "", "", 0, false); err == nil {
+	if err := c.Register("planner", "", "", nil, false); err == nil {
 		t.Fatal("expected error on duplicate register without upsert")
 	}
 
 	// Upsert should succeed
-	if err := c.Register("critic", "", "", 0, true); err != nil {
+	if err := c.Register("critic", "", "", nil, true); err != nil {
 		t.Fatalf("Register upsert: %v", err)
 	}
 }
@@ -71,10 +75,10 @@ func TestListPeers(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c.AgentID = "bob"
-	c.Register("critic", "", "", 0, false)
+	c.Register("critic", "", "", nil, false)
 
 	peers, err := c.ListPeers()
 	if err != nil {
@@ -90,12 +94,12 @@ func TestSendRecv(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	// Register bob as a peer
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	// Send from alice to bob
 	mid, err := c.Send("bob", "hello bob", "", nil)
@@ -123,7 +127,7 @@ func TestSendBroadcast(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	mid, err := c.Send("all", "hello everyone", "", nil)
 	if err != nil {
@@ -139,12 +143,12 @@ func TestPeek(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	// Register bob as peer
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	c.Send("bob", "msg1", "", nil)
 	c.Send("bob", "msg2", "", nil)
@@ -163,11 +167,11 @@ func TestSearch(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	c.Send("bob", "hello world", "", nil)
 	c.Send("bob", "goodbye moon", "", nil)
@@ -186,11 +190,11 @@ func TestThread(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	c.Send("bob", "msg1", "thread-1", nil)
 	c.Send("bob", "msg2", "thread-1", nil)
@@ -210,7 +214,7 @@ func TestSetAndGetStatus(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	if _, err := c.SetStatus("done"); err != nil {
 		t.Fatalf("SetStatus: %v", err)
@@ -230,11 +234,11 @@ func TestStats(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	c.Send("bob", "msg1", "", nil)
 	c.Send("bob", "msg2", "", nil)
@@ -259,11 +263,11 @@ func TestStatsJSON(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 	c.Send("bob", "test", "", nil)
 
 	json, err := c.StatsJSON()
@@ -280,12 +284,12 @@ func TestWait(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "bob"
-	c.Register("critic", "", "", 0, false)
+	c.Register("critic", "", "", nil, false)
 
 	// Send messages as alice
 	c2 := NewClient(c.Project, "alice")
 	c2.InitProject()
-	c2.Register("planner", "", "", 0, false)
+	c2.Register("planner", "", "", nil, false)
 	c2.Send("bob", "msg for wait test", "", nil)
 
 	// Bob waits
@@ -330,7 +334,7 @@ func TestTouch(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	oldLastSeen, _ := c.GetStatus("alice")
 	// We can't easily check last_seen value but we can verify no error
@@ -345,7 +349,7 @@ func TestCleanupExpired(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	// Insert a message with 0-second TTL (already expired)
 	db, err := c.connect()
@@ -373,11 +377,11 @@ func TestSendWithThread(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	mid, err := c.Send("bob", "with thread", "my-thread", nil)
 	if err != nil {
@@ -393,11 +397,11 @@ func TestSendWithTTL(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	ttl := 3600
 	mid, err := c.Send("bob", "with ttl", "", &ttl)
@@ -414,11 +418,11 @@ func TestSendSimple(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	mid, err := c.SendSimple("bob", "hello via simple")
 	if err != nil {
@@ -434,7 +438,7 @@ func TestRecvWithTTLCleanup(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	// Send expired message
 	ttl := 0
@@ -443,7 +447,7 @@ func TestRecvWithTTLCleanup(t *testing.T) {
 	// recv should call CleanupExpired internally and not return expired
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	msgs, err := c2.RecvSimple(0, true, false, 10)
 	if err != nil {
@@ -466,7 +470,7 @@ func TestWaitTimeout(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "lonely"
-	c.Register("waiting", "", "", 0, false)
+	c.Register("waiting", "", "", nil, false)
 
 	// Wait with 1 count on an agent with no messages should timeout
 	n, err := c.Wait(1, 1)
@@ -498,11 +502,11 @@ func TestSendEmptyBody(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	mid, err := c.Send("bob", "", "", nil)
 	if err != nil {
@@ -530,11 +534,11 @@ func TestSendSpecialChars(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	special := "hello\nmulti\nline\nwith\ttabs\nand🚀emoji\nand\"quotes\""
 	mid, err := c.Send("bob", special, "", nil)
@@ -557,11 +561,11 @@ func TestSendLongBody(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	// 10KB body
 	longBody := strings.Repeat("Lorem ipsum dolor sit amet. ", 500)
@@ -590,11 +594,11 @@ func TestRecvSince(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	// Create message at a known timestamp
 	c.Send("bob", "old message", "", nil)
@@ -619,7 +623,7 @@ func TestUnregister(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	// Verify registered
 	peers, err := c.ListPeers()
@@ -649,11 +653,11 @@ func TestConcurrentSendRecv(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	c2 := NewClient(c.Project, "bob")
 	c2.InitProject()
-	c2.Register("critic", "", "", 0, false)
+	c2.Register("critic", "", "", nil, false)
 
 	// Concurrent send/recv
 	done := make(chan bool)
@@ -684,7 +688,7 @@ func TestFTSSTriggers(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	msgs, err := c.SearchFTS("test", 10)
 	if err != nil {
@@ -714,7 +718,7 @@ func TestAgentExists(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("tester", "", "", 0, false)
+	c.Register("tester", "", "", nil, false)
 
 	exists, err := c.AgentExists("alice")
 	if err != nil {
@@ -738,7 +742,7 @@ func TestSendToUnknownRecipientFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("tester", "", "", 0, false)
+	c.Register("tester", "", "", nil, false)
 
 	_, err := c.Send("nonexistent-bob", "hello", "", nil)
 	if err == nil {
@@ -753,7 +757,7 @@ func TestSendFromUnregisteredSenderFails(t *testing.T) {
 	c.AgentID = "ghost-sender"
 	// Register a real recipient but not the sender
 	c2 := NewClient(c.Project, "bob")
-	c2.Register("tester", "", "", 0, false)
+	c2.Register("tester", "", "", nil, false)
 
 	_, err := c.Send("bob", "hello", "", nil)
 	if err == nil {
@@ -778,7 +782,7 @@ func TestPeekEmpty(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("tester", "", "", 0, false)
+	c.Register("tester", "", "", nil, false)
 
 	msgs, err := c.Peek(10)
 	if err != nil {
@@ -794,9 +798,9 @@ func TestPeekJSON(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("tester", "", "", 0, false)
+	c.Register("tester", "", "", nil, false)
 	c2 := NewClient(c.Project, "bob")
-	c2.Register("tester", "", "", 0, false)
+	c2.Register("tester", "", "", nil, false)
 
 	c.Send("bob", "peek test", "", nil)
 	msgs, err := c.Peek(10)
@@ -816,7 +820,7 @@ func TestBroadcastRecipientIsNil(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("tester", "", "", 0, false)
+	c.Register("tester", "", "", nil, false)
 
 	_, err := c.Send("all", "broadcast msg", "", nil)
 	if err != nil {
@@ -841,7 +845,7 @@ func TestSendEmptyRecipientFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("tester", "", "", 0, false)
+	c.Register("tester", "", "", nil, false)
 
 	_, err := c.Send("", "hello", "", nil)
 	if err == nil {
@@ -899,7 +903,7 @@ func TestSetStatusInvalidStatusFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "tester"
-	c.Register("checker", "", "", 0, false)
+	c.Register("checker", "", "", nil, false)
 
 	_, err := c.SetStatus("invalid-status")
 	if err == nil {
@@ -920,7 +924,7 @@ func TestWaitNonPositiveCountFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "tester"
-	c.Register("waiting", "", "", 0, false)
+	c.Register("waiting", "", "", nil, false)
 
 	_, err := c.Wait(0, 1)
 	if err == nil {
@@ -937,7 +941,7 @@ func TestSendNonPositiveTTLFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("sender", "", "", 0, false)
+	c.Register("sender", "", "", nil, false)
 
 	// TTL zero
 	zeroTTL := 0
@@ -965,7 +969,7 @@ func TestRecvNegativeLimitFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "tester"
-	c.Register("receiver", "", "", 0, false)
+	c.Register("receiver", "", "", nil, false)
 
 	_, err := c.Recv(RecvOpts{Limit: -1})
 	if err == nil {
@@ -981,7 +985,7 @@ func TestRecvNegativeWaitFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "tester"
-	c.Register("receiver", "", "", 0, false)
+	c.Register("receiver", "", "", nil, false)
 
 	_, err := c.Recv(RecvOpts{Wait: -1})
 	if err == nil {
@@ -1018,7 +1022,7 @@ func TestRegisterNonPositivePIDFails(t *testing.T) {
 	defer cleanup()
 
 	// PID negative should fail
-	err := c.Register("tester", "", "", -5, false)
+	err := c.Register("tester", "", "", intPtr(-5), false)
 	if err == nil {
 		t.Fatal("expected error for Register with PID=-5, got nil")
 	}
@@ -1033,7 +1037,7 @@ func TestRegisterMaxIDLengthFails(t *testing.T) {
 
 	longID := strings.Repeat("a", MaxAgentIDLength+1)
 	c.AgentID = longID
-	err := c.Register("tester", "", "", 0, false)
+	err := c.Register("tester", "", "", nil, false)
 	if err == nil {
 		t.Fatal("expected error for Register with too-long ID, got nil")
 	}
@@ -1047,7 +1051,7 @@ func TestSendMaxSenderIDLengthFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	// Sender ID too long
 	longID := strings.Repeat("b", MaxAgentIDLength+1)
@@ -1066,7 +1070,7 @@ func TestSendMaxRecipientIDLengthFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	// Recipient ID too long (not broadcast)
 	longID := strings.Repeat("b", MaxAgentIDLength+1)
@@ -1084,7 +1088,7 @@ func TestSendMaxThreadIDLengthFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	// Thread ID too long
 	longThread := strings.Repeat("t", MaxThreadIDLength+1)
@@ -1102,7 +1106,7 @@ func TestSendMaxBodyLengthFails(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	// Body too long
 	longBody := strings.Repeat("x", MaxBodyLength+1)
@@ -1120,7 +1124,7 @@ func TestSendMaxBodyLengthBoundaryOk(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	c.Register("planner", "", "", 0, false)
+	c.Register("planner", "", "", nil, false)
 
 	// Body at max length should succeed
 	exactBody := strings.Repeat("x", MaxBodyLength)

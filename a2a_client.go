@@ -658,11 +658,12 @@ func (c *Client) InitProject() error {
 }
 
 // Register registers an agent. If upsert is true, updates existing.
-func (c *Client) Register(role, prompt, cli string, pid int, upsert bool) error {
+// If pid is nil, no PID is stored; otherwise must be a positive integer.
+func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) error {
 	if len(c.AgentID) > MaxAgentIDLength {
 		return fmt.Errorf("agent id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
 	}
-	if pid < 0 {
+	if pid != nil && *pid <= 0 {
 		return fmt.Errorf("pid must be a positive integer")
 	}
 	if len(role) > 512 {

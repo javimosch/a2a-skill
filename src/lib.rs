@@ -213,6 +213,12 @@ impl Client {
 
         loop {
             let conn = self.connect()?;
+
+            // Clean up expired TTL messages
+            conn.execute_batch(
+                "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < CAST(strftime('%s','now') AS REAL)",
+            )?;
+
             let mut params: Vec<&dyn rusqlite::ToSql> = vec![&self.agent_id];
 
             // Filter out self if requested
@@ -294,6 +300,12 @@ impl Client {
             ));
         }
         let conn = self.connect()?;
+
+        // Clean up expired TTL messages
+        conn.execute_batch(
+            "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < CAST(strftime('%s','now') AS REAL)",
+        )?;
+
         let mut stmt = conn.prepare(
             "SELECT id, sender, recipient, body, thread_id, created_at FROM messages \
              ORDER BY created_at DESC LIMIT ?1",
@@ -361,6 +373,54 @@ impl Client {
         Ok(status)
     }
 
+    /// Register this agent on the bus
+    pub fn register(&self, role: &str, prompt: &str, cli: &str, pid: i32, upsert: bool) -> SqliteResult<bool> {
+        if role.len() > 512 {
+            return Err(rusqlite::Error::InvalidParameterName(format!(
+                "role too long ({} chars, max 512)",
+                role.len()
+            )));
+        }
+        if cli.len() > 128 {
+            return Err(rusqlite::Error::InvalidParameterName(format!(
+                "cli too long ({} chars, max 128)",
+                cli.len()
+            )));
+        }
+        if prompt.len() > MAX_BODY_LENGTH {
+            return Err(rusqlite::Error::InvalidParameterName(format!(
+                "prompt too long ({} chars, max {})",
+                prompt.len(),
+                MAX_BODY_LENGTH
+            )));
+        }
+        let conn = self.connect()?;
+        let now = Self::now();
+        if upsert {
+            conn.execute(
+                "INSERT OR IGNORE INTO agents(id, role, prompt, cli, status, pid, last_seen, created_at) VALUES (?1, ?2, ?3, ?4, 'active', ?5, ?6, ?6)",
+                params![&self.agent_id, role, prompt, cli, pid, now],
+            )?;
+            conn.execute(
+                "UPDATE agents SET role=?1, prompt=?2, cli=?3, status='active', pid=?4, last_seen=?5 WHERE id=?6",
+                params![role, prompt, cli, pid, now, &self.agent_id],
+            )?;
+        } else {
+            conn.execute(
+                "INSERT INTO agents(id, role, prompt, cli, status, pid, last_seen, created_at) VALUES (?1, ?2, ?3, ?4, 'active', ?5, ?6, ?6)",
+                params![&self.agent_id, role, prompt, cli, pid, now],
+            )?;
+        }
+        Ok(true)
+    }
+
+    /// Unregister this agent from the bus
+    pub fn unregister(&self) -> SqliteResult<bool> {
+        let conn = self.connect()?;
+        conn.execute("DELETE FROM agents WHERE id = ?1", params![&self.agent_id])?;
+        Ok(true)
+    }
+
     /// Search messages
     pub fn search(&self, query: &str, limit: i64) -> SqliteResult<Vec<Message>> {
         if query.trim().is_empty() {
@@ -376,10 +436,10 @@ impl Client {
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             "SELECT id, sender, recipient, body, thread_id, created_at FROM messages \
-             WHERE body LIKE ?1 ORDER BY created_at DESC LIMIT ?2",
+             WHERE LOWER(body) LIKE ?1 ORDER BY created_at DESC LIMIT ?2",
         )?;
 
-        let messages = stmt.query_map(params![format!("%{}%", query), limit], |row| {
+        let messages = stmt.query_map(params![format!("%{}%", query.to_lowercase()), limit], |row| {
             Ok(Message {
                 id: row.get(0)?,
                 sender: row.get(1)?,

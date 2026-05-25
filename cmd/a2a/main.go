@@ -241,9 +241,13 @@ func cmdRegister() {
 	prompt := getFlagValue("--prompt")
 	cli := getFlagValue("--cli")
 	pid := getFlagInt("--pid")
-	if hasFlag("--pid") && pid <= 0 {
-		fmt.Fprintln(os.Stderr, "a2a: --pid must be a positive integer")
-		os.Exit(1)
+	var pidPtr *int
+	if hasFlag("--pid") {
+		if pid <= 0 {
+			fmt.Fprintln(os.Stderr, "a2a: --pid must be a positive integer")
+			os.Exit(1)
+		}
+		pidPtr = &pid
 	}
 	if hasFlag("--role") && strings.TrimSpace(role) == "" {
 		fmt.Fprintln(os.Stderr, "a2a: --role must not be whitespace-only")
@@ -260,7 +264,7 @@ func cmdRegister() {
 		fmt.Fprintf(os.Stderr, "a2a: register error: %v\n", err)
 		os.Exit(1)
 	}
-	if err := c.Register(role, prompt, cli, pid, upsert); err != nil {
+	if err := c.Register(role, prompt, cli, pidPtr, upsert); err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: register error: %v\n", err)
 		os.Exit(1)
 	}
