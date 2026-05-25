@@ -99,6 +99,7 @@ echo ""
 echo "  Checking Python syntax..."
 $PYTHON3 -m py_compile a2a.py test_a2a.py test_integration.py test_a2a_client.py \
     test_v13_features.py test_git_aware.py test_server.py test_async_modules.py \
+    test_artifacts_util.py \
     benchmark.py dashboard.py a2a_client.py
 echo "  ✓ All Python files compile"
 
