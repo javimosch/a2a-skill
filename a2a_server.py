@@ -8,11 +8,14 @@ Runs on localhost:5000 (configurable).
 
 import json
 import argparse
+import math
 import sqlite3
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 import time
+
+VALID_STATUSES = frozenset({"active", "idle", "done", "blocked"})
 
 class A2ARequestHandler(BaseHTTPRequestHandler):
     """HTTP request handler for a2a REST API"""
@@ -99,6 +102,12 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         if ttl is not None and not isinstance(ttl, (int, float)):
             self.respond_json({'error': 'ttl_seconds must be a number'}, 400)
             return
+        if ttl is not None and ttl <= 0:
+            self.respond_json({'error': 'ttl_seconds must be a positive number of seconds'}, 400)
+            return
+        if ttl is not None and (math.isnan(ttl) or math.isinf(ttl)):
+            self.respond_json({'error': 'ttl_seconds must be a finite number'}, 400)
+            return
 
         try:
             db = self.get_db()
@@ -169,6 +178,9 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         except (ValueError, IndexError):
             self.respond_json({'error': 'Invalid limit parameter'}, 400)
             return
+        if limit <= 0:
+            self.respond_json({'error': 'limit must be a positive integer'}, 400)
+            return
         try:
             db = self.get_db()
             rows = db.execute(
@@ -183,13 +195,15 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
 
     def handle_search(self, query):
         """GET /search - Search messages"""
-        q = query.get('q', [''])[0]
+        q = (query.get('q', [''])[0] or '').strip()
         try:
             limit = int(query.get('limit', ['50'])[0])
         except (ValueError, IndexError):
             self.respond_json({'error': 'Invalid limit parameter'}, 400)
             return
-        
+        if limit <= 0:
+            self.respond_json({'error': 'limit must be a positive integer'}, 400)
+            return
         if not q:
             self.respond_json({'error': 'Missing q parameter'}, 400)
             return
@@ -271,6 +285,13 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
             self.respond_json({'error': 'Missing status'}, 400)
             return
 
+        if status not in VALID_STATUSES:
+            self.respond_json(
+                {'error': f"Invalid status '{status}' — must be one of: {', '.join(sorted(VALID_STATUSES))}"},
+                400,
+            )
+            return
+
         try:
             db = self.get_db()
             db.execute('UPDATE agents SET status = ?, last_seen = ? WHERE id = ?',
@@ -287,14 +308,35 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         if not agent_id:
             self.respond_json({'error': 'Missing agent_id'}, 400)
             return
+        if len(role) > 512:
+            self.respond_json({'error': 'role too long (max 512)'}, 400)
+            return
+        cli = data.get('cli', '')
+        if len(cli) > 128:
+            self.respond_json({'error': 'cli too long (max 128)'}, 400)
+            return
+        prompt = data.get('prompt', '')
+        if len(prompt) > 100_000:
+            self.respond_json({'error': 'prompt too long (max 100K)'}, 400)
+            return
+        pid = data.get('pid', 0)
+        if pid is not None and pid != 0 and pid != '':
+            try:
+                pid_int = int(pid)
+                if pid_int <= 0:
+                    self.respond_json({'error': 'pid must be a positive integer'}, 400)
+                    return
+            except (ValueError, TypeError):
+                self.respond_json({'error': 'pid must be a positive integer'}, 400)
+                return
         try:
             db = self.get_db()
             now = time.time()
             db.execute(
                 "INSERT OR REPLACE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (agent_id, role, data.get('prompt', ''), data.get('cli', ''),
-                 'active', data.get('pid', 0), now, now),
+                (agent_id, role, prompt, cli,
+                 'active', pid, now, now),
             )
             db.commit()
             self.respond_json({'agent_id': agent_id, 'role': role, 'status': 'active'})

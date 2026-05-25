@@ -453,10 +453,10 @@ class TestA2ARestServer(unittest.TestCase):
         _, body = self._get("/messages?limit=3")
         self.assertLessEqual(len(body["messages"]), 3)
 
-    def test_peek_limit_zero_returns_empty(self):
-        """GET /messages with limit=0 returns empty messages list."""
-        _, body = self._get("/messages?limit=0")
-        self.assertEqual(body["messages"], [])
+    def test_peek_limit_zero_returns_400(self):
+        """GET /messages with limit=0 returns 400."""
+        status, _ = self._get("/messages?limit=0")
+        self.assertEqual(status, 400)
 
     def test_stats_all_fields_present(self):
         """GET /stats returns all five required fields."""
