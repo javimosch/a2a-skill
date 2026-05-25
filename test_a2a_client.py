@@ -873,6 +873,13 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(row[0], "ttl-thread-1")
         self.assertEqual(row[1], 3600)
 
+    def test_search_empty_result(self):
+        """search returns empty list when no messages match."""
+        alice = A2AClient(self.project, "alice")
+        results = alice.search("nonexistent-term-xyz")
+        self.assertIsInstance(results, list)
+        self.assertEqual(len(results), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
