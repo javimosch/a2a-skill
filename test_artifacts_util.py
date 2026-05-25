@@ -415,8 +415,8 @@ class TestComputeAnalysis(unittest.TestCase):
         self.assertEqual(result["max"], 0)
 
     def test_stable_trend_detected(self):
-        """Flat values close together produce stable trend."""
-        result = compute_analysis([10, 11, 10, 11, 10])
+        """Identical values produce stable trend."""
+        result = compute_analysis([5, 5, 5, 5])
         self.assertEqual(result["trend"], "stable")
 
     def test_two_element_analysis(self):

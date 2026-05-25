@@ -514,13 +514,17 @@ class TestA2ARestServer(unittest.TestCase):
 
     def test_send_with_custom_sender(self):
         """POST /send with 'from' field stores custom sender."""
+        # Register a dedicated agent to avoid test pollution from broadcasts
+        self._post("/register", {"agent_id": "custom-recv-agent", "role": "receiver"})
+        # Drain any existing broadcasts first
+        self._post("/recv", {"agent": "custom-recv-agent", "limit": 100})
         status, body = self._post("/send", {
-            "to": "alice", "message": "from custom", "from": "custom-bot"
+            "to": "custom-recv-agent", "message": "from custom", "from": "custom-bot"
         })
         self.assertEqual(status, 200)
-        # Verify by retrieving as alice
-        _, recv_body = self._post("/recv", {"agent": "alice"})
-        self.assertIn("from custom", [m["body"] for m in recv_body["messages"]])
+        # Now recv should return our direct message
+        _, drain_body = self._post("/recv", {"agent": "custom-recv-agent"})
+        self.assertIn("from custom", [m["body"] for m in drain_body["messages"]])
 
     def test_send_body_too_long_returns_400(self):
         """POST /send with body > 100K chars returns 400."""
