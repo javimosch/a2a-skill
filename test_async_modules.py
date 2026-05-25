@@ -373,6 +373,54 @@ class TestA2AClientAsync(unittest.TestCase):
         self.assertEqual(len(msgs), 1)
         self.assertEqual(msgs[0]["body"], "")
 
+    def test_send_with_thread_and_ttl_combined(self):
+        """send() with both thread_id and ttl_seconds works together (async)."""
+        run_async(self.alice.register("tester"))
+        run_async(self.bob.register("tester"))
+        from a2a_client_async import A2AClientAsync
+        async def _do():
+            async with A2AClientAsync(self.project, "alice") as client:
+                msg_id = await client.send("bob", "threaded ttl msg",
+                                            thread_id="async-thread-1", ttl_seconds=3600)
+                return msg_id
+        msg_id = run_async(_do())
+        self.assertGreater(msg_id, 0)
+        msgs = run_async(self.bob.recv(wait=1))
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(msgs[0]["thread_id"], "async-thread-1")
+
+    def test_send_body_too_long_rejected(self):
+        """send() with body > 100K chars raises ValueError (async)."""
+        from a2a_client_async import A2AClientAsync
+        async def _test():
+            async with A2AClientAsync(self.project, "alice") as client:
+                with self.assertRaises(ValueError):
+                    await client.send("bob", "x" * 100_001)
+        run_async(_test())
+
+    def test_send_empty_thread_id_rejected(self):
+        """send() with empty thread_id raises ValueError (async)."""
+        from a2a_client_async import A2AClientAsync
+        async def _test():
+            async with A2AClientAsync(self.project, "alice") as client:
+                with self.assertRaises(ValueError):
+                    await client.send("bob", "msg", thread_id="")
+                with self.assertRaises(ValueError):
+                    await client.send("bob", "msg", thread_id="   ")
+        run_async(_test())
+
+    def test_search_returns_empty(self):
+        """search() returns empty list when no messages match (async)."""
+        run_async(self.alice.register("tester"))
+        from a2a_client_async import A2AClientAsync
+        async def _test():
+            async with A2AClientAsync(self.project, "alice") as client:
+                results = await client.search("nonexistent-term-xyz")
+                return results
+        results = run_async(_test())
+        self.assertIsInstance(results, list)
+        self.assertEqual(len(results), 0)
+
 
 @unittest.skipUnless(HAS_AIOSQLITE, SKIP_MSG)
 class TestPriorityClientAsync(unittest.TestCase):
