@@ -75,11 +75,11 @@ a2a-skill/
 ├── test_a2a.py           unit tests (148)
 ├── test_a2a_client.py    Python client tests (73)
 ├── test_integration.py   integration tests (94)
-├── test_v13_features.py  v1.3 satellite module tests (108)
+├── test_v13_features.py  v1.3 satellite module tests (114)
 ├── test_git_aware.py     git-aware module tests (42)
 ├── test_server.py        REST API tests (61)
 ├── test_async_modules.py async client tests (43, 16 skip-guarded)
-├── test_artifacts_util.py artifact build util tests (67)     ← 636 tests total
+├── test_artifacts_util.py artifact build util tests (67)     ← 642 tests total
 ├── benchmark.py
 ├── dashboard.py
 ├── examples/             AGENTS.md documents patterns
@@ -223,7 +223,7 @@ python3 test_integration.py -v
 Shells out to the `a2a` binary and verifies full workflows: register→send→recv,
 TTL expiry, broadcast, cross-project isolation, concurrent agents.
 
-### v1.3 satellite module tests (108 + 42 + 52 + 43 tests)
+### v1.3 satellite module tests (114 + 42 + 61 + 43 tests)
 
 ```bash
 python3 test_v13_features.py -v   # encryption, FTS, audit, priority, routing
