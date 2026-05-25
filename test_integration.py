@@ -1153,6 +1153,69 @@ class TestIntegration(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("too long", result.stderr.lower())
 
+    def test_wait_count_zero_rejected(self):
+        """Wait with --count 0 is rejected."""
+        a2a("register", "alice", project=self.project)
+        result = a2a("wait", "--as", "alice", "--count", "0", "--timeout", "1",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("positive integer", result.stderr.lower())
+
+    def test_wait_count_negative_rejected(self):
+        """Wait with --count -1 is rejected."""
+        a2a("register", "alice", project=self.project)
+        result = a2a("wait", "--as", "alice", "--count", "-1", "--timeout", "1",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("positive integer", result.stderr.lower())
+
+    def test_wait_timeout_negative_rejected(self):
+        """Wait with negative --timeout is rejected."""
+        a2a("register", "alice", project=self.project)
+        result = a2a("wait", "--as", "alice", "--count", "1", "--timeout", "-1",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("non-negative", result.stderr.lower())
+
+    def test_send_ttl_zero_rejected(self):
+        """Send with --ttl 0 is rejected."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        result = a2a("send", "bob", "msg", "--from", "alice", "--ttl", "0",
+                     project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("positive", result.stderr.lower())
+
+    def test_register_duplicate_without_upsert_fails(self):
+        """Registering an already-existing agent without --upsert fails."""
+        a2a("register", "alice", project=self.project)
+        result = a2a("register", "alice", project=self.project, expect_fail=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("already registered", result.stderr.lower())
+
+    def test_init_idempotent(self):
+        """Calling init on an already-initialized project is idempotent."""
+        result = a2a("init", project=self.project)
+        self.assertEqual(result.returncode, 0)
+
+    def test_search_special_fts5_chars(self):
+        """Search with FTS5 special characters (quotes, parens) works."""
+        a2a("register", "alice", project=self.project)
+        a2a("send", "alice", "test (parentheses) here", "--from", "alice",
+            project=self.project)
+        a2a("send", "alice", 'say "hello world" now', "--from", "alice",
+            project=self.project)
+        # Search with parentheses — should not crash
+        result = a2a("search", "parentheses", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertGreaterEqual(len(msgs), 1)
+        bodies = [m["body"] for m in msgs]
+        self.assertTrue(any("parentheses" in b for b in bodies))
+        # Search phrase with quotes — should not crash
+        result2 = a2a("search", "hello world", "--json", project=self.project)
+        msgs2 = json.loads(result2.stdout)
+        self.assertGreaterEqual(len(msgs2), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
