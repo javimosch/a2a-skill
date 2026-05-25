@@ -22,6 +22,11 @@ def _validate_project_name(name: str) -> None:
         raise ValueError(f"invalid project name {name!r} — must not contain path separators or start with '.'")
 
 
+# Max length constants (match a2a.py)
+_MAX_THREAD_ID_LENGTH = 256
+_MAX_BODY_LENGTH = 100_000
+
+
 class A2AClientAsync:
     """Async client for a2a peer-to-peer messaging."""
 
@@ -97,6 +102,12 @@ class A2AClientAsync:
             raise ValueError("recipient must not be empty")
         if ttl_seconds is not None and ttl_seconds <= 0:
             raise ValueError("ttl_seconds must be a positive number of seconds")
+        if thread_id is not None and not thread_id.strip():
+            raise ValueError("thread_id must not be empty")
+        if thread_id is not None and len(thread_id) > _MAX_THREAD_ID_LENGTH:
+            raise ValueError(f"thread_id too long ({len(thread_id)} chars, max {_MAX_THREAD_ID_LENGTH})")
+        if len(message) > _MAX_BODY_LENGTH:
+            raise ValueError(f"message body too long ({len(message)} chars, max {_MAX_BODY_LENGTH})")
         recipient = None if to.lower() in ("all", "*", "broadcast") else to
         await conn.execute(
             "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
