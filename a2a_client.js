@@ -14,6 +14,7 @@ const fs = require('fs');
 
 const _MAX_BODY_LENGTH = 100_000;
 const _MAX_THREAD_ID_LENGTH = 256;
+const _MAX_AGENT_ID_LENGTH = 256;
 
 class A2AClient {
   /**
@@ -29,6 +30,9 @@ class A2AClient {
     }
     if (!agentId || !agentId.trim()) {
       throw new Error('agent_id must not be empty');
+    }
+    if (agentId.length > _MAX_AGENT_ID_LENGTH) {
+      throw new Error(`agent_id too long (${agentId.length} chars, max ${_MAX_AGENT_ID_LENGTH})`);
     }
     this.project = project;
     this.agentId = agentId;
@@ -48,6 +52,18 @@ class A2AClient {
     db.exec('PRAGMA journal_mode=WAL');
     db.exec('PRAGMA busy_timeout=5000');
     return db;
+  }
+
+  /**
+   * Delete TTL-expired messages from the bus.
+   * Must be called before any message-fetching method (recv, peek).
+   * @private
+   * @param {DatabaseSync} db
+   */
+  _cleanupExpired(db) {
+    db.prepare(
+      'DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?'
+    ).run(Date.now() / 1000);
   }
 
   /**
@@ -125,6 +141,7 @@ class A2AClient {
 
     while (true) {
       const db = this._connect();
+      this._cleanupExpired(db);
       let query = `
         SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at
         FROM messages m
@@ -183,6 +200,7 @@ class A2AClient {
       throw new Error('limit must be a positive integer');
     }
     const db = this._connect();
+    this._cleanupExpired(db);
     const rows = db.prepare(
       'SELECT id, sender, recipient, body, thread_id, created_at FROM messages ORDER BY created_at DESC LIMIT ?'
     ).all(limit);
