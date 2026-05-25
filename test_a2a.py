@@ -2360,6 +2360,105 @@ class TestEdgeCases(unittest.TestCase):
                 a2a.argparse.Namespace(project=self.project, id="b" * 300)
             )
 
+    def test_cmd_register_role_too_long_raises_error(self):
+        """Register with --role > 512 chars raises SystemExit."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_register(
+                a2a.argparse.Namespace(
+                    project=self.project, id="tester",
+                    role="x" * 600, prompt="", cli="", pid=0, upsert=False,
+                )
+            )
+
+    def test_cmd_register_cli_too_long_raises_error(self):
+        """Register with --cli > 128 chars raises SystemExit."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_register(
+                a2a.argparse.Namespace(
+                    project=self.project, id="tester",
+                    role="tester", prompt="", cli="c" * 200, pid=0, upsert=False,
+                )
+            )
+
+    def test_cmd_register_prompt_too_long_raises_error(self):
+        """Register with --prompt > 100K chars raises SystemExit."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_register(
+                a2a.argparse.Namespace(
+                    project=self.project, id="tester",
+                    role="tester", prompt="p" * 100_001, cli="", pid=0, upsert=False,
+                )
+            )
+
+    def test_cmd_send_nan_ttl_raises_error(self):
+        """Send with --ttl NaN raises SystemExit."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(
+                a2a.argparse.Namespace(
+                    project=self.project, to="all", body="hi",
+                    **{"from_": "alice", "thread": None, "ttl": float("nan"), "json": False}
+                )
+            )
+
+    def test_cmd_send_inf_ttl_raises_error(self):
+        """Send with --ttl inf raises SystemExit."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(
+                a2a.argparse.Namespace(
+                    project=self.project, to="all", body="hi",
+                    **{"from_": "alice", "thread": None, "ttl": float("inf"), "json": False}
+                )
+            )
+
+    def test_recv_future_since_returns_empty(self):
+        """recv with --since in the future returns no messages."""
+        self._register("alice")
+        # Send a message first
+        a2a.cmd_send(a2a.argparse.Namespace(
+            project=self.project, to="all", body="hello",
+            **{"from_": "alice", "thread": None, "ttl": None, "json": False}
+        ))
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_recv(a2a.argparse.Namespace(
+                project=self.project, as_="alice", wait=0, all=True,
+                peek=False, limit=None, since=9999999999.0, json=True, include_self=False
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output) if output.strip() else []
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 0)
+
+    def test_search_fts_special_chars_does_not_crash(self):
+        """Search with special FTS5 characters falls back gracefully to LIKE."""
+        import io, sys
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, body, created_at) VALUES (?,?,?)",
+            ("alice", "hello (world) [test] *star*", a2a.now())
+        )
+        conn.commit()
+        conn.close()
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_search(a2a.argparse.Namespace(
+                project=self.project, query="*star*",
+                limit=10, json=False, fts=False
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("star", output)
+
     def test_cmd_clear_empty_bus(self):
         """Clear on a bus with no database prints notice and does not crash."""
         import io, sys
