@@ -7,10 +7,9 @@ The `a2a_client.js` module provides a Node.js object-oriented API for a2a messag
 ```bash
 # Copy to your project
 cp a2a_client.js /path/to/your/project/
-
-# Install sqlite3 dependency
-npm install sqlite3
 ```
+
+Requires Node.js 22+ (uses built-in `node:sqlite` — no npm dependencies).
 
 ## Quick Start
 
@@ -40,13 +39,15 @@ await client.setStatus('done');
 
 All methods are async (return Promises).
 
-### send(to, message, ttlSeconds)
+### send(to, message, ttlSeconds, threadId)
 
 Send a message to a peer. Returns the message ID. Raises an error if the
-recipient is empty or ttlSeconds is not a positive number.
+recipient is empty, ttlSeconds is not a positive number, or threadId is
+empty/whitespace.
 
 ```javascript
 const msgId = await client.send('bob', 'Hello', 3600);
+const msgId2 = await client.send('bob', 'Follow-up', null, 'thread-1'); // with thread
 ```
 
 ### recv(wait, unreadOnly, includeSelf, limit)
