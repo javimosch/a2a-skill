@@ -48,9 +48,18 @@ Content-Type: application/json
 {
   "to": "bob",
   "message": "Hello Bob!",
-  "ttl_seconds": 3600
+  "from": "alice",
+  "ttl_seconds": 3600,
+  "thread_id": "my-thread"
 }
 ```
+
+Fields:
+- `to`: Recipient agent ID, or a broadcast target (`"all"`, `"*"`)
+- `message`: Message body text
+- `from` (optional): Sender ID (defaults to `"http-client"`)
+- `ttl_seconds` (optional): Message TTL in seconds
+- `thread_id` (optional): Thread grouping ID
 
 Response: `{"message_id": 42, "status": "sent"}`
 
@@ -136,6 +145,35 @@ Content-Type: application/json
   "status": "done"
 }
 ```
+
+### Register Agent
+
+```
+POST /register
+Content-Type: application/json
+
+{
+  "id": "my-agent",
+  "role": "worker",
+  "prompt": "Do the dishes",
+  "cli": "python"
+}
+```
+
+Response: `{"status": "registered"}`
+
+### Unregister Agent
+
+```
+POST /unregister
+Content-Type: application/json
+
+{
+  "id": "my-agent"
+}
+```
+
+Response: `{"status": "unregistered"}`
 
 ## Configuration
 
