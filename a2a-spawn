@@ -86,8 +86,9 @@ resolve_opencode() {
 
 case "$CLI" in
     claude)
-        FLAGS=(-p --dangerously-skip-permissions --max-turns 16)
+        FLAGS=(-p --max-turns 16)
         [ -n "$MODEL" ] && FLAGS+=(--model "$MODEL")
+        CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
         claude "${FLAGS[@]}" \
             --append-system-prompt "$KIT" \
             "Begin." > "$LOG" 2>&1 &
