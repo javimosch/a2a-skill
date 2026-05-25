@@ -421,6 +421,57 @@ class TestA2AClientAsync(unittest.TestCase):
         self.assertIsInstance(results, list)
         self.assertEqual(len(results), 0)
 
+    def test_send_body_at_boundary_accepted(self):
+        """send() with body=100000 chars (exact boundary) is accepted (async)."""
+        from a2a_client_async import A2AClientAsync
+        run_async(self.alice.register("tester"))
+        async def _test():
+            async with A2AClientAsync(self.project, "alice") as client:
+                return await client.send("bob", "x" * 100_000)
+        msg_id = run_async(_test())
+        self.assertGreater(msg_id, 0)
+
+    def test_close_idempotent(self):
+        """close() called twice does not raise (async)."""
+        from a2a_client_async import A2AClientAsync
+        client = A2AClientAsync(self.project, "close-test")
+        async def _do():
+            await client._connect()
+            await client.close()
+            # Second close should be a no-op
+            await client.close()
+        run_async(_do())
+
+    def test_recv_unread_only_excludes_read_messages(self):
+        """recv(unread_only=True) excludes messages already marked as read (async)."""
+        from a2a_client_async import A2AClientAsync
+        run_async(self.alice.register("tester"))
+        run_async(self.bob.register("tester"))
+
+        async def _test():
+            async with A2AClientAsync(self.project, "alice") as alice:
+                await alice.send("bob", "msg1")
+            async with A2AClientAsync(self.project, "bob") as bob:
+                # First recv reads the message
+                msgs1 = await bob.recv(wait=0, unread_only=True)
+                self.assertEqual(len(msgs1), 1)
+                # Second recv with unread_only should return empty
+                msgs2 = await bob.recv(wait=0, unread_only=True)
+                return len(msgs2)
+        count = run_async(_test())
+        self.assertEqual(count, 0)
+
+    def test_peek_very_large_limit(self):
+        """peek(limit=99999) does not crash (async)."""
+        from a2a_client_async import A2AClientAsync
+        run_async(self.alice.register("tester"))
+        async def _test():
+            async with A2AClientAsync(self.project, "alice") as alice:
+                messages = await alice.peek(limit=99999)
+                return messages
+        messages = run_async(_test())
+        self.assertIsInstance(messages, list)
+
 
 @unittest.skipUnless(HAS_AIOSQLITE, SKIP_MSG)
 class TestPriorityClientAsync(unittest.TestCase):
