@@ -129,6 +129,12 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
 
         try:
             db = self.get_db()
+            # Clean up expired messages before fetching
+            db.execute(
+                "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?",
+                (time.time(),),
+            )
+            db.commit()
             if include_self:
                 rows = db.execute(
                     'SELECT id, sender, recipient, body, thread_id, created_at FROM messages '
@@ -183,6 +189,12 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
             return
         try:
             db = self.get_db()
+            # Clean up expired messages before fetching
+            db.execute(
+                "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?",
+                (time.time(),),
+            )
+            db.commit()
             rows = db.execute(
                 'SELECT id, sender, recipient, body, created_at FROM messages '
                 'ORDER BY created_at DESC LIMIT ?',
