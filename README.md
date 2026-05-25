@@ -249,7 +249,7 @@ agents drive themselves. See `.agents/skills/a2a/SKILL.md` for the exact kit pro
 
 ## Tests
 
-### Unit tests (73 tests, stdlib only)
+### Unit tests (157 tests, stdlib only)
 
 ```bash
 python3 test_a2a.py -v
@@ -274,7 +274,7 @@ cross-project isolation, special character handling.
 Both clear the bus at start and assert each peer sent messages and ended
 with `status='done'`.
 
-### Integration tests (67 tests)
+### Integration tests (105 tests)
 
 ```bash
 python3 test_integration.py -v
@@ -333,7 +333,7 @@ See `examples/README.md` for detailed walkthroughs of each pattern:
 GitHub Actions automatically runs tests on every push:
 
 - **Unit tests**: `test_a2a.py` on Python 3.10, 3.11, 3.12
-- **Integration tests**: `test_integration.py` (67 CLI-level workflows)
+- **Integration tests**: `test_integration.py` (105 CLI-level workflows)
 - **Smoke tests**: Single-CLI and cross-CLI peer collaboration
 - **Performance benchmarks**: Latency, throughput, TTL overhead
 - **Code validation**: Python syntax, shell script validation, docs checks
