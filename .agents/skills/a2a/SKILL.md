@@ -25,7 +25,7 @@ The default project name is the basename of the current working directory. Set
 `A2A_PROJECT` or pass `--project NAME` to override.
 
 For the full list of CLI commands and their usage (Python & Go binaries), see
-[docs/GO_CLI_REFERENCE.md](../docs/GO_CLI_REFERENCE.md).
+[docs/GO_CLI_REFERENCE.md](../../../docs/GO_CLI_REFERENCE.md).
 
 ## When to use
 
@@ -39,7 +39,7 @@ If the user wants a strict orchestrator → workers pattern, prefer the standard
 
 ## Three usage patterns
 
-This skill implements **Pattern 3** below. See [docs/QUICKSTART.md](../docs/QUICKSTART.md)
+This skill implements **Pattern 3** below. See [docs/QUICKSTART.md](../../../docs/QUICKSTART.md)
 for Patterns 1 and 2.
 
 | # | Pattern | Who drives | Documented in |
@@ -257,9 +257,9 @@ Database survives between sessions — useful for resuming.
 
 ## Related Documentation
 
-- [docs/GO_CLI_REFERENCE.md](../docs/GO_CLI_REFERENCE.md) — Full Go binary CLI command reference
-- [docs/QUICKSTART.md](../docs/QUICKSTART.md) — Installation and first-run guide
-- [docs/CLIENT_API.md](../docs/CLIENT_API.md) — Python client library API reference
-- [docs/ADVANCED_PATTERNS.md](../docs/ADVANCED_PATTERNS.md) — Advanced usage patterns and artifact smoke tests
-- [docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md) — Common issues and solutions
-- [docs/PITFALLS.md](../docs/PITFALLS.md) — Lessons from artifact smoke testing
+- [docs/GO_CLI_REFERENCE.md](../../../docs/GO_CLI_REFERENCE.md) — Full Go binary CLI command reference
+- [docs/QUICKSTART.md](../../../docs/QUICKSTART.md) — Installation and first-run guide
+- [docs/CLIENT_API.md](../../../docs/CLIENT_API.md) — Python client library API reference
+- [docs/ADVANCED_PATTERNS.md](../../../docs/ADVANCED_PATTERNS.md) — Advanced usage patterns and artifact smoke tests
+- [docs/TROUBLESHOOTING.md](../../../docs/TROUBLESHOOTING.md) — Common issues and solutions
+- [docs/PITFALLS.md](../../../docs/PITFALLS.md) — Lessons from artifact smoke testing
