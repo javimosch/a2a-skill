@@ -572,6 +572,42 @@ class TestA2ARestServer(unittest.TestCase):
         self.assertEqual(status, 404)
         self.assertIn("error", body)
 
+    def test_send_invalid_json_payload_returns_400(self):
+        """POST /send with invalid JSON returns 400."""
+        payload = b"not json"
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        conn.request("POST", "/send", payload, {"Content-Type": "application/json"})
+        resp = conn.getresponse()
+        body = resp.read().decode()
+        conn.close()
+        self.assertEqual(resp.status, 400)
+
+    def test_send_with_long_thread_id_returns_400(self):
+        """POST /send with thread_id > 256 chars returns 400."""
+        status, body = self._post("/send", {
+            "to": "alice",
+            "message": "test",
+            "thread_id": "t" * 300,
+        })
+        self.assertEqual(status, 400)
+
+    def test_send_with_string_ttl_returns_400_or_500(self):
+        """POST /send with string ttl_seconds does not crash server."""
+        status, body = self._post("/send", {
+            "to": "alice",
+            "message": "test ttl",
+            "ttl_seconds": "not-a-number",
+        })
+        # Server should reject non-numeric ttl_seconds
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
+    def test_register_with_empty_body_returns_400(self):
+        """POST /register without agent_id returns 400."""
+        status, body = self._post("/register", {})
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

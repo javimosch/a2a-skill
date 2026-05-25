@@ -87,8 +87,14 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         if thread_id is not None and thread_id.strip() == '':
             self.respond_json({'error': 'thread_id cannot be empty'}, 400)
             return
+        if thread_id is not None and len(thread_id) > 256:
+            self.respond_json({'error': 'thread_id too long (max 256)'}, 400)
+            return
         if len(message) > 100_000:
             self.respond_json({'error': 'Message body too long (max 100K)'}, 400)
+            return
+        if ttl is not None and not isinstance(ttl, (int, float)):
+            self.respond_json({'error': 'ttl_seconds must be a number'}, 400)
             return
 
         try:
