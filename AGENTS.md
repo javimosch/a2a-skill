@@ -359,10 +359,62 @@ Refreshes every 2 seconds in live mode.
 
 ## Style
 
-- Bash scripts: `set -u` (or `set -eu` where appropriate), no bashisms in
-  POSIX-portable spots.
-- Python: stdlib only, 4-space indent, type hints where they help readability.
-- SKILL.md: code blocks must be runnable copy-paste. Test them.
+### Bash
+- Use `set -u` (or `set -eu` where appropriate), no bashisms in POSIX-portable spots.
+- Quote variable expansions: `"$A2A"` not `$A2A`.
+- Use `[[ ... ]]` for test expressions in scripts that are Bash-only (like
+  `a2a-spawn`), but `[ ... ]` for POSIX-sh-compatible scripts.
+- Validate argument existence before use (`: "${1?}"` or `[ -n "$1" ]`).
+
+### Python
+- **Stdlib only** — no `pip install`. The whole point of the bash wrapper is we run
+  anywhere with sqlite3. Exception: `cryptography` for `a2a_crypto.py` (optional).
+- 4-space indent, no tabs.
+- Type hints where they help readability (PEP 484).
+- Use `argparse` for CLI parsing — no `click`, `typer`, or third-party parsers.
+- `conn.commit()` after every non-read SQL operation (INSERT, UPDATE, DELETE).
+  Missing commits are a recurring bug pattern — see common pitfalls above.
+- Use `with` context managers for file I/O; close database connections explicitly.
+
+### Go
+
+- Standard Go formatting (`gofmt`).
+- Use `database/sql` with `github.com/mattn/go-sqlite3` driver.
+- Return `(*int, error)` for optional PID parameters (nil = not set).
+- Always apply WAL mode + busy_timeout on every `sql.Open()`.
+- Use the same function signatures as Python where possible (snake_case in Go
+  becomes camelCase, but argument names should match).
+
+### Node.js
+
+- CommonJS (`require()`) — not ESM, for maximum compatibility with LTS Node.
+- Use `better-sqlite3` for synchronous operations (simpler than async for
+  single-threaded agents).
+- Every public method must exist: `register()`, `unregister()`, `send()`,
+  `recv()`, `peek()`, `list()`, `status()`, `stats()`, `search()`, `thread()`.
+
+### Rust
+
+- Single `lib.rs` file, no workspace sub-crates.
+- `rusqlite` with bundled feature for portability.
+- No async runtime in `lib.rs` — if needed, create `lib_async.rs`.
+- All public methods match the Python client's snake_case names.
+
+### SKILL.md (canonical at `.agents/skills/a2a/SKILL.md`)
+
+- Code blocks must be runnable copy-paste. Test them.
+- The kit prompt (Step 4) is the most-reviewed section — test every change
+  with at least one smoke test.
+- Keep it terse. AI agents pay per-token for system prompts.
+- Cross-reference docs/ files by relative path from the skill directory.
+
+### Documentation (all AGENTS.md files and docs/*.md)
+
+- Use tables for structured information (ownership, command lists, comparisons).
+- Use ASCII trees for directory layouts.
+- Keep test counts in sync with actual `grep -c "def test_"` output.
+- Every AGENTS.md file must have a scope statement in its first paragraph.
+- Cross-reference between AGENTS.md files using relative paths.
 
 ## Things this project deliberately does *not* do
 
