@@ -3,6 +3,39 @@
 This file tells AI coding agents (and humans) how to safely and effectively
 work on **a2a-skill**. Read this first.
 
+## Documentation navigation
+
+This repo has a layered documentation system. Use this diagram to find what
+you need:
+
+```
+You are here → AGENTS.md (this file)
+                     │
+                     ├── README.md          — Install, CLI cheatsheet, tests overview
+                     ├── SKILL.md (root)    — Stub → docs/SKILL.md → .agents/skills/a2a/SKILL.md
+                     ├── CHANGELOG.md       — Version history
+                     │
+                     ├── docs/AGENTS.md     — Doc ownership table (which file owns what)
+                     │   └── docs/*.md      — Feature guides, API refs, deployment
+                     │
+                     ├── examples/AGENTS.md — Example patterns and client choice guide
+                     │   └── examples/*.py  — Runnable agent examples
+                     │
+                     ├── completion/AGENTS.md — Shell completion setup and maintenance
+                     │   └── completion/a2a.{bash,zsh}
+                     │
+                     └── src/AGENTS.md      — Rust library API and build instructions
+                         └── src/lib.rs      — Rust client implementation
+```
+
+**Quick rule of thumb:**
+- Humans → `README.md` first.
+- AI agents working on this repo → `AGENTS.md` (this file).
+- Doc writers → `docs/AGENTS.md` for ownership.
+- Example authors → `examples/AGENTS.md`.
+- Completion maintainers → `completion/AGENTS.md`.
+- Rust contributors → `src/AGENTS.md`.
+
 ## What this project is
 
 A peer-to-peer messaging skill for agentic CLI sessions. N agents from any
