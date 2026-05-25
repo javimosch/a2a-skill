@@ -245,7 +245,7 @@ def check_collisions(
     print("Checking for work collisions...")
 
     other_statuses = []
-    for agent in other_agents:
+    for agent in (other_agents or []):
         # In real use, would poll recent messages from other agents
         # For now, just structure the function
         pass
