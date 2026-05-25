@@ -104,6 +104,12 @@ class TestGitAwareGitCommands(unittest.TestCase):
         commits = self.client.get_recent_commits(count=1)
         self.assertLessEqual(len(commits), 1)
 
+    def test_get_recent_commits_large_count_does_not_crash(self):
+        """Test that a very large count parameter does not crash."""
+        commits = self.client.get_recent_commits(count=99999)
+        self.assertIsInstance(commits, list)
+        # Should return at most the total number of commits available
+
     def test_get_recent_commits_zero_count(self):
         """Test that count=0 returns empty list."""
         commits = self.client.get_recent_commits(count=0)
@@ -219,6 +225,22 @@ class TestGitAwareGitCommands(unittest.TestCase):
         result = GitAwareClient.parse_bus_message("Hello world")
         self.assertIsNone(result)
 
+    def test_parse_bus_message_empty_string(self):
+        """Test parsing empty string returns None."""
+        result = GitAwareClient.parse_bus_message("")
+        self.assertIsNone(result)
+
+    def test_parse_bus_message_partial_json(self):
+        """Test parsing partial/incomplete JSON returns None."""
+        result = GitAwareClient.parse_bus_message('{"branch": "main", "agent"')
+        self.assertIsNone(result)
+
+    def test_parse_bus_message_null_bytes(self):
+        """Test parsing JSON with null bytes returns None or handled."""
+        result = GitAwareClient.parse_bus_message('{"branch": "main\x00"}')
+        # Should not crash; None is acceptable
+        self.assertIn(result, (None, {"branch": "main\x00"}))
+
 
 class TestGitAwareInvalidRepo(unittest.TestCase):
     """Test GitAwareClient behavior outside a git repository."""
@@ -256,6 +278,14 @@ class TestGitAwareInvalidRepo(unittest.TestCase):
         json_str = self.client.format_for_bus()
         parsed = json.loads(json_str)
         self.assertEqual(parsed["branch"], "unknown")
+
+    def test_get_collaboration_summary_non_repo(self):
+        """Test collaboration summary outside git repo returns string with agent info."""
+        summary = self.client.get_collaboration_summary()
+        self.assertIsInstance(summary, str)
+        self.assertIn("agent1", summary)
+        # Should mention unknown or no commits
+        self.assertTrue("unknown" in summary or "No" in summary or "no commits" in summary)
 
 
 class TestWorkCollisionDetection(unittest.TestCase):
@@ -403,6 +433,44 @@ class TestWorkCollisionDetection(unittest.TestCase):
         my_branch = self.client.get_current_branch()
         self.assertEqual(result["branch"], my_branch)
 
+    def test_collision_missing_branch_key(self):
+        """Collision detection handles other status with missing branch key."""
+        other_status = {
+            "agent": "bob",
+            # no "branch" key
+            "changed_files": [],
+            "commits": [],
+        }
+        result = self.client.detect_work_collision([other_status])
+        # Should not crash; warnings may or may not include bob
+        self.assertIsInstance(result["warnings"], list)
+
+    def test_collision_missing_changed_files_key(self):
+        """Collision detection handles other status with missing changed_files key."""
+        my_branch = self.client.get_current_branch()
+        other_status = {
+            "agent": "bob",
+            "branch": my_branch,
+            # no "changed_files" key
+            "commits": [],
+        }
+        result = self.client.detect_work_collision([other_status])
+        # Should not crash; at least same-branch warning
+        self.assertGreater(len(result["warnings"]), 0)
+
+    def test_collision_empty_agent_id(self):
+        """Collision detection handles other status with empty agent_id."""
+        my_branch = self.client.get_current_branch()
+        other_status = {
+            "agent": "",
+            "branch": my_branch,
+            "changed_files": [],
+            "commits": [],
+        }
+        result = self.client.detect_work_collision([other_status])
+        # Should not crash
+        self.assertIsInstance(result["warnings"], list)
+
 
 class TestHelperFunctions(unittest.TestCase):
     """Test module-level helper functions."""
@@ -421,6 +489,11 @@ class TestHelperFunctions(unittest.TestCase):
         body = call_args[0][1]
         parsed = json.loads(body)
         self.assertIn("agent", parsed)
+
+    def test_announce_work_status_empty_agent_id(self):
+        """Test announce_work_status with empty agent_id raises ValueError."""
+        with self.assertRaises(ValueError):
+            GitAwareClient("", ".")
 
     def test_check_collisions_no_agents(self):
         """Test check_collisions with empty agent list."""
