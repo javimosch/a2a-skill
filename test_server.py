@@ -295,7 +295,11 @@ class TestA2ARestServer(unittest.TestCase):
         _, body = self._get("/search?q=findme")
         self.assertEqual(body.get("query"), "findme")
 
-    # --- GET /thread ---
+    def test_search_no_results(self):
+        """GET /search returns empty results for non-existent keyword."""
+        _, body = self._get("/search?q=xyznonexistentkeyword12345")
+        self.assertIn("results", body)
+        self.assertEqual(body["results"], [])
 
     def test_thread_returns_400_without_id(self):
         """GET /thread without id returns 400."""
@@ -425,12 +429,29 @@ class TestA2ARestServer(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(body["status"], "sent")
 
+    def test_recv_no_unread_messages(self):
+        """POST /recv returns empty list for agent with no unread messages after draining."""
+        # Register fresh agent and drain any pending messages (broadcasts from other tests)
+        self._post("/register", {"agent_id": "drain-agent", "role": "newbie"})
+        self._post("/recv", {"agent": "drain-agent"})  # Drain any existing broadcasts
+        # Second call should return empty since all messages were read
+        status, body = self._post("/recv", {"agent": "drain-agent"})
+        self.assertEqual(status, 200)
+        self.assertEqual(body["messages"], [])
+
     def test_recv_limit_zero_returns_empty(self):
         """POST /recv with limit=0 returns empty messages list."""
         self._post("/send", {"to": "limit-zero-agent", "message": "should not appear"})
         status, body = self._post("/recv", {"agent": "limit-zero-agent", "limit": 0})
         self.assertEqual(status, 200)
         self.assertEqual(body["messages"], [])
+
+    def test_peek_with_limit(self):
+        """GET /messages with limit returns at most N messages."""
+        for i in range(5):
+            self._post("/send", {"to": "all", "message": f"peek-limit-msg-{i}"})
+        _, body = self._get("/messages?limit=3")
+        self.assertLessEqual(len(body["messages"]), 3)
 
     def test_peek_limit_zero_returns_empty(self):
         """GET /messages with limit=0 returns empty messages list."""
