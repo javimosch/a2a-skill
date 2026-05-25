@@ -321,3 +321,11 @@ See [CHANGELOG.md](CHANGELOG.md) for release history and roadmap.
 ---
 
 **Last Updated**: 2026-05-25
+
+## [1.3.3] — 2026-05-25 (Doc Maintenance)
+
+### Documentation
+- README: fixed 3 stale test counts (unit: 73→157, integration: 67→105)
+- AGENTS.md: added Monitoring & Debugging section and team-coordination protocol details
+- CHANGELOG: maintenance session entry (this entry)
+
