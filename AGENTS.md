@@ -286,8 +286,7 @@ python3 test_async_modules.py -v  # async clients (94, 2 skip-guarded — needs 
 python3 test_artifacts_util.py -v
 ```
 
-Tests the artifact generation utilities used by `examples/artifacts/` and
-`PITFALLS.md` scenarios.
+Tests the artifact generation utilities used by `examples/artifacts/`.
 
 ### Complete test suite runner
 
@@ -446,7 +445,7 @@ Access them via the global skill:
 **Boundary rule:** `docs/` is for users of a2a. `~/ai/a2a-dev/` is for contributors.
 Nothing development-process-related goes in `docs/` or `.agents/skills/` (except `.agents/skills/a2a/`).
 
-## ## Cross-references to sub-directory AGENTS.md files
+## Cross-references to sub-directory AGENTS.md files
 
 Several sub-directories have their own `AGENTS.md` with scoped guidance.
 When working in those areas, read the corresponding file first.
