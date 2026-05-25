@@ -205,6 +205,34 @@ class TestMakeKit(unittest.TestCase):
         self.assertIn("status done", kit)
 
 
+class TestMakeKitEdgeCases(unittest.TestCase):
+    """Edge cases for make_kit()."""
+
+    def test_kit_with_empty_agent_id(self):
+        """make_kit with empty agent_id still produces output."""
+        kit = make_kit("", "tester", "do the thing", "myproject")
+        self.assertIsInstance(kit, str)
+        self.assertIn("tester", kit)
+
+    def test_kit_with_empty_role(self):
+        """make_kit with empty role still produces output."""
+        kit = make_kit("test-agent", "", "do the thing", "myproject")
+        self.assertIsInstance(kit, str)
+        self.assertIn("test-agent", kit)
+
+    def test_kit_with_empty_instructions(self):
+        """make_kit with empty instructions still produces output."""
+        kit = make_kit("test-agent", "tester", "", "myproject")
+        self.assertIsInstance(kit, str)
+        self.assertIn("Ground rules", kit)
+
+    def test_kit_with_empty_project(self):
+        """make_kit with empty project still produces output."""
+        kit = make_kit("test-agent", "tester", "do the thing", "")
+        self.assertIsInstance(kit, str)
+        self.assertIn("A2A_PROJECT=", kit)
+
+
 class TestRunA2A(unittest.TestCase):
     """Test the run_a2a() helper."""
 
@@ -291,6 +319,26 @@ class TestAsciiChart(unittest.TestCase):
         self.assertIn("Single", result)
         self.assertIn("42", result)
 
+    def test_all_same_values(self):
+        """All same values produces a stable flat chart."""
+        result = ascii_chart([5, 5, 5, 5, 5], width=10, height=5, title="Flat")
+        self.assertIn("Flat", result)
+        self.assertIn("Statistics", result)
+
+    def test_negative_values(self):
+        """Negative values are handled correctly."""
+        result = ascii_chart([-10, -5, 0, -3, -8], width=10, height=5, title="Negative")
+        self.assertIn("Negative", result)
+        self.assertIn("-10", result)
+        self.assertIn("-5", result)
+
+    def test_two_element_chart(self):
+        """Two-element chart still renders correctly."""
+        result = ascii_chart([100, 200], width=5, height=3, title="Two")
+        self.assertIn("Two", result)
+        self.assertIn("100", result)
+        self.assertIn("200", result)
+
 
 class TestComputeAnalysis(unittest.TestCase):
     """Test the compute_analysis() helper."""
@@ -351,6 +399,33 @@ class TestComputeAnalysis(unittest.TestCase):
         """Volatility is positive for varying data."""
         result = compute_analysis([10, 20, 10, 30, 10])
         self.assertGreater(result["volatility"], 0)
+
+    def test_all_same_values(self):
+        """All same values have zero range, zero std_dev, stable trend."""
+        result = compute_analysis([5, 5, 5, 5])
+        self.assertEqual(result["n"], 4)
+        self.assertEqual(result["range"], 0)
+        self.assertEqual(result["std_dev"], 0)
+        self.assertEqual(result["trend"], "stable")
+
+    def test_negative_values_stats(self):
+        """Negative values produce correct mean and median."""
+        result = compute_analysis([-10, -5, 0, -3, -8])
+        self.assertEqual(result["min"], -10)
+        self.assertEqual(result["max"], 0)
+
+    def test_stable_trend_detected(self):
+        """Flat values close together produce stable trend."""
+        result = compute_analysis([10, 11, 10, 11, 10])
+        self.assertEqual(result["trend"], "stable")
+
+    def test_two_element_analysis(self):
+        """Two elements produce valid stats."""
+        result = compute_analysis([10, 20])
+        self.assertEqual(result["n"], 2)
+        self.assertEqual(result["min"], 10)
+        self.assertEqual(result["max"], 20)
+        self.assertEqual(result["median"], 15)
 
 
 if __name__ == "__main__":

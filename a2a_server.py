@@ -76,16 +76,26 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         message = data.get('message')
         ttl = data.get('ttl_seconds')
         thread_id = data.get('thread_id')
+        sender = data.get('from') or data.get('sender') or 'http-client'
 
-        if not to or not message:
-            self.respond_json({'error': 'Missing to or message'}, 400)
+        if not to:
+            self.respond_json({'error': 'Missing to'}, 400)
+            return
+        if not message:
+            self.respond_json({'error': 'Missing message'}, 400)
+            return
+        if thread_id is not None and thread_id.strip() == '':
+            self.respond_json({'error': 'thread_id cannot be empty'}, 400)
+            return
+        if len(message) > 100_000:
+            self.respond_json({'error': 'Message body too long (max 100K)'}, 400)
             return
 
         try:
             db = self.get_db()
             cursor = db.execute(
                 'INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) VALUES (?,?,?,?,?,?)',
-                ('http-client', None if to.lower() in ('all', '*') else to, message, thread_id, ttl, time.time())
+                (sender, None if to.lower() in ('all', '*') else to, message, thread_id, ttl, time.time())
             )
             db.commit()
             self.respond_json({'message_id': cursor.lastrowid, 'status': 'sent'})
@@ -97,16 +107,26 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
         agent = data.get('agent', 'http-client')
         wait = data.get('wait', 0)
         limit = data.get('limit', 10)
+        include_self = data.get('include_self', False)
 
         try:
             db = self.get_db()
-            rows = db.execute(
-                'SELECT id, sender, recipient, body, thread_id, created_at FROM messages '
-                'WHERE (recipient = ? OR recipient IS NULL) AND sender != ? '
-                'AND NOT EXISTS (SELECT 1 FROM reads WHERE agent_id = ? AND message_id = messages.id) '
-                'ORDER BY created_at LIMIT ?',
-                (agent, agent, agent, limit)
-            ).fetchall()
+            if include_self:
+                rows = db.execute(
+                    'SELECT id, sender, recipient, body, thread_id, created_at FROM messages '
+                    'WHERE (recipient = ? OR recipient IS NULL) '
+                    'AND NOT EXISTS (SELECT 1 FROM reads WHERE agent_id = ? AND message_id = messages.id) '
+                    'ORDER BY created_at LIMIT ?',
+                    (agent, agent, limit)
+                ).fetchall()
+            else:
+                rows = db.execute(
+                    'SELECT id, sender, recipient, body, thread_id, created_at FROM messages '
+                    'WHERE (recipient = ? OR recipient IS NULL) AND sender != ? '
+                    'AND NOT EXISTS (SELECT 1 FROM reads WHERE agent_id = ? AND message_id = messages.id) '
+                    'ORDER BY created_at LIMIT ?',
+                    (agent, agent, agent, limit)
+                ).fetchall()
 
             # Mark as read
             ts = time.time()

@@ -494,6 +494,74 @@ class TestA2ARestServer(unittest.TestCase):
         self.assertEqual(status, 404)
         self.assertIn("error", body)
 
+    def test_recv_with_include_self(self):
+        """POST /recv with include_self=true returns own messages."""
+        # Register http-client so it exists
+        self._post("/register", {"agent_id": "http-client", "role": "sender"})
+        self._post("/send", {"to": "http-client", "message": "self-msg", "from": "http-client"})
+        status, body = self._post("/recv", {"agent": "http-client", "include_self": True})
+        self.assertEqual(status, 200)
+        bodies = [m["body"] for m in body["messages"]]
+        self.assertIn("self-msg", bodies)
+
+    def test_recv_excludes_self_by_default(self):
+        """POST /recv without include_self excludes own messages."""
+        self._post("/send", {"to": "http-client", "message": "not-me", "from": "http-client"})
+        status, body = self._post("/recv", {"agent": "http-client"})
+        self.assertEqual(status, 200)
+        bodies = [m["body"] for m in body["messages"]]
+        self.assertNotIn("not-me", bodies)
+
+    def test_send_with_custom_sender(self):
+        """POST /send with 'from' field stores custom sender."""
+        status, body = self._post("/send", {
+            "to": "alice", "message": "from custom", "from": "custom-bot"
+        })
+        self.assertEqual(status, 200)
+        # Verify by retrieving as alice
+        _, recv_body = self._post("/recv", {"agent": "alice"})
+        self.assertIn("from custom", [m["body"] for m in recv_body["messages"]])
+
+    def test_send_body_too_long_returns_400(self):
+        """POST /send with body > 100K chars returns 400."""
+        long_body = "x" * 100_001
+        status, body = self._post("/send", {"to": "alice", "message": long_body})
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
+    def test_send_empty_to_returns_400(self):
+        """POST /send with empty 'to' returns 400."""
+        status, body = self._post("/send", {"to": "", "message": "hello"})
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
+    def test_send_with_empty_thread_id_returns_400(self):
+        """POST /send with empty thread_id returns 400."""
+        status, body = self._post("/send", {"to": "bob", "message": "test", "thread_id": ""})
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
+    def test_thread_with_messages(self):
+        """GET /thread returns messages for a known thread."""
+        self._post("/send", {"to": "bob", "message": "t1 msg1", "thread_id": "server-thread-1"})
+        self._post("/send", {"to": "bob", "message": "t1 msg2", "thread_id": "server-thread-1"})
+        status, body = self._get("/thread?id=server-thread-1")
+        self.assertEqual(status, 200)
+        self.assertIn("messages", body)
+        self.assertGreaterEqual(len(body["messages"]), 2)
+
+    def test_unregister_unknown_agent_still_succeeds(self):
+        """POST /unregister for non-existent agent still returns 200 (idempotent)."""
+        status, body = self._post("/unregister", {"agent_id": "never-existed-xyz"})
+        self.assertEqual(status, 200)
+        self.assertTrue(body["unregistered"])
+
+    def test_recv_missing_agent_defaults(self):
+        """POST /recv without agent field defaults gracefully."""
+        status, body = self._post("/recv", {})
+        self.assertEqual(status, 200)
+        self.assertIn("messages", body)
+
     def test_unknown_post_route_returns_404(self):
         """POST to unknown path returns 404."""
         status, body = self._post("/nonexistent", {})
