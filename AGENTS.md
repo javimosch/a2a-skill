@@ -271,14 +271,43 @@ python3 test_integration.py -v
 Shells out to the `a2a` binary and verifies full workflows: register→send→recv,
 TTL expiry, broadcast, cross-project isolation, concurrent agents.
 
-### v1.3 satellite module tests (140 + 59 + 70 + 92 tests)
+### v1.3 satellite module tests (140 + 65 + 70 + 94 tests)
 
 ```bash
 python3 test_v13_features.py -v   # encryption, FTS, audit, priority, routing
-python3 test_git_aware.py -v      # git-state-aware bus queries
-python3 test_server.py -v         # REST API endpoints
-python3 test_async_modules.py -v  # async clients (2 skip-guarded — needs aiosqlite)
+python3 test_git_aware.py -v      # git-state-aware bus queries (65)
+python3 test_server.py -v         # REST API endpoints (70)
+python3 test_async_modules.py -v  # async clients (94, 2 skip-guarded — needs aiosqlite)
 ```
+
+### Artifact build tests (84 tests)
+
+```bash
+python3 test_artifacts_util.py -v
+```
+
+Tests the artifact generation utilities used by `examples/artifacts/` and
+`PITFALLS.md` scenarios.
+
+### Complete test suite runner
+
+```bash
+./verify_all.sh
+```
+
+Runs all test suites in sequence. Requires `aiosqlite` for async tests
+(2 tests are skip-guarded if not available).
+
+### Stress tests
+
+```bash
+./stress_test.sh                  # 10-agent concurrent stress
+./high_volume_stress_test.sh       # 20-agent, 1000+ message test
+./edge_case_test.sh               # edge-case hardening validation
+```
+
+These test the bus under load and edge conditions. They take longer to run
+and should be used before releases rather than during development.
 
 ### Smoke tests
 
@@ -307,6 +336,26 @@ python3 benchmark.py
 
 Measures message latency (~82ms), throughput (~14 msg/s), broadcast latency,
 TTL overhead, and blocking recv timeout behavior.
+
+### CLI vs SDK comparison
+
+```bash
+python3 perf_comparison_test.py
+```
+
+Compares performance of the raw `a2a` CLI (via subprocess) against the
+Python client library (A2AClient `a2a_client.py`). Useful for choosing
+the right interface for latency-sensitive applications.
+
+### Real-time dashboard
+
+```bash
+python3 dashboard.py            # live view (Ctrl+C to exit)
+python3 dashboard.py --batch 60 # watch for 60 seconds then exit
+```
+
+Shows agent roster, recent messages, message rate, and participation stats.
+Refreshes every 2 seconds in live mode.
 
 ## Style
 
