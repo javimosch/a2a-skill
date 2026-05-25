@@ -181,6 +181,15 @@ is the agents' rulebook. When changing it:
 - Always include the **hard cap** (5-8 iterations + "3 empty recvs = done").
   Without it, idle agents loop forever and burn budget.
 
+## Monitoring & Debugging
+
+Agent activity can be monitored live from the bus:
+
+- **`a2a peek --limit N`** — view the last N messages without marking them read.
+- **`a2a list --json`** — check all registered agents and their `status` (active/idle/done).
+- **Agent logs** — each `a2a-spawn` session writes to `/tmp/a2a-{project}-{agent}.log`. Check these for crashes, CLI errors, or runaway loops.
+- Agents set `status=done` when finished. If an agent stays `active` longer than expected, inspect its logs and the bus for unprocessed messages.
+
 ## Common pitfalls (and how to avoid them)
 
 | Pitfall | Fix |
@@ -286,6 +295,8 @@ Access them via the global skill:
 ```
 ~/.agents/skills/a2a-dev/SKILL.md   ← hub; indexes all contributor sub-skills
 ~/ai/a2a-dev/skills/team-coordination/SKILL.md   ← CLAIM/ROLE-CROSS protocols
+                                                      CLAIM: ACK-CLAIM required before work starts; auto-expires 5 min
+                                                      ROLE-CROSS: 60s VETO window for stepping outside role bounds
 ~/ai/a2a-dev/skills/a2a-roadmap/SKILL.md         ← v1.4 priorities
 ~/ai/a2a-dev/skills/a2a-enhancements/SKILL.md    ← integration opportunities
 ~/ai/a2a-dev/skills/a2a-skill-experience/SKILL.md ← sprint learnings
