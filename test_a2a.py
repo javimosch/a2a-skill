@@ -2696,6 +2696,16 @@ class TestProjectNameValidation(unittest.TestCase):
             a2a.project_name(None)
         del os.environ["A2A_PROJECT"]
 
+    def test_unicode_project_name_accepted(self):
+        """Valid unicode project names should work normally."""
+        name = a2a.project_name("projeto-çñ-测试-проект")
+        self.assertEqual(name, "projeto-çñ-测试-проект")
+
+    def test_emoji_project_name_accepted(self):
+        """Project names with emoji should be allowed (no path chars)."""
+        name = a2a.project_name("project-🚀-test")
+        self.assertEqual(name, "project-🚀-test")
+
 
 if __name__ == "__main__":
     unittest.main()
