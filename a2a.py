@@ -62,6 +62,10 @@ CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
 MAX_ID_LENGTH = 256
 # Max length for thread IDs
 MAX_THREAD_ID_LENGTH = 256
+# Max length for agent role, cli, prompt fields
+MAX_ROLE_LENGTH = 512
+MAX_CLI_LENGTH = 128
+MAX_PROMPT_LENGTH = 100_000
 # Max length for message bodies (prevents abuse, ~100KB)
 MAX_BODY_LENGTH = 100_000
 
@@ -196,10 +200,17 @@ def cmd_register(args) -> None:
         args.role = args.role.strip()
         if not args.role:
             die("--role must not be whitespace-only")
+        if len(args.role) > MAX_ROLE_LENGTH:
+            die(f"--role too long ({len(args.role)} chars, max {MAX_ROLE_LENGTH})")
     if args.cli:
         args.cli = args.cli.strip()
         if not args.cli:
             die("--cli must not be whitespace-only")
+        if len(args.cli) > MAX_CLI_LENGTH:
+            die(f"--cli too long ({len(args.cli)} chars, max {MAX_CLI_LENGTH})")
+    if args.prompt:
+        if len(args.prompt) > MAX_PROMPT_LENGTH:
+            die(f"--prompt too long ({len(args.prompt)} chars, max {MAX_PROMPT_LENGTH})")
     name, conn = _open(args, create=True)
     ts = now()
     try:
@@ -331,6 +342,7 @@ def cmd_send(args) -> None:
     ttl = getattr(args, "ttl", None)
     if ttl is not None and ttl <= 0:
         die("--ttl must be a positive number of seconds")
+    _validate_finite_float(ttl, "ttl")
     thread_id = getattr(args, "thread", None)
     if thread_id is not None and not thread_id.strip():
         die("--thread must not be empty")
