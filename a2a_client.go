@@ -665,6 +665,15 @@ func (c *Client) Register(role, prompt, cli string, pid int, upsert bool) error 
 	if pid < 0 {
 		return fmt.Errorf("pid must be a positive integer")
 	}
+	if len(role) > 512 {
+		return fmt.Errorf("role too long (%d chars, max 512)", len(role))
+	}
+	if len(cli) > 128 {
+		return fmt.Errorf("cli too long (%d chars, max 128)", len(cli))
+	}
+	if len(prompt) > MaxBodyLength {
+		return fmt.Errorf("prompt too long (%d chars, max %d)", len(prompt), MaxBodyLength)
+	}
 	db, err := c.connect()
 	if err != nil {
 		return err
