@@ -6,12 +6,10 @@ trigger: /a2a
 
 # a2a — Agent-to-Agent Messaging
 
-> **This doc is a pointer.** The canonical skill document lives at
+> **This doc is a stub.** The canonical skill document lives at
 > [`.agents/skills/a2a/SKILL.md`](../.agents/skills/a2a/SKILL.md).
-
-That file contains: three usage patterns, the Pattern 3 spawn protocol,
-kit prompt template, smoke test recipe, honesty rules, and common pitfalls
-from smoke testing.
+> Ownership and doc maintenance rules are in [`AGENTS.md`](AGENTS.md).
+> Shell completions are documented in [`completion/AGENTS.md`](../completion/AGENTS.md).
 
 ## Quick reference
 
@@ -30,3 +28,11 @@ a2a clear --yes                   # wipe database
 ```
 
 **Flags:** `--project NAME` (overrides `$A2A_PROJECT` > basename of cwd)
+
+## Where to go next
+
+- [`.agents/skills/a2a/SKILL.md`](../.agents/skills/a2a/SKILL.md) — Spawn protocol, kit prompt, full skill spec
+- [`AGENTS.md`](AGENTS.md) — Doc ownership table, adding/removing files
+- [`../completion/AGENTS.md`](../completion/AGENTS.md) — Shell completion setup
+- [`../examples/AGENTS.md`](../examples/AGENTS.md) — Agent pattern examples
+- [`../README.md`](../README.md) — Project overview, install, CLI cheatsheet
