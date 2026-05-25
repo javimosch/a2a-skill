@@ -220,7 +220,7 @@ Covers: DB schema, WAL mode, agent registration & upsert, send/recv,
 read-tracking, broadcast, self-message filtering, `--include-self`,
 `--ttl` expiry & cleanup, thread IDs, status transitions, project info.
 
-### Python client tests (78 tests)
+### Python client tests (85 tests)
 
 ```bash
 python3 test_a2a_client.py -v
