@@ -139,6 +139,41 @@ class TestA2AClient(unittest.TestCase):
         self.assertIsInstance(msg_id, int)
         self.assertGreater(msg_id, 0)
 
+    def test_constructor_project_with_path_separator(self):
+        """A2AClient with project name containing '/' raises ValueError."""
+        with self.assertRaises(ValueError):
+            A2AClient("my/project", "alice")
+        with self.assertRaises(ValueError):
+            A2AClient("project\\sub", "alice")
+
+    def test_constructor_project_starts_with_dot(self):
+        """A2AClient with project name starting with '.' raises ValueError."""
+        with self.assertRaises(ValueError):
+            A2AClient(".hidden", "alice")
+        # A name containing a dot internally is fine
+        client = A2AClient("my.project", "alice")
+        self.assertEqual(client.project, "my.project")
+
+    def test_send_to_ALL_uppercase_is_broadcast(self):
+        """send() with 'ALL' (uppercase) sets recipient=None (broadcast)."""
+        alice = A2AClient(self.project, "alice")
+        msg_id = alice.send("ALL", "uppercase broadcast")
+        self.assertGreater(msg_id, 0)
+        conn = sqlite3.connect(str(alice.db_path))
+        row = conn.execute("SELECT recipient FROM messages WHERE id=?", (msg_id,)).fetchone()
+        conn.close()
+        self.assertIsNone(row[0], "ALL (uppercase) should produce broadcast (NULL recipient)")
+
+    def test_send_to_Broadcast_case_is_broadcast(self):
+        """send() with 'Broadcast' sets recipient=None."""
+        alice = A2AClient(self.project, "alice")
+        msg_id = alice.send("Broadcast", "case-insensitive broadcast")
+        self.assertGreater(msg_id, 0)
+        conn = sqlite3.connect(str(alice.db_path))
+        row = conn.execute("SELECT recipient FROM messages WHERE id=?", (msg_id,)).fetchone()
+        conn.close()
+        self.assertIsNone(row[0], "'Broadcast' should produce broadcast (NULL recipient)")
+
     def test_send_with_ttl(self):
         """Test sending with TTL."""
         alice = A2AClient(self.project, "alice")
@@ -470,6 +505,20 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(stats["threads"], 0)
         self.assertEqual(stats["top_senders"], [])
 
+    def test_stats_agent_status_counts(self):
+        """stats() reflects agent status counts (active/done)."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        # Initially both active
+        stats = alice.stats()
+        self.assertEqual(stats["agents_active"], 2)
+        self.assertEqual(stats["agents_done"], 0)
+        # Mark bob as done
+        bob.set_status("done")
+        stats = alice.stats()
+        self.assertEqual(stats["agents_active"], 1)
+        self.assertEqual(stats["agents_done"], 1)
+
     def test_list_peers_reflects_status_changes(self):
         """list_peers shows updated status after set_status call."""
         alice = A2AClient(self.project, "alice")
@@ -650,6 +699,14 @@ class TestA2AClient(unittest.TestCase):
         with self.assertRaises(ValueError):
             bob.wait_for_messages(count=1, timeout=-1)
 
+    def test_wait_for_messages_float_count_raises_error(self):
+        """wait_for_messages with float (non-int) count raises ValueError."""
+        bob = A2AClient(self.project, "bob")
+        with self.assertRaises(ValueError):
+            bob.wait_for_messages(count=2.5, timeout=5)
+        with self.assertRaises(ValueError):
+            bob.wait_for_messages(count=0.99, timeout=5)
+
     def test_list_peers_empty(self):
         """list_peers() returns all registered agents on the bus."""
         # setUp registers alice and bob
@@ -685,6 +742,17 @@ class TestA2AClient(unittest.TestCase):
         self.assertEqual(len(msgs), 1)
         self.assertEqual(len(msgs[0]["body"]), 10000)
         self.assertEqual(msgs[0]["body"], long_body)
+
+    def test_send_body_with_emoji(self):
+        """Send with emoji/unicode body characters."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        emoji_body = "Hello 🚀 from 🌍! Café $ 100% ✓"
+        msg_id = alice.send("bob", emoji_body)
+        self.assertGreater(msg_id, 0)
+        msgs = bob.recv(wait=1)
+        self.assertEqual(len(msgs), 1)
+        self.assertEqual(msgs[0]["body"], emoji_body)
 
     def test_thread_empty_string_id_raises_error(self):
         """thread() raises ValueError when thread_id is an empty string."""
