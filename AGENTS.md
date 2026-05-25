@@ -78,8 +78,8 @@ a2a-skill/
 ├── test_v13_features.py   v1.3 satellite module tests (140)
 - `test_git_aware.py`     git-aware module tests (59)
 ├── test_server.py        REST API tests (70)
-├── test_async_modules.py async client tests (47, 16 skip-guarded)
-├── test_artifacts_util.py artifact build util tests (84)     ← 740 tests total
+├── test_async_modules.py async client tests (92, 2 skip-guarded) with full PriorityClientAsync and RoutingClientAsync coverage
+├── test_artifacts_util.py artifact build util tests (84)     ← 785 tests total
 ├── benchmark.py
 ├── dashboard.py
 ├── examples/             AGENTS.md documents patterns
@@ -223,13 +223,13 @@ python3 test_integration.py -v
 Shells out to the `a2a` binary and verifies full workflows: register→send→recv,
 TTL expiry, broadcast, cross-project isolation, concurrent agents.
 
-### v1.3 satellite module tests (140 + 51 + 70 + 47 tests)
+### v1.3 satellite module tests (140 + 59 + 70 + 92 tests)
 
 ```bash
 python3 test_v13_features.py -v   # encryption, FTS, audit, priority, routing
 python3 test_git_aware.py -v      # git-state-aware bus queries
 python3 test_server.py -v         # REST API endpoints
-python3 test_async_modules.py -v  # async clients (16 skip-guarded — needs aiosqlite)
+python3 test_async_modules.py -v  # async clients (2 skip-guarded — needs aiosqlite)
 ```
 
 ### Smoke tests

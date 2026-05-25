@@ -517,6 +517,266 @@ class TestPriorityClientAsync(unittest.TestCase):
         result = run_async(self.client.init_priority_table())
         self.assertTrue(result)
 
+    # --- Priority send tests ---
+
+    def test_send_priority_returns_id(self):
+        """send() with priority returns message ID."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        msg_id = run_async(self.client.send("bob", "high priority", priority=Priority.HIGH))
+        self.assertIsInstance(msg_id, int)
+        self.assertGreater(msg_id, 0)
+
+    def test_send_priority_low_creates_message(self):
+        """send() with LOW priority stores message with correct priority."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        msg_id = run_async(self.client.send("bob", "low prio", priority=Priority.LOW))
+        self.assertGreater(msg_id, 0)
+
+        async def _check():
+            conn = await self.client._connect()
+            cursor = await conn.execute("SELECT priority FROM messages WHERE id = ?", (msg_id,))
+            row = await cursor.fetchone()
+            await conn.close()
+            return row[0]
+        stored = run_async(_check())
+        self.assertEqual(stored, 1)  # LOW = 1
+
+    def test_send_priority_critical_creates_message(self):
+        """send() with CRITICAL priority stores message with correct priority."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        msg_id = run_async(self.client.send("bob", "critical!", priority=Priority.CRITICAL))
+        self.assertGreater(msg_id, 0)
+
+        async def _check():
+            conn = await self.client._connect()
+            cursor = await conn.execute("SELECT priority FROM messages WHERE id = ?", (msg_id,))
+            row = await cursor.fetchone()
+            await conn.close()
+            return row[0]
+        stored = run_async(_check())
+        self.assertEqual(stored, 4)  # CRITICAL = 4
+
+    def test_send_invalid_priority_too_low_raises(self):
+        """send() with priority < 1 raises ValueError."""
+        run_async(self.client.init_priority_table())
+        with self.assertRaises(ValueError):
+            run_async(self.client.send("bob", "bad", priority=0))
+        with self.assertRaises(ValueError):
+            run_async(self.client.send("bob", "bad", priority=-1))
+
+    def test_send_invalid_priority_too_high_raises(self):
+        """send() with priority > 4 raises ValueError."""
+        run_async(self.client.init_priority_table())
+        with self.assertRaises(ValueError):
+            run_async(self.client.send("bob", "bad", priority=5))
+        with self.assertRaises(ValueError):
+            run_async(self.client.send("bob", "bad", priority=999))
+
+    def test_send_priority_ttl_nan_raises(self):
+        """send() with NaN ttl_seconds raises ValueError."""
+        run_async(self.client.init_priority_table())
+        with self.assertRaises(ValueError):
+            run_async(self.client.send("bob", "nan ttl", ttl_seconds=float("nan")))
+
+    def test_send_priority_ttl_inf_raises(self):
+        """send() with inf ttl_seconds raises ValueError."""
+        run_async(self.client.init_priority_table())
+        with self.assertRaises(ValueError):
+            run_async(self.client.send("bob", "inf ttl", ttl_seconds=float("inf")))
+
+    # --- Priority recv tests ---
+
+    def test_recv_priority_ordering_highest_first(self):
+        """recv() with priority_aware returns highest priority messages first."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        run_async(self.client.send("bob", "normal", priority=Priority.NORMAL))
+        run_async(self.client.send("bob", "low", priority=Priority.LOW))
+        run_async(self.client.send("bob", "high", priority=Priority.HIGH))
+        run_async(self.client.send("bob", "critical", priority=Priority.CRITICAL))
+
+        # Use a second client for recv
+        from a2a_priority_async import PriorityClientAsync
+        bob = PriorityClientAsync(self.project, "bob")
+        messages = run_async(bob.recv(wait=1, priority_aware=True))
+        bodies = [m["body"] for m in messages]
+        # Check critical appears before low
+        crit_idx = bodies.index("critical")
+        low_idx = bodies.index("low")
+        self.assertLess(crit_idx, low_idx, "critical should appear before low")
+
+    def test_recv_chronological_when_priority_aware_off(self):
+        """recv(priority_aware=False) returns messages in chronological order."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        run_async(self.client.send("bob", "first", priority=Priority.CRITICAL))
+        run_async(self.client.send("bob", "second", priority=Priority.LOW))
+
+        from a2a_priority_async import PriorityClientAsync
+        bob = PriorityClientAsync(self.project, "bob")
+        messages = run_async(bob.recv(wait=1, priority_aware=False))
+        bodies = [m["body"] for m in messages]
+        self.assertEqual(bodies[0], "first")
+        self.assertEqual(bodies[1], "second")
+
+    def test_recv_by_priority_filters_correctly(self):
+        """recv_by_priority() returns only messages with specified priority."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        run_async(self.client.send("bob", "normal msg", priority=Priority.NORMAL))
+        run_async(self.client.send("bob", "high msg", priority=Priority.HIGH))
+
+        from a2a_priority_async import PriorityClientAsync
+        bob = PriorityClientAsync(self.project, "bob")
+        high_msgs = run_async(bob.recv_by_priority(Priority.HIGH, wait=1))
+        self.assertEqual(len(high_msgs), 1)
+        self.assertEqual(high_msgs[0]["body"], "high msg")
+        self.assertEqual(high_msgs[0]["priority"], Priority.HIGH)
+
+    def test_recv_by_priority_returns_empty_when_no_match(self):
+        """recv_by_priority() returns empty list when no messages match priority."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        run_async(self.client.send("bob", "low msg", priority=Priority.LOW))
+
+        from a2a_priority_async import PriorityClientAsync
+        bob = PriorityClientAsync(self.project, "bob")
+        critical_msgs = run_async(bob.recv_by_priority(Priority.CRITICAL, wait=0))
+        self.assertEqual(len(critical_msgs), 0)
+
+    def test_recv_above_priority_returns_messages(self):
+        """recv_above_priority() returns messages with priority >= min."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        run_async(self.client.send("bob", "low", priority=Priority.LOW))
+        run_async(self.client.send("bob", "normal", priority=Priority.NORMAL))
+        run_async(self.client.send("bob", "high", priority=Priority.HIGH))
+
+        from a2a_priority_async import PriorityClientAsync
+        bob = PriorityClientAsync(self.project, "bob")
+        above_high = run_async(bob.recv_above_priority(Priority.HIGH, wait=1))
+        bodies = {m["body"] for m in above_high}
+        self.assertIn("high", bodies)
+        self.assertNotIn("low", bodies)
+        self.assertNotIn("normal", bodies)
+
+    def test_recv_above_priority_returns_empty_for_high_min(self):
+        """recv_above_priority() returns empty when no messages meet min."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        run_async(self.client.send("bob", "low", priority=Priority.LOW))
+
+        from a2a_priority_async import PriorityClientAsync
+        bob = PriorityClientAsync(self.project, "bob")
+        above_critical = run_async(bob.recv_above_priority(Priority.CRITICAL, wait=0))
+        self.assertEqual(len(above_critical), 0)
+
+    # --- Priority stats tests ---
+
+    def test_get_priority_stats_returns_dict(self):
+        """get_priority_stats() returns distribution dict."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        run_async(self.client.send("bob", "normal msg", priority=Priority.NORMAL))
+        run_async(self.client.send("bob", "high msg", priority=Priority.HIGH))
+
+        stats = run_async(self.client.get_priority_stats())
+        self.assertIsInstance(stats, dict)
+        self.assertIn("NORMAL", stats)
+        self.assertIn("HIGH", stats)
+        self.assertEqual(stats["NORMAL"], 1)
+        self.assertEqual(stats["HIGH"], 1)
+
+    def test_get_priority_stats_empty(self):
+        """get_priority_stats() returns empty dict when no messages."""
+        run_async(self.client.init_priority_table())
+        stats = run_async(self.client.get_priority_stats())
+        self.assertEqual(stats, {})
+
+    def test_get_priority_stats_by_agent(self):
+        """get_priority_stats_by_agent() returns per-agent distribution."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        run_async(self.client.send("bob", "important", priority=Priority.HIGH))
+        run_async(self.client.send("bob", "critical", priority=Priority.CRITICAL))
+
+        stats = run_async(self.client.get_priority_stats_by_agent("alice"))
+        self.assertIsInstance(stats, dict)
+        self.assertIn("HIGH", stats)
+        self.assertIn("CRITICAL", stats)
+
+    def test_get_priority_stats_by_agent_empty(self):
+        """get_priority_stats_by_agent() returns empty dict for unknown agent."""
+        run_async(self.client.init_priority_table())
+        stats = run_async(self.client.get_priority_stats_by_agent("nobody"))
+        self.assertEqual(stats, {})
+
+    # --- Convenience methods ---
+
+    def test_get_critical_messages(self):
+        """get_critical_messages() returns critical priority messages."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        run_async(self.client.send("bob", "critical msg", priority=Priority.CRITICAL))
+        run_async(self.client.send("bob", "normal msg", priority=Priority.NORMAL))
+
+        from a2a_priority_async import PriorityClientAsync
+        bob = PriorityClientAsync(self.project, "bob")
+        criticals = run_async(bob.get_critical_messages())
+        bodies = [m["body"] for m in criticals]
+        self.assertIn("critical msg", bodies)
+        self.assertNotIn("normal msg", bodies)
+
+    def test_get_high_priority_messages(self):
+        """get_high_priority_messages() returns high+critical messages."""
+        run_async(self.client.init_priority_table())
+        from a2a_priority import Priority
+        run_async(self.client.send("bob", "critical msg", priority=Priority.CRITICAL))
+        run_async(self.client.send("bob", "high msg", priority=Priority.HIGH))
+        run_async(self.client.send("bob", "low msg", priority=Priority.LOW))
+
+        from a2a_priority_async import PriorityClientAsync
+        bob = PriorityClientAsync(self.project, "bob")
+        high_msgs = run_async(bob.get_high_priority_messages())
+        bodies = [m["body"] for m in high_msgs]
+        self.assertIn("critical msg", bodies)
+        self.assertIn("high msg", bodies)
+        self.assertNotIn("low msg", bodies)
+
+    # --- Mark read ---
+
+    def test_mark_read(self):
+        """mark_read() marks a message as read."""
+        run_async(self.client.init_priority_table())
+        msg_id = run_async(self.client.send("bob", "readable msg"))
+        self.assertGreater(msg_id, 0)
+        result = run_async(self.client.mark_read(msg_id))
+        self.assertTrue(result)
+
+        async def _check():
+            conn = await self.client._connect()
+            cursor = await conn.execute(
+                "SELECT COUNT(*) FROM reads WHERE message_id = ? AND agent_id = ?",
+                (msg_id, "alice"),
+            )
+            row = await cursor.fetchone()
+            await conn.close()
+            return row[0]
+        count = run_async(_check())
+        self.assertEqual(count, 1)
+
+    def test_mark_read_idempotent(self):
+        """mark_read() called twice does not raise."""
+        run_async(self.client.init_priority_table())
+        msg_id = run_async(self.client.send("bob", "idempotent"))
+        run_async(self.client.mark_read(msg_id))
+        # Second call should not raise
+        result = run_async(self.client.mark_read(msg_id))
+        self.assertTrue(result)
+
 
 class TestPriorityClientAsyncNoAioSQLite(unittest.TestCase):
     """Test PriorityClientAsync raises ImportError without aiosqlite."""
@@ -550,6 +810,16 @@ class TestRoutingClientAsync(unittest.TestCase):
         project_dir = Path(self.test_home) / ".a2a" / self.project
         project_dir.mkdir(parents=True, exist_ok=True)
         _setup_db(project_dir)
+        # Add priority column needed by recv_with_routing / apply_routing
+        import sqlite3
+        conn = sqlite3.connect(str(project_dir / "database.db"))
+        try:
+            conn.execute("ALTER TABLE messages ADD COLUMN priority INTEGER DEFAULT 2")
+            conn.commit()
+        except sqlite3.OperationalError:
+            conn.rollback()
+        finally:
+            conn.close()
         self.client = RoutingClientAsync(self.project, "alice")
 
     def test_instantiation_succeeds(self):
@@ -576,6 +846,354 @@ class TestRoutingClientAsync(unittest.TestCase):
 
         mode = run_async(_check())
         self.assertEqual(mode, "wal")
+
+    # --- Rule CRUD tests ---
+
+    def test_add_rule_roundtrip(self):
+        """add_rule() then get_rules() returns the rule."""
+        from a2a_routing import RoutingRule, RoutingAction
+        from a2a_routing_async import RoutingClientAsync
+        run_async(self.client.init_routing_table())
+        rule = RoutingRule("alert-rule", RoutingAction.DELIVER, match_content="urgent")
+        added = run_async(self.client.add_rule(rule))
+        self.assertTrue(added)
+        rules = run_async(self.client.get_rules())
+        self.assertEqual(len(rules), 1)
+        self.assertEqual(rules[0].name, "alert-rule")
+
+    def test_add_rule_updates_inmemory_list(self):
+        """add_rule() appends rule to in-memory self.rules."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        self.assertEqual(len(self.client.rules), 0)
+        rule = RoutingRule("r1", RoutingAction.DELIVER)
+        run_async(self.client.add_rule(rule))
+        self.assertEqual(len(self.client.rules), 1)
+        self.assertEqual(self.client.rules[0].name, "r1")
+
+    def test_add_multiple_rules(self):
+        """Multiple rules can be added and retrieved."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        run_async(self.client.add_rule(RoutingRule("r1", RoutingAction.DELIVER)))
+        run_async(self.client.add_rule(RoutingRule("r2", RoutingAction.FORWARD, forward_to="bob")))
+        rules = run_async(self.client.get_rules())
+        names = {r.name for r in rules}
+        self.assertIn("r1", names)
+        self.assertIn("r2", names)
+
+    def test_get_rules_empty_when_no_rules(self):
+        """get_rules() returns empty list when no rules defined."""
+        from a2a_routing_async import RoutingClientAsync
+        run_async(self.client.init_routing_table())
+        rules = run_async(self.client.get_rules())
+        self.assertEqual(rules, [])
+
+    def test_disable_rule(self):
+        """disable_rule() marks rule as disabled."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        run_async(self.client.add_rule(RoutingRule("tog", RoutingAction.DELIVER)))
+        result = run_async(self.client.disable_rule("tog"))
+        self.assertTrue(result)
+        rules = run_async(self.client.get_rules())
+        self.assertFalse(rules[0].enabled)
+
+    def test_enable_rule(self):
+        """enable_rule() re-enables a disabled rule."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        run_async(self.client.add_rule(RoutingRule("tog", RoutingAction.DELIVER)))
+        run_async(self.client.disable_rule("tog"))
+        result = run_async(self.client.enable_rule("tog"))
+        self.assertTrue(result)
+        rules = run_async(self.client.get_rules())
+        self.assertTrue(rules[0].enabled)
+
+    def test_delete_rule(self):
+        """delete_rule() removes rule from database."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        run_async(self.client.add_rule(RoutingRule("del-me", RoutingAction.DISCARD)))
+        result = run_async(self.client.delete_rule("del-me"))
+        self.assertTrue(result)
+        rules = run_async(self.client.get_rules())
+        self.assertEqual(len(rules), 0)
+
+    def test_disable_nonexistent_rule_still_succeeds(self):
+        """disable_rule() on nonexistent rule does not raise."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        result = run_async(self.client.disable_rule("no-such-rule"))
+        self.assertTrue(result)
+
+    def test_delete_nonexistent_rule_still_succeeds(self):
+        """delete_rule() on nonexistent rule does not raise."""
+        run_async(self.client.init_routing_table())
+        result = run_async(self.client.delete_rule("no-such-rule"))
+        self.assertTrue(result)
+
+    # --- Rule matching tests ---
+
+    def test_rule_match_by_sender(self):
+        """Rule matching filters by sender correctly."""
+        from a2a_routing import RoutingRule, RoutingAction
+        rule = RoutingRule("from-bob", RoutingAction.DELIVER, match_sender="bob")
+        self.assertTrue(rule.matches({"sender": "bob", "body": "hi"}))
+        self.assertFalse(rule.matches({"sender": "alice", "body": "hi"}))
+
+    def test_rule_match_by_content(self):
+        """Rule matching filters by content pattern."""
+        from a2a_routing import RoutingRule, RoutingAction
+        rule = RoutingRule("urgent", RoutingAction.DELIVER, match_content="urgent")
+        self.assertTrue(rule.matches({"sender": "alice", "body": "this is urgent"}))
+        self.assertFalse(rule.matches({"sender": "alice", "body": "normal message"}))
+
+    def test_rule_match_by_priority(self):
+        """Rule matching filters by minimum priority."""
+        from a2a_routing import RoutingRule, RoutingAction
+        rule = RoutingRule("high-only", RoutingAction.DELIVER, match_priority=3)
+        self.assertTrue(rule.matches({"sender": "alice", "priority": 4, "body": ""}))
+        self.assertTrue(rule.matches({"sender": "alice", "priority": 3, "body": ""}))
+        self.assertFalse(rule.matches({"sender": "alice", "priority": 2, "body": ""}))
+
+    def test_rule_match_by_thread(self):
+        """Rule matching filters by thread ID."""
+        from a2a_routing import RoutingRule, RoutingAction
+        rule = RoutingRule("thread-only", RoutingAction.DELIVER, match_thread="t-42")
+        self.assertTrue(rule.matches({"sender": "alice", "thread_id": "t-42", "body": ""}))
+        self.assertFalse(rule.matches({"sender": "alice", "thread_id": "other", "body": ""}))
+
+    def test_disabled_rule_does_not_match(self):
+        """Disabled rule returns False for matches()."""
+        from a2a_routing import RoutingRule, RoutingAction
+        rule = RoutingRule("disabled", RoutingAction.DELIVER, match_content="anything", enabled=False)
+        self.assertFalse(rule.matches({"sender": "alice", "body": "anything"}))
+
+    def test_rule_all_criteria_must_match(self):
+        """Rule requires ALL specified criteria to match (AND logic)."""
+        from a2a_routing import RoutingRule, RoutingAction
+        rule = RoutingRule("strict", RoutingAction.DELIVER,
+                          match_sender="alice", match_content="deploy")
+        self.assertTrue(rule.matches({"sender": "alice", "body": "deploy now"}))
+        self.assertFalse(rule.matches({"sender": "bob", "body": "deploy now"}))
+        self.assertFalse(rule.matches({"sender": "alice", "body": "hello"}))
+
+    # --- recv_with_routing tests ---
+
+    def test_recv_with_routing_deliver(self):
+        """recv_with_routing() routes unmatched messages to deliver."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        rule = RoutingRule("catch-all", RoutingAction.DELIVER, match_content="hello")
+        run_async(self.client.add_rule(rule))
+
+        # Send a matching message
+        import sqlite3, time
+        conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("bob", self.client.agent_id, "hello world", time.time()),
+        )
+        conn.commit()
+        conn.close()
+
+        routed = run_async(self.client.recv_with_routing(wait=1))
+        self.assertIn("deliver", routed)
+        self.assertGreaterEqual(len(routed["deliver"]), 1)
+
+    def test_recv_with_routing_no_match_delivers_default(self):
+        """Unmatched messages default to deliver bucket."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        # Rule that won't match
+        rule = RoutingRule("only-urgent", RoutingAction.DISCARD, match_content="URGENT")
+        run_async(self.client.add_rule(rule))
+
+        # Send a non-matching message
+        import sqlite3, time
+        conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("bob", self.client.agent_id, "normal message", time.time()),
+        )
+        conn.commit()
+        conn.close()
+
+        routed = run_async(self.client.recv_with_routing(wait=1))
+        self.assertIn("deliver", routed)
+        self.assertGreaterEqual(len(routed["deliver"]), 1)
+
+    def test_recv_with_routing_discard_action(self):
+        """Discard action routes messages to discard bucket."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        rule = RoutingRule("trash", RoutingAction.DISCARD, match_content="spam")
+        run_async(self.client.add_rule(rule))
+
+        import sqlite3, time
+        conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("bob", self.client.agent_id, "this is spam", time.time()),
+        )
+        conn.commit()
+        conn.close()
+
+        routed = run_async(self.client.recv_with_routing(wait=1))
+        self.assertIn("discard", routed)
+        self.assertGreaterEqual(len(routed["discard"]), 1)
+
+    def test_recv_with_routing_does_not_raise_without_rules(self):
+        """recv_with_routing() works with no rules defined."""
+        run_async(self.client.init_routing_table())
+        routed = run_async(self.client.recv_with_routing(wait=0))
+        self.assertIn("deliver", routed)
+        self.assertIn("discard", routed)
+        self.assertIn("forward", routed)
+        self.assertIn("queue", routed)
+        self.assertIn("escalate", routed)
+
+    # --- apply_routing tests ---
+
+    def test_apply_routing_forward(self):
+        """apply_routing() forwards messages that are routed as forward."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        import sqlite3, time
+
+        # Create a forward action
+        routed = {
+            "forward": [{
+                "message": {"id": 1, "body": "forward me", "priority": 2, "thread_id": None},
+                "rule": "fwd-rule",
+                "forward_to": "bob",
+            }],
+            "deliver": [], "discard": [], "queue": [], "escalate": [],
+        }
+        result = run_async(self.client.apply_routing(routed))
+        self.assertTrue(result)
+
+        # Check a forwarded message was created
+        conn = sqlite3.connect(str(self.client.db_path))
+        cursor = conn.execute("SELECT body FROM messages WHERE body LIKE '[Forwarded]%'")
+        rows = cursor.fetchall()
+        conn.close()
+        self.assertGreater(len(rows), 0)
+        self.assertIn("forward me", rows[0][0])
+
+    def test_apply_routing_discard(self):
+        """apply_routing() marks discarded messages as read."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        import sqlite3, time
+
+        # Insert a message first
+        conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("bob", self.client.agent_id, "discard me", time.time()),
+        )
+        conn.commit()
+        cursor = conn.execute("SELECT id FROM messages WHERE body = 'discard me'")
+        msg_id = cursor.fetchone()[0]
+        conn.close()
+
+        routed = {
+            "discard": [{
+                "message": {"id": msg_id, "body": "discard me"},
+                "rule": "trash-rule",
+                "forward_to": None,
+            }],
+            "deliver": [], "forward": [], "queue": [], "escalate": [],
+        }
+        result = run_async(self.client.apply_routing(routed))
+        self.assertTrue(result)
+
+        # Check message was marked as read
+        conn = sqlite3.connect(str(self.client.db_path))
+        cursor = conn.execute(
+            "SELECT COUNT(*) FROM reads WHERE message_id = ? AND agent_id = ?",
+            (msg_id, self.client.agent_id),
+        )
+        count = cursor.fetchone()[0]
+        conn.close()
+        self.assertEqual(count, 1)
+
+    def test_apply_routing_empty_no_error(self):
+        """apply_routing() with empty routing dict does not raise."""
+        run_async(self.client.init_routing_table())
+        routed = {"deliver": [], "forward": [], "discard": [], "queue": [], "escalate": []}
+        result = run_async(self.client.apply_routing(routed))
+        self.assertTrue(result)
+
+    # --- get_routing_stats tests ---
+
+    def test_get_routing_stats_all_fields(self):
+        """get_routing_stats() returns all expected fields."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        run_async(self.client.add_rule(RoutingRule("r1", RoutingAction.DELIVER)))
+        run_async(self.client.add_rule(RoutingRule("r2", RoutingAction.FORWARD, forward_to="bob")))
+        run_async(self.client.disable_rule("r2"))
+
+        stats = run_async(self.client.get_routing_stats())
+        self.assertIn("total_rules", stats)
+        self.assertIn("enabled_rules", stats)
+        self.assertIn("disabled_rules", stats)
+        self.assertIn("by_action", stats)
+        self.assertEqual(stats["total_rules"], 2)
+        self.assertEqual(stats["enabled_rules"], 1)
+        self.assertEqual(stats["disabled_rules"], 1)
+
+    def test_get_routing_stats_empty(self):
+        """get_routing_stats() returns zeros when no rules."""
+        run_async(self.client.init_routing_table())
+        stats = run_async(self.client.get_routing_stats())
+        self.assertEqual(stats["total_rules"], 0)
+        self.assertEqual(stats["enabled_rules"], 0)
+        self.assertEqual(stats["disabled_rules"], 0)
+        self.assertEqual(stats["by_action"], {})
+
+    # --- Edge case: recv_with_routing with include_self ---
+
+    def test_recv_with_routing_include_self(self):
+        """recv_with_routing(include_self=True) includes own messages."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        run_async(self.client.add_rule(RoutingRule("catch", RoutingAction.DELIVER)))
+
+        import sqlite3, time
+        conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            (self.client.agent_id, self.client.agent_id, "self msg", time.time()),
+        )
+        conn.commit()
+        conn.close()
+
+        routed = run_async(self.client.recv_with_routing(wait=1, include_self=True))
+        delivered = [item["message"]["body"] for item in routed["deliver"]]
+        self.assertIn("self msg", delivered)
+
+    def test_recv_with_routing_excludes_self_by_default(self):
+        """recv_with_routing() excludes own messages by default."""
+        from a2a_routing import RoutingRule, RoutingAction
+        run_async(self.client.init_routing_table())
+        run_async(self.client.add_rule(RoutingRule("catch", RoutingAction.DELIVER)))
+
+        import sqlite3, time
+        conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            (self.client.agent_id, self.client.agent_id, "hidden self msg", time.time()),
+        )
+        conn.commit()
+        conn.close()
+
+        routed = run_async(self.client.recv_with_routing(wait=1, include_self=False))
+        delivered = [item["message"]["body"] for item in routed["deliver"]]
+        self.assertNotIn("hidden self msg", delivered)
 
 
 class TestRoutingClientAsyncNoAioSQLite(unittest.TestCase):
