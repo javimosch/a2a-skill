@@ -2451,7 +2451,101 @@ class TestEdgeCases(unittest.TestCase):
                 peek=False, limit=None, since=None, json=False, include_self=False
             ))
 
+    def test_stats_human_readable_output(self):
+        """cmd_stats without --json produces expected text format."""
+        conn = a2a.connect(self.project)
+        conn.execute(
+            "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+            ("alice", "active", a2a.now(), a2a.now())
+        )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("alice", None, "hello", a2a.now())
+        )
+        conn.commit()
+        conn.close()
 
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_stats(a2a.argparse.Namespace(project=self.project, json=False))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+
+        self.assertIn("Project:", output)
+        self.assertIn("Messages:", output)
+        self.assertIn("broadcast", output)
+
+    def test_stats_top_senders_multiple(self):
+        """stats --json reports top senders with correct ordering."""
+        conn = a2a.connect(self.project)
+        for aid in ("alice", "bob", "charlie"):
+            conn.execute(
+                "INSERT INTO agents(id, status, created_at, last_seen) VALUES (?,?,?,?)",
+                (aid, "active", a2a.now(), a2a.now())
+            )
+        for i in range(3):
+            conn.execute(
+                "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+                ("alice", "bob", f"msg-a-{i}", a2a.now() + i)
+            )
+        conn.execute(
+            "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
+            ("bob", "alice", "msg-b", a2a.now() + 10)
+        )
+        conn.commit()
+        conn.close()
+
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_stats(a2a.argparse.Namespace(project=self.project, json=True))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+
+        data = json.loads(output)
+        self.assertEqual(len(data["top_senders"]), 2)
+        self.assertEqual(data["top_senders"][0]["agent"], "alice")
+        self.assertEqual(data["top_senders"][0]["count"], 3)
+        self.assertEqual(data["top_senders"][1]["agent"], "bob")
+        self.assertEqual(data["top_senders"][1]["count"], 1)
+
+    def test_search_json_no_matches(self):
+        """search --json with no matches returns empty JSON array."""
+        import io, sys, json
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_search(a2a.argparse.Namespace(
+                project=self.project, query="nonexistent",
+                limit=10, json=True, fts=False
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 0)
+
+    def test_peek_empty_bus_human_readable(self):
+        """Peek on empty bus with human-readable output does not crash."""
+        import io, sys
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_peek(a2a.argparse.Namespace(
+                project=self.project, limit=10, json=False
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertEqual(output, "")
+
+    
 class TestWALInvariant(unittest.TestCase):
     """Verify the WAL invariant: every db entry point sets WAL + busy_timeout."""
     def setUp(self):
