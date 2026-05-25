@@ -8,6 +8,7 @@ Full API parity with a2a_priority.PriorityClient.
 """
 
 import asyncio
+import math
 import time
 from typing import Optional, List, Dict, Any
 
@@ -20,6 +21,8 @@ except ImportError:
 from pathlib import Path
 
 from a2a_priority import Priority
+
+_MAX_BODY_LENGTH = 100_000
 
 
 class PriorityClientAsync:
@@ -101,6 +104,16 @@ class PriorityClientAsync:
         """
         conn = await self._connect()
         try:
+            if not to or not to.strip():
+                raise ValueError("recipient must not be empty")
+            if ttl_seconds is not None and ttl_seconds <= 0:
+                raise ValueError("ttl_seconds must be a positive number of seconds")
+            if ttl_seconds is not None and (math.isnan(ttl_seconds) or math.isinf(ttl_seconds)):
+                raise ValueError("ttl_seconds must be a finite number")
+            if len(message) > _MAX_BODY_LENGTH:
+                raise ValueError(f"message body too long ({len(message)} chars, max {_MAX_BODY_LENGTH})")
+            if priority < 1 or priority > 4:
+                raise ValueError(f"priority must be between 1 (LOW) and 4 (CRITICAL), got {priority}")
             recipient = None if to.lower() in ("all", "*", "broadcast") else to
             cursor = await conn.execute(
                 "INSERT INTO messages(sender, recipient, body, priority, ttl_seconds, created_at) "

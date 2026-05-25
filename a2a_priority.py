@@ -7,11 +7,14 @@ Enables priority levels (critical, high, normal, low) with automatic queue order
 Supports priority-based recv() and filtering by importance.
 """
 
+import math
 import time
 from typing import Optional, List, Dict, Any
 from enum import IntEnum
 
 from a2a_client import A2AClient
+
+_MAX_BODY_LENGTH = 100_000
 
 
 class Priority(IntEnum):
@@ -101,6 +104,16 @@ class PriorityClient(A2AClient):
         """
         conn = self._connect()
         try:
+            if not to or not to.strip():
+                raise ValueError("recipient must not be empty")
+            if ttl_seconds is not None and ttl_seconds <= 0:
+                raise ValueError("ttl_seconds must be a positive number of seconds")
+            if ttl_seconds is not None and (math.isnan(ttl_seconds) or math.isinf(ttl_seconds)):
+                raise ValueError("ttl_seconds must be a finite number")
+            if len(message) > _MAX_BODY_LENGTH:
+                raise ValueError(f"message body too long ({len(message)} chars, max {_MAX_BODY_LENGTH})")
+            if priority < 1 or priority > 4:
+                raise ValueError(f"priority must be between 1 (LOW) and 4 (CRITICAL), got {priority}")
             recipient = None if to.lower() in ("all", "*", "broadcast") else to
             cur = conn.execute(
                 "INSERT INTO messages(sender, recipient, body, priority, ttl_seconds, created_at) "
