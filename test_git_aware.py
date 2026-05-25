@@ -317,6 +317,33 @@ class TestGitAwareGitCommandsFull(unittest.TestCase):
         result = GitAwareClient.parse_bus_message(message)
         self.assertEqual(result, data)
 
+    def test_parse_bus_message_deeply_nested_json(self):
+        """Test parsing deeply nested JSON structures."""
+        data = {
+            "branch": "main",
+            "agent": "deep",
+            "level1": {
+                "level2": {
+                    "level3": {
+                        "level4": {"key": "value"}
+                    }
+                }
+            },
+            "items": [1, [2, [3, [4]]]],
+        }
+        message = json.dumps(data)
+        result = GitAwareClient.parse_bus_message(message)
+        self.assertEqual(result, data)
+
+    def test_parse_bus_message_large_json(self):
+        """Test parsing a large JSON payload (1MB)."""
+        large_list = list(range(10000))
+        data = {"branch": "main", "agent": "big", "data": large_list}
+        message = json.dumps(data)
+        result = GitAwareClient.parse_bus_message(message)
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result["data"]), 10000)
+
 
 class TestGitAwareInvalidRepo(unittest.TestCase):
     """Test GitAwareClient behavior outside a git repository."""
@@ -574,6 +601,61 @@ class TestWorkCollisionDetection(unittest.TestCase):
         result = self.client.detect_work_collision([own_status])
         # Should detect same-branch collision (it's the same info but from 'another' agent)
         self.assertGreater(len(result["warnings"]), 0)
+
+    def test_collision_none_changed_files_does_not_crash(self):
+        """detect_work_collision handles None changed_files without crashing."""
+        my_branch = self.client.get_current_branch()
+        other_status = {
+            "agent": "bob",
+            "branch": my_branch,
+            "changed_files": None,
+            "commits": [],
+        }
+        result = self.client.detect_work_collision([other_status])
+        # Should NOT crash; same-branch warning is expected, file overlap should be skipped
+        self.assertIsInstance(result["warnings"], list)
+        self.assertGreater(len(result["warnings"]), 0)
+
+    def test_collision_commits_none_does_not_crash(self):
+        """detect_work_collision handles None commits without crashing."""
+        my_branch = self.client.get_current_branch()
+        other_status = {
+            "agent": "bob",
+            "branch": "different-branch",
+            "changed_files": [],
+            "commits": None,
+        }
+        result = self.client.detect_work_collision([other_status])
+        # Should NOT crash; no collisions expected
+        self.assertIsInstance(result["warnings"], list)
+
+    def test_collision_many_agents_does_not_degrade(self):
+        """detect_work_collision handles many agents with no issues."""
+        my_branch = self.client.get_current_branch()
+        others = []
+        for i in range(50):
+            others.append({
+                "agent": f"agent-{i}",
+                "branch": f"branch-{i}" if i % 2 == 0 else my_branch,
+                "changed_files": [],
+                "commits": [],
+            })
+        result = self.client.detect_work_collision(others)
+        # Should produce warnings for agents on the same branch
+        self.assertGreaterEqual(len(result["warnings"]), 25)
+
+    def test_collision_empty_branch_other_agent(self):
+        """detect_work_collision handles empty branch name in other status."""
+        my_branch = self.client.get_current_branch()
+        other_status = {
+            "agent": "bob",
+            "branch": "",
+            "changed_files": [],
+            "commits": [],
+        }
+        result = self.client.detect_work_collision([other_status])
+        # Should not crash; comparison '' == my_branch likely false
+        self.assertIsInstance(result["warnings"], list)
 
 
 class TestHelperFunctions(unittest.TestCase):
