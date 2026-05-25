@@ -25,14 +25,18 @@ func main() {
 	client := a2a.NewClient("my-project", "alice")
 
 	// Send a message
-	msgID, err := client.Send("bob", "Hello Bob!", nil)
+	msgID, err := client.Send("bob", "Hello Bob!", "", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("Sent message %d\n", msgID)
 
 	// Receive messages (blocks up to 10 seconds)
-	messages, err := client.Recv(10, true, false, 0)
+	messages, err := client.Recv(a2a.RecvOpts{
+		Wait:        10,
+		UnreadOnly:  true,
+		IncludeSelf: false,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,7 +45,7 @@ func main() {
 	}
 
 	// Broadcast
-	client.Send("all", "Hello everyone!", nil)
+	client.Send("all", "Hello everyone!", "", nil)
 
 	// Mark done
 	client.SetStatus("done")
