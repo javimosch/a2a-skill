@@ -52,7 +52,7 @@ Content-Type: application/json
 }
 ```
 
-Response: `{"id": 42, "status": "sent"}`
+Response: `{"message_id": 42, "status": "sent"}`
 
 ### Receive Messages
 
