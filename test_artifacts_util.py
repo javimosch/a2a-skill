@@ -7,10 +7,15 @@ import json
 import unittest
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 # Add artifacts dir to path
 sys.path.insert(0, str(Path(__file__).parent / "examples" / "artifacts"))
-from _util import strip_html_preamble, strip_code_fence, extract_first_code_block, make_kit, send_task, run_a2a, ascii_chart, compute_analysis
+from _util import (
+    strip_html_preamble, strip_code_fence, extract_first_code_block,
+    make_kit, send_task, run_a2a, run_a2a_json, ascii_chart, compute_analysis,
+    find_a2a, find_spawn, wait_for_messages, SpawnManager,
+)
 
 
 class TestStripHtmlPreamble(unittest.TestCase):
@@ -426,6 +431,178 @@ class TestComputeAnalysis(unittest.TestCase):
         self.assertEqual(result["min"], 10)
         self.assertEqual(result["max"], 20)
         self.assertEqual(result["median"], 15)
+
+
+class TestFindA2A(unittest.TestCase):
+    """Test the find_a2a() binary locator."""
+
+    @patch("_util.os.path.isfile")
+    @patch("_util.os.access")
+    def test_find_via_candidate_path(self, mock_access, mock_isfile):
+        """find_a2a returns path when a candidate file exists and is executable."""
+        mock_isfile.return_value = True
+        mock_access.return_value = True
+        result = find_a2a("/some/script/dir")
+        # Should find via the first candidate: ../../../a2a relative to script_dir
+        self.assertIsNotNone(result)
+
+    @patch("_util.os.path.isfile")
+    @patch("_util.os.access")
+    def test_find_returns_none_when_no_candidates(self, mock_access, mock_isfile):
+        """find_a2a returns None when no candidate path exists and command -v fails."""
+        mock_isfile.return_value = False
+        mock_access.return_value = False
+        with patch("_util.subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 1
+            mock_run.return_value.stdout = ""
+            result = find_a2a("/nonexistent/script/dir")
+        self.assertIsNone(result)
+
+
+class TestFindSpawn(unittest.TestCase):
+    """Test the find_spawn() binary locator."""
+
+    @patch("_util.find_a2a")
+    @patch("_util.os.path.isfile")
+    @patch("_util.os.access")
+    def test_find_spawn_next_to_a2a(self, mock_access, mock_isfile, mock_find_a2a):
+        """find_spawn returns path when a2a-spawn is next to a2a binary."""
+        mock_find_a2a.return_value = "/usr/local/bin/a2a"
+        mock_isfile.return_value = True
+        mock_access.return_value = True
+        result = find_spawn("/some/script/dir")
+        self.assertEqual(result, "/usr/local/bin/a2a-spawn")
+
+    @patch("_util.find_a2a")
+    @patch("_util.os.path.isfile")
+    @patch("_util.os.access")
+    def test_find_spawn_returns_none(self, mock_access, mock_isfile, mock_find_a2a):
+        """find_spawn returns None when no candidate exists."""
+        mock_find_a2a.return_value = None
+        mock_isfile.return_value = False
+        mock_access.return_value = False
+        with patch("_util.subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 1
+            mock_run.return_value.stdout = ""
+            result = find_spawn("/nonexistent/script/dir")
+        self.assertIsNone(result)
+
+
+class TestRunA2AJson(unittest.TestCase):
+    """Test the run_a2a_json() helper."""
+
+    @patch("_util.run_a2a")
+    def test_parses_valid_json(self, mock_run_a2a):
+        """run_a2a_json parses valid JSON output."""
+        mock_run_a2a.return_value = '[{"id": "alice", "status": "active"}]'
+        result = run_a2a_json("list", "/bin/a2a", "test-proj")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["id"], "alice")
+
+    @patch("_util.run_a2a")
+    def test_returns_empty_on_empty_output(self, mock_run_a2a):
+        """run_a2a_json returns [] when run_a2a returns empty string."""
+        mock_run_a2a.return_value = ""
+        result = run_a2a_json("list", "/bin/a2a", "test-proj")
+        self.assertEqual(result, [])
+
+    @patch("_util.run_a2a")
+    def test_returns_empty_on_invalid_json(self, mock_run_a2a):
+        """run_a2a_json returns [] when output is not valid JSON."""
+        mock_run_a2a.return_value = "not valid json {{{"
+        result = run_a2a_json("list", "/bin/a2a", "test-proj")
+        self.assertEqual(result, [])
+
+
+class TestSpawnManager(unittest.TestCase):
+    """Test the SpawnManager lifecycle."""
+
+    def test_add_stores_pid(self):
+        """add() stores a PID in the manager's list."""
+        mgr = SpawnManager()
+        mgr.add(12345)
+        self.assertIn(12345, mgr.pids)
+
+    def test_add_multiple_pids(self):
+        """add() stores multiple PIDs."""
+        mgr = SpawnManager()
+        mgr.add(100)
+        mgr.add(200)
+        mgr.add(300)
+        self.assertEqual(len(mgr.pids), 3)
+
+    def test_cleanup_kills_all_pids(self):
+        """cleanup() sends SIGTERM to all stored PIDs."""
+        mgr = SpawnManager()
+        mgr.add(99999)
+        mgr.add(88888)
+        with patch("_util.os.kill") as mock_kill:
+            mgr.cleanup()
+        self.assertEqual(mock_kill.call_count, 2)
+        mock_kill.assert_any_call(99999, 15)  # SIGTERM = 15
+        mock_kill.assert_any_call(88888, 15)
+
+    def test_cleanup_does_not_raise_on_missing_pid(self):
+        """cleanup() handles ProcessLookupError gracefully."""
+        mgr = SpawnManager()
+        mgr.add(99999)
+        with patch("_util.os.kill", side_effect=ProcessLookupError):
+            mgr.cleanup()
+
+
+class TestWaitForMessages(unittest.TestCase):
+    """Test the wait_for_messages() helper."""
+
+    @patch("_util.run_a2a_json")
+    def test_returns_early_when_all_senders_heard(self, mock_run_a2a_json):
+        """Returns as soon as all expected senders have been heard."""
+        mock_run_a2a_json.return_value = [
+            {"sender": "alice", "body": "hello"},
+            {"sender": "bob", "body": "world"},
+        ]
+        with patch("time.time", return_value=100):
+            result = wait_for_messages("/bin/a2a", "proj", "recvr", {"alice", "bob"}, timeout=10)
+        self.assertIn("alice", result)
+        self.assertIn("bob", result)
+        self.assertEqual(result["alice"], "hello")
+        self.assertEqual(result["bob"], "world")
+
+    @patch("_util.run_a2a_json")
+    def test_ignores_unknown_senders(self, mock_run_a2a_json):
+        """Messages from senders not in expected set are ignored."""
+        mock_run_a2a_json.return_value = [
+            {"sender": "unknown", "body": "ignored"},
+        ]
+        with patch("time.time", side_effect=[100, 101, 106]):
+            result = wait_for_messages("/bin/a2a", "proj", "recvr", {"alice"}, timeout=5)
+        self.assertNotIn("unknown", result)
+
+
+class TestExtractFirstCodeBlockEdgeCases(unittest.TestCase):
+    """Additional edge cases for extract_first_code_block()."""
+
+    def test_multiline_preamble_before_fence(self):
+        """Multi-line preamble before a code fence is stripped."""
+        result = extract_first_code_block("Here is my solution:\n\nI think the answer is:\n\n```python\nx = 42\nprint(x)\n```")
+        self.assertEqual(result, "x = 42\nprint(x)")
+
+    def test_unmatched_opening_fence_returns_as_is(self):
+        """Opening fence with no closing marker returns the whole body."""
+        payload = "```python\nx = 1\ny = 2"
+        result = extract_first_code_block(payload)
+        self.assertEqual(result, payload)
+
+    def test_content_with_both_fence_types(self):
+        """Content with ~~~ fence only is extracted correctly."""
+        payload = "~~~\nouter\n~~~"
+        result = extract_first_code_block(payload)
+        self.assertEqual(result, "outer")
+
+    def test_fence_with_single_tick_preserved(self):
+        """Single backtick code spans are not treated as fences."""
+        payload = "Use `a2a list --json` to see peers."
+        result = extract_first_code_block(payload)
+        self.assertEqual(result, payload)
 
 
 if __name__ == "__main__":

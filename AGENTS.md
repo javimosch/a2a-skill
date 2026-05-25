@@ -74,12 +74,12 @@ a2a-skill/
 ├── src/lib.rs            Rust client
 ├── test_a2a.py           unit tests (157)
 ├── test_a2a_client.py    Python client tests (78)
-├── test_integration.py   integration tests (101)
+├── test_integration.py   integration tests (105)
 ├── test_v13_features.py   v1.3 satellite module tests (140)
 - `test_git_aware.py`     git-aware module tests (59)
 ├── test_server.py        REST API tests (70)
 ├── test_async_modules.py async client tests (47, 16 skip-guarded)
-├── test_artifacts_util.py artifact build util tests (67)     ← 719 tests total
+├── test_artifacts_util.py artifact build util tests (84)     ← 740 tests total
 ├── benchmark.py
 ├── dashboard.py
 ├── examples/             AGENTS.md documents patterns

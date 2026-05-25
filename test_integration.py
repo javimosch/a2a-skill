@@ -1216,6 +1216,68 @@ class TestIntegration(unittest.TestCase):
         msgs2 = json.loads(result2.stdout)
         self.assertGreaterEqual(len(msgs2), 1)
 
+    def test_thread_special_char_id(self):
+        """thread with special characters in thread_id works."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("send", "bob", "msg 1", "--from", "alice", "--thread", "thread-1/2/3",
+            project=self.project)
+        a2a("send", "bob", "msg 2", "--from", "alice", "--thread", "thread-1/2/3",
+            project=self.project)
+        result = a2a("thread", "thread-1/2/3", "--json", project=self.project)
+        msgs = json.loads(result.stdout)
+        self.assertEqual(len(msgs), 2)
+        all_have_thread = all(m.get("thread_id") == "thread-1/2/3" for m in msgs)
+        self.assertTrue(all_have_thread)
+
+    def test_list_json_structure(self):
+        """list --json returns valid JSON with expected fields."""
+        a2a("register", "alice", "--role", "tester", "--cli", "pytest",
+            project=self.project)
+        result = a2a("list", "--json", project=self.project)
+        agents = json.loads(result.stdout)
+        self.assertIsInstance(agents, list)
+        alice = next(a for a in agents if a["id"] == "alice")
+        self.assertEqual(alice["role"], "tester")
+        self.assertEqual(alice["cli"], "pytest")
+        self.assertIn("status", alice)
+        self.assertIn("pid", alice)
+
+    def test_broadcast_received_by_multiple(self):
+        """Broadcast message is received by all registered agents."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        a2a("register", "charlie", project=self.project)
+        a2a("send", "all", "broadcast to everyone", "--from", "alice",
+            project=self.project)
+        # Bob sees it
+        bob_result = a2a("recv", "--as", "bob", "--wait", "0", "--json",
+                         project=self.project)
+        bob_msgs = json.loads(bob_result.stdout)
+        bob_bodies = [m["body"] for m in bob_msgs]
+        self.assertIn("broadcast to everyone", bob_bodies)
+        # Charlie sees it too
+        charlie_result = a2a("recv", "--as", "charlie", "--wait", "0", "--json",
+                             project=self.project)
+        charlie_msgs = json.loads(charlie_result.stdout)
+        charlie_bodies = [m["body"] for m in charlie_msgs]
+        self.assertIn("broadcast to everyone", charlie_bodies)
+
+    def test_send_unicode_body(self):
+        """Send and recv with unicode characters in body."""
+        a2a("register", "alice", project=self.project)
+        a2a("register", "bob", project=self.project)
+        unicode_msg = "Hello 世界! ñoño 🚀 # français"
+        result = a2a("send", "bob", unicode_msg, "--from", "alice", "--json",
+                     project=self.project)
+        data = json.loads(result.stdout)
+        self.assertIn("id", data)
+        bob_result = a2a("recv", "--as", "bob", "--wait", "1", "--json",
+                         project=self.project)
+        msgs = json.loads(bob_result.stdout)
+        self.assertGreaterEqual(len(msgs), 1)
+        self.assertIn(unicode_msg, [m["body"] for m in msgs])
+
 
 if __name__ == "__main__":
     unittest.main()
