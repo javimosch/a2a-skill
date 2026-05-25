@@ -73,13 +73,13 @@ a2a-skill/
 ├── a2a_client.js         Node.js client
 ├── src/lib.rs            Rust client
 ├── test_a2a.py           unit tests (157)
-├── test_a2a_client.py    Python client tests (78)
+├── test_a2a_client.py    Python client tests (85)
 ├── test_integration.py   integration tests (105)
 ├── test_v13_features.py   v1.3 satellite module tests (140)
-- `test_git_aware.py`     git-aware module tests (59)
+- `test_git_aware.py`     git-aware module tests (65)
 ├── test_server.py        REST API tests (70)
-├── test_async_modules.py async client tests (92, 2 skip-guarded) with full PriorityClientAsync and RoutingClientAsync coverage
-├── test_artifacts_util.py artifact build util tests (84)     ← 785 tests total
+├── test_async_modules.py async client tests (94, 2 skip-guarded) with full PriorityClientAsync and RoutingClientAsync coverage
+├── test_artifacts_util.py artifact build util tests (84)     ← 800 tests total
 ├── benchmark.py
 ├── dashboard.py
 ├── examples/             AGENTS.md documents patterns
@@ -214,7 +214,7 @@ python3 test_a2a_client.py -v
 Tests the A2AClient library directly (no subprocess): send, recv, search, thread,
 stats, peek, WAL invariant.
 
-### Integration tests (101 tests)
+### Integration tests (105 tests)
 
 ```bash
 python3 test_integration.py -v
