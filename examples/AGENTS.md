@@ -23,13 +23,13 @@ Do **not** put tests here. Tests live in `test_*.py` at the project root.
 | `task_coordinator_agent.py` | Divide-and-conquer with workers | `a2a_client.py` |
 | `async_task_worker.py` | Async worker pool | `a2a_client_async.py` |
 | `collision_detector.py` | Work-collision detection via git+bus | `a2a_client.py` |
-| `compliance_archival_agent.py` | Audit + archival pattern | `a2a_audit.py` |
-| `secure_team_agent.py` | Encrypted peer messaging | `a2a_crypto.py` |
+| `compliance_archival_agent.py` | Audit + FTS + archival pipeline | `a2a_audit.py` + `a2a_fts.py` |
+| `secure_team_agent.py` | Encrypted peer messaging + routing + audit | `a2a_crypto.py` + `a2a_routing.py` + `a2a_audit.py` |
 | `spawn_coordinator.py` | Orchestrator spawning workers via a2a-spawn | `subprocess` + `a2a-spawn` |
 | `spawn_debate.py` | Adversarial debate via a2a-spawn | `subprocess` + `a2a-spawn` |
+| `v13_integrated_agent.py` | All v1.3 features together (async) | `a2a_client_async.py` + all modules |
 | `nodejs_coordinator.js` | Coordinator in Node.js | `a2a_client.js` |
 | `task_worker.rs` | Worker in Rust | `src/lib.rs` |
-| `v13_integrated_agent.py` | All v1.3 features together | async + all modules |
 
 ## Rules for adding a new example
 
@@ -52,6 +52,10 @@ Do **not** put tests here. Tests live in `test_*.py` at the project root.
 | Rule-based routing | `a2a_routing.py` / `a2a_routing_async.py` |
 | Audit trail | `a2a_audit.py` |
 | Encrypted channels | `a2a_crypto.py` (requires `pip install cryptography`) |
+| Full-text search | `a2a_fts.py` (uses SQLite FTS5) |
+| Git-aware work detection | `a2a_git_aware.py` |
+| Go agents (library) | `a2a_client.go` (Go module) |
+| Go agents (binary) | `cmd/a2a/main.go` (standalone CLI) |
 | Node.js agents | `a2a_client.js` (copy to project) |
 | Rust agents | `src/lib.rs` (Cargo workspace) |
 
@@ -70,7 +74,23 @@ immediately after `sqlite3.connect()`. All clients (Python sync/async,
 Node.js, Go, Rust) now self-bootstrap WAL mode on every connection
 — no prior `a2a init` required.
 
+## Artifacts directory
+
+The `examples/artifacts/` directory contains generated outputs from example
+agent runs and smoke tests (not source code). Each sub-directory maps to a
+specific example or test scenario. Code in `examples/artifacts/_util.py`
+provides shared utilities for artifact generation. See `PITFALLS.md` for
+lessons learned from artifact smoke testing.
+
 ## README.md
 
-`examples/README.md` is the human-facing guide. Keep it in sync when adding
-or removing examples. It lists each file with a one-line description.
+`examples/README.md` is the human-facing guide with detailed walkthroughs.
+Keep it in sync when adding or removing examples. It lists each file with
+usage instructions, patterns demonstrated, and key behaviors.
+
+## See also
+
+- [`../docs/AGENTS.md`](../docs/AGENTS.md) — Doc ownership and maintenance
+- [`../docs/PITFALLS.md`](../docs/PITFALLS.md) — Artifact smoke testing lessons
+- [`../completion/AGENTS.md`](../completion/AGENTS.md) — Shell completions
+- [`../AGENTS.md`](../AGENTS.md) — Full repo guide for AI agents
