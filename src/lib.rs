@@ -61,6 +61,11 @@ pub struct Client {
     db_path: PathBuf,
 }
 
+// Max length constants matching Python clients
+const MAX_AGENT_ID_LENGTH: usize = 256;
+const MAX_THREAD_ID_LENGTH: usize = 256;
+const MAX_BODY_LENGTH: usize = 100_000;
+
 impl Client {
     /// Create new a2a client
     pub fn new(project: impl Into<String>, agent_id: impl Into<String>) -> Result<Self, ValidationError> {
@@ -69,8 +74,20 @@ impl Client {
         if project.trim().is_empty() {
             return Err(ValidationError("project must not be empty".to_string()));
         }
+        if project.contains('/') || project.contains('\\') || project.starts_with('.') {
+            return Err(ValidationError(
+                "project must not contain path separators or start with dot".to_string(),
+            ));
+        }
         if agent_id.trim().is_empty() {
             return Err(ValidationError("agent_id must not be empty".to_string()));
+        }
+        if agent_id.len() > MAX_AGENT_ID_LENGTH {
+            return Err(ValidationError(format!(
+                "agent_id too long ({} chars, max {})",
+                agent_id.len(),
+                MAX_AGENT_ID_LENGTH
+            )));
         }
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
         let db_path = PathBuf::from(home)
@@ -111,6 +128,13 @@ impl Client {
                 "recipient must not be empty".to_string(),
             ));
         }
+        if message.len() > MAX_BODY_LENGTH {
+            return Err(rusqlite::Error::InvalidParameterName(format!(
+                "message body too long ({} chars, max {})",
+                message.len(),
+                MAX_BODY_LENGTH
+            )));
+        }
         if let Some(ttl) = ttl_seconds {
             if ttl <= 0 {
                 return Err(rusqlite::Error::InvalidParameterName(
@@ -123,6 +147,13 @@ impl Client {
                 return Err(rusqlite::Error::InvalidParameterName(
                     "thread_id must not be empty".to_string(),
                 ));
+            }
+            if tid.len() > MAX_THREAD_ID_LENGTH {
+                return Err(rusqlite::Error::InvalidParameterName(format!(
+                    "thread_id too long ({} chars, max {})",
+                    tid.len(),
+                    MAX_THREAD_ID_LENGTH
+                )));
             }
         }
         let conn = self.connect()?;
@@ -139,9 +170,9 @@ impl Client {
             ));
         }
 
-        let recipient = match to {
+        let recipient = match to.to_lowercase().as_str() {
             "all" | "*" | "broadcast" => None,
-            other => Some(other.to_string()),
+            other => Some(to.to_string()),
         };
 
         // Validate recipient exists (for non-broadcast)
