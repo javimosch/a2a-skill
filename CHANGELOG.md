@@ -8,6 +8,10 @@ All notable changes to a2a-skill are documented here.
 - **Validation Hardening** — NaN/Inf rejection in `recv(wait)` and `wait_for_messages(timeout)` 
   for both sync and async Python clients. Go CLI `cmdRecv()` and `cmdRegister()` now reject
   NaN/Inf `--since` and negative `--pid` values, matching Python behavior.
+- **REST API Server Hardening** — TTL positivity/NaN/Inf rejection, status value validation,
+  peek/search positive-limit enforcement, search whitespace query rejection, register field
+  length (role 512, cli 128, prompt 100K) and PID validation, expired message cleanup in
+  recv/peek/search/thread handlers.
 - **Max Length Validation** — Agent ID (256), thread_id (256), body (100000) limits enforced
   across Go client library, Go CLI, Node.js client, and Rust client, matching Python v1.3.2.
 - **Go CLI Limit Capping** — `peek --limit` capped at 1000, `search --limit` capped at 200,
@@ -30,6 +34,15 @@ All notable changes to a2a-skill are documented here.
   eliminate ResourceWarnings.
 - **REST API Send Response** — Response field name corrected from `id` to `message_id`
   to match documented schema.
+- **Rust Client** — Added message body length cap (100K), thread_id length cap (256),
+  agent_id length cap (256), project name path-traversal guard, and case-insensitive
+  broadcast matching.
+- **Node.js Client** — Added agent_id length cap (256) in constructor and expired
+  message cleanup (TTL deletion) in recv() and peek().
+- **Async Client** — Added missing agent_id length check in __init__ and missing
+  limit < 0 guard in recv().
+- **Go Client Register** — Added role (512), cli (128), prompt (100K) length validation
+  to match Python clients.
 
 ### Documentation
 - README: added links to GO_CLI_REFERENCE, PITFALLS, SECURITY_HARDENING, TROUBLESHOOTING
