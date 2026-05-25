@@ -2,6 +2,42 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.2] — 2026-05-25 (Hardening & Cross-Client Parity)
+
+### Added
+- **Validation Hardening** — NaN/Inf rejection in `recv(wait)` and `wait_for_messages(timeout)` 
+  for both sync and async Python clients. Go CLI `cmdRecv()` and `cmdRegister()` now reject
+  NaN/Inf `--since` and negative `--pid` values, matching Python behavior.
+- **Max Length Validation** — Agent ID (256), thread_id (256), body (100000) limits enforced
+  across Go client library, Go CLI, Node.js client, and Rust client, matching Python v1.3.2.
+- **Go CLI Limit Capping** — `peek --limit` capped at 1000, `search --limit` capped at 200,
+  matching Python CLI behavior.
+- **Cross-Client `send()` Validation** — Node.js and Rust clients now validate sender and
+  recipient existence in `agents` table before INSERT. All clients reject empty recipients,
+  empty search queries, non-positive limits, and invalid status values.
+- **Cross-Client `thread_id` Support** — Node.js and Rust `send()` now accept optional
+  `threadId`/`thread_id` parameter for thread-scoped messages.
+- **Test Coverage** — 143→148 (unit), 72→73 (client), 92→94 (integration), 39→43 (async),
+  40→42 (git-aware), 56 new (artifacts util). Total: 616 tests (+70 from v1.3.1).
+- **PITFALLS.md** — Expanded from ~100 to 596 lines covering cross-CLI validation parity,
+  API key exhaustion, ddgr blocking, agent health checks, stale log files, and build
+  script best practices.
+
+### Fixed
+- **Go CLI `cmdSend`** — body length validation for stdin reads; empty body now warns
+  instead of erroring on zero-byte input from `echo -n`.
+- **Async Client Resource Leaks** — `aiosqlite` connections closed in test teardown to
+  eliminate ResourceWarnings.
+- **REST API Send Response** — Response field name corrected from `id` to `message_id`
+  to match documented schema.
+
+### Documentation
+- README: added links to GO_CLI_REFERENCE, PITFALLS, SECURITY_HARDENING, TROUBLESHOOTING
+- AGENTS.md: test counts updated to 616 total, test_artifacts_util.py added to layout
+- CHANGELOG: v1.3.2 section added (this entry)
+
+---
+
 ## [1.3.1] — 2026-05-19 (Hardening)
 
 ### Changed
@@ -229,7 +265,8 @@ All notable changes to a2a-skill are documented here.
 | 1.0-alpha | 2026-05-18 | Core messaging | 72 | 3,500+ | 24 hours |
 | 1.1 | 2026-05-19 | Search, thread, stats, client lib | 95 | 4,200+ | 15 min |
 | 1.2 | 2026-05-19 | Multi-lang clients, REST API | 95+ | 5,500+ | 20 min |
-| 1.3.0 | 2026-05-19 | Encryption, routing, audit, FTS | 95+ | 8,000+ | 45 min |
+|| 1.3.2 | 2026-05-25 | Hardening, cross-client parity | 616 | 13,000+ | 6 days |
+|| 1.3.0 | 2026-05-19 | Encryption, routing, audit, FTS | 95+ | 8,000+ | 45 min |
 
 ---
 
@@ -263,4 +300,4 @@ See [CHANGELOG.md](CHANGELOG.md) for release history and roadmap.
 
 ---
 
-**Last Updated**: 2026-05-19
+**Last Updated**: 2026-05-25

@@ -593,4 +593,3 @@ command line.
 4. Rebuild the Go binary: `go build -o a2a ./cmd/a2a/`
 5. Run both test suites before committing.
 
-
