@@ -76,7 +76,7 @@ a2a-skill/
 ├── test_a2a_client.py    Python client tests (85)
 ├── test_integration.py   integration tests (105)
 ├── test_v13_features.py   v1.3 satellite module tests (140)
-- `test_git_aware.py`     git-aware module tests (65)
+├── test_git_aware.py     git-aware module tests (65)
 ├── test_server.py        REST API tests (70)
 ├── test_async_modules.py async client tests (94, 2 skip-guarded) with full PriorityClientAsync and RoutingClientAsync coverage
 ├── test_artifacts_util.py artifact build util tests (84)     ← 800 tests total
