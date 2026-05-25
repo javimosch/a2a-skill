@@ -41,6 +41,19 @@ class TestGitAwareClientBasics(unittest.TestCase):
         with self.assertRaises(ValueError):
             GitAwareClient("   ")
 
+    def test_init_long_agent_id(self):
+        """GitAwareClient with very long agent_id does not crash."""
+        client = GitAwareClient("a" * 1000)
+        self.assertEqual(client.agent_id, "a" * 1000)
+
+    def test_init_repo_path_does_not_exist(self):
+        """GitAwareClient with nonexistent repo path still constructs."""
+        client = GitAwareClient("agent1", "/nonexistent/path/xyz789")
+        self.assertEqual(client.repo_path, Path("/nonexistent/path/xyz789"))
+        # Methods should handle gracefully, not crash
+        branch = client.get_current_branch()
+        self.assertEqual(branch, "unknown")
+
 
 class TestGitAwareGitCommands(unittest.TestCase):
     """Test git command execution in a real git repository."""
@@ -162,6 +175,63 @@ class TestGitAwareGitCommands(unittest.TestCase):
         # All changes from previous tests should have been cleaned up
         self.assertEqual(files, [])
 
+    def test_get_current_branch_detached_head(self):
+        """Test that detached HEAD state returns 'HEAD' not 'unknown'."""
+        # Detach HEAD to a specific commit
+        commit_hash = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True, text=True, cwd=self.tmp_dir
+        ).stdout.strip()
+        subprocess.run(
+            ["git", "checkout", "--detach", commit_hash],
+            capture_output=True, cwd=self.tmp_dir
+        )
+        branch = self.client.get_current_branch()
+        # Attach back to main branch
+        subprocess.run(
+            ["git", "checkout", "-"],
+            capture_output=True, cwd=self.tmp_dir
+        )
+        self.assertEqual(branch, "HEAD",
+                         "Detached HEAD should return 'HEAD', not 'unknown'")
+
+    def test_get_changed_files_binary_files(self):
+        """Test that binary files in changes don't cause errors."""
+        binary_path = Path(self.tmp_dir) / "binary.bin"
+        binary_path.write_bytes(bytes(range(256)))
+        subprocess.run(["git", "add", "binary.bin"], cwd=self.tmp_dir, capture_output=True)
+        files = self.client.get_changed_files()
+        # Clean up
+        subprocess.run(["git", "reset", "HEAD", "binary.bin"], cwd=self.tmp_dir, capture_output=True)
+        binary_path.unlink(missing_ok=True)
+        self.assertIsInstance(files, list)
+
+
+class TestGitAwareGitCommandsFull(unittest.TestCase):
+    """Test git command full features in a real git repository."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Create a temporary git repo for testing."""
+        cls.tmp_dir = tempfile.mkdtemp()
+        subprocess.run(["git", "init", cls.tmp_dir], capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@test.com"],
+            cwd=cls.tmp_dir, capture_output=True
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test"],
+            cwd=cls.tmp_dir, capture_output=True
+        )
+        test_file = Path(cls.tmp_dir) / "README.md"
+        test_file.write_text("test")
+        subprocess.run(["git", "add", "."], cwd=cls.tmp_dir, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=cls.tmp_dir, capture_output=True
+        )
+        cls.client = GitAwareClient("tester", cls.tmp_dir)
+
     def test_get_branch_status_structure(self):
         """Test get_branch_status returns complete dict."""
         status = self.client.get_branch_status()
@@ -186,7 +256,6 @@ class TestGitAwareGitCommands(unittest.TestCase):
 
     def test_get_collaboration_summary_with_changed_files(self):
         """Test collaboration summary shows changed files section."""
-        # Modify an existing tracked file (git diff --name-only shows this)
         readme = Path(self.tmp_dir) / "README.md"
         original = readme.read_text()
         readme.write_text("modified for summary test")
@@ -240,6 +309,13 @@ class TestGitAwareGitCommands(unittest.TestCase):
         result = GitAwareClient.parse_bus_message('{"branch": "main\x00"}')
         # Should not crash; None is acceptable
         self.assertIn(result, (None, {"branch": "main\x00"}))
+
+    def test_parse_bus_message_unicode(self):
+        """Test parsing JSON with unicode/emoji content."""
+        data = {"branch": "✨-feature", "agent": "Alice 🚀"}
+        message = json.dumps(data)
+        result = GitAwareClient.parse_bus_message(message)
+        self.assertEqual(result, data)
 
 
 class TestGitAwareInvalidRepo(unittest.TestCase):
@@ -471,6 +547,34 @@ class TestWorkCollisionDetection(unittest.TestCase):
         # Should not crash
         self.assertIsInstance(result["warnings"], list)
 
+    def test_collision_none_commits_key(self):
+        """Collision detection handles other status with None instead of commits list."""
+        my_branch = self.client.get_current_branch()
+        other_status = {
+            "agent": "bob",
+            "branch": "different-branch",
+            "changed_files": [],
+            # 'commits' key missing entirely
+        }
+        result = self.client.detect_work_collision([other_status])
+        # Should not crash and produce no collisions
+        self.assertIsInstance(result["warnings"], list)
+
+    def test_collision_self_comparison(self):
+        """Comparing against own status doesn't create false warnings."""
+        my_branch = self.client.get_current_branch()
+        my_files = self.client.get_changed_files()
+        my_commits = self.client.get_recent_commits(count=3)
+        own_status = {
+            "agent": "alice",
+            "branch": my_branch,
+            "changed_files": my_files,
+            "commits": [{"hash": c["hash"]} for c in my_commits],
+        }
+        result = self.client.detect_work_collision([own_status])
+        # Should detect same-branch collision (it's the same info but from 'another' agent)
+        self.assertGreater(len(result["warnings"]), 0)
+
 
 class TestHelperFunctions(unittest.TestCase):
     """Test module-level helper functions."""
@@ -539,6 +643,22 @@ class TestHelperFunctions(unittest.TestCase):
         printed = [str(c) for c in mock_print.call_args_list]
         self.assertTrue(any("No" in p or "no" in p for p in printed),
                        "Expected 'No work collisions detected' message when no warnings")
+
+    def test_check_collisions_none_agents(self):
+        """Test check_collisions handles None instead of agent list."""
+        mock_client = MagicMock()
+        mock_client.detect_work_collision.return_value = {
+            "warnings": [], "recommendations": [], "agent": "alice"
+        }
+        mock_a2a = MagicMock()
+
+        with patch("builtins.print") as mock_print:
+            check_collisions(mock_client, mock_a2a, None)
+
+        # Should still call detect_work_collision and print a message
+        mock_client.detect_work_collision.assert_called_once()
+        printed = [str(c) for c in mock_print.call_args_list]
+        self.assertTrue(any("No" in p or "no" in p for p in printed))
 
 
 if __name__ == "__main__":
