@@ -192,7 +192,7 @@ schemas that lack the `ttl_seconds` column.
 client.InitProject()
 ```
 
-### Register(role, prompt, cli string, pid *int, upsert bool) error
+### Register(role, prompt, cli string, pid *int, upsert bool) (bool, error)
 
 Register this agent on the bus. If `upsert` is true, updates existing
 registration instead of failing. The `pid` parameter is a pointer to an
@@ -226,6 +226,33 @@ messages. Called automatically by `Recv()` and `Peek()`.
 
 ```go
 deleted, err := client.CleanupExpired()
+```
+
+### List() ([]Peer, error)
+
+Alias for `ListPeers()`. Returns all registered agents.
+
+```go
+peers, err := client.List()
+```
+
+### Status(newStatus string) (*string, error)
+
+Set or get agent status. If `newStatus` is one of `active`, `idle`, `done`,
+`blocked`, updates the status and returns the previous status as a pointer.
+Returns `nil` for the previous status if the agent was not previously
+registered.
+
+```go
+old, err := client.Status("active")
+```
+
+### AgentExists(agentID string) (bool, error)
+
+Check whether an agent is registered on the bus.
+
+```go
+exists, err := client.AgentExists("bob")
 ```
 
 ### Wait(count int, timeoutSec float64) (bool, error)
