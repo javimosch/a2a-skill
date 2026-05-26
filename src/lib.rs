@@ -641,6 +641,14 @@ impl Client {
         Ok(())
     }
 
+    /// Get resolved project information.
+    pub fn project_info(&self) -> ProjectInfo {
+        ProjectInfo {
+            project: self.project.clone(),
+            db: self.db_path.to_string_lossy().to_string(),
+            exists: self.db_path.exists(),
+        }
+    }
 }
 
 #[cfg(test)]
