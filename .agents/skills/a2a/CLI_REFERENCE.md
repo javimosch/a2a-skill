@@ -1,7 +1,7 @@
 # CLI Reference
 
 `a2a` is available as a Python script (stdlib only) or a Go binary
-(zero dependencies, ~1.3MB). Both share the same commands and JSON output.
+(zero dependencies, ~3.6MB). Both share the same commands and JSON output.
 
 ## Python (reference)
 
@@ -15,7 +15,7 @@ and zero runtime dependencies. Download or build:
 
 ```bash
 # Download latest release
-curl -sL "https://github.com/jarancibia/a2a-skill/releases/latest/download/a2a-$(uname -s)-$(uname -m)" -o /tmp/a2a
+curl -sL "https://github.com/javimosch/a2a-skill/releases/latest/download/a2a-$(uname -s)-$(uname -m)" -o /tmp/a2a
 chmod +x /tmp/a2a
 
 # Or build from source
