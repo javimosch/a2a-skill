@@ -2,6 +2,13 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.5] — 2026-05-26 (WAL Completeness)
+
+### Fixed
+- **WAL invariant in test_a2a_client.py + test_async_modules.py** — Added PRAGMA
+  journal_mode=WAL and PRAGMA busy_timeout=5000 to 19 remaining direct
+  sqlite3.connect() calls that were missed in v1.3.4. All 539 tests pass.
+
 ## [1.3.4] — 2026-05-26 (Doc Audit & Client Hardening)
 
 ### Fixed
