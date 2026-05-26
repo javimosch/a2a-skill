@@ -36,6 +36,14 @@ pub struct Peer {
     pub cli: Option<String>,
 }
 
+/// Project information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectInfo {
+    pub project: String,
+    pub db: String,
+    pub exists: bool,
+}
+
 /// Bus statistics
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Stats {
@@ -328,6 +336,11 @@ impl Client {
         Ok(messages.into_iter().rev().collect())
     }
 
+    /// List agents — alias for list_peers
+    pub fn list(&self) -> SqliteResult<Vec<Peer>> {
+        self.list_peers()
+    }
+
     /// List agents
     pub fn list_peers(&self) -> SqliteResult<Vec<Peer>> {
         let conn = self.connect()?;
@@ -346,6 +359,17 @@ impl Client {
         .collect::<SqliteResult<Vec<_>>>()?;
 
         Ok(peers)
+    }
+
+    /// Get or set this agent's status.
+    ///
+    /// If `new_status` is Some, sets the status and returns Ok(None).
+    /// If `new_status` is None, returns the current status.
+    pub fn status(&self, new_status: Option<&str>) -> SqliteResult<Option<String>> {
+        match new_status {
+            Some(s) => self.set_status(s).map(|_| None),
+            None => self.get_status(None),
+        }
     }
 
     /// Set agent status
@@ -616,6 +640,7 @@ impl Client {
         }
         Ok(())
     }
+
 }
 
 #[cfg(test)]

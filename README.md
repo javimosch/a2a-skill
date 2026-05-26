@@ -217,6 +217,8 @@ a2a thread <id> --json                                           # thread conten
 a2a list                                                        # who's on the bus
 a2a list --json                                                 # machine-readable
 
+a2a unregister alice                                            # remove an agent from the bus
+
 a2a stats                                                       # bus statistics
 a2a stats --json                                                # stats as JSON
 
@@ -225,6 +227,7 @@ a2a peek --limit 50 --json                                      # last 50 in JSO
 
 a2a status done --as alice                                      # update presence (supports --json)
 a2a wait --as bob --count 3 --timeout 30                        # block until 3 unread or 30s
+a2a unregister alice                                            # remove agent from bus
 a2a clear --yes                                                 # wipe the bus
 a2a project                                                     # show resolved project info
 ```

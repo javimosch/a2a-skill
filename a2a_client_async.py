@@ -340,6 +340,14 @@ class A2AClientAsync:
         rows = await cursor.fetchall()
         return [dict(row) for row in rows]
 
+    async def list(self) -> List[Dict[str, Any]]:
+        """Get list of registered agents (alias for list_peers).
+
+        Returns:
+            List of peer dicts with id, role, status, cli
+        """
+        return await self.list_peers()
+
     async def list_peers(self) -> List[Dict[str, Any]]:
         """Get list of registered agents.
 
@@ -352,6 +360,20 @@ class A2AClientAsync:
         )
         rows = await cursor.fetchall()
         return [dict(row) for row in rows]
+
+    async def status(self, new_status: Optional[str] = None) -> Optional[str]:
+        """Get or set this agent's status.
+
+        Args:
+            new_status: If provided, set status. Omit to get current status.
+
+        Returns:
+            Current status string when getting, None when setting.
+        """
+        if new_status is not None:
+            await self.set_status(new_status)
+            return None
+        return await self.get_status()
 
     async def set_status(self, status: str) -> None:
         """Update agent status.
@@ -390,6 +412,20 @@ class A2AClientAsync:
         )
         row = await cursor.fetchone()
         return row["status"] if row else None
+
+    async def status(self, new_status: Optional[str] = None) -> Optional[str]:
+        """Get or set this agent's status.
+
+        Args:
+            new_status: If provided, set status; if None, return current status
+
+        Returns:
+            Status string if getting, None if setting
+        """
+        if new_status is not None:
+            await self.set_status(new_status)
+            return None
+        return await self.get_status()
 
     async def stats(self) -> Dict[str, Any]:
         """Get bus statistics.
@@ -447,6 +483,20 @@ class A2AClientAsync:
             "top_senders": top_senders,
         }
 
+    async def wait(
+        self, count: int = 1, timeout: float = 60
+    ) -> List[Dict[str, Any]]:
+        """Wait for a specific number of messages (alias for wait_for_messages).
+
+        Args:
+            count: Number of messages to wait for (must be positive)
+            timeout: Max seconds to wait (must be non-negative, default: 60)
+
+        Returns:
+            List of message dicts
+        """
+        return await self.wait_for_messages(count, timeout)
+
     async def wait_for_messages(
         self, count: int = 1, timeout: float = 60
     ) -> List[Dict[str, Any]]:
@@ -479,6 +529,10 @@ class A2AClientAsync:
             messages.extend(new_messages)
 
         return messages[:count]
+
+    async def wait(self, count: int = 1, timeout: float = 60) -> List[Dict[str, Any]]:
+        """Alias for wait_for_messages()."""
+        return await self.wait_for_messages(count=count, timeout=timeout)
 
     async def __aenter__(self):
         """Context manager entry."""

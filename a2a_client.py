@@ -299,6 +299,14 @@ class A2AClient:
         finally:
             conn.close()
 
+    def list(self) -> List[Dict[str, Any]]:
+        """Get list of registered agents (alias for list_peers).
+
+        Returns:
+            List of agent dicts with id, role, status, etc.
+        """
+        return self.list_peers()
+
     def list_peers(self) -> List[Dict[str, Any]]:
         """Get list of registered agents.
 
@@ -313,6 +321,10 @@ class A2AClient:
             return [dict(r) for r in rows]
         finally:
             conn.close()
+
+    def list(self) -> List[Dict[str, Any]]:
+        """Alias for list_peers()."""
+        return self.list_peers()
 
     def set_status(self, status: str) -> None:
         """Update this agent's status.
@@ -357,6 +369,34 @@ class A2AClient:
         finally:
             conn.close()
 
+    def status(self, new_status: Optional[str] = None) -> Optional[str]:
+        """Get or set this agent's status.
+
+        Args:
+            new_status: If provided, set status; if None, return current status
+
+        Returns:
+            Status string if getting, None if setting
+        """
+        if new_status is not None:
+            self.set_status(new_status)
+            return None
+        return self.get_status()
+
+    def wait(
+        self, count: int = 1, timeout: float = 60
+    ) -> bool:
+        """Block until N unread messages or timeout (alias for wait_for_messages).
+
+        Args:
+            count: Number of unread messages to wait for (must be positive)
+            timeout: Max seconds to wait (must be non-negative)
+
+        Returns:
+            True if got N messages, False on timeout
+        """
+        return self.wait_for_messages(count, timeout)
+
     def wait_for_messages(
         self, count: int = 1, timeout: float = 60
     ) -> bool:
@@ -392,6 +432,10 @@ class A2AClient:
             if not msgs:
                 time.sleep(0.5)
         return False
+
+    def wait(self, count: int = 1, timeout: float = 60) -> bool:
+        """Alias for wait_for_messages()."""
+        return self.wait_for_messages(count=count, timeout=timeout)
 
     def search(self, query: str, limit: int = 50) -> List[Dict[str, Any]]:
         """Search messages by content.
