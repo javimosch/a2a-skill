@@ -322,10 +322,6 @@ class A2AClient:
         finally:
             conn.close()
 
-    def list(self) -> List[Dict[str, Any]]:
-        """Alias for list_peers()."""
-        return self.list_peers()
-
     def set_status(self, status: str) -> None:
         """Update this agent's status.
 
@@ -432,10 +428,6 @@ class A2AClient:
             if not msgs:
                 time.sleep(0.5)
         return False
-
-    def wait(self, count: int = 1, timeout: float = 60) -> bool:
-        """Alias for wait_for_messages()."""
-        return self.wait_for_messages(count=count, timeout=timeout)
 
     def search(self, query: str, limit: int = 50) -> List[Dict[str, Any]]:
         """Search messages by content.

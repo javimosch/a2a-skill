@@ -221,6 +221,7 @@ class A2AClientAsync:
 
         while True:
             await self._cleanup_expired(conn)
+            await conn.commit()
             query = (
                 "SELECT id, sender, recipient, body, thread_id, created_at "
                 "FROM messages WHERE (recipient = ? OR recipient IS NULL)"
@@ -283,6 +284,7 @@ class A2AClientAsync:
             raise ValueError("limit must be a positive integer")
         conn = await self._connect()
         await self._cleanup_expired(conn)
+        await conn.commit()
         cursor = await conn.execute(
             "SELECT id, sender, recipient, body, thread_id, created_at "
             "FROM messages ORDER BY created_at DESC LIMIT ?",
@@ -356,7 +358,7 @@ class A2AClientAsync:
         """
         conn = await self._connect()
         cursor = await conn.execute(
-            "SELECT id, role, cli, status FROM agents ORDER BY created_at"
+            "SELECT id, role, cli, status, pid FROM agents ORDER BY created_at"
         )
         rows = await cursor.fetchall()
         return [dict(row) for row in rows]
@@ -412,20 +414,6 @@ class A2AClientAsync:
         )
         row = await cursor.fetchone()
         return row["status"] if row else None
-
-    async def status(self, new_status: Optional[str] = None) -> Optional[str]:
-        """Get or set this agent's status.
-
-        Args:
-            new_status: If provided, set status; if None, return current status
-
-        Returns:
-            Status string if getting, None if setting
-        """
-        if new_status is not None:
-            await self.set_status(new_status)
-            return None
-        return await self.get_status()
 
     async def stats(self) -> Dict[str, Any]:
         """Get bus statistics.
@@ -485,29 +473,29 @@ class A2AClientAsync:
 
     async def wait(
         self, count: int = 1, timeout: float = 60
-    ) -> List[Dict[str, Any]]:
-        """Wait for a specific number of messages (alias for wait_for_messages).
+    ) -> bool:
+        """Wait for N unread messages or timeout (alias for wait_for_messages).
 
         Args:
-            count: Number of messages to wait for (must be positive)
+            count: Number of unread messages to wait for (must be positive)
             timeout: Max seconds to wait (must be non-negative, default: 60)
 
         Returns:
-            List of message dicts
+            True if got N messages, False on timeout
         """
         return await self.wait_for_messages(count, timeout)
 
     async def wait_for_messages(
         self, count: int = 1, timeout: float = 60
-    ) -> List[Dict[str, Any]]:
-        """Wait for a specific number of messages.
+    ) -> bool:
+        """Block until N unread messages or timeout.
 
         Args:
-            count: Number of messages to wait for (must be positive)
+            count: Number of unread messages to wait for (must be positive)
             timeout: Max seconds to wait (must be non-negative, default: 60)
 
         Returns:
-            List of message dicts
+            True if got N messages, False on timeout
 
         Raises:
             ValueError: If count is not a positive integer or timeout is negative
@@ -519,20 +507,17 @@ class A2AClientAsync:
         if not math.isfinite(timeout):
             raise ValueError("timeout must be a finite number")
         deadline = time.time() + timeout
-        messages = []
+        seen = []
 
-        while len(messages) < count:
-            if time.time() > deadline:
-                break
+        while time.time() < deadline:
+            new_messages = await self.recv(wait=0, unread_only=True)
+            seen.extend(new_messages)
+            if len(seen) >= count:
+                return True
+            if not new_messages:
+                await asyncio.sleep(0.5)
 
-            new_messages = await self.recv(wait=1, unread_only=True, limit=count)
-            messages.extend(new_messages)
-
-        return messages[:count]
-
-    async def wait(self, count: int = 1, timeout: float = 60) -> List[Dict[str, Any]]:
-        """Alias for wait_for_messages()."""
-        return await self.wait_for_messages(count=count, timeout=timeout)
+        return False
 
     async def __aenter__(self):
         """Context manager entry."""
@@ -581,7 +566,7 @@ class A2AClientAsync:
             """)
             await conn.commit()
         finally:
-            await conn.close()
+            await self.close()
 
     def project_info(self) -> Dict[str, Any]:
         """Get resolved project information.
@@ -600,6 +585,7 @@ class A2AClientAsync:
 
         Warning: This permanently deletes all messages and agent registrations.
         """
+        await self.close()
         from pathlib import Path as _Path
         for suffix in ("", "-wal", "-shm"):
             p = _Path(str(self.db_path) + suffix)
