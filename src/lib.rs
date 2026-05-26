@@ -209,13 +209,13 @@ impl Client {
     /// Receive messages
     pub fn recv(
         &self,
-        wait: u64,
+        wait: f64,
         unread_only: bool,
         include_self: bool,
         limit: Option<i64>,
     ) -> SqliteResult<Vec<Message>> {
-        let deadline = if wait > 0 {
-            Some(SystemTime::now() + Duration::from_secs(wait))
+        let deadline = if wait > 0.0 {
+            Some(SystemTime::now() + Duration::from_secs_f64(wait))
         } else {
             None
         };
@@ -399,7 +399,7 @@ impl Client {
     }
 
     /// Register this agent on the bus
-    pub fn register(&self, role: &str, prompt: &str, cli: &str, pid: i32, upsert: bool) -> SqliteResult<bool> {
+    pub fn register(&self, role: &str, prompt: &str, cli: &str, pid: Option<i32>, upsert: bool) -> SqliteResult<bool> {
         if role.len() > 512 {
             return Err(rusqlite::Error::InvalidParameterName(format!(
                 "role too long ({} chars, max 512)",
@@ -569,20 +569,23 @@ impl Client {
     /// Wait for N unread messages with timeout.
     ///
     /// Blocks up to `timeout_secs` seconds, polling the bus every 200ms,
-    /// until `count` unread messages arrive.
-    pub fn wait(&self, count: i64, timeout_secs: f64) -> SqliteResult<Vec<Message>> {
+    /// until `count` unread messages arrive. Returns true if the required
+    /// count was reached before timeout.
+    pub fn wait(&self, count: i64, timeout_secs: f64) -> SqliteResult<bool> {
         let deadline = SystemTime::now() + Duration::from_secs_f64(timeout_secs);
-        let mut collected: Vec<Message> = Vec::new();
         loop {
-            let remaining = count - collected.len() as i64;
+            let remaining = count;
             if remaining <= 0 {
-                return Ok(collected);
+                return Ok(true);
             }
             if SystemTime::now() >= deadline {
-                return Ok(collected);
+                return Ok(false);
             }
-            let msgs = self.recv(1, true, false, Some(remaining))?;
-            collected.extend(msgs);
+            let msgs = self.recv(1.0, true, false, Some(remaining))?;
+            if !msgs.is_empty() {
+                return Ok(true);
+            }
+            thread::sleep(Duration::from_millis(200));
         }
     }
 

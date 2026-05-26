@@ -293,12 +293,12 @@ func TestWait(t *testing.T) {
 	c2.Send("bob", "msg for wait test", "", nil)
 
 	// Bob waits
-	n, err := c.Wait(1, 5)
+	ok, err := c.Wait(1, 5)
 	if err != nil {
 		t.Fatalf("Wait: %v", err)
 	}
-	if n < 1 {
-		t.Fatalf("expected at least 1 unread, got %d", n)
+	if !ok {
+		t.Fatal("expected Wait to return true (messages found)")
 	}
 }
 
@@ -473,11 +473,13 @@ func TestWaitTimeout(t *testing.T) {
 	c.Register("waiting", "", "", nil, false)
 
 	// Wait with 1 count on an agent with no messages should timeout
-	n, err := c.Wait(1, 1)
+	ok, err := c.Wait(1, 1)
 	if err != nil {
 		t.Fatalf("Wait(1, 1): %v", err)
 	}
-	_ = n
+	if ok {
+		t.Fatal("expected Wait to return false (timeout)")
+	}
 }
 
 func TestProjectInfoNoDB(t *testing.T) {

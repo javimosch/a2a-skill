@@ -701,15 +701,15 @@ func cmdWait() {
 	}
 
 	c := newClient(agentID)
-	n, err := c.Wait(count, timeout)
+	ok, err := c.Wait(count, timeout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: wait error: %v\n", err)
 		os.Exit(1)
 	}
-	if n >= count {
-		fmt.Printf("ok: %d unread\n", n)
+	if ok {
+		fmt.Println("ok: unread messages found")
 	} else {
-		fmt.Fprintf(os.Stderr, "a2a: timeout: only %d unread (wanted %d)\n", n, count)
+		fmt.Fprintf(os.Stderr, "a2a: timeout: no messages after %.0fs\n", timeout)
 		os.Exit(2)
 	}
 }

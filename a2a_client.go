@@ -365,6 +365,29 @@ func (c *Client) ListPeers() ([]Peer, error) {
 	return peers, nil
 }
 
+// List returns all registered agents (alias for ListPeers).
+func (c *Client) List() ([]Peer, error) {
+	return c.ListPeers()
+}
+
+// Status gets or sets this agent's status.
+// If newStatus is provided, sets the status and returns nil.
+// If newStatus is empty, returns the current status.
+func (c *Client) Status(newStatus string) (*string, error) {
+	if newStatus != "" {
+		_, err := c.SetStatus(newStatus)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}
+	status, err := c.GetStatus(c.AgentID)
+	if err != nil {
+		return nil, err
+	}
+	return &status, nil
+}
+
 // AgentExists returns true if the agent is registered in the project.
 func (c *Client) AgentExists(agentID string) (bool, error) {
 	db, err := c.connect()
@@ -758,23 +781,23 @@ func (c *Client) Clear() error {
 }
 
 // Wait blocks until at least count unread messages exist for this agent,
-// or until timeout seconds elapse. Returns the number of unread messages found.
-func (c *Client) Wait(count int, timeoutSec float64) (int, error) {
+// or until timeout seconds elapse. Returns true if the required count was reached.
+func (c *Client) Wait(count int, timeoutSec float64) (bool, error) {
 	if count <= 0 {
-		return 0, fmt.Errorf("count must be a positive integer")
+		return false, fmt.Errorf("count must be a positive integer")
 	}
 	if math.IsInf(timeoutSec, 0) || math.IsNaN(timeoutSec) {
-		return 0, fmt.Errorf("timeout must be a finite number")
+		return false, fmt.Errorf("timeout must be a finite number")
 	}
 	if timeoutSec < 0 {
-		return 0, fmt.Errorf("timeout must be a non-negative number")
+		return false, fmt.Errorf("timeout must be a non-negative number")
 	}
 	deadline := time.Now().Add(time.Duration(timeoutSec * float64(time.Second)))
 	pollInterval := 500 * time.Millisecond
 	for {
 		db, err := c.connect()
 		if err != nil {
-			return 0, err
+			return false, err
 		}
 		var unread int
 		err = db.QueryRow(
@@ -786,13 +809,13 @@ func (c *Client) Wait(count int, timeoutSec float64) (int, error) {
 		).Scan(&unread)
 		db.Close()
 		if err != nil {
-			return 0, err
+			return false, err
 		}
 		if unread >= count {
-			return unread, nil
+			return true, nil
 		}
 		if time.Now().After(deadline) {
-			return unread, nil
+			return false, nil
 		}
 		time.Sleep(pollInterval)
 	}

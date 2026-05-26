@@ -36,7 +36,7 @@ fn main() {
 
     loop {
         // Wait for task (30 second timeout)
-        match client.recv(30, true, false, Some(1)) {
+        match client.recv(30.0, true, false, Some(1)) {
             Ok(messages) => {
                 if messages.is_empty() {
                     println!("No tasks received, exiting");
