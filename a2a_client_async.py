@@ -22,6 +22,16 @@ def _validate_project_name(name: str) -> None:
         raise ValueError(f"invalid project name {name!r} — must not contain path separators or start with '.'")
 
 
+def _validate_agent_id(agent_id: str) -> None:
+    """Validate agent ID is non-empty and within length limits."""
+    if not agent_id or not agent_id.strip():
+        raise ValueError("agent_id must not be empty")
+    if len(agent_id) > _MAX_AGENT_ID_LENGTH:
+        raise ValueError(
+            f"agent_id too long ({len(agent_id)} chars, max {_MAX_AGENT_ID_LENGTH})"
+        )
+
+
 # Max length constants (match a2a.py)
 _MAX_AGENT_ID_LENGTH = 256
 _MAX_THREAD_ID_LENGTH = 256
@@ -43,13 +53,8 @@ class A2AClientAsync:
         """
         if not project or not project.strip():
             raise ValueError("project must not be empty")
-        if not agent_id or not agent_id.strip():
-            raise ValueError("agent_id must not be empty")
         _validate_project_name(project)
-        if len(agent_id) > _MAX_AGENT_ID_LENGTH:
-            raise ValueError(
-                f"agent_id too long ({len(agent_id)} chars, max {_MAX_AGENT_ID_LENGTH})"
-            )
+        _validate_agent_id(agent_id)
         self.project = project
         self.agent_id = agent_id
         self.db_path = Path.home() / ".a2a" / project / "database.db"
@@ -116,15 +121,14 @@ class A2AClientAsync:
         if len(message) > _MAX_BODY_LENGTH:
             raise ValueError(f"message body too long ({len(message)} chars, max {_MAX_BODY_LENGTH})")
         recipient = None if to.lower() in ("all", "*", "broadcast") else to
-        await conn.execute(
+        cursor = await conn.execute(
             "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
             (self.agent_id, recipient, message, thread_id, ttl_seconds, time.time()),
         )
+        msg_id = cursor.lastrowid
         await conn.commit()
-        cursor = await conn.execute("SELECT last_insert_rowid() as id")
-        row = await cursor.fetchone()
-        return row["id"] if row else 0
+        return msg_id
 
     async def register(
         self,
@@ -240,7 +244,7 @@ class A2AClientAsync:
                 params.append(self.agent_id)
 
             query += " ORDER BY created_at ASC"
-            if limit:
+            if limit is not None and limit > 0:
                 query += " LIMIT ?"
                 params.append(limit)
 
@@ -533,40 +537,37 @@ class A2AClientAsync:
         Safe to call multiple times — uses CREATE TABLE IF NOT EXISTS.
         """
         conn = await self._connect()
-        try:
-            await conn.executescript("""
-                CREATE TABLE IF NOT EXISTS agents (
-                    id          TEXT PRIMARY KEY,
-                    role        TEXT,
-                    prompt      TEXT,
-                    cli         TEXT,
-                    status      TEXT NOT NULL DEFAULT 'active',
-                    pid         INTEGER,
-                    created_at  REAL NOT NULL,
-                    last_seen   REAL NOT NULL
-                );
-                CREATE TABLE IF NOT EXISTS messages (
-                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    sender      TEXT NOT NULL,
-                    recipient   TEXT,
-                    body        TEXT NOT NULL,
-                    thread_id   TEXT,
-                    ttl_seconds INTEGER,
-                    created_at  REAL NOT NULL
-                );
-                CREATE TABLE IF NOT EXISTS reads (
-                    agent_id    TEXT NOT NULL,
-                    message_id  INTEGER NOT NULL,
-                    read_at     REAL NOT NULL,
-                    PRIMARY KEY (agent_id, message_id)
-                );
-                CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
-                CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
-                CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
-            """)
-            await conn.commit()
-        finally:
-            await self.close()
+        await conn.executescript("""
+            CREATE TABLE IF NOT EXISTS agents (
+                id          TEXT PRIMARY KEY,
+                role        TEXT,
+                prompt      TEXT,
+                cli         TEXT,
+                status      TEXT NOT NULL DEFAULT 'active',
+                pid         INTEGER,
+                created_at  REAL NOT NULL,
+                last_seen   REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS messages (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender      TEXT NOT NULL,
+                recipient   TEXT,
+                body        TEXT NOT NULL,
+                thread_id   TEXT,
+                ttl_seconds INTEGER,
+                created_at  REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS reads (
+                agent_id    TEXT NOT NULL,
+                message_id  INTEGER NOT NULL,
+                read_at     REAL NOT NULL,
+                PRIMARY KEY (agent_id, message_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
+            CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
+            CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
+        """)
+        await conn.commit()
 
     def project_info(self) -> Dict[str, Any]:
         """Get resolved project information.
