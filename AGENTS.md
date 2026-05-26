@@ -12,7 +12,7 @@ you need:
 You are here → AGENTS.md (this file)
                      │
                      ├── README.md          — Install, CLI cheatsheet, tests overview
-                     ├── SKILL.md (root)    — Stub → docs/SKILL.md → .agents/skills/a2a/SKILL.md
+                     ├── SKILL.md (root)    — Stub → .agents/skills/a2a/SKILL.md
                      ├── CHANGELOG.md       — Version history
                      │
                      ├── docs/AGENTS.md     — Doc ownership table (which file owns what)
@@ -45,7 +45,7 @@ orchestrator, no central chain of command.
 
 **Core** (stdlib-only, zero deps):
 - `a2a.py` — CLI: 14 commands (init, register, send, recv, peek, list, status, wait, clear, project, unregister, search, stats, thread)
-- `a2a` — bash wrapper that auto-locates python3+sqlite3
+- `a2a` — Go CLI binary (companion, ~3.6MB ELF, zero deps)
 - `a2a-spawn` — per-CLI launcher that hides flag differences
 
 **Python client library** (v1.1+):
