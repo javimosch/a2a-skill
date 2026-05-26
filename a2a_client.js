@@ -230,14 +230,6 @@ class A2AClient {
   }
 
   /**
-   * Alias for listPeers() — matches EXPECTED API.
-   * @returns {Promise<Array>}
-   */
-  async list() {
-    return this.listPeers();
-  }
-
-  /**
    * Get or set status — matches EXPECTED API.
    * @param {string} [arg] - Status to set, or agent ID to query, or empty to get own
    * @returns {Promise<string|null>}
@@ -251,19 +243,6 @@ class A2AClient {
       return null;
     }
     return this.getStatus(arg);
-  }
-
-  /**
-   * Get or set this agent's status.
-   * @param {string|null} [newStatus] - Omit to get, provide to set
-   * @returns {Promise<string|null>}
-   */
-  async status(newStatus = null) {
-    if (newStatus !== null) {
-      await this.setStatus(newStatus);
-      return null;
-    }
-    return this.getStatus();
   }
 
   /**
@@ -459,23 +438,6 @@ class A2AClient {
   }
 
   /**
-   * Alias for waitForMessages() — matches EXPECTED API.
-   * @param {number} [count=1]
-   * @param {number} [timeout=60]
-   * @returns {Promise<boolean>}
-   */
-  async wait(count = 1, timeout = 60) {
-    return this.waitForMessages(count, timeout);
-  }
-
-  /**
-   * Initialize the project database (alias for initProject).
-   */
-  init_project() {
-    return this.initProject();
-  }
-
-  /**
    * Initialize the project database, creating tables if they don't exist.
    * Safe to call multiple times — uses CREATE TABLE IF NOT EXISTS.
    */
@@ -512,14 +474,6 @@ class A2AClient {
       CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
     `);
     db.close();
-  }
-
-  /**
-   * Get resolved project information (alias for projectInfo).
-   * @returns {Object} { project, db, exists }
-   */
-  project_info() {
-    return this.projectInfo();
   }
 
   /**
