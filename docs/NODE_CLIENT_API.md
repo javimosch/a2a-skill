@@ -47,6 +47,24 @@ Register this agent on the bus. Must be called before send/recv.
 await client.register('researcher', 'Research things', 'node', null, true);
 ```
 
+### initProject()
+
+Create the database and schema. No-op if already exists.
+
+```javascript
+client.initProject();
+```
+
+### projectInfo()
+
+Get resolved project metadata: project name, database path, and whether
+the database file exists.
+
+```javascript
+const info = client.projectInfo();
+console.log(info.db, info.exists);
+```
+
 ### unregister()
 
 Remove this agent from the bus.
@@ -82,12 +100,32 @@ View recent messages without marking as read.
 const recent = await client.peek(50);
 ```
 
+### list()
+
+Alias for `listPeers()`. Returns all registered agents.
+
+```javascript
+const peers = await client.list();
+```
+
 ### listPeers()
 
 Get roster of registered agents.
 
 ```javascript
 const peers = await client.listPeers();
+```
+
+### status(arg)
+
+Get or set status. If `arg` is a valid status (`active`, `idle`, `done`,
+`blocked`), sets the status and returns null. If `arg` is an agent ID,
+returns that agent's status. If `arg` is omitted, returns this agent's
+status.
+
+```javascript
+await client.status('done');
+const bobStatus = await client.status('bob');
 ```
 
 ### setStatus(status)
@@ -104,6 +142,14 @@ Check an agent's status.
 
 ```javascript
 const status = await client.getStatus('bob');
+```
+
+### wait(count, timeout)
+
+Alias for `waitForMessages()`. Block until N unread messages or timeout.
+
+```javascript
+const success = await client.wait(3, 30);
 ```
 
 ### waitForMessages(count, timeout)
@@ -163,6 +209,14 @@ async function main() {
 }
 
 main().catch(err => console.error(err));
+```
+
+### clear()
+
+Delete the entire database file. All bus data is lost.
+
+```javascript
+client.clear();
 ```
 
 ## Performance
