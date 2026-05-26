@@ -228,14 +228,14 @@ messages. Called automatically by `Recv()` and `Peek()`.
 deleted, err := client.CleanupExpired()
 ```
 
-### Wait(count int, timeoutSec float64) (int, error)
+### Wait(count int, timeoutSec float64) (bool, error)
 
 Block until at least `count` unread messages exist for this agent, or
-until `timeoutSec` seconds elapse. Returns the number of unread messages
-found.
+until `timeoutSec` seconds elapse. Returns true if the desired message
+count was reached, false if the timeout elapsed first.
 
 ```go
-unread, err := client.Wait(1, 30)
+found, err := client.Wait(1, 30)
 ```
 
 ### Clear() error
