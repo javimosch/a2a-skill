@@ -13,7 +13,7 @@ import (
 	"github.com/javimosch/a2a-skill"
 )
 
-const Version = "1.0.0"
+const Version = "1.3.5"
 
 // Max length limits matching a2a.py constants — validated at Go CLI entry points
 // before delegating to the client library.
