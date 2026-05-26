@@ -64,6 +64,8 @@ def _setup_db(project_dir: Path):
     """Initialize a test database with schema and two agents."""
     db_path = project_dir / "database.db"
     conn = sqlite3.connect(str(db_path))
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
     conn.executescript(DB_SCHEMA)
     ts = time.time()
     conn.execute(
@@ -196,6 +198,8 @@ class TestA2AClientAsync(unittest.TestCase):
         # Register a separate agent using sync client for status tests
         import sqlite3
         conn = sqlite3.connect(str(self.alice.db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.execute(
             "INSERT OR IGNORE INTO agents(id, role, status, created_at, last_seen) "
             "VALUES (?,?,?,?,?)",
@@ -813,6 +817,8 @@ class TestRoutingClientAsync(unittest.TestCase):
         # Add priority column needed by recv_with_routing / apply_routing
         import sqlite3
         conn = sqlite3.connect(str(project_dir / "database.db"))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         try:
             conn.execute("ALTER TABLE messages ADD COLUMN priority INTEGER DEFAULT 2")
             conn.commit()
@@ -991,6 +997,8 @@ class TestRoutingClientAsync(unittest.TestCase):
         # Send a matching message
         import sqlite3, time
         conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.execute(
             "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
             ("bob", self.client.agent_id, "hello world", time.time()),
@@ -1013,6 +1021,8 @@ class TestRoutingClientAsync(unittest.TestCase):
         # Send a non-matching message
         import sqlite3, time
         conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.execute(
             "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
             ("bob", self.client.agent_id, "normal message", time.time()),
@@ -1033,6 +1043,8 @@ class TestRoutingClientAsync(unittest.TestCase):
 
         import sqlite3, time
         conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.execute(
             "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
             ("bob", self.client.agent_id, "this is spam", time.time()),
@@ -1076,6 +1088,8 @@ class TestRoutingClientAsync(unittest.TestCase):
 
         # Check a forwarded message was created
         conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         cursor = conn.execute("SELECT body FROM messages WHERE body LIKE '[Forwarded]%'")
         rows = cursor.fetchall()
         conn.close()
@@ -1090,6 +1104,8 @@ class TestRoutingClientAsync(unittest.TestCase):
 
         # Insert a message first
         conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.execute(
             "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
             ("bob", self.client.agent_id, "discard me", time.time()),
@@ -1112,6 +1128,8 @@ class TestRoutingClientAsync(unittest.TestCase):
 
         # Check message was marked as read
         conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         cursor = conn.execute(
             "SELECT COUNT(*) FROM reads WHERE message_id = ? AND agent_id = ?",
             (msg_id, self.client.agent_id),
@@ -1165,6 +1183,8 @@ class TestRoutingClientAsync(unittest.TestCase):
 
         import sqlite3, time
         conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.execute(
             "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
             (self.client.agent_id, self.client.agent_id, "self msg", time.time()),
@@ -1184,6 +1204,8 @@ class TestRoutingClientAsync(unittest.TestCase):
 
         import sqlite3, time
         conn = sqlite3.connect(str(self.client.db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.execute(
             "INSERT INTO messages(sender, recipient, body, created_at) VALUES (?,?,?,?)",
             (self.client.agent_id, self.client.agent_id, "hidden self msg", time.time()),
