@@ -682,25 +682,25 @@ func (c *Client) InitProject() error {
 
 // Register registers an agent. If upsert is true, updates existing.
 // If pid is nil, no PID is stored; otherwise must be a positive integer.
-func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) error {
+func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) (bool, error) {
 	if len(c.AgentID) > MaxAgentIDLength {
-		return fmt.Errorf("agent id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
+		return false, fmt.Errorf("agent id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
 	}
 	if pid != nil && *pid <= 0 {
-		return fmt.Errorf("pid must be a positive integer")
+		return false, fmt.Errorf("pid must be a positive integer")
 	}
 	if len(role) > 512 {
-		return fmt.Errorf("role too long (%d chars, max 512)", len(role))
+		return false, fmt.Errorf("role too long (%d chars, max 512)", len(role))
 	}
 	if len(cli) > 128 {
-		return fmt.Errorf("cli too long (%d chars, max 128)", len(cli))
+		return false, fmt.Errorf("cli too long (%d chars, max 128)", len(cli))
 	}
 	if len(prompt) > MaxBodyLength {
-		return fmt.Errorf("prompt too long (%d chars, max %d)", len(prompt), MaxBodyLength)
+		return false, fmt.Errorf("prompt too long (%d chars, max %d)", len(prompt), MaxBodyLength)
 	}
 	db, err := c.connect()
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer db.Close()
 
@@ -718,11 +718,11 @@ func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) error
 				 WHERE id=?`,
 				role, prompt, cli, pid, ts, c.AgentID,
 			)
-			return err
+			return false, err
 		}
-		return fmt.Errorf("agent '%s' already registered (use upsert=true to update): %w", c.AgentID, err)
+		return false, fmt.Errorf("agent '%s' already registered (use upsert=true to update): %w", c.AgentID, err)
 	}
-	return nil
+	return true, nil
 }
 
 // Unregister removes an agent from the bus.

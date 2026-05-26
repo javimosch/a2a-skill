@@ -89,12 +89,13 @@ resolve_opencode() {
 
 # Use nohup + disown so the spawned process survives the parent shell exit.
 _spawn_bg() {
-    # Set A2A_PROJECT if --project was provided
-    if [ -n "$PROJECT" ]; then
-        export A2A_PROJECT="$PROJECT"
-    fi
     # "$@" is the command to run; stdout/stderr already redirected.
-    nohup "$@" > "$LOG" 2>&1 &
+    # Use inline env var so the export is scoped only to the spawned process.
+    if [ -n "$PROJECT" ]; then
+        A2A_PROJECT="$PROJECT" nohup "$@" > "$LOG" 2>&1 &
+    else
+        nohup "$@" > "$LOG" 2>&1 &
+    fi
     local PID=$!
     disown "$PID" 2>/dev/null || true
     echo "$PID"
@@ -107,7 +108,7 @@ case "$CLI" in
         # root cannot use --allow-dangerously-skip-permissions (claude blocks it).
         # Instead, use --permission-mode auto + --allowedTools for root.
         if [ "$(id -u)" -eq 0 ]; then
-            FLAGS+=(--permission-mode auto --allowedTools "Bash,Read,Edit")
+            FLAGS+=(--permission-mode auto --allowedTools "Bash,Read,Edit,Write,Ls,Glob")
         else
             FLAGS+=(--allow-dangerously-skip-permissions)
         fi

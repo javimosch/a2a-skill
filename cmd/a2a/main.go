@@ -264,7 +264,7 @@ func cmdRegister() {
 		fmt.Fprintf(os.Stderr, "a2a: register error: %v\n", err)
 		os.Exit(1)
 	}
-	if err := c.Register(role, prompt, cli, pidPtr, upsert); err != nil {
+	if _, err := c.Register(role, prompt, cli, pidPtr, upsert); err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: register error: %v\n", err)
 		os.Exit(1)
 	}

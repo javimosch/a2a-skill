@@ -124,7 +124,7 @@ class A2AClientAsync:
             prompt: System prompt (optional)
             cli: CLI tool name (optional)
             pid: Process ID (optional, must be > 0 if provided)
-            upsert: Replace existing registration if True
+            upsert: Update existing registration if True (preserves created_at)
 
         Returns:
             True on success

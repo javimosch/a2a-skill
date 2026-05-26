@@ -55,17 +55,17 @@ func TestRegister(t *testing.T) {
 	defer cleanup()
 
 	c.AgentID = "alice"
-	if err := c.Register("planner", "plan things", "claude", intPtr(123), false); err != nil {
+	if _, err := c.Register("planner", "plan things", "claude", intPtr(123), false); err != nil {
 		t.Fatalf("Register: %v", err)
 	}
 
 	// Double registration should fail without upsert
-	if err := c.Register("planner", "", "", nil, false); err == nil {
+	if _, err := c.Register("planner", "", "", nil, false); err == nil {
 		t.Fatal("expected error on duplicate register without upsert")
 	}
 
 	// Upsert should succeed
-	if err := c.Register("critic", "", "", nil, true); err != nil {
+	if _, err := c.Register("critic", "", "", nil, true); err != nil {
 		t.Fatalf("Register upsert: %v", err)
 	}
 }
@@ -1024,7 +1024,7 @@ func TestRegisterNonPositivePIDFails(t *testing.T) {
 	defer cleanup()
 
 	// PID negative should fail
-	err := c.Register("tester", "", "", intPtr(-5), false)
+	_, err := c.Register("tester", "", "", intPtr(-5), false)
 	if err == nil {
 		t.Fatal("expected error for Register with PID=-5, got nil")
 	}
@@ -1039,7 +1039,7 @@ func TestRegisterMaxIDLengthFails(t *testing.T) {
 
 	longID := strings.Repeat("a", MaxAgentIDLength+1)
 	c.AgentID = longID
-	err := c.Register("tester", "", "", nil, false)
+	_, err := c.Register("tester", "", "", nil, false)
 	if err == nil {
 		t.Fatal("expected error for Register with too-long ID, got nil")
 	}
