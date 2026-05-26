@@ -13,29 +13,8 @@ import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Callable
 
-
-def _validate_project_name(name: str) -> None:
-    """Reject project names that could cause path traversal or directory escape."""
-    if not name or not name.strip():
-        raise ValueError("project name must not be empty")
-    if "/" in name or "\\" in name or name[0] == ".":
-        raise ValueError(f"invalid project name {name!r} — must not contain path separators or start with '.'")
-
-
-def _validate_agent_id(agent_id: str) -> None:
-    """Validate agent ID is non-empty and within length limits."""
-    if not agent_id or not agent_id.strip():
-        raise ValueError("agent_id must not be empty")
-    if len(agent_id) > _MAX_AGENT_ID_LENGTH:
-        raise ValueError(
-            f"agent_id too long ({len(agent_id)} chars, max {_MAX_AGENT_ID_LENGTH})"
-        )
-
-
-# Max length constants (match a2a.py)
-_MAX_AGENT_ID_LENGTH = 256
-_MAX_THREAD_ID_LENGTH = 256
-_MAX_BODY_LENGTH = 100_000
+from a2a_common import MAX_ID_LENGTH, MAX_THREAD_ID_LENGTH, MAX_BODY_LENGTH
+from a2a_common import _validate_project_name, _validate_agent_id
 
 
 class A2AClientAsync:
@@ -116,10 +95,10 @@ class A2AClientAsync:
             raise ValueError("ttl_seconds must be a finite number")
         if thread_id is not None and not thread_id.strip():
             raise ValueError("thread_id must not be empty")
-        if thread_id is not None and len(thread_id) > _MAX_THREAD_ID_LENGTH:
-            raise ValueError(f"thread_id too long ({len(thread_id)} chars, max {_MAX_THREAD_ID_LENGTH})")
-        if len(message) > _MAX_BODY_LENGTH:
-            raise ValueError(f"message body too long ({len(message)} chars, max {_MAX_BODY_LENGTH})")
+        if thread_id is not None and len(thread_id) > MAX_THREAD_ID_LENGTH:
+            raise ValueError(f"thread_id too long ({len(thread_id)} chars, max {MAX_THREAD_ID_LENGTH})")
+        if len(message) > MAX_BODY_LENGTH:
+            raise ValueError(f"message body too long ({len(message)} chars, max {MAX_BODY_LENGTH})")
         recipient = None if to.lower() in ("all", "*", "broadcast") else to
         cursor = await conn.execute(
             "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
@@ -152,12 +131,12 @@ class A2AClientAsync:
         """
         if pid is not None and pid <= 0:
             raise ValueError("pid must be a positive integer")
-        if len(role) > _MAX_AGENT_ID_LENGTH:
-            raise ValueError(f"role too long ({len(role)} chars, max {_MAX_AGENT_ID_LENGTH})")
+        if len(role) > MAX_ID_LENGTH:
+            raise ValueError(f"role too long ({len(role)} chars, max {MAX_ID_LENGTH})")
         if len(cli) > 128:
             raise ValueError(f"cli too long ({len(cli)} chars, max 128)")
-        if len(prompt) > _MAX_BODY_LENGTH:
-            raise ValueError(f"prompt too long ({len(prompt)} chars, max {_MAX_BODY_LENGTH})")
+        if len(prompt) > MAX_BODY_LENGTH:
+            raise ValueError(f"prompt too long ({len(prompt)} chars, max {MAX_BODY_LENGTH})")
         conn = await self._connect()
         now = time.time()
         if upsert:

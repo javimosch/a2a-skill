@@ -96,6 +96,100 @@ test('_connect() creates parent directory', () => {
   assert.strictEqual(fs.existsSync(dir), true);
 });
 
+// --- register ---
+
+test('register() registers agent on bus', async () => {
+  const project = 'register-test';
+  const dir = path.join(tmpDir, '.a2a', project);
+  fs.mkdirSync(dir, { recursive: true });
+  const dbPath = path.join(dir, 'database.db');
+  const db = new DatabaseSync(dbPath);
+  db.exec('PRAGMA journal_mode=WAL');
+  db.exec(DB_SCHEMA);
+  db.close();
+
+  const c = new A2AClient(project, 'charlie');
+  c.dbDir = dir;
+  c.dbPath = dbPath;
+  const ok = await c.register('tester', 'testing', 'node', 456, false);
+  assert.strictEqual(ok, true);
+
+  const db2 = new DatabaseSync(dbPath);
+  const row = db2.prepare("SELECT id, role, prompt, cli, pid, status FROM agents WHERE id='charlie'").get();
+  db2.close();
+  assert.ok(row);
+  assert.strictEqual(row.role, 'tester');
+  assert.strictEqual(row.pid, 456);
+  assert.strictEqual(row.status, 'active');
+});
+
+test('register() with negative PID rejects', async () => {
+  const project = 'register-pid';
+  const dir = path.join(tmpDir, '.a2a', project);
+  fs.mkdirSync(dir, { recursive: true });
+  const dbPath = path.join(dir, 'database.db');
+  const db = new DatabaseSync(dbPath);
+  db.exec('PRAGMA journal_mode=WAL');
+  db.exec(DB_SCHEMA);
+  db.close();
+
+  const c = new A2AClient(project, 'dave');
+  c.dbDir = dir;
+  c.dbPath = dbPath;
+  try {
+    await c.register('tester', '', '', -1, false);
+    assert.fail('expected error for negative PID');
+  } catch (e) {
+    assert.ok(e.message.includes('pid must be a positive integer'));
+  }
+});
+
+test('register() without upsert fails on duplicate', async () => {
+  const project = 'register-no-upsert';
+  const dir = path.join(tmpDir, '.a2a', project);
+  fs.mkdirSync(dir, { recursive: true });
+  const dbPath = path.join(dir, 'database.db');
+  const db = new DatabaseSync(dbPath);
+  db.exec('PRAGMA journal_mode=WAL');
+  db.exec(DB_SCHEMA);
+  db.close();
+
+  const c = new A2AClient(project, 'eve');
+  c.dbDir = dir;
+  c.dbPath = dbPath;
+  await c.register('first', '', '', null, false);
+  try {
+    await c.register('second', '', '', null, false);
+    assert.fail('expected error for duplicate register without upsert');
+  } catch (e) {
+    assert.ok(e);
+  }
+});
+
+test('register() with upsert updates existing', async () => {
+  const project = 'register-upsert';
+  const dir = path.join(tmpDir, '.a2a', project);
+  fs.mkdirSync(dir, { recursive: true });
+  const dbPath = path.join(dir, 'database.db');
+  const db = new DatabaseSync(dbPath);
+  db.exec('PRAGMA journal_mode=WAL');
+  db.exec(DB_SCHEMA);
+  db.close();
+
+  const c = new A2AClient(project, 'frank');
+  c.dbDir = dir;
+  c.dbPath = dbPath;
+  await c.register('first', '', '', null, false);
+  const ok = await c.register('second', '', '', 999, true);
+  assert.strictEqual(ok, true);
+
+  const db2 = new DatabaseSync(dbPath);
+  const row = db2.prepare("SELECT role, pid FROM agents WHERE id='frank'").get();
+  db2.close();
+  assert.strictEqual(row.role, 'second');
+  assert.strictEqual(row.pid, 999);
+});
+
 // --- send ---
 
 test('send() returns positive message ID', async () => {
