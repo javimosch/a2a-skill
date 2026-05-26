@@ -112,7 +112,7 @@ a2a-skill/
 ├── test_v13_features.py   v1.3 satellite module tests (140)
 ├── test_git_aware.py     git-aware module tests (65)
 ├── test_server.py        REST API tests (70)
-├── test_async_modules.py async client tests (94, 2 skip-guarded)
+├── test_async_modules.py async client tests (94, 3 skip-guarded classes)
 ├── test_artifacts_util.py artifact build util tests (84)     ← 902 tests total (800 Python + 55 Go + 14 Rust + 33 JS)
 ├── benchmark.py
 ├── dashboard.py
@@ -241,7 +241,7 @@ Agent activity can be monitored live from the bus:
 | `INSERT OR REPLACE` destroys `created_at` on upsert | Use `INSERT OR IGNORE` then `UPDATE` (two statements) to preserve the original `created_at` when re-registering an agent. The async Python client had this bug (fixed in v1.3.3). |
 | Rust `recv()`/`peek()` skip TTL cleanup | Rust client must call `DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?` before fetching. It was missing in both `recv()` and `peek()` (fixed in v1.3.3). |
 | `a2a-spawn` processes die silently when parent shell exits | The background `&` in `a2a-spawn` creates a child that receives SIGHUP when the parent bash exits. Fixed in v1.3.3+ using `nohup` + `disown` via the `_spawn_bg()` helper. If you write your own launcher script, use `nohup ... &` + `disown $!`. |
-| claude `-p` mode sandbox blocks `a2a` and other non-project CLIs | Claude Code restricts shell tool access to the project working directory. The `a2a` CLI needs to read/write `~/.a2a/` which is outside the sandbox. Workaround: run reviewer in foreground and pipe findings to a file, then inject into fixer's kit prompt. Set `--allowedTools "Bash(Ls,Read)"` to narrow but not block. |
+| claude `-p` mode sandbox blocks `a2a` and other non-project CLIs | Claude Code restricts shell tool access to the project working directory. The `a2a` CLI needs to read/write `~/.a2a/` which is outside the sandbox. Workaround: run reviewer in foreground and pipe findings to a file, then inject into fixer's kit prompt. Set `--allowedTools "Bash,Read,Ls"` to narrow but not block. |
 | opencode foreground mode works where background fails | When `a2a-spawn` background processes don't persist, run agents sequentially in foreground (`opencode run ...` / `claude -p ...`) instead. The sequential approach is more reliable for cron jobs and CI. |
 | Cross-client API surface drifts apart | When adding a new command to `a2a.py`, update ALL 5 clients (py sync, py async, Go, JS, Rust) in the same PR. Run all test suites before committing. |
 | `a2a-spawn --project` unknown arg (pre-v1.3.6) | `a2a-spawn` did not accept `--project`. Pass `A2A_PROJECT=<name>` in the calling shell before `a2a-spawn`, or upgrade to v1.3.6+ where `--project NAME` sets `A2A_PROJECT` for the spawned agent. |
@@ -282,7 +282,7 @@ TTL expiry, broadcast, cross-project isolation, concurrent agents.
 python3 test_v13_features.py -v   # encryption, FTS, audit, priority, routing
 python3 test_git_aware.py -v      # git-state-aware bus queries (65)
 python3 test_server.py -v         # REST API endpoints (70)
-python3 test_async_modules.py -v  # async clients (94, 2 skip-guarded — needs aiosqlite)
+python3 test_async_modules.py -v  # async clients (94, 3 skip-guarded classes — needs aiosqlite)
 ```
 
 ### Artifact build tests (84 tests)
@@ -300,7 +300,7 @@ Tests the artifact generation utilities used by `examples/artifacts/`.
 ```
 
 Runs all test suites in sequence. Requires `aiosqlite` for async tests
-(2 tests are skip-guarded if not available).
+(3 classes are skip-guarded if aiosqlite is not available).
 
 ### Stress tests
 

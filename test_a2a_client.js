@@ -6,7 +6,13 @@
 
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
-const { DatabaseSync } = require('node:sqlite');
+let DatabaseSync;
+try {
+  DatabaseSync = require('node:sqlite').DatabaseSync;
+} catch (e) {
+  console.error('WARN: node:sqlite unavailable (Node < 22) — skipping all tests');
+  process.exit(0);
+}
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
