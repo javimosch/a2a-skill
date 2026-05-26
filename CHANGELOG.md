@@ -365,7 +365,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## Future Releases
 
-See [docs/V14_ARCHITECTURE.md](docs/V14_ARCHITECTURE.md) for v1.4 planning:
+v1.4 planning includes:
 - gRPC API (10-100x faster than HTTP)
 - WebSocket API (real-time notifications)
 - Distributed tracing (Jaeger integration)

@@ -111,7 +111,7 @@ a2a-skill/
 ├── test_v13_features.py   v1.3 satellite module tests (140)
 ├── test_git_aware.py     git-aware module tests (65)
 ├── test_server.py        REST API tests (70)
-├── test_async_modules.py async client tests (94, 2 skip-guarded) with full PriorityClientAsync and RoutingClientAsync coverage
+├── test_async_modules.py async client tests (94, 2 skip-guarded)
 ├── test_artifacts_util.py artifact build util tests (84)     ← 800 tests total
 ├── benchmark.py
 ├── dashboard.py
@@ -239,10 +239,10 @@ Agent activity can be monitored live from the bus:
 | claude `-p` mode requires `CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1` | Without this env var, claude prompts for shell/file approval even in `-p` mode. The kit runs but no shell commands execute until manually approved. |
 | `INSERT OR REPLACE` destroys `created_at` on upsert | Use `INSERT OR IGNORE` then `UPDATE` (two statements) to preserve the original `created_at` when re-registering an agent. The async Python client had this bug (fixed in v1.3.3). |
 | Rust `recv()`/`peek()` skip TTL cleanup | Rust client must call `DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?` before fetching. It was missing in both `recv()` and `peek()` (fixed in v1.3.3). |
-|| `a2a-spawn` processes die silently when parent shell exits | The background `&` in `a2a-spawn` creates a child that receives SIGHUP when the parent bash exits. Fixed in v1.3.3+ using `nohup` + `disown` via the `_spawn_bg()` helper. If you write your own launcher script, use `nohup ... &` + `disown $!`. |
+| `a2a-spawn` processes die silently when parent shell exits | The background `&` in `a2a-spawn` creates a child that receives SIGHUP when the parent bash exits. Fixed in v1.3.3+ using `nohup` + `disown` via the `_spawn_bg()` helper. If you write your own launcher script, use `nohup ... &` + `disown $!`. |
 | claude `-p` mode sandbox blocks `a2a` and other non-project CLIs | Claude Code restricts shell tool access to the project working directory. The `a2a` CLI needs to read/write `~/.a2a/` which is outside the sandbox. Workaround: run reviewer in foreground and pipe findings to a file, then inject into fixer's kit prompt. Set `--allowedTools "Bash(Ls,Read)"` to narrow but not block. |
 | opencode foreground mode works where background fails | When `a2a-spawn` background processes don't persist, run agents sequentially in foreground (`opencode run ...` / `claude -p ...`) instead. The sequential approach is more reliable for cron jobs and CI. |
-|| Cross-client API surface drifts apart | When adding a new command to `a2a.py`, update ALL 5 clients (py sync, py async, Go, JS, Rust) in the same PR. Run all test suites before committing. |
+| Cross-client API surface drifts apart | When adding a new command to `a2a.py`, update ALL 5 clients (py sync, py async, Go, JS, Rust) in the same PR. Run all test suites before committing. |
 
 ## Running the tests
 
@@ -420,11 +420,8 @@ Refreshes every 2 seconds in live mode.
 
 ## Things this project deliberately does *not* do
 
-- **No encryption.** The bus is cleartext on the local FS. Trust model: a
-  shared local environment. Add encryption if remoting the db.
 - **No central orchestrator.** That's the point. If you find yourself adding
   one, you are building a different project.
-- **No TTL/expiry on messages.** The db grows. `a2a clear --yes` resets.
 - **No auth.** Anyone with FS access to `~/.a2a/{project}/database.db` can
   read or write the bus.
 
