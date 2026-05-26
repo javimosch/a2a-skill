@@ -104,10 +104,16 @@ case "$CLI" in
     claude)
         FLAGS=(--max-turns 50)
         [ -n "$MODEL" ] && FLAGS+=(--model "$MODEL")
+        # root cannot use --allow-dangerously-skip-permissions (claude blocks it).
+        # Instead, use --permission-mode auto + --allowedTools for root.
+        if [ "$(id -u)" -eq 0 ]; then
+            FLAGS+=(--permission-mode auto --allowedTools "Bash,Read,Edit")
+        else
+            FLAGS+=(--allow-dangerously-skip-permissions)
+        fi
         CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
         _spawn_bg "$HOME/.local/bin/claude" \
             -p "Begin." \
-            --allow-dangerously-skip-permissions \
             "${FLAGS[@]}" \
             --append-system-prompt "$KIT"
         ;;
