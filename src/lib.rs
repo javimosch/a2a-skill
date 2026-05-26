@@ -55,6 +55,7 @@ pub struct TopSender {
 }
 
 /// a2a client for Rust
+#[derive(Debug)]
 pub struct Client {
     pub project: String,
     pub agent_id: String,
@@ -539,6 +540,81 @@ impl Client {
             agents_done,
             top_senders,
         })
+    }
+
+    /// Wait for N unread messages with timeout.
+    ///
+    /// Blocks up to `timeout_secs` seconds, polling the bus every 200ms,
+    /// until `count` unread messages arrive.
+    pub fn wait(&self, count: i64, timeout_secs: f64) -> SqliteResult<Vec<Message>> {
+        let deadline = SystemTime::now() + Duration::from_secs_f64(timeout_secs);
+        let mut collected: Vec<Message> = Vec::new();
+        loop {
+            let remaining = count - collected.len() as i64;
+            if remaining <= 0 {
+                return Ok(collected);
+            }
+            if SystemTime::now() >= deadline {
+                return Ok(collected);
+            }
+            let msgs = self.recv(1, true, false, Some(remaining))?;
+            collected.extend(msgs);
+        }
+    }
+
+    /// Initialize the project database, creating tables if they don't exist.
+    ///
+    /// Safe to call multiple times — uses CREATE TABLE IF NOT EXISTS.
+    pub fn init_project(&self) -> SqliteResult<()> {
+        let conn = self.connect()?;
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS agents (
+                id          TEXT PRIMARY KEY,
+                role        TEXT,
+                prompt      TEXT,
+                cli         TEXT,
+                status      TEXT NOT NULL DEFAULT 'active',
+                pid         INTEGER,
+                created_at  REAL NOT NULL,
+                last_seen   REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS messages (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender      TEXT NOT NULL,
+                recipient   TEXT,
+                body        TEXT NOT NULL,
+                thread_id   TEXT,
+                ttl_seconds INTEGER,
+                created_at  REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS reads (
+                agent_id    TEXT NOT NULL,
+                message_id  INTEGER NOT NULL,
+                read_at     REAL NOT NULL,
+                PRIMARY KEY (agent_id, message_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
+            CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
+            CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);",
+        )?;
+        Ok(())
+    }
+
+    /// Delete the project database and all WAL-related files.
+    ///
+    /// Warning: This permanently deletes all messages and agent registrations.
+    pub fn clear(&self) -> SqliteResult<()> {
+        for suffix in &["", "-wal", "-shm"] {
+            let actual = if suffix.is_empty() {
+                self.db_path.clone()
+            } else {
+                let mut s = self.db_path.to_string_lossy().to_string();
+                s.push_str(suffix);
+                std::path::PathBuf::from(s)
+            };
+            let _ = std::fs::remove_file(&actual);
+        }
+        Ok(())
     }
 }
 
