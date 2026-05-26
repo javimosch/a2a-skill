@@ -102,12 +102,13 @@ _spawn_bg() {
 
 case "$CLI" in
     claude)
-        FLAGS=(-p --max-turns 50)
+        FLAGS=(--max-turns 50)
         [ -n "$MODEL" ] && FLAGS+=(--model "$MODEL")
         CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
-        _spawn_bg "$HOME/.local/bin/claude" "${FLAGS[@]}" \
-            --append-system-prompt "$KIT" \
-            "Begin."
+        _spawn_bg "$HOME/.local/bin/claude" \
+            -p "Begin." \
+            "${FLAGS[@]}" \
+            --append-system-prompt "$KIT"
         ;;
     opencode)
         OPENCODE="$(resolve_opencode)"
