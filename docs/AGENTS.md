@@ -40,7 +40,7 @@ It is duplicated into two stubs for CLI discovery:
 
 1. **`.agents/skills/a2a/SKILL.md`** — canonical, edit this one
 2. **`docs/SKILL.md`** — stub with quick reference, points to canonical
-3. **`SKILL.md`** (root) — stub, points to `docs/SKILL.md` → canonical
+3. **`SKILL.md`** (root) — stub, points directly to canonical
 
 The root copy is required because `~/.claude/skills/a2a` is a symlink to the
 project root — Claude Code's skill loader reads `SKILL.md` at the symlink

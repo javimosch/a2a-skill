@@ -35,7 +35,7 @@ and [`.agents/skills/a2a/SKILL.md`](.agents/skills/a2a/SKILL.md) for the Pattern
 
 ```
 a2a-skill/
-├── a2a                  # bash wrapper that finds a python with sqlite3
+├── a2a                  # Go CLI binary (companion, ~3.6MB ELF, zero deps)
 ├── a2a.py               # core CLI (stdlib only: argparse, sqlite3, json)
 ├── a2a_client.py        # Python client library (sync, no subprocess overhead)
 ├── a2a_client_async.py  # Python async client (asyncio-based, high concurrency)
@@ -50,6 +50,7 @@ a2a-skill/
 📚 Documentation
 ├── README.md                 # overview (this file)
 ├── AGENTS.md                 # guide for AI agents working on this repo
+├── WEB_UI_README.md          # web-based dashboard documentation
 │
 🚀 Getting Started
 ├── docs/QUICKSTART.md        # 5-minute quick start
@@ -60,11 +61,13 @@ a2a-skill/
 ├── docs/CLIENT_API.md        # Python client library reference
 ├── docs/NODE_CLIENT_API.md   # Node.js client library reference
 ├── docs/GO_CLIENT_API.md     # Go client library reference
+├── docs/GO_CLI_REFERENCE.md  # Go binary CLI flags and commands
 ├── docs/RUST_CLIENT_API.md   # Rust client library reference
 ├── docs/REST_API.md          # HTTP REST interface reference
 ├── docs/ADVANCED_PATTERNS.md # optimization & patterns guide
 ├── docs/INTEGRATION_GUIDE.md # multi-interface coordination guide
 ├── docs/GIT_AWARE.md         # work-collision detection & prevention
+├── docs/PITFALLS.md          # common pitfalls from smoke testing
 │
 🔐 v1.3 Features & Security
 ├── docs/ENCRYPTION.md        # end-to-end encryption (symmetric & asymmetric)

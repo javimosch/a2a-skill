@@ -75,7 +75,7 @@ directly.
 
 ```
 a2a-skill/
-├── a2a                   bash wrapper
+├── a2a                   Go CLI binary (companion, ~3.6MB ELF, zero deps)
 ├── a2a.py                CLI (stdlib only)
 ├── a2a-spawn             per-CLI launcher
 ├── SKILL.md              skill spec (stub — canonical is .agents/skills/a2a/SKILL.md)
