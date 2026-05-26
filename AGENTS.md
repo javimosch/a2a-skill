@@ -104,7 +104,7 @@ a2a-skill/
 ├── smoke_test_go.sh      Go CLI smoke test (30 tests)
 ├── verify_json_parity.sh Go vs Python JSON cross-verify
 ├── a2a_client.js         Node.js client
-├── test_a2a_client.js    Node.js client tests (29)
+├── test_a2a_client.js    Node.js client tests (33)
 ├── src/lib.rs            Rust client (14 tests)
 ├── test_a2a.py           unit tests (157)
 ├── test_a2a_client.py    Python client tests (85)
@@ -113,7 +113,7 @@ a2a-skill/
 ├── test_git_aware.py     git-aware module tests (65)
 ├── test_server.py        REST API tests (70)
 ├── test_async_modules.py async client tests (94, 2 skip-guarded)
-├── test_artifacts_util.py artifact build util tests (84)     ← 898 tests total (800 Python + 55 Go + 14 Rust + 29 JS)
+├── test_artifacts_util.py artifact build util tests (84)     ← 902 tests total (800 Python + 55 Go + 14 Rust + 33 JS)
 ├── benchmark.py
 ├── dashboard.py
 ├── examples/             AGENTS.md documents patterns
