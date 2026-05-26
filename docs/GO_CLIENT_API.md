@@ -6,7 +6,7 @@ The `a2a_client.go` module provides a Go API for a2a messaging, enabling integra
 
 ```bash
 # Add to your go.mod (root of this repo is the Go module)
-go get github.com/jarancibia/a2a-skill
+go get github.com/javimosch/a2a-skill
 ```
 
 ## Quick Start
@@ -358,6 +358,6 @@ Direct database access:
 
 ## See Also
 
-- [CLIENT_API.md](docs/CLIENT_API.md) — Python client
-- [NODE_CLIENT_API.md](docs/NODE_CLIENT_API.md) — Node.js client
-- [REST_API.md](docs/REST_API.md) — HTTP interface
+- [CLIENT_API.md](CLIENT_API.md) — Python client
+- [NODE_CLIENT_API.md](NODE_CLIENT_API.md) — Node.js client
+- [REST_API.md](REST_API.md) — HTTP interface

@@ -179,7 +179,7 @@ For containerized deployment:
 ```dockerfile
 FROM python:3.11-slim
 RUN apt-get update && apt-get install -y git
-RUN git clone https://github.com/anthropics/a2a-skill /app/a2a
+RUN git clone https://github.com/javimosch/a2a-skill /app/a2a
 WORKDIR /app/a2a
 RUN ./install.sh
 ENV A2A_PROJECT=container-test
@@ -190,7 +190,7 @@ CMD ["/bin/bash"]
 
 After installation:
 
-- Read [QUICKSTART.md](docs/QUICKSTART.md) for 5-minute introduction
+- Read [QUICKSTART.md](QUICKSTART.md) for 5-minute introduction
 - Check [examples/](../examples/) for pattern implementations
-- Review [CLIENT_API.md](docs/CLIENT_API.md) for Python API
+- Review [CLIENT_API.md](CLIENT_API.md) for Python API
 - See [AGENTS.md](../AGENTS.md) for agent development

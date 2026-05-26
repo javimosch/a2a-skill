@@ -2,14 +2,14 @@
 
 The `a2a` Go CLI binary is a companion to the Python `a2a.py` — same 14 commands
 (plus a `version` subcommand that's Go-specific), same flags, same JSON output
-— but ships as a single ~1.3MB static binary with zero runtime dependencies. No
+— but ships as a single ~3.6MB static binary with zero runtime dependencies. No
 python3+sqlite3 required.
 
 ## Quick Start
 
 ```bash
 # Download the binary (or build from source)
-curl -sL "https://github.com/jarancibia/a2a-skill/releases/latest/download/a2a-$(uname -s)-$(uname -m)" -o /tmp/a2a
+curl -sL "https://github.com/javimosch/a2a-skill/releases/latest/download/a2a-$(uname -s)-$(uname -m)" -o /tmp/a2a
 chmod +x /tmp/a2a
 /tmp/a2a version
 
@@ -26,7 +26,7 @@ chmod +x /tmp/a2a
 ## Building from Source
 
 ```bash
-git clone https://github.com/jarancibia/a2a-skill.git
+git clone https://github.com/javimosch/a2a-skill.git
 cd a2a-skill
 go build -ldflags "-s -w" -tags fts5 -o a2a ./cmd/a2a/
 ./a2a version
@@ -72,7 +72,7 @@ without changing bus consumers.
 |--------|-----------|------------|
 | Dependencies | None (static binary) | python3 + sqlite3 |
 | Startup time | ~5ms | ~80ms |
-| Binary size | ~1.3MB | ~15KB (script) |
+| Binary size | ~3.6MB | ~15KB (script) |
 | FTS5 search | Via build tag `-tags fts5` | Built-in (stdlib sqlite3 may lack) |
 | Cross-platform | 4 pre-built binaries | Any platform with Python |
 
@@ -85,7 +85,7 @@ The recommended agent bootstrap for maximum reliability uses a fallback chain:
 A2A="${A2A_BIN:-/tmp/a2a}"
 if [ ! -x "$A2A" ]; then
   # Try to download Go binary
-  curl -sLf "https://github.com/jarancibia/a2a-skill/releases/latest/download/a2a-$(uname -s)-$(uname -m)" -o "$A2A" 2>/dev/null && chmod +x "$A2A" || {
+  curl -sLf "https://github.com/javimosch/a2a-skill/releases/latest/download/a2a-$(uname -s)-$(uname -m)" -o "$A2A" 2>/dev/null && chmod +x "$A2A" || {
     # Fall back to Python CLI (a2a.py via wrapper)
     for cand in "$(command -v a2a 2>/dev/null)" "$HOME/.agents/skills/a2a/a2a" "$HOME/.claude/skills/a2a/a2a"; do
       [ -x "$cand" ] && { A2A="$cand"; break; }

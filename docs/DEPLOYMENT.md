@@ -187,7 +187,7 @@ Run a2a as a systemd service:
 ```ini
 [Unit]
 Description=a2a REST API Server
-Documentation=https://github.com/anthropics/a2a
+Documentation=https://github.com/javimosch/a2a-skill
 After=network.target
 Wants=a2a-workers.service
 
@@ -410,5 +410,5 @@ sqlite3 ~/.a2a/production/database.db "PRAGMA query_only=ON;" "SELECT * FROM mes
 ## See Also
 
 - [README.md](../README.md) — Project overview
-- [REST_API.md](docs/REST_API.md) — HTTP interface reference
-- [INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md) — Multi-interface coordination
+- [REST_API.md](REST_API.md) — HTTP interface reference
+- [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) — Multi-interface coordination
