@@ -84,15 +84,23 @@ resolve_opencode() {
     fi
 }
 
+# Use nohup + disown so the spawned process survives the parent shell exit.
+_spawn_bg() {
+    # "$@" is the command to run; stdout/stderr already redirected.
+    nohup "$@" > "$LOG" 2>&1 &
+    local PID=$!
+    disown "$PID" 2>/dev/null || true
+    echo "$PID"
+}
+
 case "$CLI" in
     claude)
         FLAGS=(-p --max-turns 50)
         [ -n "$MODEL" ] && FLAGS+=(--model "$MODEL")
         CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
-        "$HOME/.local/bin/claude" "${FLAGS[@]}" \
+        _spawn_bg "$HOME/.local/bin/claude" "${FLAGS[@]}" \
             --append-system-prompt "$KIT" \
-            "Begin." > "$LOG" 2>&1 &
-        echo $!
+            "Begin."
         ;;
     opencode)
         OPENCODE="$(resolve_opencode)"
@@ -104,17 +112,15 @@ case "$CLI" in
 
 ---
 Begin."
-        "$OPENCODE" "${FLAGS[@]}" "$MSG" > "$LOG" 2>&1 &
-        echo $!
+        _spawn_bg "$OPENCODE" "${FLAGS[@]}" "$MSG"
         ;;
     pi)
         FLAGS=(-p)
         [ -n "$MODEL" ]    && FLAGS+=(--model "$MODEL")
         [ -n "$PROVIDER" ] && FLAGS+=(--provider "$PROVIDER")
-        pi "${FLAGS[@]}" \
+        _spawn_bg pi "${FLAGS[@]}" \
             --append-system-prompt "$KIT" \
-            "Begin." > "$LOG" 2>&1 &
-        echo $!
+            "Begin."
         ;;
     *)
         echo "a2a-spawn: unknown CLI '$CLI' (expected claude|opencode|pi)" >&2
