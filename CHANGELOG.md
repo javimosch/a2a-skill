@@ -13,6 +13,9 @@ All notable changes to a2a-skill are documented here.
   list(), init_project(), project_info(), and wait().
 - **a2a_client.go: Wait()/List()/Status() API** — Changed Wait() to return bool,
   added List() alias and Status() method for API consistency.
+- **WAL invariant in test files + example** — Added PRAGMA journal_mode=WAL and
+  PRAGMA busy_timeout=5000 to all sqlite3.connect() calls in test files and
+  examples/compliance_archival_agent.py. Production clients were already correct.
 
 ### Added
 - **src/lib.rs: project_info()** — Added missing project_info() method to Rust Client impl.
