@@ -489,6 +489,69 @@ class A2AClient:
         finally:
             conn.close()
 
+    def init_project(self) -> None:
+        """Initialize the project database, creating tables if they don't exist.
+
+        Safe to call multiple times — uses CREATE TABLE IF NOT EXISTS.
+        """
+        conn = self._connect()
+        try:
+            conn.executescript("""
+                CREATE TABLE IF NOT EXISTS agents (
+                    id          TEXT PRIMARY KEY,
+                    role        TEXT,
+                    prompt      TEXT,
+                    cli         TEXT,
+                    status      TEXT NOT NULL DEFAULT 'active',
+                    pid         INTEGER,
+                    created_at  REAL NOT NULL,
+                    last_seen   REAL NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS messages (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sender      TEXT NOT NULL,
+                    recipient   TEXT,
+                    body        TEXT NOT NULL,
+                    thread_id   TEXT,
+                    ttl_seconds INTEGER,
+                    created_at  REAL NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS reads (
+                    agent_id    TEXT NOT NULL,
+                    message_id  INTEGER NOT NULL,
+                    read_at     REAL NOT NULL,
+                    PRIMARY KEY (agent_id, message_id)
+                );
+                CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
+                CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
+                CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
+            """)
+            conn.commit()
+        finally:
+            conn.close()
+
+    def project_info(self) -> Dict[str, Any]:
+        """Get resolved project information.
+
+        Returns:
+            Dict with project name, database path, and whether the DB exists.
+        """
+        return {
+            "project": self.project,
+            "db": str(self.db_path),
+            "exists": self.db_path.exists(),
+        }
+
+    def clear(self) -> None:
+        """Delete the project database and all WAL-related files.
+
+        Warning: This permanently deletes all messages and agent registrations.
+        """
+        from pathlib import Path as _Path
+        for suffix in ("", "-wal", "-shm"):
+            p = _Path(str(self.db_path) + suffix)
+            if p.exists():
+                p.unlink()
 
 # Example usage
 if __name__ == "__main__":
@@ -515,6 +578,9 @@ if __name__ == "__main__":
     print(f"  Database: {client.db_path}")
     print("")
     print("Available methods:")
+    print("  client.init_project()")
+    print("  client.project_info()")
+    print("  client.clear()")
     print("  client.send(to, message, ttl_seconds=None)")
     print("  client.recv(wait=0, unread_only=True, include_self=False, limit=0)")
     print("  client.peek(limit=20)")
