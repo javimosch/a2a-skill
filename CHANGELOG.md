@@ -2,6 +2,27 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.4] — 2026-05-26 (Doc Audit & Client Hardening)
+
+### Fixed
+- **a2a-spawn: nohup+disown** — Spawned agents now survive parent shell exit using
+  nohup + disown pattern. Eliminates silent agent death on shell exit.
+- **a2a_client_async.py: 4 bugs** — Fixed wait() return type, added missing commits,
+  included pid in list_peers, and resolved async client code review findings.
+- **a2a_client.js: duplicate methods** — Removed duplicate definitions of status(),
+  list(), init_project(), project_info(), and wait().
+- **a2a_client.go: Wait()/List()/Status() API** — Changed Wait() to return bool,
+  added List() alias and Status() method for API consistency.
+
+### Added
+- **src/lib.rs: project_info()** — Added missing project_info() method to Rust Client impl.
+- **Go CLI binary rebuild** — Rebuilt companion binary after Wait()/List()/Status() API changes.
+
+### Documentation
+- **Doc audit fix** — Corrected stale docs found by a2a doc audit: Go binary size,
+  Node.js sqlite backend, kit prompt iteration cap, duplicate AGENTS.md pitfalls,
+  and CHANGELOG duplicate entries.
+
 ## [1.3.3] — 2026-05-25 (Multi-Client Audit & Fixes)
 
 ### Added
@@ -354,12 +375,5 @@ See [CHANGELOG.md](CHANGELOG.md) for release history and roadmap.
 
 ---
 
-**Last Updated**: 2026-05-25
-
-## [1.3.3] — 2026-05-25 (Doc Maintenance)
-
-### Documentation
-- README: fixed 3 stale test counts (unit: 73→157, integration: 67→105)
-- AGENTS.md: added Monitoring & Debugging section and team-coordination protocol details
-- CHANGELOG: maintenance session entry (this entry)
+**Last Updated**: 2026-05-26
 

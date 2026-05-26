@@ -62,7 +62,7 @@ orchestrator, no central chain of command.
 
 **Multi-language clients** (v1.2+):
 - `a2a_client.go` — Go client library
-- `cmd/a2a/main.go` — Go CLI binary (companion, ~1.3MB, zero deps)
+- `cmd/a2a/main.go` — Go CLI binary (companion, ~3.6MB ELF, zero deps)
 - `a2a_client.js` — Node.js client
 - `src/lib.rs` — Rust client (Cargo workspace)
 
@@ -211,7 +211,7 @@ is the agents' rulebook. When changing it:
 
 - Keep it terse. Agents pay per-token.
 - The locator snippet at the top must work whether or not `a2a` is on PATH.
-- Always include the **hard cap** (5-8 iterations + "3 empty recvs = done").
+- Always include the **hard cap** (8 loop iterations + "3 empty recvs = done").
   Without it, idle agents loop forever and burn budget.
 
 ## Monitoring & Debugging
@@ -390,7 +390,7 @@ Refreshes every 2 seconds in live mode.
 ### Node.js
 
 - CommonJS (`require()`) — not ESM, for maximum compatibility with LTS Node.
-- Use `better-sqlite3` for synchronous operations (simpler than async for
+- Use `node:sqlite` (built-in, Node 22+) for synchronous operations (simpler than async for
   single-threaded agents).
 - Every public method must exist: `register()`, `unregister()`, `send()`,
   `recv()`, `peek()`, `list()`, `status()`, `stats()`, `search()`, `thread()`.
