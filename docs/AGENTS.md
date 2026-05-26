@@ -11,7 +11,7 @@ matches what you write.
 | Doc file | Owned by | Keep in sync with |
 |----------|----------|-------------------|
 | `SKILL.md` | `/a2a` skill spec | kit prompt in `a2a-spawn`, `smoke_test.sh` |
-| `CLIENT_API.md` | `a2a_client.py` | public method signatures |
+| `CLIENT_API.md` | `a2a_client.py`, `a2a_client_async.py` | public method signatures (sync + async section) |
 | `QUICKSTART.md` | install + first run | `install.sh`, `a2a --help` output |
 | `INSTALLATION.md` | `install.sh` | path resolution in `a2a` wrapper |
 | `AUDIT.md` | `a2a_audit.py` | `AuditClient` methods |
