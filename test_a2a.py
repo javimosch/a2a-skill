@@ -2679,7 +2679,10 @@ class TestWALInvariant(unittest.TestCase):
     def _open_db(self, project: str) -> sqlite3.Connection:
         """Open the project database directly."""
         db_path = Path(self.test_home) / ".a2a" / project / "database.db"
+        db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.row_factory = sqlite3.Row
         return conn
 

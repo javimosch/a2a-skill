@@ -72,6 +72,8 @@ class TestA2ARestServer(unittest.TestCase):
         db_dir.mkdir(parents=True, exist_ok=True)
         cls.db_path = db_dir / "database.db"
         conn = sqlite3.connect(str(cls.db_path))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.executescript(DB_SCHEMA)
         ts = time.time()
         conn.execute(

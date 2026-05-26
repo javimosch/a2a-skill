@@ -103,8 +103,11 @@ class ComplianceArchivalAgent:
 
         # Query database directly for date range (FTS doesn't support dates well)
         db_path = Path.home() / ".a2a" / self.project / "database.db"
-        conn = sqlite3.connect(str(db_path))
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(db_path), timeout=10.0)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
 
         try:
             start_ts = start_date.timestamp()
@@ -199,7 +202,11 @@ class ComplianceArchivalAgent:
         print(f"[{self.agent_id}] Cutoff time: {datetime.fromtimestamp(cutoff_time)}")
 
         db_path = Path.home() / ".a2a" / self.project / "database.db"
-        conn = sqlite3.connect(str(db_path))
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(db_path), timeout=10.0)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
 
         try:
             # Count messages to archive
@@ -303,7 +310,11 @@ class ComplianceArchivalAgent:
         print(f"[{self.agent_id}] Verifying message database integrity...")
 
         db_path = Path.home() / ".a2a" / self.project / "database.db"
-        conn = sqlite3.connect(str(db_path))
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(db_path), timeout=10.0)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
 
         try:
             # Run integrity check
@@ -341,7 +352,11 @@ class ComplianceArchivalAgent:
     def _get_message_counts(self) -> dict:
         """Get message statistics."""
         db_path = Path.home() / ".a2a" / self.project / "database.db"
-        conn = sqlite3.connect(str(db_path))
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(db_path), timeout=10.0)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
 
         try:
             cursor = conn.execute("SELECT COUNT(*) FROM messages")
@@ -365,7 +380,11 @@ class ComplianceArchivalAgent:
     def _count_archived_messages(self) -> int:
         """Count archived messages (for report)."""
         db_path = Path.home() / ".a2a" / self.project / "database.db"
-        conn = sqlite3.connect(str(db_path))
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(db_path), timeout=10.0)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
 
         try:
             # Count messages older than 90 days

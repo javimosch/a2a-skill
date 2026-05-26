@@ -24,6 +24,8 @@ def setup_test_db():
     # Create schema
     db_path = project_dir / "database.db"
     conn = sqlite3.connect(str(db_path))
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
     conn.executescript("""
         CREATE TABLE agents (
             id TEXT PRIMARY KEY,

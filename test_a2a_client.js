@@ -38,6 +38,8 @@ function makeClients(project) {
   const dbPath = path.join(dir, 'database.db');
 
   const db = new DatabaseSync(dbPath);
+  db.exec('PRAGMA journal_mode=WAL');
+  db.exec('PRAGMA busy_timeout=5000');
   db.exec(DB_SCHEMA);
   const now = Date.now() / 1000;
   db.prepare('INSERT OR IGNORE INTO agents VALUES (?,?,?,?,?,?,?,?)').run('alice','tester',null,'node','active',null,now,now);
