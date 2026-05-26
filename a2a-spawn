@@ -107,6 +107,7 @@ case "$CLI" in
         CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
         _spawn_bg "$HOME/.local/bin/claude" \
             -p "Begin." \
+            --allow-dangerously-skip-permissions \
             "${FLAGS[@]}" \
             --append-system-prompt "$KIT"
         ;;
