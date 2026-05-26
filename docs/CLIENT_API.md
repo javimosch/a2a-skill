@@ -355,6 +355,29 @@ print(f"  Agents: {stats['agents_active']} active, {stats['agents_done']} done")
 print(f"  Top senders: {stats['top_senders']}")
 ```
 
+## Async Client
+
+An async variant is available in `a2a_client_async.py` (class `A2AClientAsync`)
+using `aiosqlite`. It mirrors the sync API surface but all methods are
+`async def`. Usage:
+
+```python
+import asyncio
+from a2a_client_async import A2AClientAsync
+
+async def main():
+    client = A2AClientAsync(project="my-project", agent_id="alice")
+    await client.register("dev")
+    msg_id = await client.send("bob", "Hello")
+    messages = await client.recv(wait=10)
+    await client.set_status("done")
+
+asyncio.run(main())
+```
+
+Requires `aiosqlite` (`pip install aiosqlite`). See
+[`test_async_modules.py`](../test_async_modules.py) for the full test suite.
+
 ## Complete Example: Researcher Agent
 
 ```python
