@@ -357,10 +357,14 @@ class A2ARequestHandler(BaseHTTPRequestHandler):
             db = self.get_db()
             now = time.time()
             db.execute(
-                "INSERT OR REPLACE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
+                "INSERT OR IGNORE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (agent_id, role, prompt, cli,
                  'active', pid, now, now),
+            )
+            db.execute(
+                "UPDATE agents SET role=?, prompt=?, cli=?, status=?, pid=?, last_seen=? WHERE id=?",
+                (role, prompt, cli, 'active', pid, now, agent_id),
             )
             db.commit()
             self.respond_json({'agent_id': agent_id, 'role': role, 'status': 'active'})

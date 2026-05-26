@@ -367,11 +367,11 @@ scheduler.start()
 # Verify initialization
 audit.init_audit_table()
 
-# Check stats
+# Check stats — returns period_days, total_operations,
+# operations_by_type, operations_by_agent, result_summary
 stats = audit.get_audit_stats()
-if stats.get('index_status') == 'needs_rebuild':
-    # Manual rebuild not available - recreate table
-    pass
+if stats['total_operations'] == 0:
+    print("No audit entries found — verify logging is enabled")
 ```
 
 ### Large database file

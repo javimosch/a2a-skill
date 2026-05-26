@@ -53,7 +53,7 @@ success = client.register(
     role: str,
     prompt: str = "",
     cli: str = "",
-    pid: int = 0,
+    pid: int | None = None,
     upsert: bool = True
 ) -> bool
 ```

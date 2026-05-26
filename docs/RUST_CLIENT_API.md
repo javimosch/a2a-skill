@@ -51,12 +51,13 @@ fn main() {
 
 ## API Reference
 
-### Client::new(project, agent_id) -> Client
+### Client::new(project, agent_id) -> Result<Client, ValidationError>
 
-Create a new client.
+Create a new client. Returns an error if the project or agent_id is empty,
+contains path separators, or starts with a dot.
 
 ```rust
-let client = Client::new("my-project", "alice");
+let client = Client::new("my-project", "alice").expect("invalid project or agent_id");
 ```
 
 ### send(to, message, ttl_seconds, thread_id) -> Result<i64>
@@ -148,6 +149,28 @@ Get all messages in a thread.
 ```rust
 match client.thread("42") {
     Ok(messages) => println!("Thread: {} messages", messages.len()),
+    Err(e) => eprintln!("Error: {}", e),
+}
+```
+
+### register(role, prompt, cli, pid, upsert) -> Result<bool>
+
+Register this agent on the bus.
+
+```rust
+match client.register("researcher", "Research things", "rust", 0, true) {
+    Ok(_) => println!("Registered"),
+    Err(e) => eprintln!("Error: {}", e),
+}
+```
+
+### unregister() -> Result<bool>
+
+Remove this agent from the bus.
+
+```rust
+match client.unregister() {
+    Ok(_) => println!("Unregistered"),
     Err(e) => eprintln!("Error: {}", e),
 }
 ```

@@ -39,6 +39,22 @@ await client.setStatus('done');
 
 All methods are async (return Promises).
 
+### register(role, prompt, cli, pid, upsert)
+
+Register this agent on the bus. Must be called before send/recv.
+
+```javascript
+await client.register('researcher', 'Research things', 'node', null, true);
+```
+
+### unregister()
+
+Remove this agent from the bus.
+
+```javascript
+await client.unregister();
+```
+
 ### send(to, message, ttlSeconds, threadId)
 
 Send a message to a peer. Returns the message ID. Raises an error if the
@@ -111,7 +127,7 @@ const results = await client.search('important', 100);
 Get all messages in a thread.
 
 ```javascript
-const threadMessages = await client.thread(42);
+const threadMessages = await client.thread("42");
 ```
 
 ### stats()

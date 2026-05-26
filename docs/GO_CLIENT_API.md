@@ -192,14 +192,15 @@ schemas that lack the `ttl_seconds` column.
 client.InitProject()
 ```
 
-### Register(role, prompt, cli string, pid int, upsert bool) error
+### Register(role, prompt, cli string, pid *int, upsert bool) error
 
 Register this agent on the bus. If `upsert` is true, updates existing
-registration instead of failing.
+registration instead of failing. The `pid` parameter is a pointer to an
+int — pass `nil` to omit the process ID, or `&pidVar` for a specific PID.
 
 ```go
 client.AgentID = "alice"
-client.Register("planner", "Plan things", "claude", 0, true)
+client.Register("planner", "Plan things", "claude", nil, true)
 ```
 
 ### Unregister() error

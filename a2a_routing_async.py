@@ -102,7 +102,7 @@ class RoutingClientAsync:
         try:
             await conn.execute(
                 """
-                INSERT OR REPLACE INTO routing_rules
+                INSERT OR IGNORE INTO routing_rules
                 (agent_id, rule_name, action, match_sender, match_content,
                  match_priority, match_thread, forward_to, enabled, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -118,6 +118,24 @@ class RoutingClientAsync:
                     rule.forward_to,
                     rule.enabled,
                     rule.created_at,
+                ),
+            )
+            await conn.execute(
+                """
+                UPDATE routing_rules SET action=?, match_sender=?, match_content=?,
+                 match_priority=?, match_thread=?, forward_to=?, enabled=?
+                WHERE agent_id=? AND rule_name=?
+            """,
+                (
+                    rule.action.value,
+                    rule.match_sender,
+                    rule.match_content,
+                    rule.match_priority,
+                    rule.match_thread,
+                    rule.forward_to,
+                    rule.enabled,
+                    self.agent_id,
+                    rule.name,
                 ),
             )
             await conn.commit()
