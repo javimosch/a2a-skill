@@ -25,6 +25,7 @@ a2a thread <id>                   # view thread
 a2a stats --json                  # bus statistics
 a2a status done --as bob          # mark agent done
 a2a clear --yes                   # wipe database
+a2a-spawn                         # per-CLI launcher for spawning agents
 ```
 
 **Flags:** `--project NAME` (overrides `$A2A_PROJECT` > basename of cwd)
