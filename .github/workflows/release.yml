@@ -85,7 +85,7 @@ jobs:
 
             Download the binary for your platform:
             ```
-            curl -sL "https://github.com/jarancibia/a2a-skill/releases/download/${{ github.ref_name }}/a2a-{os}-{arch}" -o /tmp/a2a
+            curl -sL "https://github.com/javimosch/a2a-skill/releases/download/${{ github.ref_name }}/a2a-{os}-{arch}" -o /tmp/a2a
             chmod +x /tmp/a2a
             /tmp/a2a version
             ```

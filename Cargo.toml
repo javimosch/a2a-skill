@@ -4,7 +4,7 @@ version = "1.2.0"
 edition = "2021"
 authors = ["a2a team"]
 description = "Agent-to-Agent (a2a) messaging library for Rust"
-repository = "https://github.com/anthropics/a2a"
+repository = "https://github.com/javimosch/a2a-skill"
 license = "MIT"
 
 [dependencies]

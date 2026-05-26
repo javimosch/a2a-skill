@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jarancibia/a2a-skill"
+	"github.com/javimosch/a2a-skill"
 )
 
 const Version = "1.0.0"

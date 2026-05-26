@@ -1,4 +1,4 @@
-module github.com/jarancibia/a2a-skill
+module github.com/javimosch/a2a-skill
 
 go 1.22
 
