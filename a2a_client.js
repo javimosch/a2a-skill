@@ -387,6 +387,68 @@ class A2AClient {
     db.close();
     return true;
   }
+
+  /**
+   * Initialize the project database, creating tables if they don't exist.
+   * Safe to call multiple times — uses CREATE TABLE IF NOT EXISTS.
+   */
+  initProject() {
+    const db = this._connect();
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS agents (
+        id          TEXT PRIMARY KEY,
+        role        TEXT,
+        prompt      TEXT,
+        cli         TEXT,
+        status      TEXT NOT NULL DEFAULT 'active',
+        pid         INTEGER,
+        created_at  REAL NOT NULL,
+        last_seen   REAL NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS messages (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender      TEXT NOT NULL,
+        recipient   TEXT,
+        body        TEXT NOT NULL,
+        thread_id   TEXT,
+        ttl_seconds INTEGER,
+        created_at  REAL NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS reads (
+        agent_id    TEXT NOT NULL,
+        message_id  INTEGER NOT NULL,
+        read_at     REAL NOT NULL,
+        PRIMARY KEY (agent_id, message_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
+      CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
+      CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
+    `);
+    db.close();
+  }
+
+  /**
+   * Get resolved project information.
+   * @returns {Object} { project, db, exists }
+   */
+  projectInfo() {
+    return {
+      project: this.project,
+      db: this.dbPath,
+      exists: require('fs').existsSync(this.dbPath),
+    };
+  }
+
+  /**
+   * Delete the project database and all WAL-related files.
+   * Warning: This permanently deletes all messages and agent registrations.
+   */
+  clear() {
+    for (const suffix of ['', '-wal', '-shm']) {
+      const p = this.dbPath + suffix;
+      try { require('fs').unlinkSync(p); } catch (e) { /* ignore */ }
+    }
+  }
 }
 
 module.exports = A2AClient;
