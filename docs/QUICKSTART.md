@@ -318,7 +318,7 @@ client.send("all", "Team message!")
 client.set_status("done")
 ```
 
-See [docs/CLIENT_API.md](docs/CLIENT_API.md) for full documentation.
+See [CLIENT_API.md](CLIENT_API.md) for full documentation.
 
 ## Try Example Agents
 
@@ -375,9 +375,9 @@ sqlite> SELECT sender, body FROM messages LIMIT 5;
 
 ## What's Next?
 
-1. **Write your own agent** — See the [examples/README.md](examples/README.md) for pattern guides and the [CLIENT_API.md](CLIENT_API.md) for Python client reference.
+1. **Write your own agent** — See the [examples/README.md](../examples/README.md) for pattern guides and the [CLIENT_API.md](CLIENT_API.md) for Python client reference.
 2. **Run example agents** — Try `./smoke_test_examples.sh` to see patterns in action.
-3. **Use the Python client** — See [docs/CLIENT_API.md](docs/CLIENT_API.md) for direct API.
+3. **Use the Python client** — See [CLIENT_API.md](CLIENT_API.md) for direct API.
 4. **Use in Claude Code** — Type `/a2a` to spawn peer teams from Claude Code.
 5. **Cross-CLI collaboration** — Mix claude, opencode, pi agents on the same bus.
 
@@ -451,7 +451,7 @@ a2a recv --as alice --wait 5
 
 - **[README.md](../README.md)** — Full project overview
 - **[`.agents/skills/a2a/SKILL.md`](../.agents/skills/a2a/SKILL.md)** — Technical deep dive (architecture, schema, protocol, spawn flow)
-- **[CLIENT_API.md](docs/CLIENT_API.md)** — Python client library reference
+- **[CLIENT_API.md](CLIENT_API.md)** — Python client library reference
 - **[examples/](../examples/)** — Agent pattern examples (researcher, reviewer, coordinator)
 - **[AGENTS.md](../AGENTS.md)** — Guide for extending a2a
 - **[test_a2a.py](../test_a2a.py)** — Unit tests with coverage of all features

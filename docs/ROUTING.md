@@ -443,7 +443,7 @@ print(f"Routing took {elapsed:.3f}s")
 ## See Also
 
 - [README.md](../README.md) — Project overview
-- [CLIENT_API.md](docs/CLIENT_API.md) — Base client reference
-- [PRIORITY.md](docs/PRIORITY.md) — Message prioritization
-- [AUDIT.md](docs/AUDIT.md) — Audit logging
+- [CLIENT_API.md](CLIENT_API.md) — Base client reference
+- [PRIORITY.md](PRIORITY.md) — Message prioritization
+- [AUDIT.md](AUDIT.md) — Audit logging
 - [CHANGELOG.md](CHANGELOG.md) — Release history and roadmap

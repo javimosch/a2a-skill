@@ -257,5 +257,5 @@ pip install cryptography
 ## See Also
 
 - [README.md](../README.md) — Project overview
-- [CLIENT_API.md](docs/CLIENT_API.md) — Python client
+- [CLIENT_API.md](CLIENT_API.md) — Python client
 - [CHANGELOG.md](CHANGELOG.md) — Release history and roadmap

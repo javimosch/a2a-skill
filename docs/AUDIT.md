@@ -395,7 +395,7 @@ audit.cleanup_old_logs(days=1)
 ## See Also
 
 - [README.md](../README.md) — Project overview
-- [CLIENT_API.md](docs/CLIENT_API.md) — Python client reference
-- [ENCRYPTION.md](docs/ENCRYPTION.md) — End-to-end encryption
-- [FTS_SEARCH.md](docs/FTS_SEARCH.md) — Full-text search
+- [CLIENT_API.md](CLIENT_API.md) — Python client reference
+- [ENCRYPTION.md](ENCRYPTION.md) — End-to-end encryption
+- [FTS_SEARCH.md](FTS_SEARCH.md) — Full-text search
 - [CHANGELOG.md](CHANGELOG.md) — Release history and roadmap

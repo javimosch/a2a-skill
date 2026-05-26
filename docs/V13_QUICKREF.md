@@ -364,9 +364,9 @@ python3 -m unittest test_v13_features.TestMessageRouting
 
 ## See Also
 
-- [ENCRYPTION.md](docs/ENCRYPTION.md) — Full encryption guide
-- [FTS_SEARCH.md](docs/FTS_SEARCH.md) — Search API reference
-- [AUDIT.md](docs/AUDIT.md) — Audit logging details
-- [PRIORITY.md](docs/PRIORITY.md) — Priority queue patterns
-- [ROUTING.md](docs/ROUTING.md) — Routing rules and examples
+- [ENCRYPTION.md](ENCRYPTION.md) — Full encryption guide
+- [FTS_SEARCH.md](FTS_SEARCH.md) — Search API reference
+- [AUDIT.md](AUDIT.md) — Audit logging details
+- [PRIORITY.md](PRIORITY.md) — Priority queue patterns
+- [ROUTING.md](ROUTING.md) — Routing rules and examples
 - [test_v13_features.py](test_v13_features.py) — Comprehensive test suite

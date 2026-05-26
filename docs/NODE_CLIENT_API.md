@@ -174,5 +174,5 @@ Direct SQLite connections (no subprocess overhead):
 
 ## See Also
 
-- [CLIENT_API.md](docs/CLIENT_API.md) — Python client
-- [ADVANCED_PATTERNS.md](docs/ADVANCED_PATTERNS.md) — Patterns and optimization
+- [CLIENT_API.md](CLIENT_API.md) — Python client
+- [ADVANCED_PATTERNS.md](ADVANCED_PATTERNS.md) — Patterns and optimization

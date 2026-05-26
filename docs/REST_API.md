@@ -271,5 +271,5 @@ WantedBy=multi-user.target
 ## See Also
 
 - [README.md](../README.md) — Project overview
-- [CLIENT_API.md](docs/CLIENT_API.md) — Python client
-- [NODE_CLIENT_API.md](docs/NODE_CLIENT_API.md) — Node.js client
+- [CLIENT_API.md](CLIENT_API.md) — Python client
+- [NODE_CLIENT_API.md](NODE_CLIENT_API.md) — Node.js client

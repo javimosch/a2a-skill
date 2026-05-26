@@ -297,7 +297,7 @@ WantedBy=multi-user.target
 
 ## See Also
 
-- [CLIENT_API.md](docs/CLIENT_API.md) — Python client
-- [NODE_CLIENT_API.md](docs/NODE_CLIENT_API.md) — Node.js client
-- [GO_CLIENT_API.md](docs/GO_CLIENT_API.md) — Go client
-- [REST_API.md](docs/REST_API.md) — HTTP interface
+- [CLIENT_API.md](CLIENT_API.md) — Python client
+- [NODE_CLIENT_API.md](NODE_CLIENT_API.md) — Node.js client
+- [GO_CLIENT_API.md](GO_CLIENT_API.md) — Go client
+- [REST_API.md](REST_API.md) — HTTP interface
