@@ -19,7 +19,7 @@ You are here → AGENTS.md (this file)
                      │   └── docs/*.md      — Feature guides, API refs, deployment
                      │
                      ├── examples/AGENTS.md — Example patterns and client choice guide
-                     │   └── examples/*.py  — Runnable agent examples
+                     │   └── examples/*.{py,js,rs}  — Runnable agent examples
                      │
                      ├── completion/AGENTS.md — Shell completion setup and maintenance
                      │   └── completion/a2a.{bash,zsh}
