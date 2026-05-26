@@ -93,7 +93,7 @@ a2a-skill/
 ├── test_server.py       # REST API tests (70 tests)
 ├── test_async_modules.py# async client tests (94 tests)
 ├── test_artifacts_util.py# artifact util tests (84 tests)
-├── test_a2a_client.js   # Node.js client tests (29 tests)
+├── test_a2a_client.js   # Node.js client tests (33 tests)
 ├── stress_test.sh       # 10-agent concurrent stress test
 ├── high_volume_stress_test.sh  # 20-agent, 1000+ message test
 ├── edge_case_test.sh    # edge-case hardening validation
