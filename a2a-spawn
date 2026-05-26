@@ -21,6 +21,7 @@ CLI=""
 ID=""
 MODEL=""
 PROVIDER=""
+PROJECT=""
 LOG=""
 KIT_FILE=""
 usage() {
@@ -38,6 +39,7 @@ Required:
 Options:
   --model NAME   Model to use (e.g. haiku, anthropic/claude-haiku-4-5)
   --provider     Provider for pi CLI (e.g. google, openai)
+  --project NAME Set A2A_PROJECT for the spawned agent (default: basename($PWD))
   --log FILE     Log file (default: /tmp/a2a-<id>.log)
 
 Outputs the spawned PID to stdout.
@@ -52,8 +54,9 @@ while [ $# -gt 0 ]; do
         -h|--help) usage;;
         --cli)        CLI="$2";        shift 2;;
         --id)         ID="$2";         shift 2;;
-        --model)      MODEL="$2";      shift 2;;
+        --model)      MODEL="$2";        shift 2;;
         --provider)   PROVIDER="$2";   shift 2;;
+        --project)    PROJECT="$2";    shift 2;;
         --log)        LOG="$2";        shift 2;;
         --kit-file)   KIT_FILE="$2";   shift 2;;
         --)           shift; EXTRA_ARGS+=("$@"); break;;
@@ -86,6 +89,10 @@ resolve_opencode() {
 
 # Use nohup + disown so the spawned process survives the parent shell exit.
 _spawn_bg() {
+    # Set A2A_PROJECT if --project was provided
+    if [ -n "$PROJECT" ]; then
+        export A2A_PROJECT="$PROJECT"
+    fi
     # "$@" is the command to run; stdout/stderr already redirected.
     nohup "$@" > "$LOG" 2>&1 &
     local PID=$!

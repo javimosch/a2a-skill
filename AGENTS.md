@@ -244,6 +244,7 @@ Agent activity can be monitored live from the bus:
 | claude `-p` mode sandbox blocks `a2a` and other non-project CLIs | Claude Code restricts shell tool access to the project working directory. The `a2a` CLI needs to read/write `~/.a2a/` which is outside the sandbox. Workaround: run reviewer in foreground and pipe findings to a file, then inject into fixer's kit prompt. Set `--allowedTools "Bash(Ls,Read)"` to narrow but not block. |
 | opencode foreground mode works where background fails | When `a2a-spawn` background processes don't persist, run agents sequentially in foreground (`opencode run ...` / `claude -p ...`) instead. The sequential approach is more reliable for cron jobs and CI. |
 | Cross-client API surface drifts apart | When adding a new command to `a2a.py`, update ALL 5 clients (py sync, py async, Go, JS, Rust) in the same PR. Run all test suites before committing. |
+| `a2a-spawn --project` unknown arg (pre-v1.3.6) | `a2a-spawn` did not accept `--project`. Pass `A2A_PROJECT=<name>` in the calling shell before `a2a-spawn`, or upgrade to v1.3.6+ where `--project NAME` sets `A2A_PROJECT` for the spawned agent. |
 
 ## Running the tests
 
