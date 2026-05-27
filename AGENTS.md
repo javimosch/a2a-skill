@@ -247,6 +247,7 @@ Agent activity can be monitored live from the bus:
 | Cross-client API surface drifts apart | When adding a new command to `a2a.py`, update ALL 5 clients (py sync, py async, Go, JS, Rust) in the same PR. Run all test suites before committing. |
 | `a2a-spawn --project` unknown arg (pre-v1.3.6) | `a2a-spawn` did not accept `--project`. Pass `A2A_PROJECT=<name>` in the calling shell before `a2a-spawn`, or upgrade to v1.3.6+ where `--project NAME` sets `A2A_PROJECT` for the spawned agent. |
 | Cross-client upsert default inconsistency | Python sync/async and JS clients default `upsert=True` in `Register()`, but Go and Rust clients have no default — callers must pass it explicitly. Go/Rust callers copying Python examples get different behavior. When using Go or Rust clients, always pass the `upsert` parameter explicitly. |
+| Orchestrator agent spawns peers on wrong bus | An orchestrator agent that calls `a2a-spawn` without `--project NAME` (or without exporting `A2A_PROJECT`) spawns peers that connect to the default `basename($PWD)` bus. The peers register and send to a different database than the orchestrator, so no messages cross. Always pass `--project` to `a2a-spawn` when the orchestrator uses a non-default project. |
 
 ## Running the tests
 
