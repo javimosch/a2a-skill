@@ -103,6 +103,9 @@ a2a-skill/
 ├── build.sh              Go build script
 ├── Makefile              Go build/test/cover targets
 ├── smoke_test_go.sh      Go CLI smoke test (30 tests)
+├── smoke_test.sh          Python CLI smoke test (2 claude haiku peers)
+├── smoke_test_multi.sh    Multi-CLI smoke test (3 peers: claude+opencode+pi)
+├── smoke_test_examples.sh Example agent patterns smoke test
 ├── verify_json_parity.sh Go vs Python JSON cross-verify
 ├── a2a_client.js         Node.js client
 ├── test_a2a_client.js    Node.js client tests (33)
