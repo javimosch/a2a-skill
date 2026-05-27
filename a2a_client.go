@@ -194,7 +194,7 @@ type RecvOpts struct {
 	Since *float64
 }
 
-// Recv receives messages with full options. Calls CleanupExpired and Touch at start.
+// Recv receives messages with full options. Calls CleanupExpired and Touch on each poll tick.
 func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 	if opts.Limit < 0 {
 		return nil, fmt.Errorf("limit must be a non-negative integer")
@@ -202,9 +202,6 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 	if opts.Wait < 0 {
 		return nil, fmt.Errorf("wait must be a non-negative number of seconds")
 	}
-	c.CleanupExpired()
-	c.Touch()
-
 	db, err := c.connect()
 	if err != nil {
 		return nil, err
@@ -215,6 +212,8 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 	pollInterval := 100 * time.Millisecond
 
 	for {
+		c.CleanupExpired()
+		c.Touch()
 		query := "SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE (recipient = ? OR recipient IS NULL)"
 		args := []interface{}{c.AgentID}
 

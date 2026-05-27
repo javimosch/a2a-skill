@@ -225,8 +225,8 @@ def cmd_register(args) -> None:
             conn.close()
             die(f"agent '{args.id}' already registered (use --upsert to update)")
         conn.execute(
-            "UPDATE agents SET role=COALESCE(?,role), prompt=COALESCE(?,prompt), "
-            "cli=COALESCE(?,cli), pid=COALESCE(?,pid), status='active', last_seen=? "
+            "UPDATE agents SET role=COALESCE(NULLIF(?,\"\"),role), prompt=COALESCE(NULLIF(?,\"\"),prompt), "
+            "cli=COALESCE(NULLIF(?,\"\"),cli), pid=COALESCE(?,pid), status='active', last_seen=? "
             "WHERE id=?",
             (args.role, args.prompt, args.cli, args.pid, ts, args.id),
         )
@@ -654,12 +654,16 @@ def cmd_wait(args) -> None:
     if args.timeout < 0:
         die("--timeout must be a non-negative number of seconds")
     _validate_finite_float(args.timeout, "timeout")
+    since = getattr(args, "since", None)
+    if since is not None and since < 0:
+        die("--since must be a non-negative timestamp")
+    _validate_finite_float(since, "since")
     agent, conn = _resolve_agent(args)
     deadline = now() + args.timeout
     while True:
         cleanup_expired(conn)
         conn.commit()
-        rows = _fetch_messages(conn, agent, unread_only=True, since=None,
+        rows = _fetch_messages(conn, agent, unread_only=True, since=since,
                                limit=None, mark_read=False)
         if len(rows) >= args.count:
             conn.close()
@@ -778,6 +782,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--as", dest="as_", required=True)
     s.add_argument("--count", type=int, default=1)
     s.add_argument("--timeout", type=float, default=60)
+    s.add_argument("--since", type=float, help="only count messages after this Unix timestamp")
     s.set_defaults(func=cmd_wait)
 
     s = sub.add_parser("clear", help="delete the project database")
