@@ -2,6 +2,32 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.8] — 2026-05-27 (a2a Peer Session — Validation & Consistency)
+
+### Fixed
+- **Go client: NewClient() returns error** — Changed `NewClient(project, agentID) *Client` to
+  `NewClient(project, agentID) (*Client, error)` with input validation: empty/non-printable
+  project/agentID, path separators in project name, and agentID length limits are now caught
+  early instead of producing opaque SQLite errors.
+- **Go client: Send() validates body before DB connect** — Moved the `MaxBodyLength` check
+  before `c.connect()` to fail fast without opening a connection.
+- **Go client: Peek() runs TTL cleanup on existing connection** — Inlined the DELETE query
+  instead of calling `CleanupExpired()` which opened a separate connection.
+- **Go client: Recv() inlines TTL cleanup and Touch on the poll connection** — Removed
+  separate `CleanupExpired()` and `Touch()` calls that created extra connections; now runs
+  both operations on the existing poll-loop connection.
+- **Go client: Register() upsert uses INSERT OR IGNORE + UPDATE** — Refactored to match the
+  cross-client pattern: always INSERT OR IGNORE, then UPDATE with COALESCE(NULLIF(...)).
+- **Rust client: recv() connection reuse** — Moved `self.connect()` outside the poll loop
+  so only one connection is opened per `recv()` call instead of one per poll iteration.
+- **Rust client: recv() adds last_seen update** — Added `UPDATE agents SET last_seen=?`
+  inside the recv loop (matching Go/Python Touch behavior).
+- **Rust client: add touch() method** — New public `touch()` method matching the Python
+  `Touch()` / Go `Touch()` API for updating `last_seen` timestamp.
+
+### Docs
+- **CHANGELOG** — Added v1.3.8 entry.
+
 ## [1.3.7] — 2026-05-27 (a2a Peer Agent Maintenance)
 
 ### Fixed
