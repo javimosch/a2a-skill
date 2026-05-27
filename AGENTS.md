@@ -85,6 +85,7 @@ a2a-skill/
 ├── install.sh
 ├── a2a_client.py         sync Python client (A2AClient)
 ├── a2a_client_async.py   async Python client
+├── a2a_common.py         shared validation constants and helpers
 ├── a2a_audit.py          v1.3: audit logging
 ├── a2a_crypto.py         v1.3: encryption
 ├── a2a_fts.py            v1.3: full-text search
