@@ -573,8 +573,8 @@ impl Client {
     /// count was reached before timeout.
     pub fn wait(&self, count: i64, timeout_secs: f64) -> SqliteResult<bool> {
         let deadline = SystemTime::now() + Duration::from_secs_f64(timeout_secs);
+        let mut remaining = count;
         loop {
-            let remaining = count;
             if remaining <= 0 {
                 return Ok(true);
             }
@@ -582,7 +582,8 @@ impl Client {
                 return Ok(false);
             }
             let msgs = self.recv(1.0, true, false, Some(remaining))?;
-            if !msgs.is_empty() {
+            remaining -= msgs.len() as i64;
+            if remaining <= 0 {
                 return Ok(true);
             }
             thread::sleep(Duration::from_millis(200));

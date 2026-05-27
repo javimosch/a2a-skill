@@ -27,6 +27,7 @@ const (
 	MaxAgentIDLength   = 256
 	MaxThreadIDLength  = 256
 	MaxBodyLength      = 100000
+	MaxRoleLength      = 512
 )
 
 // Client represents an a2a messaging client
@@ -689,8 +690,8 @@ func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) (bool
 	if pid != nil && *pid <= 0 {
 		return false, fmt.Errorf("pid must be a positive integer")
 	}
-	if len(role) > 512 {
-		return false, fmt.Errorf("role too long (%d chars, max 512)", len(role))
+	if len(role) > MaxRoleLength {
+		return false, fmt.Errorf("role too long (%d chars, max %d)", len(role), MaxRoleLength)
 	}
 	if len(cli) > 128 {
 		return false, fmt.Errorf("cli too long (%d chars, max 128)", len(cli))
@@ -713,8 +714,8 @@ func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) (bool
 	if err != nil {
 		if upsert {
 			_, err = db.Exec(
-				`UPDATE agents SET role=COALESCE(?,role), prompt=COALESCE(?,prompt),
-				 cli=COALESCE(?,cli), pid=COALESCE(?,pid), status='active', last_seen=?
+				`UPDATE agents SET role=COALESCE(NULLIF(?,''),role), prompt=COALESCE(NULLIF(?,''),prompt),
+				 cli=COALESCE(NULLIF(?,''),cli), pid=COALESCE(?,pid), status='active', last_seen=?
 				 WHERE id=?`,
 				role, prompt, cli, pid, ts, c.AgentID,
 			)

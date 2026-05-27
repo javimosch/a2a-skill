@@ -89,6 +89,11 @@ class A2AClientAsync:
         conn = await self._connect()
         if not to or not to.strip():
             raise ValueError("recipient must not be empty")
+        # Validate sender is registered
+        cur = await conn.execute("SELECT COUNT(1) FROM agents WHERE id=?", (self.agent_id,))
+        row = await cur.fetchone()
+        if row[0] == 0:
+            raise ValueError(f"unknown sender '{self.agent_id}' — register first")
         if ttl_seconds is not None and ttl_seconds <= 0:
             raise ValueError("ttl_seconds must be a positive number of seconds")
         if ttl_seconds is not None and (math.isnan(ttl_seconds) or math.isinf(ttl_seconds)):
@@ -100,6 +105,11 @@ class A2AClientAsync:
         if len(message) > MAX_BODY_LENGTH:
             raise ValueError(f"message body too long ({len(message)} chars, max {MAX_BODY_LENGTH})")
         recipient = None if to.lower() in ("all", "*", "broadcast") else to
+        if recipient is not None:
+            cur = await conn.execute("SELECT COUNT(1) FROM agents WHERE id=?", (recipient,))
+            row = await cur.fetchone()
+            if row[0] == 0:
+                raise ValueError(f"unknown recipient '{recipient}' — register them first")
         cursor = await conn.execute(
             "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
@@ -146,8 +156,8 @@ class A2AClientAsync:
                 (self.agent_id, role, prompt, cli, "active", pid, now, now),
             )
             await conn.execute(
-                "UPDATE agents SET role=COALESCE(?,role), prompt=COALESCE(?,prompt), "
-                "cli=COALESCE(?,cli), pid=COALESCE(?,pid), status='active', last_seen=? "
+                "UPDATE agents SET role=COALESCE(NULLIF(?,''),role), prompt=COALESCE(NULLIF(?,''),prompt), "
+                "cli=COALESCE(NULLIF(?,''),cli), pid=COALESCE(?,pid), status='active', last_seen=? "
                 "WHERE id=?",
                 (role, prompt, cli, pid, now, self.agent_id),
             )

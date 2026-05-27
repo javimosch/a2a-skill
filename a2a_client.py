@@ -83,6 +83,10 @@ class A2AClient:
         try:
             if not to or not to.strip():
                 raise ValueError("recipient must not be empty")
+            # Validate sender is registered
+            cur = conn.execute("SELECT COUNT(1) FROM agents WHERE id=?", (self.agent_id,))
+            if cur.fetchone()[0] == 0:
+                raise ValueError(f"unknown sender '{self.agent_id}' — register first")
             if ttl_seconds is not None and ttl_seconds <= 0:
                 raise ValueError("ttl_seconds must be a positive number of seconds")
             if ttl_seconds is not None and (math.isnan(ttl_seconds) or math.isinf(ttl_seconds)):
@@ -94,6 +98,10 @@ class A2AClient:
             if len(message) > MAX_BODY_LENGTH:
                 raise ValueError(f"message body too long ({len(message)} chars, max {MAX_BODY_LENGTH})")
             recipient = None if to.lower() in ("all", "*", "broadcast") else to
+            if recipient is not None:
+                cur = conn.execute("SELECT COUNT(1) FROM agents WHERE id=?", (recipient,))
+                if cur.fetchone()[0] == 0:
+                    raise ValueError(f"unknown recipient '{recipient}' — register them first")
             cur = conn.execute(
                 "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
@@ -143,8 +151,8 @@ class A2AClient:
                     (self.agent_id, role, prompt, cli, "active", pid, now, now),
                 )
                 conn.execute(
-                    "UPDATE agents SET role=COALESCE(?,role), prompt=COALESCE(?,prompt), "
-                    "cli=COALESCE(?,cli), pid=COALESCE(?,pid), status='active', last_seen=? "
+                    "UPDATE agents SET role=COALESCE(NULLIF(?,''),role), prompt=COALESCE(NULLIF(?,''),prompt), "
+                    "cli=COALESCE(NULLIF(?,''),cli), pid=COALESCE(?,pid), status='active', last_seen=? "
                     "WHERE id=?",
                     (role, prompt, cli, pid, now, self.agent_id),
                 )

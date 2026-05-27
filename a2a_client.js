@@ -15,6 +15,7 @@ const fs = require('fs');
 const _MAX_BODY_LENGTH = 100_000;
 const _MAX_THREAD_ID_LENGTH = 256;
 const _MAX_AGENT_ID_LENGTH = 256;
+const _MAX_ROLE_LENGTH = 512;
 
 class A2AClient {
   /**
@@ -384,8 +385,8 @@ class A2AClient {
     if (pid !== null && pid !== undefined && (!Number.isInteger(pid) || pid <= 0)) {
       throw new Error('pid must be a positive integer');
     }
-    if (typeof role === 'string' && role.length > _MAX_AGENT_ID_LENGTH) {
-      throw new Error(`role too long (${role.length} chars, max ${_MAX_AGENT_ID_LENGTH})`);
+    if (typeof role === 'string' && role.length > _MAX_ROLE_LENGTH) {
+      throw new Error(`role too long (${role.length} chars, max ${_MAX_ROLE_LENGTH})`);
     }
     if (typeof cli === 'string' && cli.length > 128) {
       throw new Error(`cli too long (${cli.length} chars, max 128)`);
@@ -400,7 +401,7 @@ class A2AClient {
         'INSERT OR IGNORE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
       ).run(this.agentId, role, prompt, cli, 'active', pid, now, now);
       db.prepare(
-        "UPDATE agents SET role=COALESCE(?,role), prompt=COALESCE(?,prompt), cli=COALESCE(?,cli), pid=COALESCE(?,pid), status='active', last_seen=? WHERE id=?"
+        "UPDATE agents SET role=COALESCE(NULLIF(?,''),role), prompt=COALESCE(NULLIF(?,''),prompt), cli=COALESCE(NULLIF(?,''),cli), pid=COALESCE(?,pid), status='active', last_seen=? WHERE id=?"
       ).run(role, prompt, cli, pid, now, this.agentId);
     } else {
       db.prepare(
