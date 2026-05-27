@@ -41,6 +41,11 @@ a2a-skill/
 ├── a2a_client_async.py  # Python async client (asyncio-based, high concurrency)
 ├── a2a_git_aware.py     # Git-aware features (work-collision prevention)
 ├── a2a_client.go        # Go client library (direct DB access)
+├── a2a_client_test.go   # Go client tests (55 tests)
+├── go.mod               # Go module definition
+├── go.sum               # Go module checksums
+├── Makefile             # Go build/test/cover targets
+├── build.sh             # Go binary build script
 ├── a2a_client.js        # Node.js client library (async/Promise)
 ├── src/lib.rs           # Rust client library (async, idiomatic)
 ├── a2a_server.py        # REST API server (HTTP interface)
@@ -84,7 +89,7 @@ a2a-skill/
 🔐 v1.3 Quick Reference
 ├── docs/V13_QUICKREF.md      # v1.3 quick reference
 │
-🧪 Tests & Benchmarks
+🧪 Tests & Benchmarks (902+ total: 800 Python + 55 Go + 33 JS + 14 Rust)
 ├── test_a2a.py          # unit tests (157 tests)
 ├── test_a2a_client.py   # Python client tests (85 tests)
 ├── test_integration.py  # integration tests (105 tests)
@@ -101,6 +106,7 @@ a2a-skill/
 ├── benchmark.py         # latency, throughput, TTL benchmarks
 ├── dashboard.py         # real-time bus visualization
 ├── verify_all.sh        # comprehensive test suite runner
+├── verify_json_parity.sh  # Go vs Python JSON output cross-verify
 
 🔨 Tools & Examples
 ├── examples/

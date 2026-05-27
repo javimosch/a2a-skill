@@ -2,6 +2,13 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.10] — 2026-05-27 (Hourly Maintenance — Doc Audit & Repo Housekeeping)
+
+### Docs
+- **README.md** — Added missing Go build files to project tree (`go.mod`, `go.sum`, `Makefile`, `build.sh`, `a2a_client_test.go`).
+- **README.md** — Added `verify_json_parity.sh` to Tests section.
+- **README.md** — Added total test suite count (902+: 800 Python + 55 Go + 33 JS + 14 Rust).
+
 ## [1.3.9] — 2026-05-27 (a2a Spawn Shell Quoting Fix)
 
 ### Fixed
