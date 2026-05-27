@@ -85,6 +85,8 @@ a2a-skill/
 ├── install.sh
 ├── a2a_client.py         sync Python client (A2AClient)
 ├── a2a_client_async.py   async Python client
+├── a2a_client.pyi        Python type stubs (sync)
+├── a2a_client_async.pyi  Python type stubs (async)
 ├── a2a_common.py         shared validation constants and helpers
 ├── a2a_audit.py          v1.3: audit logging
 ├── a2a_crypto.py         v1.3: encryption
@@ -95,6 +97,8 @@ a2a-skill/
 ├── a2a_routing_async.py  v1.3: routing rules (async)
 ├── a2a_git_aware.py      v1.3: git-aware bus queries
 ├── a2a_server.py         REST API server
+├── Dockerfile.multi      Multi-stage Docker build
+├── docker-compose.yml    Docker Compose deployment
 ├── a2a_client.go         Go client library
 ├── a2a_client_test.go    Go library tests (55)
 ├── go.mod                Go module (companion binary)
@@ -110,6 +114,8 @@ a2a-skill/
 ├── a2a_client.js         Node.js client
 ├── test_a2a_client.js    Node.js client tests (33)
 ├── src/lib.rs            Rust client (14 tests)
+├── Cargo.toml            Rust workspace configuration
+├── Cargo.lock
 ├── test_a2a.py           unit tests (157)
 ├── test_a2a_client.py    Python client tests (85)
 ├── test_integration.py   integration tests (105)
@@ -120,6 +126,14 @@ a2a-skill/
 ├── test_artifacts_util.py artifact build util tests (84)     ← 902 tests total (800 Python + 55 Go + 14 Rust + 33 JS)
 ├── benchmark.py
 ├── dashboard.py
+├── WEB_UI_README.md      Web UI documentation
+├── server.js             Web UI server
+├── public/               Web UI static assets
+├── edge_case_test.sh     Edge-case hardening tests
+├── perf_comparison_test.py CLI vs SDK performance comparison
+├── stress_test.sh        10-agent concurrent stress test
+├── high_volume_stress_test.sh 20-agent, 1000+ message test
+├── verify_all.sh         Complete test suite runner
 ├── examples/             AGENTS.md documents patterns
 ├── completion/           AGENTS.md documents shell completions
 ├── docs/                 AGENTS.md documents doc ownership
