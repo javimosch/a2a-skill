@@ -50,6 +50,14 @@ class RoutingClientAsync:
         await conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
+    async def _cleanup_expired(self, conn: "aiosqlite.Connection") -> int:
+        """Delete messages past their TTL. Return count deleted."""
+        cursor = await conn.execute(
+            "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?",
+            (time.time(),),
+        )
+        return cursor.rowcount
+
     async def init_routing_table(self) -> bool:
         """Initialize routing rules table (async).
 
@@ -295,6 +303,8 @@ class RoutingClientAsync:
         conn = await self._connect()
         try:
             while True:
+                if await self._cleanup_expired(conn):
+                    await conn.commit()
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
                     "m.priority, m.created_at FROM messages m "

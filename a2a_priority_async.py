@@ -53,6 +53,14 @@ class PriorityClientAsync:
         await conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
+    async def _cleanup_expired(self, conn: "aiosqlite.Connection") -> int:
+        """Delete messages past their TTL. Return count deleted."""
+        cursor = await conn.execute(
+            "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?",
+            (time.time(),),
+        )
+        return cursor.rowcount
+
     async def init_priority_table(self) -> bool:
         """Add priority column to messages table if not exists.
 
@@ -151,6 +159,8 @@ class PriorityClientAsync:
             poll_interval = 0.1
 
             while True:
+                if await self._cleanup_expired(conn):
+                    await conn.commit()
                 # Build query
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
@@ -224,6 +234,8 @@ class PriorityClientAsync:
             poll_interval = 0.1
 
             while True:
+                if await self._cleanup_expired(conn):
+                    await conn.commit()
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
                     "m.priority, m.created_at FROM messages m "
@@ -293,6 +305,8 @@ class PriorityClientAsync:
             poll_interval = 0.1
 
             while True:
+                if await self._cleanup_expired(conn):
+                    await conn.commit()
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
                     "m.priority, m.created_at FROM messages m "

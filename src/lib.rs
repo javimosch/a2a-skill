@@ -183,7 +183,7 @@ impl Client {
 
         let recipient = match to.to_lowercase().as_str() {
             "all" | "*" | "broadcast" => None,
-            other => Some(to.to_string()),
+            _ => Some(to.to_string()),
         };
 
         // Validate recipient exists (for non-broadcast)
