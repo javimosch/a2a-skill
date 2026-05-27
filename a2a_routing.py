@@ -9,7 +9,7 @@ forwarding, and delivery based on sender, content, priority, and thread.
 
 import re
 import time
-from typing import Optional, List, Dict, Any, Callable
+from typing import Optional, List, Dict, Any, Callable, Tuple
 from enum import Enum
 
 from a2a_client import A2AClient
@@ -223,7 +223,13 @@ class RoutingClient(A2AClient):
                 ),
             )
             conn.commit()
-            self.rules.append(rule)
+            # Update in-memory list, replacing duplicate if exists
+            for i, r in enumerate(self.rules):
+                if r.name == rule.name:
+                    self.rules[i] = rule
+                    break
+            else:
+                self.rules.append(rule)
             return True
         except Exception as e:
             print(f"Error adding rule: {e}")
@@ -267,6 +273,9 @@ class RoutingClient(A2AClient):
 
             self.rules = rules
             return rules
+        except Exception:
+            self.rules = []
+            return []
         finally:
             conn.close()
 
@@ -290,6 +299,8 @@ class RoutingClient(A2AClient):
                 (self.agent_id, rule_name),
             )
             conn.commit()
+            # Update in-memory list
+            self.get_rules()
             return True
         except Exception as e:
             print(f"Error disabling rule: {e}")
@@ -317,6 +328,8 @@ class RoutingClient(A2AClient):
                 (self.agent_id, rule_name),
             )
             conn.commit()
+            # Update in-memory list
+            self.get_rules()
             return True
         except Exception as e:
             print(f"Error enabling rule: {e}")
@@ -343,6 +356,8 @@ class RoutingClient(A2AClient):
                 (self.agent_id, rule_name),
             )
             conn.commit()
+            # Update in-memory list
+            self.get_rules()
             return True
         except Exception as e:
             print(f"Error deleting rule: {e}")
@@ -435,22 +450,22 @@ class RoutingClient(A2AClient):
                         (
                             self.agent_id,
                             forward_to,
-                            f"[Forwarded] {msg['body']}",
+                            f"[Forwarded] {msg.get('body') or ''}",
                             msg.get("priority", 2),
                             msg.get("thread_id"),
                             time.time(),
                         ),
                     )
 
-            # Handle discards
-            for item in routed.get("discard", []):
-                msg = item["message"]
-                # Mark as read to hide
-                conn.execute(
-                    "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) "
-                    "VALUES (?, ?, ?)",
-                    (self.agent_id, msg["id"], time.time()),
-                )
+            # Mark all processed messages as read to prevent re-processing
+            for category in ("deliver", "forward", "discard", "queue", "escalate"):
+                for item in routed.get(category, []):
+                    msg = item["message"]
+                    conn.execute(
+                        "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) "
+                        "VALUES (?, ?, ?)",
+                        (self.agent_id, msg["id"], time.time()),
+                    )
 
             conn.commit()
             return True
@@ -500,6 +515,8 @@ class RoutingClient(A2AClient):
                 "disabled_rules": total_rules - enabled_rules,
                 "by_action": by_action,
             }
+        except Exception:
+            return {"total_rules": 0, "enabled_rules": 0, "disabled_rules": 0, "by_action": {}}
         finally:
             conn.close()
 
@@ -514,7 +531,7 @@ class SmartRouter:
             client: RoutingClient instance
         """
         self.client = client
-        self.custom_matchers: List[Callable[[Dict], bool]] = []
+        self.custom_matchers: List[Tuple[Callable[[Dict], bool], Callable[[Dict], None]]] = []
         self.handler_map: Dict[str, Callable[[Dict], None]] = {}
 
     def add_custom_matcher(
@@ -545,20 +562,20 @@ class SmartRouter:
         self.handler_map[action] = handler
         return self
 
-    def route_message(self, message: Dict[str, Any]) -> bool:
+    def route_message(self, message: Dict[str, Any]) -> Optional[str]:
         """Route single message with custom logic.
 
         Args:
             message: Message to route
 
         Returns:
-            True if handled
+            Action name string if handled, None if unhandled
         """
         # Try custom matchers first
         for matcher, handler in self.custom_matchers:
             if matcher(message):
                 handler(message)
-                return True
+                return "custom"
 
         # Fall back to rules
         self.client.get_rules()
@@ -567,9 +584,10 @@ class SmartRouter:
                 handler = self.handler_map.get(rule.action.value)
                 if handler:
                     handler(message)
-                return True
+                    return rule.action.value
+                return None
 
-        return False
+        return None
 
     def route_batch(self, messages: List[Dict[str, Any]]) -> Dict[str, int]:
         """Route batch of messages.
@@ -590,9 +608,11 @@ class SmartRouter:
         }
 
         for msg in messages:
-            if self.route_message(msg):
-                # Count the action taken (would need to track in handlers)
-                pass
+            action = self.route_message(msg)
+            if action and action in stats:
+                stats[action] += 1
+            elif action == "custom":
+                pass  # custom matchers don't map to a predefined action
             else:
                 stats["unhandled"] += 1
 
