@@ -2,6 +2,26 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.6] — 2026-05-27 (Peer Review Session Fixes)
+
+### Fixed
+- **All clients: MAX_ROLE_LENGTH, NULLIF upsert, sender/recipient validation** —
+  Code review finding 1-6 applied across Go, JS, Python sync/async, Rust:
+  - Added `MaxRoleLength` / `_MAX_ROLE_LENGTH` (512) constants; replaced hardcoded 512
+  - Wrapped COALESCE with NULLIF(?,'') in upsert to preserve empty fields
+  - Added sender-registered check in Python sync/async send()
+  - Added recipient-existence check in Python sync/async send()
+  - Fixed Rust wait() to decrement `remaining` accumulator instead of resetting
+- **a2a_client_async.py: run_agent()** — Calls `register()` before `set_status("active")`
+  so the status UPDATE targets an existing agent record (finding 7)
+- **src/lib.rs: TTL cleanup** — Uses float `SystemTime` parameter instead of SQLite
+  `strftime('%s','now')` for sub-second precision matching Go/Python (finding 8)
+- **a2a_client_async.py: recv() limit type** — Changed `limit: Optional[int] = None` to
+  `limit: int = 0` to match sync client API (finding 9)
+
+### Docs
+- **AGENTS.md** — Added orchestrator-project-mismatch pitfall to Common pitfalls table
+
 ## [1.3.5] — 2026-05-26 (WAL Completeness)
 
 ### Fixed
