@@ -239,9 +239,9 @@ impl Client {
             None
         };
 
-        loop {
-            let conn = self.connect()?;
+        let conn = self.connect()?;
 
+        loop {
             // Clean up expired TTL messages using float epoch (matches Go/Python)
             let now = SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
@@ -251,6 +251,12 @@ impl Client {
                 "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?",
                 params![now],
             )?;
+
+            // Update last_seen
+            let _ = conn.execute(
+                "UPDATE agents SET last_seen = ?1 WHERE id = ?2",
+                params![now, &self.agent_id],
+            );
 
             let mut params: Vec<&dyn rusqlite::ToSql> = vec![&self.agent_id];
 
@@ -691,6 +697,16 @@ impl Client {
             };
             let _ = std::fs::remove_file(&actual);
         }
+        Ok(())
+    }
+
+    /// Update last_seen timestamp for this agent.
+    pub fn touch(&self) -> SqliteResult<()> {
+        let conn = self.connect()?;
+        conn.execute(
+            "UPDATE agents SET last_seen = ?1 WHERE id = ?2",
+            params![Self::now(), &self.agent_id],
+        )?;
         Ok(())
     }
 

@@ -78,14 +78,26 @@ type Stats struct {
 }
 
 // NewClient creates a new a2a client
-func NewClient(project, agentID string) *Client {
+func NewClient(project, agentID string) (*Client, error) {
+	if strings.TrimSpace(project) == "" {
+		return nil, fmt.Errorf("project must not be empty")
+	}
+	if strings.Contains(project, "/") || strings.Contains(project, "\\") || strings.HasPrefix(project, ".") {
+		return nil, fmt.Errorf("project must not contain path separators or start with dot")
+	}
+	if strings.TrimSpace(agentID) == "" {
+		return nil, fmt.Errorf("agent_id must not be empty")
+	}
+	if len(agentID) > MaxAgentIDLength {
+		return nil, fmt.Errorf("agent_id too long (%d chars, max %d)", len(agentID), MaxAgentIDLength)
+	}
 	dbDir := filepath.Join(os.Getenv("HOME"), ".a2a", project)
 	dbPath := filepath.Join(dbDir, "database.db")
 	return &Client{
 		Project: project,
 		AgentID: agentID,
 		dbPath:  dbPath,
-	}
+	}, nil
 }
 
 // connect opens the database connection, applying the WAL invariant.
@@ -118,6 +130,9 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 	if ttlSeconds != nil && *ttlSeconds <= 0 {
 		return 0, fmt.Errorf("ttl_seconds must be a positive number of seconds")
 	}
+	if len(message) > MaxBodyLength {
+		return 0, fmt.Errorf("message body too long (%d chars, max %d)", len(message), MaxBodyLength)
+	}
 	db, err := c.connect()
 	if err != nil {
 		return 0, err
@@ -149,10 +164,6 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 			return 0, fmt.Errorf("thread id too long (%d chars, max %d)", len(threadID), MaxThreadIDLength)
 		}
 		tid = &threadID
-	}
-
-	if len(message) > MaxBodyLength {
-		return 0, fmt.Errorf("message body too long (%d chars, max %d)", len(message), MaxBodyLength)
 	}
 
 	result, err := db.Exec(
@@ -194,7 +205,7 @@ type RecvOpts struct {
 	Since *float64
 }
 
-// Recv receives messages with full options. Calls CleanupExpired and Touch on each poll tick.
+// Recv receives messages with full options. Run TTL cleanup and Touch on same connection.
 func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 	if opts.Limit < 0 {
 		return nil, fmt.Errorf("limit must be a non-negative integer")
@@ -212,8 +223,8 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 	pollInterval := 100 * time.Millisecond
 
 	for {
-		c.CleanupExpired()
-		c.Touch()
+		db.Exec("DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?", nowSec())
+		db.Exec("UPDATE agents SET last_seen=? WHERE id=?", nowSec(), c.AgentID)
 		query := "SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE (recipient = ? OR recipient IS NULL)"
 		args := []interface{}{c.AgentID}
 
@@ -283,18 +294,20 @@ func (c *Client) RecvSimple(wait int, unreadOnly, includeSelf bool, limit int) (
 	})
 }
 
-// Peek views recent messages without marking read. Calls CleanupExpired first.
+// Peek views recent messages without marking read. Cleans up expired TTL first.
 func (c *Client) Peek(limit int) ([]Message, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("limit must be a positive integer")
 	}
-	c.CleanupExpired()
 
 	db, err := c.connect()
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
+
+	// Clean up expired TTL messages
+	db.Exec("DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?", nowSec())
 
 	rows, err := db.Query(
 		"SELECT id, sender, recipient, body, thread_id, created_at FROM messages ORDER BY created_at DESC LIMIT ?",
@@ -705,21 +718,26 @@ func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) (bool
 	defer db.Close()
 
 	ts := nowSec()
+	if upsert {
+		_, err = db.Exec(
+			`INSERT OR IGNORE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen)
+			 VALUES (?,?,?,?,?,?,?,?)`,
+			c.AgentID, role, prompt, cli, "active", pid, ts, ts,
+		)
+		_, err = db.Exec(
+			`UPDATE agents SET role=COALESCE(NULLIF(?,''),role), prompt=COALESCE(NULLIF(?,''),prompt),
+			 cli=COALESCE(NULLIF(?,''),cli), pid=COALESCE(?,pid), status='active', last_seen=?
+			 WHERE id=?`,
+			role, prompt, cli, pid, ts, c.AgentID,
+		)
+		return true, err
+	}
 	_, err = db.Exec(
 		`INSERT INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen)
 		 VALUES (?,?,?,?,?,?,?,?)`,
 		c.AgentID, role, prompt, cli, "active", pid, ts, ts,
 	)
 	if err != nil {
-		if upsert {
-			_, err = db.Exec(
-				`UPDATE agents SET role=COALESCE(NULLIF(?,''),role), prompt=COALESCE(NULLIF(?,''),prompt),
-				 cli=COALESCE(NULLIF(?,''),cli), pid=COALESCE(?,pid), status='active', last_seen=?
-				 WHERE id=?`,
-				role, prompt, cli, pid, ts, c.AgentID,
-			)
-			return true, err
-		}
 		return false, fmt.Errorf("agent '%s' already registered (use upsert=true to update): %w", c.AgentID, err)
 	}
 	return true, nil

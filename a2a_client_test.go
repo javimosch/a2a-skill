@@ -13,12 +13,21 @@ func intPtr(v int) *int {
 	return &v
 }
 
+func setupTestClient(t *testing.T, project, agentID string) *Client {
+	t.Helper()
+	c, err := NewClient(project, agentID)
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	return c
+}
+
 func setupTestProject(t *testing.T) (*Client, func()) {
 	t.Helper()
 	// Unique project per test prevents stale-data collisions when tests share the same DB path.
 	project := "a2a-go-test-" + strings.ToLower(strings.ReplaceAll(t.Name(), "/", "-"))
 	agentID := "test-agent"
-	c := NewClient(project, agentID)
+	c := setupTestClient(t, project, agentID)
 	if err := c.InitProject(); err != nil {
 		t.Fatalf("InitProject: %v", err)
 	}
@@ -97,7 +106,7 @@ func TestSendRecv(t *testing.T) {
 	c.Register("planner", "", "", nil, false)
 
 	// Register bob as a peer
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -146,7 +155,7 @@ func TestPeek(t *testing.T) {
 	c.Register("planner", "", "", nil, false)
 
 	// Register bob as peer
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -169,7 +178,7 @@ func TestSearch(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -192,7 +201,7 @@ func TestThread(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -236,7 +245,7 @@ func TestStats(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -265,7 +274,7 @@ func TestStatsJSON(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 	c.Send("bob", "test", "", nil)
@@ -287,7 +296,7 @@ func TestWait(t *testing.T) {
 	c.Register("critic", "", "", nil, false)
 
 	// Send messages as alice
-	c2 := NewClient(c.Project, "alice")
+	c2 := setupTestClient(t, c.Project, "alice")
 	c2.InitProject()
 	c2.Register("planner", "", "", nil, false)
 	c2.Send("bob", "msg for wait test", "", nil)
@@ -379,7 +388,7 @@ func TestSendWithThread(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -399,7 +408,7 @@ func TestSendWithTTL(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -420,7 +429,7 @@ func TestSendSimple(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -445,7 +454,7 @@ func TestRecvWithTTLCleanup(t *testing.T) {
 	c.Send("bob", "will expire", "", &ttl)
 
 	// recv should call CleanupExpired internally and not return expired
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -483,7 +492,10 @@ func TestWaitTimeout(t *testing.T) {
 }
 
 func TestProjectInfoNoDB(t *testing.T) {
-	c := NewClient("nonexistent-project-xyz", "")
+	c, err := NewClient("nonexistent-project-xyz", "test-agent")
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
 	info := c.ProjectInfo()
 	if info["exists"] == true {
 		t.Log("project info: db exists (may be leftover from another test)")
@@ -492,7 +504,10 @@ func TestProjectInfoNoDB(t *testing.T) {
 
 func TestDBPath(t *testing.T) {
 	home := os.Getenv("HOME")
-	c := NewClient("test-proj", "agent")
+	c, err := NewClient("test-proj", "agent")
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
 	expected := filepath.Join(home, ".a2a", "test-proj", "database.db")
 	if c.dbPath != expected {
 		t.Fatalf("expected db path %s, got %s", expected, c.dbPath)
@@ -506,7 +521,7 @@ func TestSendEmptyBody(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -538,7 +553,7 @@ func TestSendSpecialChars(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -565,7 +580,7 @@ func TestSendLongBody(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -598,7 +613,7 @@ func TestRecvSince(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -657,7 +672,7 @@ func TestConcurrentSendRecv(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
@@ -758,7 +773,7 @@ func TestSendFromUnregisteredSenderFails(t *testing.T) {
 
 	c.AgentID = "ghost-sender"
 	// Register a real recipient but not the sender
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.Register("tester", "", "", nil, false)
 
 	_, err := c.Send("bob", "hello", "", nil)
@@ -801,7 +816,7 @@ func TestPeekJSON(t *testing.T) {
 
 	c.AgentID = "alice"
 	c.Register("tester", "", "", nil, false)
-	c2 := NewClient(c.Project, "bob")
+	c2 := setupTestClient(t, c.Project, "bob")
 	c2.Register("tester", "", "", nil, false)
 
 	c.Send("bob", "peek test", "", nil)

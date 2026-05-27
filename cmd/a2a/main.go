@@ -196,7 +196,12 @@ func resolveProject() string {
 }
 
 func newClient(agentID string) *a2a.Client {
-	return a2a.NewClient(resolveProject(), agentID)
+	c, err := a2a.NewClient(resolveProject(), agentID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "a2a: client error: %v\n", err)
+		os.Exit(1)
+	}
+	return c
 }
 
 func printJSON(v interface{}) {
