@@ -267,6 +267,8 @@ Agent activity can be monitored live from the bus:
 | Cross-client upsert default inconsistency | Python sync/async and JS clients default `upsert=True` in `Register()`, but Go and Rust clients have no default — callers must pass it explicitly. Go/Rust callers copying Python examples get different behavior. When using Go or Rust clients, always pass the `upsert` parameter explicitly. |
 | Orchestrator agent spawns peers on wrong bus | An orchestrator agent that calls `a2a-spawn` without `--project NAME` (or without exporting `A2A_PROJECT`) spawns peers that connect to the default `basename($PWD)` bus. The peers register and send to a different database than the orchestrator, so no messages cross. Always pass `--project` to `a2a-spawn` when the orchestrator uses a non-default project. |
 | Claude auto mode classifier blocks kit prompts with shell-like commands | Claude's `--permission-mode auto` uses a security classifier that blocks kit prompts containing `EXPORT`, shell variable assignments (`A2A=...`), or explicit command invocations. The kit prompt must be written as natural-language instructions, not bash-looking code. Keep env var exports out of kit prompts — `a2a-spawn` already sets them in the subprocess environment. Put commands in `code blocks` within natural text rather than as bare shell syntax. |
+| `--append-system-prompt "$KIT"` breaks with multi-line kit prompts via nohup | When `_spawn_bg()` passes a multi-line kit prompt via `--append-system-prompt "$KIT"`, the shell expands the variable into multiple arguments, breaking the flag. Use `--append-system-prompt-file "$KIT_FILE"` instead — claude reads the file directly, avoiding shell expansion. Fix applied to `a2a-spawn` in commit a820c9b. |
+
 
 ## Running the tests
 

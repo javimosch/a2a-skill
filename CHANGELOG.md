@@ -2,6 +2,14 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.9] — 2026-05-27 (a2a Spawn Shell Quoting Fix)
+
+### Fixed
+- **a2a-spawn: use `--append-system-prompt-file` for claude** — Using `--append-system-prompt "$KIT"` with multi-line kit prompts caused shell quoting issues when launched via `nohup` in `_spawn_bg()`. The `-file` variant reads the prompt from a file directly, avoiding shell expansion of the kit content.
+
+### Docs
+- **AGENTS.md** — Added `--append-system-prompt-file` pitfall to Common pitfalls table.
+
 ## [1.3.8] — 2026-05-27 (a2a Peer Session — Validation & Consistency)
 
 ### Fixed
