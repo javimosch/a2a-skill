@@ -2,6 +2,19 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.12] — 2026-05-27 (a2a Peer Session — Stub Expansion & Pitfall Audit)
+
+### Fixed
+- **a2a_client.pyi: `search()` default limit was 100, implementation uses 50** — stub and implementation diverged; corrected to `limit: int = 50`.
+- **a2a_client_async.pyi: same `search()` limit drift** — corrected to `limit: int = 50`.
+- **a2a_client.pyi: 8 public methods missing** — `register()`, `unregister()`, `list()`, `status()`, `wait()`, `init_project()`, `project_info()`, `clear()` were absent; type checkers flagged callers. All added with correct signatures.
+- **a2a_client_async.pyi: same 8 methods missing** — added async variants with matching signatures.
+- **a2a_client_async.pyi: `run_agent`/`run_agents` handler over-specified** — stub declared `Callable[[A2AClientAsync], Coroutine[Any, Any, None]]` but implementation accepts `Callable[..., Any]`; corrected to match implementation. Removed unused `Coroutine` import.
+- **a2a_client.pyi: `wait_for_messages` return type wrong** — stub returned `List[Dict[str, Any]]` but implementation returns `bool`; corrected. Also updated `timeout` from `int` to `float`.
+
+### Docs
+- **AGENTS.md: 8 new pitfall rows** — documented RoutingClientAsync validation gap, `add_rule()` idempotency fix, `disable_rule`/`enable_rule` stale state, `recv_with_routing` non-existent `m.priority` column, `recv_with_routing` missing read tracking, `route_messages()` missing read tracking, `A2AClientAsync` empty `agent_id` acceptance, and `.pyi` stub drift pattern.
+
 ## [1.3.11] — 2026-05-27 (a2a Peer Session — Async Parity Audit)
 
 ### Fixed
