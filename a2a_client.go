@@ -213,6 +213,9 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 	if opts.Wait < 0 {
 		return nil, fmt.Errorf("wait must be a non-negative number of seconds")
 	}
+	if math.IsInf(opts.Wait, 0) || math.IsNaN(opts.Wait) {
+		return nil, fmt.Errorf("wait must be a finite number of seconds")
+	}
 	db, err := c.connect()
 	if err != nil {
 		return nil, err
@@ -553,6 +556,9 @@ func (c *Client) SearchFTS(query string, limit int) ([]Message, error) {
 func (c *Client) Thread(threadID string) ([]Message, error) {
 	if strings.TrimSpace(threadID) == "" {
 		return nil, fmt.Errorf("thread id must not be empty")
+	}
+	if len(threadID) > MaxThreadIDLength {
+		return nil, fmt.Errorf("thread id too long (%d chars, max %d)", len(threadID), MaxThreadIDLength)
 	}
 	db, err := c.connect()
 	if err != nil {

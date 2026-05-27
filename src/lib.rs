@@ -227,9 +227,9 @@ impl Client {
             ));
         }
         if let Some(l) = limit {
-            if l <= 0 {
+            if l < 0 {
                 return Err(rusqlite::Error::InvalidParameterName(
-                    "limit must be a positive integer".to_string(),
+                    "limit must be a non-negative integer".to_string(),
                 ));
             }
         }
@@ -636,12 +636,12 @@ impl Client {
             if SystemTime::now() >= deadline {
                 return Ok(false);
             }
-            let msgs = self.recv(1.0, true, false, Some(remaining))?;
-            remaining -= msgs.len() as i64;
-            if remaining <= 0 {
-                return Ok(true);
+            let msgs = self.recv(0.0, true, false, Some(remaining))?;
+            if msgs.is_empty() {
+                thread::sleep(Duration::from_millis(500));
+                continue;
             }
-            thread::sleep(Duration::from_millis(200));
+            remaining -= msgs.len() as i64;
         }
     }
 
