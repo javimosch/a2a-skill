@@ -151,7 +151,8 @@ class PriorityClient(A2AClient):
             poll_interval = 0.1
 
             while True:
-                self._cleanup_expired(conn)
+                if self._cleanup_expired(conn):
+                    conn.commit()
                 # Build query
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
@@ -230,7 +231,8 @@ class PriorityClient(A2AClient):
             poll_interval = 0.1
 
             while True:
-                self._cleanup_expired(conn)
+                if self._cleanup_expired(conn):
+                    conn.commit()
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
                     "m.priority, m.created_at FROM messages m "
@@ -305,7 +307,8 @@ class PriorityClient(A2AClient):
             poll_interval = 0.1
 
             while True:
-                self._cleanup_expired(conn)
+                if self._cleanup_expired(conn):
+                    conn.commit()
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
                     "m.priority, m.created_at FROM messages m "
@@ -522,7 +525,8 @@ class PriorityQueue:
         """
         conn = self.client._connect()
         try:
-            self.client._cleanup_expired(conn)
+            if self.client._cleanup_expired(conn):
+                conn.commit()
             cursor = conn.execute(
                 """
                 SELECT m.id, m.sender, m.recipient, m.body, m.thread_id,
