@@ -116,7 +116,7 @@ case "$CLI" in
         _spawn_bg "$HOME/.local/bin/claude" \
             -p "Begin." \
             "${FLAGS[@]}" \
-            --append-system-prompt "$KIT"
+            --append-system-prompt-file "$KIT_FILE"
         ;;
     opencode)
         OPENCODE="$(resolve_opencode)"
