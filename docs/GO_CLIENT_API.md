@@ -149,6 +149,15 @@ Check agent status.
 status, err := client.GetStatus("bob")
 ```
 
+### SearchFTS(query string, limit int) ([]Message, error)
+
+Full-text search using SQLite FTS5. Requires the binary to be built with
+`-tags fts5`. Falls back to LIKE-based search if FTS5 is unavailable.
+
+```go
+results, err := client.SearchFTS("important", 100)
+```
+
 ### Search(query string, limit int) ([]Message, error)
 
 Search messages by substring (case-insensitive). Returns an error if the
@@ -307,7 +316,7 @@ func main() {
 
 	for {
 		// Wait for task (30 second timeout)
-		messages, err := client.Recv(30, true, false, 1)
+		messages, err := client.Recv(a2a.RecvOpts{Wait: 30, UnreadOnly: true, IncludeSelf: false, Limit: 1})
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -336,7 +345,7 @@ func main() {
 			"time":    time.Now().Format(time.RFC3339),
 		}
 		resultJSON, _ := json.Marshal(result)
-		client.Send("coordinator", string(resultJSON), nil)
+		client.Send("coordinator", string(resultJSON), "", nil)
 	}
 
 	client.SetStatus("done")
