@@ -46,9 +46,26 @@ a2a-skill/
 ├── go.sum               # Go module checksums
 ├── Makefile             # Go build/test/cover targets
 ├── build.sh             # Go binary build script
+├── cmd/a2a/main.go      # Go CLI binary entry point
+├── smoke_test_go.sh     # Go CLI smoke test (30 tests)
+├── Cargo.lock           # Rust lock file
+├── Dockerfile.multi     # Multi-stage Docker build
+├── docker-compose.yml   # Docker Compose deployment
+├── server.js            # Web UI server
+├── public/              # Web UI static assets
+├── SKILL.md             # skill spec (stub)
+├── CHANGELOG.md         # version history
 ├── a2a_client.js        # Node.js client library (async/Promise)
 ├── src/lib.rs           # Rust client library (async, idiomatic)
 ├── a2a_server.py        # REST API server (HTTP interface)
+├── a2a_common.py        # shared validation constants and helpers
+├── a2a_audit.py         # v1.3: audit logging
+├── a2a_crypto.py        # v1.3: end-to-end encryption
+├── a2a_fts.py           # v1.3: full-text search (FTS5)
+├── a2a_priority.py      # v1.3: priority queuing (sync)
+├── a2a_priority_async.py# v1.3: priority queuing (async)
+├── a2a_routing.py       # v1.3: rule-based routing (sync)
+├── a2a_routing_async.py # v1.3: rule-based routing (async)
 ├── a2a-spawn            # CLI-agnostic peer launcher (claude, opencode, pi, ...)
 ├── install.sh           # one-command installer (symlinks CLI + skill)
 
@@ -107,6 +124,8 @@ a2a-skill/
 ├── dashboard.py         # real-time bus visualization
 ├── verify_all.sh        # comprehensive test suite runner
 ├── verify_json_parity.sh  # Go vs Python JSON output cross-verify
+├── a2a_client.pyi         # Python type stubs (sync)
+├── a2a_client_async.pyi   # Python type stubs (async)
 
 🔨 Tools & Examples
 ├── examples/
@@ -137,8 +156,7 @@ a2a-skill/
 ├── Cargo.toml           # Rust library configuration
 ├── LICENSE              # MIT (attribution required)
 ├── .gitignore
-└── docs/                # ad-hoc reviews, notes
-    └── review.md
+└── docs/                # feature guides, API refs, deployment
 ```
 
 ## Install
