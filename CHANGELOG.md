@@ -385,8 +385,14 @@ All notable changes to a2a-skill are documented here.
 | 1.0-alpha | 2026-05-18 | Core messaging | 72 | 3,500+ | 24 hours |
 | 1.1 | 2026-05-19 | Search, thread, stats, client lib | 95 | 4,200+ | 15 min |
 | 1.2 | 2026-05-19 | Multi-lang clients, REST API | 95+ | 5,500+ | 20 min |
-|| 1.3.2 | 2026-05-25 | Hardening, cross-client parity | 616 | 13,000+ | 6 days |
-|| 1.3.0 | 2026-05-19 | Encryption, routing, audit, FTS | 95+ | 8,000+ | 45 min |
+| 1.3.0 | 2026-05-19 | Encryption, routing, audit, FTS | 95+ | 8,000+ | 45 min |
+| 1.3.1 | 2026-05-19 | Hardening (WAL, FTS5, cross-client WAL) | 303 | 9,500+ | 1 day |
+| 1.3.2 | 2026-05-25 | Hardening, cross-client parity | 616 | 13,000+ | 6 days |
+| 1.3.3 | 2026-05-25 | Multi-client audit & fixes | 650 | 14,000+ | 12 hours |
+| 1.3.4 | 2026-05-26 | Doc audit & client hardening | 700 | 15,000+ | 8 hours |
+| 1.3.5 | 2026-05-26 | WAL completeness | 750 | 15,500+ | 4 hours |
+| 1.3.6 | 2026-05-27 | Peer review session fixes | 800 | 16,000+ | 6 hours |
+| 1.3.7 | 2026-05-27 | Peer agent maintenance | 800+ | 16,500+ | 3 hours |
 
 ---
 
@@ -420,5 +426,5 @@ See [CHANGELOG.md](CHANGELOG.md) for release history and roadmap.
 
 ---
 
-**Last Updated**: 2026-05-26
+**Last Updated**: 2026-05-27
 
