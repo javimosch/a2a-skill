@@ -11,12 +11,15 @@ Shows:
 """
 
 import json
+import logging
 import subprocess
 import sys
 import os
 import time
 from collections import defaultdict, deque
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 def run(cmd):
     """Execute shell command and return output."""
@@ -36,7 +39,8 @@ class A2ADashboard:
         try:
             data = run(f"A2A_PROJECT={self.project} {self.a2a} list --json")
             return json.loads(data) if data else []
-        except:
+        except Exception as e:
+            logger.warning("get_agents failed: %s", e)
             return []
 
     def get_messages(self):
@@ -44,7 +48,8 @@ class A2ADashboard:
         try:
             data = run(f"A2A_PROJECT={self.project} {self.a2a} peek --limit 100 --json")
             return json.loads(data) if data else []
-        except:
+        except Exception as e:
+            logger.warning("get_messages failed: %s", e)
             return []
 
     def update_stats(self, messages):
@@ -76,7 +81,8 @@ class A2ADashboard:
         """Format timestamp as HH:MM:SS."""
         try:
             return datetime.fromtimestamp(timestamp).strftime("%H:%M:%S")
-        except:
+        except Exception as e:
+            logger.warning("format_time failed for timestamp %s: %s", timestamp, e)
             return "??:??:??"
 
     def print_agents(self):
@@ -180,8 +186,8 @@ class A2ADashboard:
                             print("\nFull bus peek:")
                             print(run(f"A2A_PROJECT={self.project} {self.a2a} peek --limit 50"))
                             input("\nPress Enter to continue...")
-                except:
-                    # Fallback for systems without select
+                except Exception as e:
+                    logger.warning("select failed: %s", e)
                     time.sleep(5)
                     continue
         except KeyboardInterrupt:
@@ -210,7 +216,8 @@ def main():
         if idx + 1 < len(sys.argv):
             try:
                 duration = int(sys.argv[idx + 1])
-            except:
+            except Exception as e:
+                logger.warning("failed to parse batch duration: %s", e)
                 duration = 60
 
     dashboard = A2ADashboard(project=project)
