@@ -979,10 +979,10 @@ class TestA2AClient(unittest.TestCase):
             alice.send("bob", "hello", ttl_seconds=float("inf"))
 
     def test_register_role_too_long_raises_value_error(self):
-        """register with role > 256 chars raises ValueError."""
+        """register with role > 512 chars raises ValueError."""
         alice = A2AClient(self.project, "alice")
         with self.assertRaises(ValueError):
-            alice.register(role="x" * 300)
+            alice.register(role="x" * 600)
 
     def test_register_cli_too_long_raises_value_error(self):
         """register with cli > 128 chars raises ValueError."""
