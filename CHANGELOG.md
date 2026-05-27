@@ -2,6 +2,16 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.7] — 2026-05-27 (a2a Peer Agent Maintenance)
+
+### Fixed
+- **src/lib.rs: peek() TTL cleanup** — Was still using `execute_batch` with `strftime('%s','now')`
+  while `recv()` had been upgraded to parameterized float epoch in v1.3.6. Changed to match
+  using `Self::now()` parameterized query for sub-second precision consistency.
+- **src/lib.rs: missing MAX_ROLE_LENGTH constant** — The `register()` method used magic
+  number `512` directly instead of a named constant (found during v1.3.6 cross-client audit).
+  Added `const MAX_ROLE_LENGTH: usize = 512` and replaced the hardcoded value.
+
 ## [1.3.6] — 2026-05-27 (Peer Review Session Fixes)
 
 ### Fixed

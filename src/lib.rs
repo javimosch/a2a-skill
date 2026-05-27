@@ -74,6 +74,7 @@ pub struct Client {
 const MAX_AGENT_ID_LENGTH: usize = 256;
 const MAX_THREAD_ID_LENGTH: usize = 256;
 const MAX_BODY_LENGTH: usize = 100_000;
+const MAX_ROLE_LENGTH: usize = 512;
 
 impl Client {
     /// Create new a2a client
@@ -315,9 +316,11 @@ impl Client {
         }
         let conn = self.connect()?;
 
-        // Clean up expired TTL messages
-        conn.execute_batch(
-            "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < CAST(strftime('%s','now') AS REAL)",
+        // Clean up expired TTL messages using float epoch (matches recv())
+        let now = Self::now();
+        conn.execute(
+            "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?1",
+            params![now],
         )?;
 
         let mut stmt = conn.prepare(
@@ -405,9 +408,9 @@ impl Client {
 
     /// Register this agent on the bus
     pub fn register(&self, role: &str, prompt: &str, cli: &str, pid: Option<i32>, upsert: bool) -> SqliteResult<bool> {
-        if role.len() > 512 {
+        if role.len() > MAX_ROLE_LENGTH {
             return Err(rusqlite::Error::InvalidParameterName(format!(
-                "role too long ({} chars, max 512)",
+                "role too long ({} chars, max {MAX_ROLE_LENGTH})",
                 role.len()
             )));
         }
