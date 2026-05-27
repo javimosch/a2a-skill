@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from a2a_common import MAX_ID_LENGTH, MAX_THREAD_ID_LENGTH, MAX_BODY_LENGTH
+from a2a_common import MAX_ID_LENGTH, MAX_ROLE_LENGTH, MAX_THREAD_ID_LENGTH, MAX_BODY_LENGTH
 from a2a_common import _validate_project_name, _validate_agent_id
 
 
@@ -127,8 +127,8 @@ class A2AClient:
         """
         if pid is not None and pid <= 0:
             raise ValueError("pid must be a positive integer")
-        if len(role) > MAX_ID_LENGTH:
-            raise ValueError(f"role too long ({len(role)} chars, max {MAX_ID_LENGTH})")
+        if len(role) > MAX_ROLE_LENGTH:
+            raise ValueError(f"role too long ({len(role)} chars, max {MAX_ROLE_LENGTH})")
         if len(cli) > 128:
             raise ValueError(f"cli too long ({len(cli)} chars, max 128)")
         if len(prompt) > MAX_BODY_LENGTH:

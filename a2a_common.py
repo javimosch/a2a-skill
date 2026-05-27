@@ -3,6 +3,7 @@
 """Shared validation utilities and constants for a2a clients."""
 
 MAX_ID_LENGTH = 256
+MAX_ROLE_LENGTH = 512
 MAX_THREAD_ID_LENGTH = 256
 MAX_BODY_LENGTH = 100_000
 

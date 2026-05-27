@@ -130,7 +130,7 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 	}
 
 	var recip *string
-	if to != "all" && to != "*" && to != "broadcast" {
+	if toLower := strings.ToLower(to); toLower != "all" && toLower != "*" && toLower != "broadcast" {
 		if len(to) > MaxAgentIDLength {
 			return 0, fmt.Errorf("recipient agent id too long (%d chars, max %d)", len(to), MaxAgentIDLength)
 		}
@@ -718,7 +718,7 @@ func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) (bool
 				 WHERE id=?`,
 				role, prompt, cli, pid, ts, c.AgentID,
 			)
-			return false, err
+			return true, err
 		}
 		return false, fmt.Errorf("agent '%s' already registered (use upsert=true to update): %w", c.AgentID, err)
 	}
@@ -777,7 +777,12 @@ func (c *Client) ProjectInfo() map[string]interface{} {
 
 // Clear deletes the database file entirely.
 func (c *Client) Clear() error {
-	return os.Remove(c.dbPath)
+	for _, suffix := range []string{"", "-wal", "-shm"} {
+		if err := os.Remove(c.dbPath + suffix); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+	return nil
 }
 
 // Wait blocks until at least count unread messages exist for this agent,

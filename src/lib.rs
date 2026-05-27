@@ -427,7 +427,7 @@ impl Client {
                 params![&self.agent_id, role, prompt, cli, pid, now],
             )?;
             conn.execute(
-                "UPDATE agents SET role=?1, prompt=?2, cli=?3, status='active', pid=?4, last_seen=?5 WHERE id=?6",
+                "UPDATE agents SET role=COALESCE(NULLIF(?1,''),role), prompt=COALESCE(NULLIF(?2,''),prompt), cli=COALESCE(NULLIF(?3,''),cli), status='active', pid=COALESCE(?4,pid), last_seen=?5 WHERE id=?6",
                 params![role, prompt, cli, pid, now, &self.agent_id],
             )?;
         } else {
