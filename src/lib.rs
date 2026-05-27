@@ -34,6 +34,7 @@ pub struct Peer {
     pub role: Option<String>,
     pub status: String,
     pub cli: Option<String>,
+    pub pid: Option<i32>,
 }
 
 /// Project information
@@ -215,6 +216,23 @@ impl Client {
         include_self: bool,
         limit: Option<i64>,
     ) -> SqliteResult<Vec<Message>> {
+        if wait < 0.0 {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "wait must be a non-negative number of seconds".to_string(),
+            ));
+        }
+        if !wait.is_finite() {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "wait must be a finite number".to_string(),
+            ));
+        }
+        if let Some(l) = limit {
+            if l <= 0 {
+                return Err(rusqlite::Error::InvalidParameterName(
+                    "limit must be a positive integer".to_string(),
+                ));
+            }
+        }
         let deadline = if wait > 0.0 {
             Some(SystemTime::now() + Duration::from_secs_f64(wait))
         } else {
@@ -353,7 +371,7 @@ impl Client {
     pub fn list_peers(&self) -> SqliteResult<Vec<Peer>> {
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
-            "SELECT id, role, cli, status FROM agents ORDER BY created_at",
+            "SELECT id, role, cli, status, pid FROM agents ORDER BY created_at",
         )?;
 
         let peers = stmt.query_map([], |row| {
@@ -362,6 +380,7 @@ impl Client {
                 role: row.get(1)?,
                 cli: row.get(2)?,
                 status: row.get(3)?,
+                pid: row.get(4)?,
             })
         })?
         .collect::<SqliteResult<Vec<_>>>()?;
@@ -408,6 +427,13 @@ impl Client {
 
     /// Register this agent on the bus
     pub fn register(&self, role: &str, prompt: &str, cli: &str, pid: Option<i32>, upsert: bool) -> SqliteResult<bool> {
+        if let Some(p) = pid {
+            if p <= 0 {
+                return Err(rusqlite::Error::InvalidParameterName(
+                    "pid must be a positive integer".to_string(),
+                ));
+            }
+        }
         if role.len() > MAX_ROLE_LENGTH {
             return Err(rusqlite::Error::InvalidParameterName(format!(
                 "role too long ({} chars, max {MAX_ROLE_LENGTH})",
@@ -580,6 +606,21 @@ impl Client {
     /// until `count` unread messages arrive. Returns true if the required
     /// count was reached before timeout.
     pub fn wait(&self, count: i64, timeout_secs: f64) -> SqliteResult<bool> {
+        if count <= 0 {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "count must be a positive integer".to_string(),
+            ));
+        }
+        if timeout_secs < 0.0 {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "timeout must be a non-negative number of seconds".to_string(),
+            ));
+        }
+        if !timeout_secs.is_finite() {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "timeout must be a finite number".to_string(),
+            ));
+        }
         let deadline = SystemTime::now() + Duration::from_secs_f64(timeout_secs);
         let mut remaining = count;
         loop {
@@ -725,9 +766,11 @@ mod tests {
             role: Some("worker".to_string()),
             status: "active".to_string(),
             cli: Some("a2a".to_string()),
+            pid: Some(12345),
         };
         assert_eq!(peer.id, "alice");
         assert_eq!(peer.status, "active");
+        assert_eq!(peer.pid, Some(12345));
     }
 
     #[test]
