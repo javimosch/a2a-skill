@@ -12,6 +12,11 @@ All notable changes to a2a-skill are documented here.
   number `512` directly instead of a named constant (found during v1.3.6 cross-client audit).
   Added `const MAX_ROLE_LENGTH: usize = 512` and replaced the hardcoded value.
 
+### Docs
+- **AGENTS.md repo layout tree** — Added 15 missing entries (Python type stubs, Docker
+  deployment, Rust workspace, Web UI, test/verify scripts) to the repository layout tree.
+- **Git tags** — Added v1.3.2–v1.3.7 tags matching CHANGELOG versions.
+
 ## [1.3.6] — 2026-05-27 (Peer Review Session Fixes)
 
 ### Fixed
