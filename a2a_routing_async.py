@@ -18,6 +18,7 @@ try:
 except ImportError:
     HAS_AIOSQLITE = False
 
+from a2a_common import _validate_project_name, _validate_agent_id
 from a2a_routing import RoutingAction, RoutingRule
 
 
@@ -35,6 +36,13 @@ class RoutingClientAsync:
             raise ImportError(
                 "aiosqlite library required: pip install aiosqlite"
             )
+
+        if not project or not project.strip():
+            raise ValueError("project must not be empty")
+        if not agent_id or not agent_id.strip():
+            raise ValueError("agent_id must not be empty")
+        _validate_project_name(project)
+        _validate_agent_id(agent_id, "agent_id")
 
         self.project = project
         self.agent_id = agent_id
@@ -147,7 +155,12 @@ class RoutingClientAsync:
                 ),
             )
             await conn.commit()
-            self.rules.append(rule)
+            for i, r in enumerate(self.rules):
+                if r.name == rule.name:
+                    self.rules[i] = rule
+                    break
+            else:
+                self.rules.append(rule)
             return True
         except Exception as e:
             print(f"Error adding rule: {e}")
@@ -214,6 +227,7 @@ class RoutingClientAsync:
                 (self.agent_id, rule_name),
             )
             await conn.commit()
+            await self.get_rules()
             return True
         except Exception as e:
             print(f"Error disabling rule: {e}")
@@ -241,6 +255,7 @@ class RoutingClientAsync:
                 (self.agent_id, rule_name),
             )
             await conn.commit()
+            await self.get_rules()
             return True
         except Exception as e:
             print(f"Error enabling rule: {e}")
@@ -307,7 +322,7 @@ class RoutingClientAsync:
                     await conn.commit()
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
-                    "m.priority, m.created_at FROM messages m "
+                    "m.created_at FROM messages m "
                     "WHERE (m.recipient = ? OR m.recipient IS NULL) "
                 )
                 params = [self.agent_id]
@@ -337,6 +352,15 @@ class RoutingClientAsync:
                     break
 
                 await asyncio.sleep(poll_interval)
+
+            if messages:
+                ts = time.time()
+                for msg in messages:
+                    await conn.execute(
+                        "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?, ?, ?)",
+                        (self.agent_id, msg["id"], ts),
+                    )
+                await conn.commit()
         finally:
             await conn.close()
 
@@ -411,6 +435,13 @@ class RoutingClientAsync:
                     (self.agent_id, msg["id"], time.time()),
                 )
 
+            for category in ("deliver", "forward", "queue", "escalate"):
+                for item in routed.get(category, []):
+                    msg = item["message"]
+                    await conn.execute(
+                        "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?, ?, ?)",
+                        (self.agent_id, msg["id"], time.time()),
+                    )
             await conn.commit()
             return True
         except Exception as e:

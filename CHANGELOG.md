@@ -2,6 +2,21 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.11] — 2026-05-27 (a2a Peer Session — Async Parity Audit)
+
+### Fixed
+- **a2a_client_async.py: `__init__` missing agent_id empty guard** — async skipped the explicit `if not agent_id or not agent_id.strip()` check that the sync `A2AClient.__init__` has; now matches sync behavior.
+- **a2a_routing_async.py: `RoutingClientAsync.__init__` missing all input validation** — async set `self.project`/`self.agent_id` directly with zero guards; now calls `_validate_project_name`, `_validate_agent_id`, and the empty-string checks matching sync's inherited `A2AClient.__init__` path.
+- **a2a_routing_async.py: `add_rule` always appended instead of upsert** — repeated calls with the same rule name created duplicates in `self.rules`; now uses the sync for/else upsert pattern.
+- **a2a_routing_async.py: `disable_rule` left in-memory list stale** — missing `await self.get_rules()` after commit; now matches sync which calls `self.get_rules()` after disabling.
+- **a2a_routing_async.py: `enable_rule` left in-memory list stale** — same missing refresh as `disable_rule`; now calls `await self.get_rules()` after commit.
+- **a2a_routing_async.py: `apply_routing` only marked `discard` messages read** — `deliver`, `forward`, `queue`, and `escalate` messages were never marked read, causing infinite re-processing on every poll; now marks all five categories.
+- **a2a_routing_async.py: `recv_with_routing` selected non-existent `m.priority` column** — would raise `sqlite3.OperationalError` at runtime (messages table has no priority column); removed the column from the SELECT.
+- **a2a_routing_async.py: `recv_with_routing` never marked fetched messages read** — all returned messages reappeared on every subsequent call; now inserts into `reads` table after fetching, matching sync behavior.
+
+### Docs
+- **CHANGELOG** — Added v1.3.11 entry.
+
 ## [1.3.10] — 2026-05-27 (Hourly Maintenance — Doc Audit & Repo Housekeeping)
 
 ### Docs

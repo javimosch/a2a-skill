@@ -33,6 +33,8 @@ class A2AClientAsync:
         if not project or not project.strip():
             raise ValueError("project must not be empty")
         _validate_project_name(project)
+        if not agent_id or not agent_id.strip():
+            raise ValueError("agent_id must not be empty")
         _validate_agent_id(agent_id, 'agent_id')
         self.project = project
         self.agent_id = agent_id
