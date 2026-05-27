@@ -186,7 +186,7 @@ class A2AClientAsync:
         wait: float = 0,
         unread_only: bool = True,
         include_self: bool = False,
-        limit: Optional[int] = None,
+        limit: int = 0,
     ) -> List[Dict[str, Any]]:
         """Receive messages.
 
@@ -194,7 +194,7 @@ class A2AClientAsync:
             wait: Max seconds to wait for messages (supports fractional)
             unread_only: Only return unread messages
             include_self: Include messages from self
-            limit: Max number of messages to return
+            limit: Max number of messages to return (0 = unlimited)
 
         Returns:
             List of message dicts
@@ -208,7 +208,7 @@ class A2AClientAsync:
             raise ValueError("wait must be a non-negative number of seconds")
         if not math.isfinite(wait):
             raise ValueError("wait must be a finite number")
-        if limit is not None and limit < 0:
+        if limit < 0:
             raise ValueError("limit must be a non-negative integer")
         deadline = time.time() + wait if wait > 0 else None
 
@@ -233,7 +233,7 @@ class A2AClientAsync:
                 params.append(self.agent_id)
 
             query += " ORDER BY created_at ASC"
-            if limit is not None and limit > 0:
+            if limit > 0:
                 query += " LIMIT ?"
                 params.append(limit)
 
@@ -584,15 +584,26 @@ class A2AClientAsync:
 
 
 # Helper function for concurrent agent patterns
-async def run_agent(agent_id: str, project: str, handler: Callable[..., Any]) -> None:
+async def run_agent(
+    agent_id: str,
+    project: str,
+    handler: Callable[..., Any],
+    role: str = "",
+    prompt: str = "",
+    cli: str = "",
+) -> None:
     """Run an async agent with automatic cleanup.
 
     Args:
         agent_id: Agent ID
         project: Project name
         handler: Async handler function that receives client
+        role: Optional agent role (registered before setting active)
+        prompt: Optional agent prompt
+        cli: Optional CLI identifier
     """
     async with A2AClientAsync(project, agent_id) as client:
+        await client.register(role, prompt, cli)
         await client.set_status("active")
         try:
             await handler(client)

@@ -223,9 +223,14 @@ impl Client {
         loop {
             let conn = self.connect()?;
 
-            // Clean up expired TTL messages
-            conn.execute_batch(
-                "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < CAST(strftime('%s','now') AS REAL)",
+            // Clean up expired TTL messages using float epoch (matches Go/Python)
+            let now = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs_f64();
+            conn.execute(
+                "DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?",
+                params![now],
             )?;
 
             let mut params: Vec<&dyn rusqlite::ToSql> = vec![&self.agent_id];
