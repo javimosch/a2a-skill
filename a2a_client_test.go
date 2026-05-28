@@ -1018,16 +1018,16 @@ func TestThreadEmptyIDFails(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for Thread with empty ID, got nil")
 	}
-	if !strings.Contains(err.Error(), "thread id") {
-		t.Fatalf("expected error about thread id, got: %v", err)
+	if !strings.Contains(err.Error(), "thread_id") {
+		t.Fatalf("expected error about thread_id, got: %v", err)
 	}
 
 	_, err = c.Thread("   ")
 	if err == nil {
 		t.Fatal("expected error for Thread with whitespace-only ID, got nil")
 	}
-	if !strings.Contains(err.Error(), "thread id") {
-		t.Fatalf("expected error about thread id, got: %v", err)
+	if !strings.Contains(err.Error(), "thread_id") {
+		t.Fatalf("expected error about thread_id, got: %v", err)
 	}
 }
 

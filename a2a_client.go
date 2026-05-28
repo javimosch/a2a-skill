@@ -119,7 +119,7 @@ func (c *Client) connect() (*sql.DB, error) {
 // Matches Python/JS/Rust order: send(to, message, ttl_seconds, thread_id).
 func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int64, error) {
 	if len(c.AgentID) > MaxAgentIDLength {
-		return 0, fmt.Errorf("sender agent id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
+			return 0, fmt.Errorf("agent_id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
 	}
 	if strings.TrimSpace(to) == "" {
 		return 0, fmt.Errorf("recipient must not be empty")
@@ -148,7 +148,7 @@ func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int
 	var recip *string
 	if toLower := strings.ToLower(to); toLower != "all" && toLower != "*" && toLower != "broadcast" {
 		if len(to) > MaxAgentIDLength {
-			return 0, fmt.Errorf("recipient agent id too long (%d chars, max %d)", len(to), MaxAgentIDLength)
+			return 0, fmt.Errorf("recipient agent_id too long (%d chars, max %d)", len(to), MaxAgentIDLength)
 		}
 		// Validate recipient exists
 		if err := db.QueryRow("SELECT COUNT(1) FROM agents WHERE id=?", to).Scan(&count); err != nil || count == 0 {
@@ -164,7 +164,7 @@ func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int
 	}
 	if threadID != "" {
 		if len(threadID) > MaxThreadIDLength {
-			return 0, fmt.Errorf("thread id too long (%d chars, max %d)", len(threadID), MaxThreadIDLength)
+			return 0, fmt.Errorf("thread_id too long (%d chars, max %d)", len(threadID), MaxThreadIDLength)
 		}
 		tid = &threadID
 	}
@@ -217,7 +217,7 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 		return nil, fmt.Errorf("wait must be a non-negative number of seconds")
 	}
 	if math.IsInf(opts.Wait, 0) || math.IsNaN(opts.Wait) {
-		return nil, fmt.Errorf("wait must be a finite number of seconds")
+		return nil, fmt.Errorf("wait must be a finite number")
 	}
 	db, err := c.connect()
 	if err != nil {
@@ -561,10 +561,10 @@ func (c *Client) SearchFTS(query string, limit int) ([]Message, error) {
 // Thread gets all messages in a thread
 func (c *Client) Thread(threadID string) ([]Message, error) {
 	if strings.TrimSpace(threadID) == "" {
-		return nil, fmt.Errorf("thread id must not be empty")
+		return nil, fmt.Errorf("thread_id must not be empty")
 	}
 	if len(threadID) > MaxThreadIDLength {
-		return nil, fmt.Errorf("thread id too long (%d chars, max %d)", len(threadID), MaxThreadIDLength)
+		return nil, fmt.Errorf("thread_id too long (%d chars, max %d)", len(threadID), MaxThreadIDLength)
 	}
 	db, err := c.connect()
 	if err != nil {
@@ -710,7 +710,7 @@ func (c *Client) InitProject() error {
 // If pid is nil, no PID is stored; otherwise must be a positive integer.
 func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) (bool, error) {
 	if len(c.AgentID) > MaxAgentIDLength {
-		return false, fmt.Errorf("agent id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
+		return false, fmt.Errorf("agent_id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
 	}
 	if pid != nil && *pid <= 0 {
 		return false, fmt.Errorf("pid must be a positive integer")
@@ -835,11 +835,11 @@ func (c *Client) Wait(count int, timeoutSec float64) (bool, error) {
 	if count <= 0 {
 		return false, fmt.Errorf("count must be a positive integer")
 	}
+	if timeoutSec < 0 {
+		return false, fmt.Errorf("timeout must be a non-negative number of seconds")
+	}
 	if math.IsInf(timeoutSec, 0) || math.IsNaN(timeoutSec) {
 		return false, fmt.Errorf("timeout must be a finite number")
-	}
-	if timeoutSec < 0 {
-		return false, fmt.Errorf("timeout must be a non-negative number")
 	}
 	deadline := time.Now().Add(time.Duration(timeoutSec * float64(time.Second)))
 	seen := 0

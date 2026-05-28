@@ -86,8 +86,11 @@ class A2AClient {
       throw new Error(`message body too long (${message.length} chars, max ${_MAX_BODY_LENGTH})`);
     }
     if (ttlSeconds !== null && ttlSeconds !== undefined) {
-      if (typeof ttlSeconds !== 'number' || !Number.isFinite(ttlSeconds) || ttlSeconds <= 0) {
-        throw new Error('ttl_seconds must be a positive number');
+      if (typeof ttlSeconds !== 'number' || !Number.isFinite(ttlSeconds)) {
+        throw new Error('ttl_seconds must be a finite number');
+      }
+      if (ttlSeconds <= 0) {
+        throw new Error('ttl_seconds must be a positive number of seconds');
       }
     }
     if (threadId !== null && threadId !== undefined) {
@@ -132,8 +135,11 @@ class A2AClient {
    * @returns {Promise<Array>}
    */
   async recv(wait = 0, unreadOnly = true, includeSelf = false, limit = 0) {
-    if (wait !== 0 && (typeof wait !== 'number' || !Number.isFinite(wait) || wait < 0)) {
-      throw new Error('wait must be a non-negative number');
+    if (typeof wait !== 'number' || !Number.isFinite(wait)) {
+      throw new Error('wait must be a finite number');
+    }
+    if (wait < 0) {
+      throw new Error('wait must be a non-negative number of seconds');
     }
     if (limit !== 0 && (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 0)) {
       throw new Error('limit must be a non-negative integer');
@@ -295,8 +301,11 @@ class A2AClient {
     if (!Number.isInteger(count) || count <= 0) {
       throw new Error('count must be a positive integer');
     }
-    if (typeof timeout !== 'number' || !Number.isFinite(timeout) || timeout < 0) {
-      throw new Error('timeout must be a non-negative number');
+    if (typeof timeout !== 'number' || !Number.isFinite(timeout)) {
+      throw new Error('timeout must be a finite number');
+    }
+    if (timeout < 0) {
+      throw new Error('timeout must be a non-negative number of seconds');
     }
     const deadline = Date.now() + timeout * 1000;
     while (Date.now() < deadline) {
@@ -335,7 +344,7 @@ class A2AClient {
    */
   async thread(threadId) {
     if (!threadId || !threadId.trim()) {
-      throw new Error('thread id must not be empty');
+      throw new Error('thread_id must not be empty');
     }
     if (threadId.length > _MAX_THREAD_ID_LENGTH) {
       throw new Error(`thread_id too long (${threadId.length} chars, max ${_MAX_THREAD_ID_LENGTH})`);

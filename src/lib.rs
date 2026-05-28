@@ -154,7 +154,7 @@ impl Client {
         if let Some(ttl) = ttl_seconds {
             if ttl <= 0 {
                 return Err(rusqlite::Error::InvalidParameterName(
-                    "ttl_seconds must be a positive number".to_string(),
+                    "ttl_seconds must be a positive number of seconds".to_string(),
                 ));
             }
         }
@@ -528,7 +528,7 @@ impl Client {
     pub fn thread(&self, thread_id: &str) -> SqliteResult<Vec<Message>> {
         if thread_id.trim().is_empty() {
             return Err(rusqlite::Error::InvalidParameterName(
-                "thread id must not be empty".to_string(),
+                "thread_id must not be empty".to_string(),
             ));
         }
         if thread_id.len() > MAX_THREAD_ID_LENGTH {
