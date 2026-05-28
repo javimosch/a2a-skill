@@ -6,6 +6,18 @@ MAX_ID_LENGTH = 256
 MAX_ROLE_LENGTH = 512
 MAX_THREAD_ID_LENGTH = 256
 MAX_BODY_LENGTH = 100_000
+MAX_GROUP_NAME_LENGTH = 64
+
+
+def _validate_group_name(name: str) -> None:
+    import re
+    name = name.strip()
+    if not name:
+        raise ValueError("group name must not be empty")
+    if len(name) > MAX_GROUP_NAME_LENGTH:
+        raise ValueError(f"group name too long ({len(name)} chars, max {MAX_GROUP_NAME_LENGTH})")
+    if not re.match(r'^[a-zA-Z0-9_-]+$', name):
+        raise ValueError("group name must contain only alphanumeric characters, dashes, or underscores")
 
 
 def _validate_project_name(name: str) -> None:

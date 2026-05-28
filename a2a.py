@@ -53,6 +53,15 @@ CREATE TABLE IF NOT EXISTS reads (
 CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
 CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
+
+CREATE TABLE IF NOT EXISTS agent_groups (
+    name       TEXT NOT NULL,
+    member_id  TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY (name, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_agent_groups_name   ON agent_groups(name);
+CREATE INDEX IF NOT EXISTS idx_agent_groups_member ON agent_groups(member_id);
 """
 
 
@@ -60,6 +69,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
 
 # Max length for agent IDs (prevents SQLite/text abuse)
 MAX_ID_LENGTH = 256
+MAX_GROUP_NAME_LENGTH = 64
 # Max length for thread IDs
 MAX_THREAD_ID_LENGTH = 256
 # Max length for agent role, cli, prompt fields
@@ -85,6 +95,23 @@ def project_name(explicit: str | None) -> str:
         return env
     name = Path.cwd().name or "default"
     _validate_project_name(name)
+    return name
+
+
+def _validate_group_name(name: str) -> None:
+    import re
+    name = name.strip()
+    if not name:
+        die("group name must not be empty")
+    if len(name) > MAX_GROUP_NAME_LENGTH:
+        die(f"group name too long ({len(name)} chars, max {MAX_GROUP_NAME_LENGTH})")
+    if not re.match(r'^[a-zA-Z0-9_-]+$', name):
+        die("group name must contain only alphanumeric characters, dashes, or underscores")
+
+
+def _resolve_group_name(raw: str) -> str:
+    name = raw.strip().lstrip('@')
+    _validate_group_name(name)
     return name
 
 
@@ -328,10 +355,10 @@ def cmd_send(args) -> None:
         if not recipient:
             conn.close()
             die("recipient must not be empty — use 'all' for broadcast")
-        if len(recipient) > MAX_ID_LENGTH:
+        if not recipient.startswith('@') and len(recipient) > MAX_ID_LENGTH:
             conn.close()
             die(f"agent id too long ({len(recipient)} chars, max {MAX_ID_LENGTH})")
-        if not conn.execute("SELECT 1 FROM agents WHERE id=?", (recipient,)).fetchone():
+        if not recipient.startswith('@') and not conn.execute("SELECT 1 FROM agents WHERE id=?", (recipient,)).fetchone():
             conn.close()
             die(f"unknown recipient '{recipient}' — register them first")
     body = args.body
@@ -350,6 +377,33 @@ def cmd_send(args) -> None:
         die(f"--thread too long ({len(thread_id)} chars, max {MAX_THREAD_ID_LENGTH})")
     if len(body) > MAX_BODY_LENGTH:
         die(f"message body too long ({len(body)} chars, max {MAX_BODY_LENGTH})")
+    if recipient is not None and recipient.startswith('@'):
+        group_name = _resolve_group_name(recipient)
+        members = conn.execute(
+            'SELECT member_id FROM agent_groups WHERE name=?', (group_name,)
+        ).fetchall()
+        if not members:
+            conn.close()
+            die(f"group '@{group_name}' not found or has no members")
+        ts_now = now()
+        first_id = None
+        for m in members:
+            cur = conn.execute(
+                'INSERT INTO messages(sender,recipient,body,thread_id,ttl_seconds,created_at)'
+                ' VALUES (?,?,?,?,?,?)',
+                (sender, m['member_id'], body, thread_id, ttl, ts_now)
+            )
+            if first_id is None:
+                first_id = cur.lastrowid
+        _touch(conn, sender)
+        conn.commit()
+        conn.close()
+        target = f"@{group_name} ({len(members)} members)"
+        if getattr(args, 'json', False):
+            print(json.dumps({'id': first_id, 'sender': sender, 'recipient': target}, indent=2))
+        else:
+            print(f"#{first_id} {sender} -> {target}")
+        return
     cur = conn.execute(
         "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
         "VALUES (?,?,?,?,?,?)",
@@ -675,6 +729,119 @@ def cmd_wait(args) -> None:
         time.sleep(0.5)
 
 
+# ---------- group commands ----------
+
+def cmd_group_create(args) -> None:
+    name = _resolve_group_name(args.name)
+    _, conn = _open(args)
+    # upsert-safe: just ensures the name is valid; rows added via add
+    conn.close()
+    if getattr(args, 'json', False):
+        print(json.dumps({"group": name, "created": True}, indent=2))
+    else:
+        print(f"group '@{name}' ready")
+
+
+def cmd_group_add(args) -> None:
+    name = _resolve_group_name(args.name)
+    _, conn = _open(args)
+    ts = now()
+    added = 0
+    for member in args.members:
+        member = member.strip()
+        if not member:
+            continue
+        if not conn.execute("SELECT 1 FROM agents WHERE id=?", (member,)).fetchone():
+            print(f"a2a: warning: agent '{member}' not registered — skipping", file=sys.stderr)
+            continue
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO agent_groups(name, member_id, created_at) VALUES (?,?,?)",
+                (name, member, ts),
+            )
+            added += conn.execute(
+                "SELECT changes()"
+            ).fetchone()[0]
+        except sqlite3.IntegrityError:
+            pass
+    conn.commit()
+    conn.close()
+    if getattr(args, 'json', False):
+        print(json.dumps({"group": name, "added": added}, indent=2))
+    else:
+        print(f"added {added} member(s) to '@{name}'")
+
+
+def cmd_group_remove(args) -> None:
+    name = _resolve_group_name(args.name)
+    member = args.member.strip()
+    if not member:
+        die("member must not be empty")
+    _, conn = _open(args)
+    cur = conn.execute(
+        "DELETE FROM agent_groups WHERE name=? AND member_id=?", (name, member)
+    )
+    conn.commit()
+    n = cur.rowcount
+    conn.close()
+    if getattr(args, 'json', False):
+        print(json.dumps({"group": name, "removed": member, "rows": n}, indent=2))
+    else:
+        print(f"removed '{member}' from '@{name}' ({n} row(s))")
+
+
+def cmd_group_delete(args) -> None:
+    name = _resolve_group_name(args.name)
+    _, conn = _open(args)
+    cur = conn.execute("DELETE FROM agent_groups WHERE name=?", (name,))
+    conn.commit()
+    n = cur.rowcount
+    conn.close()
+    if getattr(args, 'json', False):
+        print(json.dumps({"group": name, "deleted": n}, indent=2))
+    else:
+        print(f"deleted group '@{name}' ({n} row(s))")
+
+
+def cmd_group_list(args) -> None:
+    _, conn = _open(args)
+    rows = conn.execute(
+        "SELECT name, COUNT(*) as member_count FROM agent_groups GROUP BY name ORDER BY name"
+    ).fetchall()
+    conn.close()
+    if getattr(args, 'json', False):
+        print(json.dumps([dict(r) for r in rows], indent=2))
+        return
+    if not rows:
+        print("(no groups)")
+        return
+    print(f"{'GROUP':<32} {'MEMBERS':<8}")
+    for r in rows:
+        print(f"@{r['name']:<31} {r['member_count']:<8}")
+
+
+def cmd_group_show(args) -> None:
+    name = _resolve_group_name(args.name)
+    _, conn = _open(args)
+    rows = conn.execute(
+        "SELECT member_id FROM agent_groups WHERE name=? ORDER BY member_id", (name,)
+    ).fetchall()
+    conn.close()
+    if getattr(args, 'json', False):
+        print(json.dumps({"group": name, "members": [r['member_id'] for r in rows]}, indent=2))
+        return
+    if not rows:
+        print(f"(group '@{name}' is empty or does not exist)")
+        return
+    print(f"@{name}:")
+    for r in rows:
+        print(f"  {r['member_id']}")
+
+
+def cmd_group(args) -> None:
+    args.group_func(args)
+
+
 # ---------- arg parsing ----------
 
 def build_parser() -> argparse.ArgumentParser:
@@ -788,6 +955,41 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("clear", help="delete the project database")
     s.add_argument("--yes", action="store_true")
     s.set_defaults(func=cmd_clear)
+
+    sg = sub.add_parser("group", help="manage named agent groups")
+    sg.set_defaults(func=cmd_group)
+    gsub = sg.add_subparsers(dest="group_cmd", required=True)
+
+    s = gsub.add_parser("create", help="create a group")
+    s.add_argument("name")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(group_func=cmd_group_create)
+
+    s = gsub.add_parser("add", help="add members to a group")
+    s.add_argument("name")
+    s.add_argument("members", nargs="+")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(group_func=cmd_group_add)
+
+    s = gsub.add_parser("remove", help="remove a member from a group")
+    s.add_argument("name")
+    s.add_argument("member")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(group_func=cmd_group_remove)
+
+    s = gsub.add_parser("delete", help="delete an entire group")
+    s.add_argument("name")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(group_func=cmd_group_delete)
+
+    s = gsub.add_parser("list", help="list all groups")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(group_func=cmd_group_list)
+
+    s = gsub.add_parser("show", help="show members of a group")
+    s.add_argument("name")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(group_func=cmd_group_show)
 
     return p
 
