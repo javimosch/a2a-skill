@@ -58,6 +58,13 @@ _a2a_completion() {
                 return 0
             fi
             ;;
+        unregister)
+            if [[ $cword -eq 2 ]] && [[ "${prev}" != -* ]]; then
+                local agents=$(a2a list 2>/dev/null | awk 'NR>1{print $1}' | tr '\n' ' ')
+                COMPREPLY=($(compgen -W "${agents}" -- "${cur}"))
+                return 0
+            fi
+            ;;
     esac
 
     # Handle flag completion per command

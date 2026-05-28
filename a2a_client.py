@@ -95,6 +95,8 @@ class A2AClient:
                 raise ValueError("thread_id must not be empty")
             if thread_id is not None and len(thread_id) > MAX_THREAD_ID_LENGTH:
                 raise ValueError(f"thread_id too long ({len(thread_id)} chars, max {MAX_THREAD_ID_LENGTH})")
+            if not message or not message.strip():
+                raise ValueError("message body must not be empty")
             if len(message) > MAX_BODY_LENGTH:
                 raise ValueError(f"message body too long ({len(message)} chars, max {MAX_BODY_LENGTH})")
             recipient = None if to.lower() in ("all", "*", "broadcast") else to

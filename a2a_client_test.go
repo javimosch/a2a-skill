@@ -528,24 +528,18 @@ func TestSendEmptyBody(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	mid, err := c.Send("bob", "", nil, "")
-	if err != nil {
-		t.Fatalf("Send empty body: %v", err)
+	_, err := c.Send("bob", "", nil, "")
+	if err == nil {
+		t.Fatal("expected error for empty body")
 	}
-	if mid <= 0 {
-		t.Fatal("expected positive message id")
+	if !strings.Contains(err.Error(), "message body must not be empty") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Verify it was stored
-	msgs, err := c2.RecvSimple(0, true, false, 10)
-	if err != nil {
-		t.Fatalf("Recv: %v", err)
-	}
-	if len(msgs) != 1 {
-		t.Fatalf("expected 1 message, got %d", len(msgs))
-	}
-	if msgs[0].Body != "" {
-		t.Fatalf("expected empty body, got '%s'", msgs[0].Body)
+	// Also test whitespace-only body
+	_, err = c.Send("bob", "   ", nil, "")
+	if err == nil {
+		t.Fatal("expected error for whitespace-only body")
 	}
 }
 

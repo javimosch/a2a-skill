@@ -127,6 +127,9 @@ func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int
 	if ttlSeconds != nil && *ttlSeconds <= 0 {
 		return 0, fmt.Errorf("ttl_seconds must be a positive number of seconds")
 	}
+	if strings.TrimSpace(message) == "" {
+		return 0, fmt.Errorf("message body must not be empty")
+	}
 	if len(message) > MaxBodyLength {
 		return 0, fmt.Errorf("message body too long (%d chars, max %d)", len(message), MaxBodyLength)
 	}

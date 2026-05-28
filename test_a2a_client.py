@@ -649,15 +649,16 @@ class TestA2AClient(unittest.TestCase):
         bodies = [m["body"] for m in messages]
         self.assertEqual(bodies, ["first", "second", "third"])
 
-    def test_send_empty_body(self):
-        """send() with empty body creates a message with empty content."""
+    def test_send_empty_body_rejected(self):
+        """send() with empty body raises ValueError."""
         alice = A2AClient(self.project, "alice")
         bob = A2AClient(self.project, "bob")
-        msg_id = alice.send("bob", "")
-        self.assertGreater(msg_id, 0)
+        with self.assertRaises(ValueError):
+            alice.send("bob", "")
+        with self.assertRaises(ValueError):
+            alice.send("bob", "   ")
         messages = bob.recv(wait=1)
-        self.assertEqual(len(messages), 1)
-        self.assertEqual(messages[0]["body"], "")
+        self.assertEqual(len(messages), 0)
 
     def test_send_ttl_non_positive_rejected(self):
         """send() with ttl_seconds <= 0 raises ValueError."""

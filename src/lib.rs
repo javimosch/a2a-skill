@@ -139,6 +139,11 @@ impl Client {
                 "recipient must not be empty".to_string(),
             ));
         }
+        if message.trim().is_empty() {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "message body must not be empty".to_string(),
+            ));
+        }
         if message.len() > MAX_BODY_LENGTH {
             return Err(rusqlite::Error::InvalidParameterName(format!(
                 "message body too long ({} chars, max {})",

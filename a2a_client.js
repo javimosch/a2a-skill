@@ -79,6 +79,9 @@ class A2AClient {
     if (!to || !to.trim()) {
       throw new Error('recipient must not be empty');
     }
+    if (!message || !message.trim()) {
+      throw new Error('message body must not be empty');
+    }
     if (typeof message === 'string' && message.length > _MAX_BODY_LENGTH) {
       throw new Error(`message body too long (${message.length} chars, max ${_MAX_BODY_LENGTH})`);
     }

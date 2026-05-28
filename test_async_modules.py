@@ -358,20 +358,20 @@ class TestA2AClientAsync(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         await client.send("bob", "bad ttl", ttl_seconds=bad_ttl)
 
-    def test_send_empty_body(self):
-        """send() with empty body creates a message with empty content (async)."""
+    def test_send_empty_body_rejected(self):
+        """send() with empty body raises ValueError (async)."""
         from a2a_client_async import A2AClientAsync
         run_async(self.alice.register("tester"))
         run_async(self.bob.register("tester"))
         async def _do():
             async with A2AClientAsync(self.project, "alice") as client:
-                msg_id = await client.send("bob", "")
-                return msg_id
-        msg_id = run_async(_do())
-        self.assertGreater(msg_id, 0)
+                with self.assertRaises(ValueError):
+                    await client.send("bob", "")
+                with self.assertRaises(ValueError):
+                    await client.send("bob", "   ")
+        run_async(_do())
         msgs = run_async(self.bob.recv(wait=1))
-        self.assertEqual(len(msgs), 1)
-        self.assertEqual(msgs[0]["body"], "")
+        self.assertEqual(len(msgs), 0)
 
     def test_send_with_thread_and_ttl_combined(self):
         """send() with both thread_id and ttl_seconds works together (async)."""

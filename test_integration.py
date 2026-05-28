@@ -723,11 +723,12 @@ class TestIntegration(unittest.TestCase):
         msgs = json.loads(result.stdout)
         self.assertGreaterEqual(len(msgs), 1)
 
-    def test_send_empty_body(self):
-        """Send with empty body works."""
+    def test_send_empty_body_warns(self):
+        """Send with empty body prints warning but still sends."""
         a2a("register", "alice", project=self.project)
         a2a("register", "bob", project=self.project)
-        a2a("send", "bob", "", "--from", "alice", project=self.project)
+        result = a2a("send", "bob", "", "--from", "alice", project=self.project)
+        self.assertIn("warning: sending empty message body", result.stderr)
         result = a2a("peek", "--json", project=self.project)
         msgs = json.loads(result.stdout)
         bodies = [m["body"] for m in msgs]

@@ -93,8 +93,11 @@ _a2a() {
                         '--json[output JSON]' \
                         '1:thread id:'
                     ;;
-                init|project|unregister)
+                init|project)
                     :
+                    ;;
+                unregister)
+                    _arguments '1:agent id:->agents'
                     ;;
                 *)
                     _arguments \
