@@ -66,6 +66,13 @@ class TestA2AClient(unittest.TestCase):
                 read_at     REAL NOT NULL,
                 PRIMARY KEY (agent_id, message_id)
             );
+
+            CREATE TABLE IF NOT EXISTS agent_groups (
+                name       TEXT NOT NULL,
+                member_id  TEXT NOT NULL,
+                created_at REAL NOT NULL,
+                PRIMARY KEY (name, member_id)
+            );
         """)
 
         # Register test agents
@@ -978,6 +985,335 @@ class TestA2AClient(unittest.TestCase):
         alice = A2AClient(self.project, "alice")
         with self.assertRaises(ValueError):
             alice.register(role="tester", prompt="p" * 100_001)
+
+
+# ========== Agent Groups tests ==========
+
+
+class TestA2AClientGroups(unittest.TestCase):
+    """Test agent group operations via A2AClient."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Set up test project directory."""
+        cls.test_home = tempfile.mkdtemp()
+        cls.original_home = os.environ.get("HOME")
+        os.environ["HOME"] = cls.test_home
+
+    @classmethod
+    def tearDownClass(cls):
+        """Restore original HOME."""
+        if cls.original_home:
+            os.environ["HOME"] = cls.original_home
+
+    def setUp(self):
+        """Initialize test project with schema and test agents."""
+        self.project = f"a2a-group-test-{id(self)}"
+        self.project_dir = Path.home() / ".a2a" / self.project
+        self.project_dir.mkdir(parents=True, exist_ok=True)
+
+        db_path = self.project_dir / "database.db"
+        conn = make_connection(db_path)
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS agents (
+                id          TEXT PRIMARY KEY,
+                role        TEXT,
+                prompt      TEXT,
+                cli         TEXT,
+                status      TEXT NOT NULL DEFAULT 'active',
+                pid         INTEGER,
+                created_at  REAL NOT NULL,
+                last_seen   REAL NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS messages (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender      TEXT NOT NULL,
+                recipient   TEXT,
+                body        TEXT NOT NULL,
+                thread_id   TEXT,
+                ttl_seconds INTEGER,
+                created_at  REAL NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS reads (
+                agent_id    TEXT NOT NULL,
+                message_id  INTEGER NOT NULL,
+                read_at     REAL NOT NULL,
+                PRIMARY KEY (agent_id, message_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS agent_groups (
+                name       TEXT NOT NULL,
+                member_id  TEXT NOT NULL,
+                created_at REAL NOT NULL,
+                PRIMARY KEY (name, member_id)
+            );
+        """)
+
+        # Register test agents
+        ts = time.time()
+        for agent_id in ("alice", "bob", "carol"):
+            conn.execute(
+                "INSERT INTO agents(id, role, status, created_at, last_seen) VALUES (?,?,?,?,?)",
+                (agent_id, "tester", "active", ts, ts),
+            )
+        conn.commit()
+        conn.close()
+
+    def tearDown(self):
+        """Clean up test project."""
+        import shutil
+        db_path = self.project_dir / "database.db"
+        if db_path.exists():
+            db_path.unlink()
+        if self.project_dir.exists():
+            shutil.rmtree(self.project_dir)
+
+    # --- create_group ---
+
+    def test_create_group_ok(self):
+        """create_group creates a group with sentinel row."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_group("my-team")
+        members = alice.group_members("my-team")
+        self.assertEqual(members, [])
+
+    def test_create_group_empty_name_raises_value_error(self):
+        """create_group with empty name raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.create_group("")
+
+    def test_create_group_whitespace_name_raises_value_error(self):
+        """create_group with whitespace-only name raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.create_group("   ")
+
+    def test_create_group_too_long_name_raises_value_error(self):
+        """create_group with name exceeding max length raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.create_group("a" * 65)
+
+    def test_create_group_special_chars_raises_value_error(self):
+        """create_group with special characters raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.create_group("my team!")
+
+    # --- add_to_group ---
+
+    def test_add_to_group_ok(self):
+        """add_to_group adds members to a group."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_group("my-team")
+        added = alice.add_to_group("my-team", "alice", "bob")
+        self.assertEqual(added, 2)
+        members = alice.group_members("my-team")
+        self.assertEqual(sorted(members), ["alice", "bob"])
+
+    def test_add_to_group_unregistered_skipped(self):
+        """add_to_group skips unregistered agents with warning."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_group("my-team")
+        import io
+        import sys
+        old_stderr = sys.stderr
+        sys.stderr = io.StringIO()
+        try:
+            added = alice.add_to_group("my-team", "unknown")
+            warning = sys.stderr.getvalue()
+        finally:
+            sys.stderr = old_stderr
+        self.assertEqual(added, 0)
+        self.assertIn("not registered", warning)
+
+    def test_add_to_group_duplicate_skipped(self):
+        """add_to_group skips duplicate members."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_group("my-team")
+        alice.add_to_group("my-team", "alice")
+        added = alice.add_to_group("my-team", "alice")
+        self.assertEqual(added, 0)
+        members = alice.group_members("my-team")
+        self.assertEqual(members, ["alice"])
+
+    def test_add_to_group_nonexistent_name_raises_value_error(self):
+        """add_to_group with invalid group name raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.add_to_group("", "alice")
+
+    # --- remove_from_group ---
+
+    def test_remove_from_group_ok(self):
+        """remove_from_group removes a member."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_group("my-team")
+        alice.add_to_group("my-team", "alice", "bob")
+        result = alice.remove_from_group("my-team", "alice")
+        self.assertTrue(result)
+        members = alice.group_members("my-team")
+        self.assertEqual(members, ["bob"])
+
+    def test_remove_from_group_non_member(self):
+        """remove_from_group on a non-member returns False."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_group("my-team")
+        result = alice.remove_from_group("my-team", "unknown")
+        self.assertFalse(result)
+
+    def test_remove_from_group_nonexistent_group(self):
+        """remove_from_group on a non-existent group returns False."""
+        alice = A2AClient(self.project, "alice")
+        result = alice.remove_from_group("no-such-group", "alice")
+        self.assertFalse(result)
+
+    def test_remove_from_group_invalid_name_raises_value_error(self):
+        """remove_from_group with invalid group name raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.remove_from_group("", "alice")
+
+    # --- delete_group ---
+
+    def test_delete_group_ok(self):
+        """delete_group removes all group rows."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_group("my-team")
+        alice.add_to_group("my-team", "alice", "bob")
+        deleted = alice.delete_group("my-team")
+        self.assertEqual(deleted, 3)  # sentinel + 2 members
+        groups = alice.list_groups()
+        self.assertEqual(len(groups), 0)
+
+    def test_delete_group_nonexistent(self):
+        """delete_group on non-existent group returns 0."""
+        alice = A2AClient(self.project, "alice")
+        deleted = alice.delete_group("no-such-group")
+        self.assertEqual(deleted, 0)
+
+    def test_delete_group_invalid_name_raises_value_error(self):
+        """delete_group with invalid group name raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.delete_group("!!!")
+
+    # --- list_groups ---
+
+    def test_list_groups_ok(self):
+        """list_groups returns all groups with member counts (excluding sentinel)."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_group("team-a")
+        alice.create_group("team-b")
+        alice.add_to_group("team-a", "alice", "bob")
+        alice.add_to_group("team-b", "carol")
+        groups = alice.list_groups()
+        group_names = {g["name"]: g["member_count"] for g in groups}
+        self.assertIn("team-a", group_names)
+        self.assertIn("team-b", group_names)
+        self.assertEqual(group_names["team-a"], 2)  # 2 real members
+        self.assertEqual(group_names["team-b"], 1)  # 1 real member
+
+    def test_list_groups_empty(self):
+        """list_groups returns empty list when no groups exist."""
+        alice = A2AClient(self.project, "alice")
+        groups = alice.list_groups()
+        self.assertEqual(groups, [])
+
+    # --- group_members ---
+
+    def test_group_members_ok(self):
+        """group_members returns member IDs."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_group("my-team")
+        alice.add_to_group("my-team", "alice", "bob")
+        members = alice.group_members("my-team")
+        # member list should not include sentinel __group__
+        self.assertNotIn("__group__", members)
+        self.assertEqual(sorted(members), ["alice", "bob"])
+
+    def test_group_members_empty(self):
+        """group_members on empty group returns empty list."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_group("empty-group")
+        members = alice.group_members("empty-group")
+        self.assertEqual(members, [])
+
+    def test_group_members_nonexistent_group(self):
+        """group_members on non-existent group returns empty list."""
+        alice = A2AClient(self.project, "alice")
+        members = alice.group_members("no-such-group")
+        self.assertEqual(members, [])
+
+    def test_group_members_invalid_name_raises_value_error(self):
+        """group_members with invalid name raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.group_members("!!!")
+
+    # --- send to @groupname ---
+
+    def test_send_to_group_fan_out(self):
+        """send to @groupname fans out to all group members."""
+        alice = A2AClient(self.project, "alice")
+        alice.register("alice")
+        bob = A2AClient(self.project, "bob")
+        bob.register("bob")
+        carol = A2AClient(self.project, "carol")
+        carol.register("carol")
+
+        alice.create_group("my-team")
+        alice.add_to_group("my-team", "bob", "carol")
+        msg_id = alice.send("@my-team", "group hello")
+        self.assertGreater(msg_id, 0)
+
+        # Both members should receive the message
+        bob_msgs = bob.recv()
+        carol_msgs = carol.recv()
+        bob_bodies = [m["body"] for m in bob_msgs]
+        carol_bodies = [m["body"] for m in carol_msgs]
+        self.assertIn("group hello", bob_bodies)
+        self.assertIn("group hello", carol_bodies)
+
+    def test_send_to_empty_group_raises_value_error(self):
+        """send to empty @groupname raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        alice.register("alice")
+        alice.create_group("empty-group")
+        with self.assertRaises(ValueError):
+            alice.send("@empty-group", "hello")
+
+    def test_send_to_nonexistent_group_raises_value_error(self):
+        """send to non-existent @groupname raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        alice.register("alice")
+        with self.assertRaises(ValueError):
+            alice.send("@no-such-group", "hello")
+
+    def test_send_to_group_self_not_included(self):
+        """send to @groupname does not send to self if sender is a member."""
+        alice = A2AClient(self.project, "alice")
+        alice.register("alice")
+        bob = A2AClient(self.project, "bob")
+        bob.register("bob")
+
+        alice.create_group("my-team")
+        alice.add_to_group("my-team", "alice", "bob")
+        msg_id = alice.send("@my-team", "self check")
+        self.assertGreater(msg_id, 0)
+
+        # Alice should NOT receive her own message (sender excluded by default)
+        alice_msgs = alice.recv()
+        alice_bodies = [m["body"] for m in alice_msgs]
+        self.assertNotIn("self check", alice_bodies)
+
+        # Bob should receive it
+        bob_msgs = bob.recv()
+        bob_bodies = [m["body"] for m in bob_msgs]
+        self.assertIn("self check", bob_bodies)
 
 
 if __name__ == "__main__":
