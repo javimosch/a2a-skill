@@ -205,7 +205,7 @@ a2a-skill/
 ├── test_git_aware.py     git-aware module tests (65)
 ├── test_server.py        REST API tests (70)
 ├── test_async_modules.py async client tests (94, 3 skip-guarded classes)
-├── test_artifacts_util.py artifact build util tests (84)     ← 908 tests total (800 Python + 60 Go + 33 JS + 15 Rust)
+├── test_artifacts_util.py artifact build util tests (84)     ← 914 tests total (804 Python + 60 Go + 35 JS + 15 Rust)
 ├── benchmark.py
 ├── dashboard.py
 ├── WEB_UI_README.md      Web UI documentation
