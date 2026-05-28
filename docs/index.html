@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A2A Skill - Agent-to-Agent Collaboration Framework</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300..800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.468.0"></script>
+    <link rel="stylesheet" href="style-base.css">
+    <link rel="stylesheet" href="style-layout.css">
+</head>
+<body>
+    <a href="#main-content" class="sr-only">Skip to main content</a>
+
+    <header role="banner">
+        <div class="container">
+            <nav role="navigation" aria-label="Main navigation">
+                <a href="#" class="logo">a2a<span>skill</span></a>
+                <ul class="nav-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#architecture">Architecture</a></li>
+                    <li><a href="#use-cases">Use Cases</a></li>
+                    <li><a href="changelog.html">Changelog</a></li>
+                    <li><a href="https://github.com/javimosch/a2a-skill" class="nav-github">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <section class="hero" aria-label="Introduction">
+            <div class="container">
+                <div class="hero-layout">
+                    <div>
+                        <h1>Peer-to-peer <em>agent collaboration</em></h1>
+                        <p class="hero-subtitle">A decentralized message bus for AI agents that work as peers. No orchestrator, no chain of command — agents communicate directly through a shared database.</p>
+                        <div class="hero-actions">
+                            <a href="#features" class="cta-button" aria-label="Explore A2A Skill features">Explore A2A Skill</a>
+                            <a href="https://github.com/javimosch/a2a-skill" class="cta-button-outline" aria-label="View project on GitHub">View on GitHub</a>
+                        </div>
+                    </div>
+                    <div class="hero-visual" aria-hidden="true">
+                        <div class="hero-diagram">
+                            <div class="hero-diagram-node">dev</div>
+                            <div class="hero-diagram-node">pm</div>
+                            <div class="hero-diagram-node accent">qa</div>
+                            <div class="hero-diagram-node accent">arch</div>
+                            <div class="hero-diagram-node" style="border-color: rgba(6,182,212,0.3); color: var(--accent); font-weight: 600;">bus</div>
+                            <div class="hero-diagram-node">ux</div>
+                            <div class="hero-diagram-node">writer</div>
+                            <div class="hero-diagram-node">critic</div>
+                            <div class="hero-diagram-node accent">data</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features" id="features" aria-labelledby="features-title">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Features</span>
+                    <h2 class="section-title" id="features-title">Designed for agent autonomy</h2>
+                    <p class="section-subtitle">A single principle guides the design: agents communicate as peers, not through a bottleneck.</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <span class="feature-icon" aria-hidden="true"><i data-lucide="arrow-left-right" size="28"></i></span>
+                        <h3>Peer-to-Peer Messaging</h3>
+                        <p>Agents send messages directly to each other without intermediaries. No bottlenecks, no single point of failure.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon" aria-hidden="true"><i data-lucide="settings" size="28"></i></span>
+                        <h3>No Central Coordinator</h3>
+                        <p>Each agent is independent. Decisions are made locally, context is shared globally through the bus when needed.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon" aria-hidden="true"><i data-lucide="database" size="28"></i></span>
+                        <h3>SQLite Message Bus</h3>
+                        <p>Messages persist in a local SQLite database. Query them, search them, replay them — no message broker needed.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon" aria-hidden="true"><i data-lucide="users" size="28"></i></span>
+                        <h3>Role-Based Teams</h3>
+                        <p>Researchers, critics, developers, PMs, and QA — each with their own perspective and responsibilities, collaborating as equals.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon" aria-hidden="true"><i data-lucide="search" size="28"></i></span>
+                        <h3>Rich Message Metadata</h3>
+                        <p>Threading, full-text search, and per-agent read tracking. Find any context instantly and understand conversation flow.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon" aria-hidden="true"><i data-lucide="zap" size="28"></i></span>
+                        <h3>Zero Configuration</h3>
+                        <p>No servers to deploy, no daemons to manage. Install the binary and agents start talking.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon" aria-hidden="true"><i data-lucide="plug" size="28"></i></span>
+                        <h3>Cross-CLI Support</h3>
+                        <p>Compatible with Claude CLI, pi, OpenCode, and other agentic CLIs. Fits into your existing workflow without changes.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="architecture" id="architecture" aria-labelledby="architecture-title">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Architecture</span>
+                    <h2 class="section-title" id="architecture-title">Simple by construction</h2>
+                    <p class="section-subtitle">A single-file SQLite database at the heart of a distributed system. No message brokers, no HTTP hops between agents — just direct reads and writes.</p>
+                </div>
+                <div class="architecture-content">
+                    <div class="architecture-text">
+                        <h3>How it works</h3>
+                        <ul>
+                            <li>Lightweight CLI — a single binary handles all operations</li>
+                            <li>One database per project at <code>~/.a2a/{project}/database.db</code></li>
+                            <li>FTS5 full-text search with LIKE fallback for queries</li>
+                            <li>Thread views organize conversations logically</li>
+                            <li>Per-agent status tracking for coordination</li>
+                        </ul>
+                    </div>
+                    <div class="architecture-diagram" aria-hidden="true">
+                        <div class="arch-row">
+                            <span class="label">Agent</span>
+                            <span>writes message</span>
+                            <span class="gap">→</span>
+                            <span style="color: var(--accent); font-weight: 500;">SQLite Bus</span>
+                        </div>
+                        <div class="arch-row">
+                            <span class="label">Agent</span>
+                            <span>polls for updates</span>
+                            <span class="gap">→</span>
+                            <span style="color: var(--accent); font-weight: 500;">SQLite Bus</span>
+                        </div>
+                        <div class="arch-row">
+                            <span class="label">Agent</span>
+                            <span>reads unread</span>
+                            <span class="gap">→</span>
+                            <span style="color: var(--accent); font-weight: 500;">SQLite Bus</span>
+                        </div>
+                        <div class="arch-row" style="border-color: var(--border-accent);">
+                            <span class="label" style="color: #67e8f9;">All</span>
+                            <span style="color: var(--text-muted);">no coordinator, no HTTP, no broker</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="use-cases" id="use-cases" aria-labelledby="usecases-title">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Use Cases</span>
+                    <h2 class="section-title" id="usecases-title">Built for team workflows</h2>
+                    <p class="section-subtitle">Code review trios, research deep-dives, debugging squads — any pattern where agents need to work together.</p>
+                </div>
+                <div class="use-cases-grid">
+                    <div class="use-case">
+                        <h4>Code Reviews</h4>
+                        <p>Multi-perspective reviews with critic and developer agents working collaboratively on the same codebase.</p>
+                    </div>
+                    <div class="use-case">
+                        <h4>Research</h4>
+                        <p>Researcher and analyst agents combine their sources and perspectives to surface insights faster.</p>
+                    </div>
+                    <div class="use-case">
+                        <h4>Content</h4>
+                        <p>Writer and editor agents create and refine content through direct back-and-forth collaboration.</p>
+                    </div>
+                    <div class="use-case">
+                        <h4>Debugging</h4>
+                        <p>Architect, QA, and developer agents work together to isolate, diagnose, and fix complex issues.</p>
+                    </div>
+                    <div class="use-case">
+                        <h4>Claude Code</h4>
+                        <p>AI-powered development workflows that need agent autonomy with lightweight shared context.</p>
+                    </div>
+                    <div class="use-case">
+                        <h4>API Projects</h4>
+                        <p>Connect Claude API and other AI applications directly to the bus for agent-to-agent communication.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer role="contentinfo">
+        <div class="container">
+            <p>A2A Skill by <strong>Javier Leandro Arancibia</strong> &middot; <a href="https://github.com/javimosch/a2a-skill">GitHub</a> &middot; Agent-to-Agent Collaboration Framework</p>
+        </div>
+    </footer>
+    <script>lucide.createIcons()</script>
+</body>
+</html>
