@@ -872,32 +872,3 @@ func (c *Client) WaitForMessages(count int, timeout float64) (bool, error) {
 		}
 	}
 }
-	if timeout < 0 {
-		return false, fmt.Errorf("timeout must be a non-negative number of seconds")
-	}
-	if math.IsInf(timeout, 0) || math.IsNaN(timeout) {
-		return false, fmt.Errorf("timeout must be a finite number")
-	}
-	deadline := time.Now().Add(time.Duration(timeout * float64(time.Second)))
-	seen := 0
-	for {
-		if time.Now().After(deadline) {
-			return false, nil
-		}
-		need := count - seen
-		if need <= 0 {
-			return true, nil
-		}
-		msgs, err := c.Recv(RecvOpts{Wait: 0, UnreadOnly: true, IncludeSelf: false, Limit: need})
-		if err != nil {
-			return false, err
-		}
-		seen += len(msgs)
-		if seen >= count {
-			return true, nil
-		}
-		if len(msgs) == 0 {
-			time.Sleep(500 * time.Millisecond)
-		}
-	}
-}

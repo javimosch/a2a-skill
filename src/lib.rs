@@ -669,34 +669,6 @@ impl Client {
             }
         }
     }
-        if timeout < 0.0 {
-            return Err(rusqlite::Error::InvalidParameterName(
-                "timeout must be a non-negative number of seconds".to_string(),
-            ));
-        }
-        if !timeout.is_finite() {
-            return Err(rusqlite::Error::InvalidParameterName(
-                "timeout must be a finite number".to_string(),
-            ));
-        }
-        let deadline = SystemTime::now() + Duration::from_secs_f64(timeout);
-        let mut seen: i64 = 0;
-        while SystemTime::now() < deadline {
-            let need = count - seen;
-            if need <= 0 {
-                return Ok(true);
-            }
-            let msgs = self.recv(0.0, true, false, Some(need))?;
-            seen += msgs.len() as i64;
-            if seen >= count {
-                return Ok(true);
-            }
-            if msgs.is_empty() {
-                thread::sleep(Duration::from_millis(500));
-            }
-        }
-        Ok(seen >= count)
-    }
 
     /// Initialize the project database, creating tables if they don't exist.
     ///
