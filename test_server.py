@@ -5,9 +5,9 @@
 import http.client
 import json
 import os
-import sqlite3
 import tempfile
 import threading
+from test_helpers import make_connection
 import time
 import unittest
 from pathlib import Path
@@ -71,9 +71,7 @@ class TestA2ARestServer(unittest.TestCase):
         db_dir = Path(cls.test_home) / ".a2a" / cls.project
         db_dir.mkdir(parents=True, exist_ok=True)
         cls.db_path = db_dir / "database.db"
-        conn = sqlite3.connect(str(cls.db_path))
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
+        conn = make_connection(cls.db_path)
         conn.executescript(DB_SCHEMA)
         ts = time.time()
         conn.execute(

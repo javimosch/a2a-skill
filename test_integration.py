@@ -16,7 +16,7 @@ import tempfile
 import time
 import unittest
 
-import sqlite3
+from test_helpers import make_connection
 
 # Path to the a2a CLI (same directory as this test)
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -90,9 +90,7 @@ def count_messages(project: str) -> int:
     path = db_path(project)
     if not os.path.exists(path):
         return 0
-    conn = sqlite3.connect(path)
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=5000")
+    conn = make_connection(path)
     count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
     conn.close()
     return count
@@ -103,9 +101,7 @@ def count_agents(project: str) -> int:
     path = db_path(project)
     if not os.path.exists(path):
         return 0
-    conn = sqlite3.connect(path)
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=5000")
+    conn = make_connection(path)
     count = conn.execute("SELECT COUNT(*) FROM agents").fetchone()[0]
     conn.close()
     return count

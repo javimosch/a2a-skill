@@ -4,11 +4,11 @@
 
 import json
 import os
-import sqlite3
 import tempfile
 import time
 import unittest
 from pathlib import Path
+from test_helpers import make_connection
 
 from a2a_client import A2AClient
 
@@ -37,9 +37,7 @@ class TestA2AClient(unittest.TestCase):
 
         # Create fresh database with schema
         db_path = self.project_dir / "database.db"
-        conn = sqlite3.connect(str(db_path))
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
+        conn = make_connection(db_path)
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS agents (
                 id          TEXT PRIMARY KEY,
@@ -161,9 +159,7 @@ class TestA2AClient(unittest.TestCase):
         alice = A2AClient(self.project, "alice")
         msg_id = alice.send("ALL", "uppercase broadcast")
         self.assertGreater(msg_id, 0)
-        conn = sqlite3.connect(str(alice.db_path))
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
+        conn = make_connection(alice.db_path)
         row = conn.execute("SELECT recipient FROM messages WHERE id=?", (msg_id,)).fetchone()
         conn.close()
         self.assertIsNone(row[0], "ALL (uppercase) should produce broadcast (NULL recipient)")
@@ -173,9 +169,7 @@ class TestA2AClient(unittest.TestCase):
         alice = A2AClient(self.project, "alice")
         msg_id = alice.send("Broadcast", "case-insensitive broadcast")
         self.assertGreater(msg_id, 0)
-        conn = sqlite3.connect(str(alice.db_path))
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
+        conn = make_connection(alice.db_path)
         row = conn.execute("SELECT recipient FROM messages WHERE id=?", (msg_id,)).fetchone()
         conn.close()
         self.assertIsNone(row[0], "'Broadcast' should produce broadcast (NULL recipient)")
@@ -359,9 +353,7 @@ class TestA2AClient(unittest.TestCase):
         bob = A2AClient(self.project, "bob")
 
         # Send messages with same thread_id
-        conn = sqlite3.connect(str(self.project_dir / "database.db"))
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
+        conn = make_connection(self.project_dir / "database.db")
         ts = time.time()
         conn.execute(
             "INSERT INTO messages(sender, recipient, body, thread_id, created_at) "
@@ -610,10 +602,7 @@ class TestA2AClient(unittest.TestCase):
         # First registration
         alice.register("critic", upsert=True)
         # Read back the created_at
-        import sqlite3
-        conn = sqlite3.connect(str(alice.db_path))
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
+        conn = make_connection(alice.db_path)
         row = conn.execute("SELECT created_at FROM agents WHERE id='alice'").fetchone()
         original_created = row[0]
         conn.close()
@@ -621,9 +610,7 @@ class TestA2AClient(unittest.TestCase):
         time.sleep(0.01)
         # Upsert with different role
         alice.register("planner", upsert=True)
-        conn = sqlite3.connect(str(alice.db_path))
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
+        conn = make_connection(alice.db_path)
         row = conn.execute("SELECT created_at, role, last_seen FROM agents WHERE id='alice'").fetchone()
         conn.close()
         # created_at must be preserved
@@ -856,9 +843,7 @@ class TestA2AClient(unittest.TestCase):
 
         # Set up second project's database (same schema, different db file)
         db_path_b = proj_dir_b / "database.db"
-        conn_b = sqlite3.connect(str(db_path_b))
-        conn_b.execute("PRAGMA journal_mode=WAL")
-        conn_b.execute("PRAGMA busy_timeout=5000")
+        conn_b = make_connection(db_path_b)
         conn_b.executescript("""
             CREATE TABLE IF NOT EXISTS agents (
                 id          TEXT PRIMARY KEY,
@@ -946,10 +931,7 @@ class TestA2AClient(unittest.TestCase):
         msg_id = alice.send("bob", "threaded ttl msg", thread_id="ttl-thread-1", ttl_seconds=3600)
         self.assertGreater(msg_id, 0)
         # Verify thread and TTL were stored
-        import sqlite3
-        conn = sqlite3.connect(str(alice.db_path))
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
+        conn = make_connection(alice.db_path)
         row = conn.execute(
             "SELECT thread_id, ttl_seconds FROM messages WHERE id=?", (msg_id,)
         ).fetchone()

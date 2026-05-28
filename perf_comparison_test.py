@@ -3,11 +3,11 @@
 """Compare performance: a2a CLI vs a2a_client.py library"""
 
 import os
-import sqlite3
 import subprocess
 import tempfile
 import time
 from pathlib import Path
+from test_helpers import make_connection
 
 from a2a_client import A2AClient
 
@@ -23,9 +23,7 @@ def setup_test_db():
     
     # Create schema
     db_path = project_dir / "database.db"
-    conn = sqlite3.connect(str(db_path))
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=5000")
+    conn = make_connection(db_path)
     conn.executescript("""
         CREATE TABLE agents (
             id TEXT PRIMARY KEY,
