@@ -94,12 +94,12 @@ msgs, err := client.Recv(a2a.RecvOpts{
 })
 ```
 
-### RecvSimple(wait int, unreadOnly, includeSelf bool, limit int) ([]Message, error)
+### RecvSimple(wait float64, unreadOnly, includeSelf bool, limit int) ([]Message, error)
 
 Backward-compatible wrapper for `Recv()` with positional args.
 
 ```go
-messages, err := client.RecvSimple(30, true, false, 10)
+messages, err := client.RecvSimple(30.0, true, false, 10)
 ```
 
 #### RecvOpts fields
@@ -141,12 +141,15 @@ is not registered.
 client.SetStatus("done")
 ```
 
-### GetStatus(agentID string) (string, error)
+### GetStatus(agentID string) (*string, error)
 
-Check agent status.
+Check agent status. Returns `nil, nil` if agent is not found (matching Python's `None` return).
 
 ```go
 status, err := client.GetStatus("bob")
+if status == nil {
+    // agent not found
+}
 ```
 
 ### SearchFTS(query string, limit int) ([]Message, error)
