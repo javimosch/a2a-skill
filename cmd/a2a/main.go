@@ -108,7 +108,9 @@ func main() {
 	switch cmd {
 	case "init", "register", "unregister", "list", "status",
 		"send", "recv", "peek", "thread", "search", "stats",
-		"wait", "clear", "project", "version", "--version", "-v",
+		"wait", "clear", "project",
+		"task-create", "task-list", "task-status", "task-claim", "task-complete",
+		"version", "--version", "-v",
 		"help", "--help", "-h":
 	default:
 		fmt.Fprintf(os.Stderr, "a2a: unknown command: %s\n", cmd)
@@ -149,6 +151,16 @@ func main() {
 		cmdClear()
 	case "project":
 		cmdProject()
+	case "task-create":
+		cmdTaskCreate()
+	case "task-list":
+		cmdTaskList()
+	case "task-status":
+		cmdTaskStatus()
+	case "task-claim":
+		cmdTaskClaim()
+	case "task-complete":
+		cmdTaskComplete()
 	}
 }
 
@@ -173,6 +185,11 @@ Commands:
   wait --as <id>           block until N unread messages or timeout
   clear --yes              delete the project database
   project                  show resolved project info
+  task-create <title>      create a new task (planned)
+  task-list                list tasks
+  task-status <id> <state> update task status (state machine validated)
+  task-claim <id>          claim a task (set in_progress)
+  task-complete <id>       complete a task
   version                  show version information
 
 Project resolution:
@@ -421,7 +438,7 @@ func cmdSend() {
 	}
 
 	c := newClient(from)
-	mid, err := 	c.Send(to, body, ttlPtr, thread)
+	mid, err := 	c.Send(to, body, ttlPtr, thread, 3, false)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: send error: %v\n", err)
 		os.Exit(1)
@@ -740,6 +757,167 @@ func cmdProject() {
 	c := newClient("")
 	info := c.ProjectInfo()
 	printJSON(info)
+}
+
+// ---------- task commands (phase 2) ----------
+
+func cmdTaskCreate() {
+	args := positionalArgs()
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "a2a: usage: a2a task-create <title> [--description DESC] [--assigned-to AGENT] [--priority N] [--depends-on IDS...]")
+		os.Exit(1)
+	}
+	title := args[0]
+	description := getFlagValue("--description")
+	assignedTo := getFlagValue("--assigned-to")
+	priority := getFlagInt("--priority")
+	if priority == 0 {
+		priority = 3
+	}
+	dependsOnStr := getFlagValue("--depends-on")
+	var dependsOn []int64
+	if dependsOnStr != "" {
+		for _, s := range strings.Split(dependsOnStr, ",") {
+			id, err := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "a2a: invalid dependency id '%s'\n", s)
+				os.Exit(1)
+			}
+			dependsOn = append(dependsOn, id)
+		}
+	}
+	jsonFlag := hasFlag("--json")
+
+	agentID := getFlagValue("--as")
+	if agentID == "" {
+		agentID = "cli"
+	}
+	c := newClient(agentID)
+	tid, err := c.CreateTask(title, description, assignedTo, priority, dependsOn)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "a2a: %v\n", err)
+		os.Exit(1)
+	}
+	if jsonFlag {
+		printJSON(map[string]interface{}{
+			"id":     tid,
+			"title":  title,
+			"status": "planned",
+		})
+	} else {
+		fmt.Printf("task #%d created: %s (planned)\n", tid, title)
+	}
+}
+
+func cmdTaskList() {
+	status := getFlagValue("--status")
+	assignedTo := getFlagValue("--assigned-to")
+	jsonFlag := hasFlag("--json")
+
+	c := newClient("")
+	tasks, err := c.ListTasks(status, assignedTo)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "a2a: %v\n", err)
+		os.Exit(1)
+	}
+	if jsonFlag {
+		printJSON(tasks)
+		return
+	}
+	if len(tasks) == 0 {
+		fmt.Println("(no tasks)")
+		return
+	}
+	fmt.Printf("%-5s %-40s %-16s %-20s %-5s\n", "ID", "TITLE", "STATUS", "ASSIGNED", "PRIO")
+	fmt.Println(strings.Repeat("-", 90))
+	for _, t := range tasks {
+		assigned := "-"
+		if t.AssignedTo != nil {
+			assigned = *t.AssignedTo
+		}
+		title := t.Title
+		if len(title) > 40 {
+			title = title[:37] + "..."
+		}
+		fmt.Printf("%-5d %-40s %-16s %-20s %-5d\n", t.ID, title, t.Status, assigned, t.Priority)
+	}
+}
+
+func cmdTaskStatus() {
+	args := positionalArgs()
+	if len(args) < 2 {
+		fmt.Fprintln(os.Stderr, "a2a: usage: a2a task-status <task_id> <state> [--as AGENT]")
+		os.Exit(1)
+	}
+	id, err := strconv.ParseInt(args[0], 10, 64)
+	if err != nil || id <= 0 {
+		fmt.Fprintln(os.Stderr, "a2a: task_id must be a positive integer")
+		os.Exit(1)
+	}
+	state := args[1]
+	agentID := getFlagValue("--as")
+
+	c := newClient(agentID)
+	if err := c.UpdateTaskStatus(id, state); err != nil {
+		fmt.Fprintf(os.Stderr, "a2a: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("task #%d status -> %s\n", id, state)
+}
+
+func cmdTaskClaim() {
+	args := positionalArgs()
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "a2a: usage: a2a task-claim <task_id> --as AGENT")
+		os.Exit(1)
+	}
+	id, err := strconv.ParseInt(args[0], 10, 64)
+	if err != nil || id <= 0 {
+		fmt.Fprintln(os.Stderr, "a2a: task_id must be a positive integer")
+		os.Exit(1)
+	}
+	agentID := getFlagValue("--as")
+	if agentID == "" {
+		fmt.Fprintln(os.Stderr, "a2a: --as <agent-id> is required")
+		os.Exit(1)
+	}
+
+	c := newClient(agentID)
+	if err := c.ClaimTask(id); err != nil {
+		fmt.Fprintf(os.Stderr, "a2a: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("task #%d claimed by '%s' -> in_progress\n", id, agentID)
+}
+
+func cmdTaskComplete() {
+	args := positionalArgs()
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "a2a: usage: a2a task-complete <task_id> [--result RESULT] --as AGENT")
+		os.Exit(1)
+	}
+	id, err := strconv.ParseInt(args[0], 10, 64)
+	if err != nil || id <= 0 {
+		fmt.Fprintln(os.Stderr, "a2a: task_id must be a positive integer")
+		os.Exit(1)
+	}
+	agentID := getFlagValue("--as")
+	if agentID == "" {
+		fmt.Fprintln(os.Stderr, "a2a: --as <agent-id> is required")
+		os.Exit(1)
+	}
+	result := getFlagValue("--result")
+
+	c := newClient(agentID)
+	if err := c.CompleteTask(id, result); err != nil {
+		fmt.Fprintf(os.Stderr, "a2a: %v\n", err)
+		os.Exit(1)
+	}
+	if result != "" {
+		fmt.Printf("task #%d completed by %s: %s\n", id, agentID, result)
+	} else {
+		fmt.Printf("task #%d completed by %s\n", id, agentID)
+	}
 }
 
 func printMessages(msgs []a2a.Message) {

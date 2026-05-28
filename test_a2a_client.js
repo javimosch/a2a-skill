@@ -478,3 +478,163 @@ test('stats() message counts are accurate', async () => {
   assert.ok(s.broadcasts >= 1);
   assert.ok(s.direct_messages >= 2);
 });
+
+// --- task tests (phase 2) ---
+
+test('createTask returns positive ID', async () => {
+  const { alice } = makeClients('task-create-basic');
+  const id = await alice.createTask('Test task');
+  assert.ok(typeof id === 'number');
+  assert.ok(id > 0);
+});
+
+test('createTask stores title and status', async () => {
+  const { alice } = makeClients('task-create-store');
+  await alice.createTask('Test task');
+  const tasks = await alice.listTasks();
+  assert.strictEqual(tasks.length, 1);
+  assert.strictEqual(tasks[0].title, 'Test task');
+  assert.strictEqual(tasks[0].status, 'planned');
+});
+
+test('createTask with description, assignee, priority', async () => {
+  const { alice } = makeClients('task-create-full');
+  await alice.createTask('Build feature', 'Implement X', 'bob', 1);
+  const tasks = await alice.listTasks();
+  assert.strictEqual(tasks.length, 1);
+  assert.strictEqual(tasks[0].title, 'Build feature');
+  assert.strictEqual(tasks[0].description, 'Implement X');
+  assert.strictEqual(tasks[0].assigned_to, 'bob');
+  assert.strictEqual(tasks[0].priority, 1);
+});
+
+test('createTask with dependencies', async () => {
+  const { alice } = makeClients('task-create-deps');
+  const t1 = await alice.createTask('First');
+  const t2 = await alice.createTask('Second', '', '', 3, [t1]);
+  const tasks = await alice.listTasks();
+  const second = tasks.find(t => t.id === t2);
+  assert.ok(second);
+  assert.ok(second.dependencies);
+});
+
+test('createTask empty title throws', async () => {
+  const { alice } = makeClients('task-create-empty');
+  await assert.rejects(() => alice.createTask(''), /must not be empty/);
+  await assert.rejects(() => alice.createTask('   '), /must not be empty/);
+});
+
+test('createTask invalid priority throws', async () => {
+  const { alice } = makeClients('task-create-prio');
+  await assert.rejects(() => alice.createTask('test', '', '', 5));
+  await assert.rejects(() => alice.createTask('test', '', '', 0));
+});
+
+test('listTasks empty returns empty array', async () => {
+  const { alice } = makeClients('list-empty');
+  const tasks = await alice.listTasks();
+  assert.deepStrictEqual(tasks, []);
+});
+
+test('listTasks filter by status', async () => {
+  const { alice } = makeClients('list-status');
+  await alice.createTask('Task A');
+  await alice.createTask('Task B');
+  const planned = await alice.listTasks('planned');
+  assert.strictEqual(planned.length, 2);
+  const done = await alice.listTasks('done');
+  assert.strictEqual(done.length, 0);
+});
+
+test('listTasks filter by assigned', async () => {
+  const { alice } = makeClients('list-assigned');
+  await alice.createTask('Alice task', '', 'alice');
+  await alice.createTask('Bob task', '', 'bob');
+  const aliceTasks = await alice.listTasks(null, 'alice');
+  assert.strictEqual(aliceTasks.length, 1);
+  assert.strictEqual(aliceTasks[0].title, 'Alice task');
+});
+
+test('updateTaskStatus valid transitions', async () => {
+  const { alice } = makeClients('update-valid');
+  const tid = await alice.createTask('Workflow');
+  await alice.updateTaskStatus(tid, 'in_progress');
+  await alice.updateTaskStatus(tid, 'review_pending');
+  await alice.updateTaskStatus(tid, 'approved');
+  await alice.updateTaskStatus(tid, 'done');
+  const tasks = await alice.listTasks();
+  assert.strictEqual(tasks[0].status, 'done');
+});
+
+test('updateTaskStatus invalid transition throws', async () => {
+  const { alice } = makeClients('update-invalid');
+  const tid = await alice.createTask('Test');
+  await assert.rejects(() => alice.updateTaskStatus(tid, 'done'));
+  await assert.rejects(() => alice.updateTaskStatus(tid, 'blocked'));
+});
+
+test('updateTaskStatus done is terminal', async () => {
+  const { alice } = makeClients('update-terminal');
+  const tid = await alice.createTask('Test');
+  await alice.updateTaskStatus(tid, 'in_progress');
+  await alice.updateTaskStatus(tid, 'done');
+  await assert.rejects(() => alice.updateTaskStatus(tid, 'in_progress'));
+});
+
+test('updateTaskStatus blocked then unblock', async () => {
+  const { alice } = makeClients('update-blocked');
+  const tid = await alice.createTask('Test');
+  await alice.updateTaskStatus(tid, 'in_progress');
+  await alice.updateTaskStatus(tid, 'blocked');
+  await alice.updateTaskStatus(tid, 'in_progress');
+  const tasks = await alice.listTasks();
+  assert.strictEqual(tasks[0].status, 'in_progress');
+});
+
+test('updateTaskStatus not found throws', async () => {
+  const { alice } = makeClients('update-notfound');
+  await assert.rejects(() => alice.updateTaskStatus(9999, 'in_progress'));
+});
+
+test('claimTask sets in_progress and assigns', async () => {
+  const { alice, bob } = makeClients('claim-ok');
+  const tid = await alice.createTask('Claimable', '', 'alice');
+  await bob.claimTask(tid);
+  const tasks = await alice.listTasks();
+  assert.strictEqual(tasks[0].status, 'in_progress');
+  assert.strictEqual(tasks[0].assigned_to, 'bob');
+});
+
+test('claimTask already done throws', async () => {
+  const { alice } = makeClients('claim-done');
+  const tid = await alice.createTask('Done task');
+  await alice.updateTaskStatus(tid, 'in_progress');
+  await alice.updateTaskStatus(tid, 'done');
+  await assert.rejects(() => alice.claimTask(tid));
+});
+
+test('claimTask assigned to other throws', async () => {
+  const { alice, bob } = makeClients('claim-other');
+  const tid = await alice.createTask('Others task', '', 'alice');
+  await assert.rejects(() => bob.claimTask(tid));
+});
+
+test('claimTask not found throws', async () => {
+  const { alice } = makeClients('claim-notfound');
+  await assert.rejects(() => alice.claimTask(9999));
+});
+
+test('completeTask sets done with result', async () => {
+  const { alice } = makeClients('complete-result');
+  const tid = await alice.createTask('Completable', '', 'alice');
+  await alice.claimTask(tid);
+  await alice.completeTask(tid, 'All done!');
+  const tasks = await alice.listTasks();
+  assert.strictEqual(tasks[0].status, 'done');
+  assert.strictEqual(tasks[0].result, 'All done!');
+});
+
+test('completeTask not found throws', async () => {
+  const { alice } = makeClients('complete-notfound');
+  await assert.rejects(() => alice.completeTask(9999, 'nope'));
+});

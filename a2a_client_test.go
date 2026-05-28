@@ -111,7 +111,7 @@ func TestSendRecv(t *testing.T) {
 	c2.Register("critic", "", "", nil, false)
 
 	// Send from alice to bob
-	mid, err := c.Send("bob", "hello bob", nil, "")
+	mid, err := c.Send("bob", "hello bob", nil, "", 3, false)
 	if err != nil {
 		t.Fatalf("Send: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestSendBroadcast(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	mid, err := c.Send("all", "hello everyone", nil, "")
+	mid, err := c.Send("all", "hello everyone", nil, "", 3, false)
 	if err != nil {
 		t.Fatalf("Send broadcast: %v", err)
 	}
@@ -159,8 +159,8 @@ func TestPeek(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	c.Send("bob", "msg1", nil, "")
-	c.Send("bob", "msg2", nil, "")
+	c.Send("bob", "msg1", nil, "", 3, false)
+	c.Send("bob", "msg2", nil, "", 3, false)
 
 	msgs, err := c.Peek(10)
 	if err != nil {
@@ -182,8 +182,8 @@ func TestSearch(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	c.Send("bob", "hello world", nil, "")
-	c.Send("bob", "goodbye moon", nil, "")
+	c.Send("bob", "hello world", nil, "", 3, false)
+	c.Send("bob", "goodbye moon", nil, "", 3, false)
 
 	msgs, err := c.Search("hello", 10)
 	if err != nil {
@@ -205,9 +205,9 @@ func TestThread(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	c.Send("bob", "msg1", nil, "thread-1")
-	c.Send("bob", "msg2", nil, "thread-1")
-	c.Send("bob", "other", nil, "")
+	c.Send("bob", "msg1", nil, "thread-1", 3, false)
+	c.Send("bob", "msg2", nil, "thread-1", 3, false)
+	c.Send("bob", "other", nil, "", 3, false)
 
 	msgs, err := c.Thread("thread-1")
 	if err != nil {
@@ -252,8 +252,8 @@ func TestStats(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	c.Send("bob", "msg1", nil, "")
-	c.Send("bob", "msg2", nil, "")
+	c.Send("bob", "msg1", nil, "", 3, false)
+	c.Send("bob", "msg2", nil, "", 3, false)
 
 	stats, err := c.Stats()
 	if err != nil {
@@ -280,7 +280,7 @@ func TestStatsJSON(t *testing.T) {
 	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
-	c.Send("bob", "test", nil, "")
+	c.Send("bob", "test", nil, "", 3, false)
 
 	json, err := c.StatsJSON()
 	if err != nil {
@@ -302,7 +302,7 @@ func TestWait(t *testing.T) {
 	c2 := setupTestClient(t, c.Project, "alice")
 	c2.InitProject()
 	c2.Register("planner", "", "", nil, false)
-	c2.Send("bob", "msg for wait test", nil, "")
+	c2.Send("bob", "msg for wait test", nil, "", 3, false)
 
 	// Bob waits
 	ok, err := c.Wait(1, 5)
@@ -395,7 +395,7 @@ func TestSendWithThread(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	mid, err := c.Send("bob", "with thread", nil, "my-thread")
+	mid, err := c.Send("bob", "with thread", nil, "my-thread", 3, false)
 	if err != nil {
 		t.Fatalf("Send with thread: %v", err)
 	}
@@ -416,7 +416,7 @@ func TestSendWithTTL(t *testing.T) {
 	c2.Register("critic", "", "", nil, false)
 
 	ttl := 3600
-	mid, err := c.Send("bob", "with ttl", &ttl, "")
+	mid, err := c.Send("bob", "with ttl", &ttl, "", 3, false)
 	if err != nil {
 		t.Fatalf("Send with TTL: %v", err)
 	}
@@ -454,7 +454,7 @@ func TestRecvWithTTLCleanup(t *testing.T) {
 
 	// Send expired message
 	ttl := 0
-	c.Send("bob", "will expire", &ttl, "")
+	c.Send("bob", "will expire", &ttl, "", 3, false)
 
 	// recv should call CleanupExpired internally and not return expired
 	c2 := setupTestClient(t, c.Project, "bob")
@@ -528,18 +528,22 @@ func TestSendEmptyBody(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	_, err := c.Send("bob", "", nil, "")
-	if err == nil {
-		t.Fatal("expected error for empty body")
+	// Empty body allowed (matches Python behavior)
+	mid, err := c.Send("bob", "", nil, "", 3, false)
+	if err != nil {
+		t.Fatalf("unexpected error for empty body: %v", err)
 	}
-	if !strings.Contains(err.Error(), "message body must not be empty") {
-		t.Fatalf("unexpected error: %v", err)
+	if mid <= 0 {
+		t.Fatal("expected positive message id for empty body")
 	}
 
-	// Also test whitespace-only body
-	_, err = c.Send("bob", "   ", nil, "")
-	if err == nil {
-		t.Fatal("expected error for whitespace-only body")
+	// Also test whitespace-only body (allowed, matches Python)
+	mid, err = c.Send("bob", "   ", nil, "", 3, false)
+	if err != nil {
+		t.Fatalf("unexpected error for whitespace-only body: %v", err)
+	}
+	if mid <= 1 {
+		t.Fatal("expected positive message id for whitespace-only body")
 	}
 }
 
@@ -555,7 +559,7 @@ func TestSendSpecialChars(t *testing.T) {
 	c2.Register("critic", "", "", nil, false)
 
 	special := "hello\nmulti\nline\nwith\ttabs\nand🚀emoji\nand\"quotes\""
-	mid, err := c.Send("bob", special, nil, "")
+	mid, err := c.Send("bob", special, nil, "", 3, false)
 	if err != nil {
 		t.Fatalf("Send special chars: %v", err)
 	}
@@ -583,7 +587,7 @@ func TestSendLongBody(t *testing.T) {
 
 	// 10KB body
 	longBody := strings.Repeat("Lorem ipsum dolor sit amet. ", 500)
-	mid, err := c.Send("bob", longBody, nil, "")
+	mid, err := c.Send("bob", longBody, nil, "", 3, false)
 	if err != nil {
 		t.Fatalf("Send long body (10KB): %v", err)
 	}
@@ -615,10 +619,10 @@ func TestRecvSince(t *testing.T) {
 	c2.Register("critic", "", "", nil, false)
 
 	// Create message at a known timestamp
-	c.Send("bob", "old message", nil, "")
+	c.Send("bob", "old message", nil, "", 3, false)
 	time.Sleep(10 * time.Millisecond)
 	since := nowSec()
-	c.Send("bob", "new message", nil, "")
+	c.Send("bob", "new message", nil, "", 3, false)
 
 	msgs, err := c2.Recv(RecvOpts{Since: &since, UnreadOnly: true, Wait: 2})
 	if err != nil {
@@ -677,7 +681,7 @@ func TestConcurrentSendRecv(t *testing.T) {
 	done := make(chan bool)
 	go func() {
 		for i := 0; i < 5; i++ {
-			c.Send("bob", fmt.Sprintf("msg-%d", i), nil, "")
+			c.Send("bob", fmt.Sprintf("msg-%d", i), nil, "", 3, false)
 			time.Sleep(10 * time.Millisecond)
 		}
 		done <- true
@@ -758,7 +762,7 @@ func TestSendToUnknownRecipientFails(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("tester", "", "", nil, false)
 
-	_, err := c.Send("nonexistent-bob", "hello", nil, "")
+	_, err := c.Send("nonexistent-bob", "hello", nil, "", 3, false)
 	if err == nil {
 		t.Fatal("expected error sending to unknown recipient, got nil")
 	}
@@ -773,7 +777,7 @@ func TestSendFromUnregisteredSenderFails(t *testing.T) {
 	c2 := setupTestClient(t, c.Project, "bob")
 	c2.Register("tester", "", "", nil, false)
 
-	_, err := c.Send("bob", "hello", nil, "")
+	_, err := c.Send("bob", "hello", nil, "", 3, false)
 	if err == nil {
 		t.Fatal("expected error sending from unregistered sender, got nil")
 	}
@@ -816,7 +820,7 @@ func TestPeekJSON(t *testing.T) {
 	c2 := setupTestClient(t, c.Project, "bob")
 	c2.Register("tester", "", "", nil, false)
 
-	c.Send("bob", "peek test", nil, "")
+	c.Send("bob", "peek test", nil, "", 3, false)
 	msgs, err := c.Peek(10)
 	if err != nil {
 		t.Fatalf("Peek: %v", err)
@@ -836,7 +840,7 @@ func TestBroadcastRecipientIsNil(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("tester", "", "", nil, false)
 
-	_, err := c.Send("all", "broadcast msg", nil, "")
+	_, err := c.Send("all", "broadcast msg", nil, "", 3, false)
 	if err != nil {
 		t.Fatalf("Send broadcast: %v", err)
 	}
@@ -861,7 +865,7 @@ func TestSendEmptyRecipientFails(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("tester", "", "", nil, false)
 
-	_, err := c.Send("", "hello", nil, "")
+	_, err := c.Send("", "hello", nil, "", 3, false)
 	if err == nil {
 		t.Fatal("expected error sending to empty recipient, got nil")
 	}
@@ -960,7 +964,7 @@ func TestWaitForMessages(t *testing.T) {
 	c2 := setupTestClient(t, c.Project, "alice")
 	c2.InitProject()
 	c2.Register("planner", "", "", nil, false)
-	c2.Send("bob", "msg for wait test", nil, "")
+	c2.Send("bob", "msg for wait test", nil, "", 3, false)
 
 	ok, err := c.WaitForMessages(1, 5)
 	if err != nil {
@@ -1027,9 +1031,9 @@ func TestWaitForMessagesMultipleCount(t *testing.T) {
 	c2 := setupTestClient(t, c.Project, "alice")
 	c2.InitProject()
 	c2.Register("planner", "", "", nil, false)
-	c2.Send("bob", "msg1", nil, "")
-	c2.Send("bob", "msg2", nil, "")
-	c2.Send("bob", "msg3", nil, "")
+	c2.Send("bob", "msg1", nil, "", 3, false)
+	c2.Send("bob", "msg2", nil, "", 3, false)
+	c2.Send("bob", "msg3", nil, "", 3, false)
 
 	ok, err := c.WaitForMessages(3, 5)
 	if err != nil {
@@ -1049,7 +1053,7 @@ func TestSendNonPositiveTTLFails(t *testing.T) {
 
 	// TTL zero
 	zeroTTL := 0
-	_, err := c.Send("bob", "test", &zeroTTL, "")
+	_, err := c.Send("bob", "test", &zeroTTL, "", 3, false)
 	if err == nil {
 		t.Fatal("expected error for Send with TTL=0, got nil")
 	}
@@ -1059,7 +1063,7 @@ func TestSendNonPositiveTTLFails(t *testing.T) {
 
 	// TTL negative
 	negTTL := -5
-	_, err = c.Send("bob", "test", &negTTL, "")
+	_, err = c.Send("bob", "test", &negTTL, "", 3, false)
 	if err == nil {
 		t.Fatal("expected error for Send with TTL=-5, got nil")
 	}
@@ -1160,7 +1164,7 @@ func TestSendMaxSenderIDLengthFails(t *testing.T) {
 	// Sender ID too long
 	longID := strings.Repeat("b", MaxAgentIDLength+1)
 	c.AgentID = longID
-	_, err := c.Send("alice", "hello", nil, "")
+	_, err := c.Send("alice", "hello", nil, "", 3, false)
 	if err == nil {
 		t.Fatal("expected error for Send with too-long sender ID, got nil")
 	}
@@ -1178,7 +1182,7 @@ func TestSendMaxRecipientIDLengthFails(t *testing.T) {
 
 	// Recipient ID too long (not broadcast)
 	longID := strings.Repeat("b", MaxAgentIDLength+1)
-	_, err := c.Send(longID, "hello", nil, "")
+	_, err := c.Send(longID, "hello", nil, "", 3, false)
 	if err == nil {
 		t.Fatal("expected error for Send with too-long recipient ID, got nil")
 	}
@@ -1196,7 +1200,7 @@ func TestSendMaxThreadIDLengthFails(t *testing.T) {
 
 	// Thread ID too long
 	longThread := strings.Repeat("t", MaxThreadIDLength+1)
-	_, err := c.Send("alice", "hello", nil, longThread)
+	_, err := c.Send("alice", "hello", nil, longThread, 3, false)
 	if err == nil {
 		t.Fatal("expected error for Send with too-long thread ID, got nil")
 	}
@@ -1214,7 +1218,7 @@ func TestSendMaxBodyLengthFails(t *testing.T) {
 
 	// Body too long
 	longBody := strings.Repeat("x", MaxBodyLength+1)
-	_, err := c.Send("alice", longBody, nil, "")
+	_, err := c.Send("alice", longBody, nil, "", 3, false)
 	if err == nil {
 		t.Fatal("expected error for Send with too-long body, got nil")
 	}
@@ -1232,8 +1236,367 @@ func TestSendMaxBodyLengthBoundaryOk(t *testing.T) {
 
 	// Body at max length should succeed
 	exactBody := strings.Repeat("x", MaxBodyLength)
-	_, err := c.Send("alice", exactBody, nil, "")
+	_, err := c.Send("alice", exactBody, nil, "", 3, false)
 	if err != nil {
 		t.Fatalf("expected body at max length to succeed, got: %v", err)
+	}
+}
+
+// ---- task tests (phase 2) ----
+
+func TestCreateTask(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "alice"
+	tid, err := c.CreateTask("Test task", "", "", 3, nil)
+	if err != nil {
+		t.Fatalf("CreateTask: %v", err)
+	}
+	if tid <= 0 {
+		t.Fatalf("expected positive task ID, got %d", tid)
+	}
+
+	tasks, err := c.ListTasks("", "")
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if len(tasks) != 1 {
+		t.Fatalf("expected 1 task, got %d", len(tasks))
+	}
+	if tasks[0].Title != "Test task" {
+		t.Fatalf("expected title 'Test task', got '%s'", tasks[0].Title)
+	}
+	if tasks[0].Status != "planned" {
+		t.Fatalf("expected status 'planned', got '%s'", tasks[0].Status)
+	}
+}
+
+func TestCreateTaskWithDescriptionAndAssignee(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	_, err := c.CreateTask("Build feature", "Implement X", "bob", 1, nil)
+	if err != nil {
+		t.Fatalf("CreateTask: %v", err)
+	}
+
+	tasks, err := c.ListTasks("", "")
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if len(tasks) != 1 {
+		t.Fatalf("expected 1 task, got %d", len(tasks))
+	}
+	tt := tasks[0]
+	if tt.Title != "Build feature" {
+		t.Fatalf("title: got '%s'", tt.Title)
+	}
+	if tt.Description == nil || *tt.Description != "Implement X" {
+		t.Fatalf("description mismatch")
+	}
+	if tt.AssignedTo == nil || *tt.AssignedTo != "bob" {
+		t.Fatalf("assigned_to mismatch")
+	}
+	if tt.Priority != 1 {
+		t.Fatalf("priority: got %d", tt.Priority)
+	}
+}
+
+func TestCreateTaskWithDependencies(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	t1, err := c.CreateTask("First", "", "", 3, nil)
+	if err != nil {
+		t.Fatalf("CreateTask first: %v", err)
+	}
+	t2, err := c.CreateTask("Second", "", "", 3, []int64{t1})
+	if err != nil {
+		t.Fatalf("CreateTask second: %v", err)
+	}
+
+	tasks, err := c.ListTasks("", "")
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	var second Task
+	for _, ta := range tasks {
+		if ta.ID == int(t2) {
+			second = ta
+			break
+		}
+	}
+	if second.Dependencies == nil {
+		t.Fatal("expected dependencies to be set")
+	}
+	if !strings.Contains(*second.Dependencies, "1") {
+		t.Fatalf("expected dependency on task 1, got '%s'", *second.Dependencies)
+	}
+}
+
+func TestCreateTaskEmptyTitleFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	_, err := c.CreateTask("  ", "", "", 3, nil)
+	if err == nil {
+		t.Fatal("expected error for empty title, got nil")
+	}
+}
+
+func TestCreateTaskInvalidPriorityFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	_, err := c.CreateTask("test", "", "", 5, nil)
+	if err == nil {
+		t.Fatal("expected error for priority 5, got nil")
+	}
+	_, err = c.CreateTask("test", "", "", 0, nil)
+	if err == nil {
+		t.Fatal("expected error for priority 0, got nil")
+	}
+}
+
+func TestListTasksEmpty(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	tasks, err := c.ListTasks("", "")
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if len(tasks) != 0 {
+		t.Fatalf("expected empty list, got %d tasks", len(tasks))
+	}
+}
+
+func TestListTasksFilterByStatus(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	c.CreateTask("Task A", "", "", 3, nil)
+	c.CreateTask("Task B", "", "", 3, nil)
+
+	// Both should be planned
+	tasks, err := c.ListTasks("planned", "")
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if len(tasks) != 2 {
+		t.Fatalf("expected 2 planned tasks, got %d", len(tasks))
+	}
+
+	// No done tasks
+	tasks, err = c.ListTasks("done", "")
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if len(tasks) != 0 {
+		t.Fatalf("expected 0 done tasks, got %d", len(tasks))
+	}
+}
+
+func TestListTasksFilterByAssigned(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	c.CreateTask("Alice task", "", "alice", 3, nil)
+	c.CreateTask("Bob task", "", "bob", 3, nil)
+
+	tasks, err := c.ListTasks("", "alice")
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if len(tasks) != 1 {
+		t.Fatalf("expected 1 task for alice, got %d", len(tasks))
+	}
+	if tasks[0].Title != "Alice task" {
+		t.Fatalf("expected 'Alice task', got '%s'", tasks[0].Title)
+	}
+}
+
+func TestUpdateTaskStatusValidTransitions(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	tid, _ := c.CreateTask("Workflow", "", "", 3, nil)
+
+	transitions := []string{"in_progress", "review_pending", "approved", "done"}
+	for _, st := range transitions {
+		if err := c.UpdateTaskStatus(tid, st); err != nil {
+			t.Fatalf("transition to '%s': %v", st, err)
+		}
+	}
+}
+
+func TestUpdateTaskStatusInvalidTransitionFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	tid, _ := c.CreateTask("Test", "", "", 3, nil)
+
+	// planned -> done is invalid
+	if err := c.UpdateTaskStatus(tid, "done"); err == nil {
+		t.Fatal("expected error for planned->done, got nil")
+	}
+	// planned -> blocked is invalid
+	if err := c.UpdateTaskStatus(tid, "blocked"); err == nil {
+		t.Fatal("expected error for planned->blocked, got nil")
+	}
+}
+
+func TestUpdateTaskStatusDoneIsTerminal(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	tid, _ := c.CreateTask("Test", "", "", 3, nil)
+	c.UpdateTaskStatus(tid, "in_progress")
+	c.UpdateTaskStatus(tid, "done")
+
+	if err := c.UpdateTaskStatus(tid, "in_progress"); err == nil {
+		t.Fatal("expected error transitioning from done, got nil")
+	}
+}
+
+func TestUpdateTaskStatusBlockedAndUnblock(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	tid, _ := c.CreateTask("Test", "", "", 3, nil)
+	c.UpdateTaskStatus(tid, "in_progress")
+	c.UpdateTaskStatus(tid, "blocked")
+
+	// blocked -> in_progress should be valid
+	if err := c.UpdateTaskStatus(tid, "in_progress"); err != nil {
+		t.Fatalf("expected blocked->in_progress to work, got: %v", err)
+	}
+}
+
+func TestUpdateTaskStatusNotFoundFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	if err := c.UpdateTaskStatus(9999, "in_progress"); err == nil {
+		t.Fatal("expected error for non-existent task, got nil")
+	}
+}
+
+func TestClaimTask(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	tid, _ := c.CreateTask("Claimable", "", "", 3, nil)
+	if err := c.ClaimTask(tid); err != nil {
+		t.Fatalf("ClaimTask: %v", err)
+	}
+
+	tasks, _ := c.ListTasks("", "")
+	tt := tasks[0]
+	if tt.Status != "in_progress" {
+		t.Fatalf("expected status 'in_progress', got '%s'", tt.Status)
+	}
+	if tt.AssignedTo == nil || *tt.AssignedTo != "alice" {
+		t.Fatalf("expected assigned_to 'alice', got '%v'", tt.AssignedTo)
+	}
+	if tt.ClaimedAt == nil {
+		t.Fatal("expected claimed_at to be set")
+	}
+}
+
+func TestClaimTaskAlreadyDoneFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	tid, _ := c.CreateTask("Done task", "", "", 3, nil)
+	c.UpdateTaskStatus(tid, "in_progress")
+	c.UpdateTaskStatus(tid, "done")
+
+	if err := c.ClaimTask(tid); err == nil {
+		t.Fatal("expected error claiming done task, got nil")
+	}
+}
+
+func TestClaimTaskAssignedToOtherFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "bob"
+
+	// Create task assigned to alice
+	tid, _ := c.CreateTask("Others task", "", "alice", 3, nil)
+
+	// bob tries to claim — should fail
+	if err := c.ClaimTask(tid); err == nil {
+		t.Fatal("expected error claiming another's task, got nil")
+	}
+}
+
+func TestClaimTaskNotFoundFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	if err := c.ClaimTask(9999); err == nil {
+		t.Fatal("expected error for non-existent task, got nil")
+	}
+}
+
+func TestClaimTaskReclaimOwned(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	tid, _ := c.CreateTask("Mine", "", "alice", 3, nil)
+	if err := c.ClaimTask(tid); err != nil {
+		t.Fatalf("ClaimTask own: %v", err)
+	}
+}
+
+func TestCompleteTask(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	tid, _ := c.CreateTask("Completable", "", "alice", 3, nil)
+	c.ClaimTask(tid)
+	if err := c.CompleteTask(tid, "All done"); err != nil {
+		t.Fatalf("CompleteTask: %v", err)
+	}
+
+	tasks, _ := c.ListTasks("", "")
+	tt := tasks[0]
+	if tt.Status != "done" {
+		t.Fatalf("expected status 'done', got '%s'", tt.Status)
+	}
+	if tt.Result == nil || *tt.Result != "All done" {
+		t.Fatalf("expected result 'All done', got '%v'", tt.Result)
+	}
+	if tt.CompletedAt == nil {
+		t.Fatal("expected completed_at to be set")
+	}
+}
+
+func TestCompleteTaskNotFoundFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+	c.AgentID = "alice"
+
+	if err := c.CompleteTask(9999, "nope"); err == nil {
+		t.Fatal("expected error for non-existent task, got nil")
 	}
 }

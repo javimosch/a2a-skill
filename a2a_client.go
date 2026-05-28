@@ -39,12 +39,14 @@ type Client struct {
 
 // Message represents a message in the bus
 type Message struct {
-	ID       int       `json:"id"`
-	Sender   string    `json:"sender"`
-	Recipient *string  `json:"recipient"`
-	Body     string    `json:"body"`
-	ThreadID *string   `json:"thread_id"`
-	CreatedAt float64  `json:"created_at"`
+	ID          int       `json:"id"`
+	Sender      string    `json:"sender"`
+	Recipient   *string   `json:"recipient"`
+	Body        string    `json:"body"`
+	ThreadID    *string   `json:"thread_id"`
+	Priority    int       `json:"priority"`
+	RequiresAck bool      `json:"requires_ack"`
+	CreatedAt   float64   `json:"created_at"`
 }
 
 // Peer represents an agent on the bus
@@ -56,21 +58,57 @@ type Peer struct {
 	PID    *int    `json:"pid"`
 }
 
+// Task represents a task in the shared task queue
+type Task struct {
+	ID           int      `json:"id"`
+	Title        string   `json:"title"`
+	Description  *string  `json:"description"`
+	AssignedTo   *string  `json:"assigned_to"`
+	Status       string   `json:"status"`
+	Priority     int      `json:"priority"`
+	Dependencies *string  `json:"dependencies"`
+	Result       *string  `json:"result"`
+	ClaimedAt    *float64 `json:"claimed_at"`
+	CompletedAt  *float64 `json:"completed_at"`
+	CreatedAt    float64  `json:"created_at"`
+	UpdatedAt    float64  `json:"updated_at"`
+}
+
+// TaskDep represents a dependency between tasks
+type TaskDep struct {
+	TaskID    int `json:"task_id"`
+	DependsOn int `json:"depends_on"`
+}
+
 // TopSender represents one entry in the top senders stats list.
 type TopSender struct {
 	Agent string `json:"agent"`
 	Count int    `json:"count"`
 }
 
+// PriorityCount represents one priority level's count in stats.
+type PriorityCount struct {
+	Label string `json:"label"`
+	Count int    `json:"count"`
+}
+
 // Stats represents bus statistics
 type Stats struct {
-	Messages       int         `json:"messages"`
-	DirectMessages int         `json:"direct_messages"`
-	Broadcasts     int         `json:"broadcasts"`
-	Threads        int         `json:"threads"`
-	AgentsActive   int         `json:"agents_active"`
-	AgentsDone     int         `json:"agents_done"`
-	TopSenders     []TopSender `json:"top_senders"`
+	Messages            int            `json:"messages"`
+	DirectMessages      int            `json:"direct_messages"`
+	Broadcasts          int            `json:"broadcasts"`
+	Threads             int            `json:"threads"`
+	PriorityDistribution []PriorityCount `json:"priority_distribution"`
+	AcksRequired        int            `json:"acks_required"`
+	AcksSent            int            `json:"acks_sent"`
+	PendingAcks         int            `json:"pending_acks"`
+	AgentsActive        int            `json:"agents_active"`
+	AgentsDone          int            `json:"agents_done"`
+	TasksTotal          int            `json:"tasks_total"`
+	TasksDone           int            `json:"tasks_done"`
+	TasksBlocked        int            `json:"tasks_blocked"`
+	TasksByStatus       map[string]int `json:"tasks_by_status"`
+	TopSenders          []TopSender    `json:"top_senders"`
 }
 
 // NewClient creates a new a2a client
@@ -80,9 +118,6 @@ func NewClient(project, agentID string) (*Client, error) {
 	}
 	if strings.Contains(project, "/") || strings.Contains(project, "\\") || strings.HasPrefix(project, ".") {
 		return nil, fmt.Errorf("project must not contain path separators or start with dot")
-	}
-	if strings.TrimSpace(agentID) == "" {
-		return nil, fmt.Errorf("agent_id must not be empty")
 	}
 	if len(agentID) > MaxAgentIDLength {
 		return nil, fmt.Errorf("agent_id too long (%d chars, max %d)", len(agentID), MaxAgentIDLength)
@@ -116,8 +151,10 @@ func (c *Client) connect() (*sql.DB, error) {
 
 // Send sends a message to a peer (or broadcast if recipient is "all"/"*"/"broadcast").
 // threadID may be empty string for no thread. ttlSeconds may be nil for no expiry.
-// Matches Python/JS/Rust order: send(to, message, ttl_seconds, thread_id).
-func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int64, error) {
+// priority should be 1-4 (1=URGENT, 2=HIGH, 3=NORMAL, 4=LOW, default 3).
+// requireAck marks the message as requiring acknowledgment.
+// Matches Python/JS/Rust order: send(to, message, ttl_seconds, thread_id, priority, require_ack).
+func (c *Client) Send(to, message string, ttlSeconds *int, threadID string, priority int, requireAck bool) (int64, error) {
 	if len(c.AgentID) > MaxAgentIDLength {
 			return 0, fmt.Errorf("agent_id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
 	}
@@ -127,11 +164,11 @@ func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int
 	if ttlSeconds != nil && *ttlSeconds <= 0 {
 		return 0, fmt.Errorf("ttl_seconds must be a positive number of seconds")
 	}
-	if strings.TrimSpace(message) == "" {
-		return 0, fmt.Errorf("message body must not be empty")
-	}
 	if len(message) > MaxBodyLength {
 		return 0, fmt.Errorf("message body too long (%d chars, max %d)", len(message), MaxBodyLength)
+	}
+	if priority < 1 || priority > 4 {
+		return 0, fmt.Errorf("priority must be 1-4 (1=URGENT, 2=HIGH, 3=NORMAL, 4=LOW)")
 	}
 	db, err := c.connect()
 	if err != nil {
@@ -139,7 +176,6 @@ func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int
 	}
 	defer db.Close()
 
-	// Validate sender exists
 	var count int
 	if err := db.QueryRow("SELECT COUNT(1) FROM agents WHERE id=?", c.AgentID).Scan(&count); err != nil || count == 0 {
 		return 0, fmt.Errorf("unknown sender '%s' — register first", c.AgentID)
@@ -150,7 +186,6 @@ func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int
 		if len(to) > MaxAgentIDLength {
 			return 0, fmt.Errorf("recipient agent_id too long (%d chars, max %d)", len(to), MaxAgentIDLength)
 		}
-		// Validate recipient exists
 		if err := db.QueryRow("SELECT COUNT(1) FROM agents WHERE id=?", to).Scan(&count); err != nil || count == 0 {
 			return 0, fmt.Errorf("unknown recipient '%s' — register them first", to)
 		}
@@ -169,9 +204,14 @@ func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int
 		tid = &threadID
 	}
 
+	ackVal := 0
+	if requireAck {
+		ackVal = 1
+	}
+
 	result, err := db.Exec(
-		"INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) VALUES (?,?,?,?,?,?)",
-		c.AgentID, recip, message, tid, ttlSeconds, nowSec(),
+		"INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, priority, requires_ack, created_at) VALUES (?,?,?,?,?,?,?,?)",
+		c.AgentID, recip, message, tid, ttlSeconds, priority, ackVal, nowSec(),
 	)
 	if err != nil {
 		return 0, err
@@ -180,10 +220,12 @@ func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int
 	return result.LastInsertId()
 }
 
-// SendSimple sends a message without thread or TTL. Backward-compat wrapper for old 3-arg calls.
+// SendSimple sends a message without thread, TTL, priority options. Backward-compat wrapper.
 func (c *Client) SendSimple(to, message string) (int64, error) {
-	return c.Send(to, message, nil, "")
+	return c.Send(to, message, nil, "", 3, false)
 }
+
+
 
 // RecvOpts configures the Recv call
 var DefaultRecvOpts = RecvOpts{
@@ -206,6 +248,8 @@ type RecvOpts struct {
 	Limit int
 	// Since filters to messages created after this timestamp (nil = no filter)
 	Since *float64
+	// PriorityMin filters to messages at this priority level or higher (1=URGENT, 4=LOW)
+	PriorityMin *int
 }
 
 // Recv receives messages with full options. Run TTL cleanup and Touch on same connection.
@@ -230,7 +274,7 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 
 	for {
 		db.Exec("DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?", nowSec())
-		query := "SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE (recipient = ? OR recipient IS NULL)"
+		query := "SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at FROM messages WHERE (recipient = ? OR recipient IS NULL)"
 		args := []interface{}{c.AgentID}
 
 		if !opts.IncludeSelf {
@@ -248,11 +292,16 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 			args = append(args, *opts.Since)
 		}
 
-		query += " ORDER BY created_at ASC"
-		if opts.Limit > 0 {
-			query += " LIMIT ?"
-			args = append(args, opts.Limit)
-		}
+	if opts.PriorityMin != nil {
+		query += " AND priority <= ?"
+		args = append(args, *opts.PriorityMin)
+	}
+
+	query += " ORDER BY priority ASC, created_at ASC"
+	if opts.Limit > 0 {
+		query += " LIMIT ?"
+		args = append(args, opts.Limit)
+	}
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
@@ -263,11 +312,14 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 
 		for rows.Next() {
 			var m Message
-			err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &m.CreatedAt)
+			var priority, requiresAck int
+			err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &priority, &requiresAck, &m.CreatedAt)
 			if err != nil {
 				rows.Close()
 				return nil, err
 			}
+			m.Priority = priority
+			m.RequiresAck = requiresAck == 1
 			messages = append(messages, m)
 		}
 		rows.Close()
@@ -317,7 +369,7 @@ func (c *Client) Peek(limit int) ([]Message, error) {
 	db.Exec("DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?", nowSec())
 
 	rows, err := db.Query(
-		"SELECT id, sender, recipient, body, thread_id, created_at FROM messages ORDER BY created_at DESC LIMIT ?",
+		"SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at FROM messages ORDER BY created_at DESC LIMIT ?",
 		limit,
 	)
 	if err != nil {
@@ -328,10 +380,13 @@ func (c *Client) Peek(limit int) ([]Message, error) {
 	messages := []Message{}
 	for rows.Next() {
 		var m Message
-		err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &m.CreatedAt)
+		var priority, requiresAck int
+		err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &priority, &requiresAck, &m.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
+		m.Priority = priority
+		m.RequiresAck = requiresAck == 1
 		messages = append(messages, m)
 	}
 
@@ -478,7 +533,7 @@ func (c *Client) Search(query string, limit int) ([]Message, error) {
 	defer db.Close()
 
 	rows, err := db.Query(
-		"SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
+		"SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at FROM messages WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
 		fmt.Sprintf("%%%s%%", strings.ToLower(query)), limit,
 	)
 	if err != nil {
@@ -489,10 +544,13 @@ func (c *Client) Search(query string, limit int) ([]Message, error) {
 	messages := []Message{}
 	for rows.Next() {
 		var m Message
-		err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &m.CreatedAt)
+		var priority, requiresAck int
+		err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &priority, &requiresAck, &m.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
+		m.Priority = priority
+		m.RequiresAck = requiresAck == 1
 		messages = append(messages, m)
 	}
 
@@ -573,7 +631,7 @@ func (c *Client) Thread(threadID string) ([]Message, error) {
 	defer db.Close()
 
 	rows, err := db.Query(
-		"SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE thread_id = ? ORDER BY created_at ASC",
+		"SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at FROM messages WHERE thread_id = ? ORDER BY created_at ASC",
 		threadID,
 	)
 	if err != nil {
@@ -584,10 +642,13 @@ func (c *Client) Thread(threadID string) ([]Message, error) {
 	messages := []Message{}
 	for rows.Next() {
 		var m Message
-		err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &m.CreatedAt)
+		var priority, requiresAck int
+		err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &priority, &requiresAck, &m.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
+		m.Priority = priority
+		m.RequiresAck = requiresAck == 1
 		messages = append(messages, m)
 	}
 
@@ -603,7 +664,8 @@ func (c *Client) Stats() (*Stats, error) {
 	defer db.Close()
 
 	stats := &Stats{
-		TopSenders: []TopSender{},
+		TopSenders:    []TopSender{},
+		TasksByStatus: map[string]int{},
 	}
 
 	// Message counts
@@ -614,6 +676,28 @@ func (c *Client) Stats() (*Stats, error) {
 	db.QueryRow("SELECT COUNT(DISTINCT thread_id) FROM messages WHERE thread_id IS NOT NULL").Scan(&stats.Threads)
 
 	stats.DirectMessages = stats.Messages - stats.Broadcasts
+
+	// Priority distribution
+	prioRows, err := db.Query("SELECT priority, COUNT(*) FROM messages WHERE priority IS NOT NULL GROUP BY priority ORDER BY priority")
+	if err == nil {
+		defer prioRows.Close()
+		prioLabels := map[int]string{1: "URGENT", 2: "HIGH", 3: "NORMAL", 4: "LOW"}
+		for prioRows.Next() {
+			var prio, count int
+			if err := prioRows.Scan(&prio, &count); err == nil {
+				label := prioLabels[prio]
+				stats.PriorityDistribution = append(stats.PriorityDistribution, PriorityCount{Label: label, Count: count})
+			}
+		}
+	}
+
+	// Ack stats
+	db.QueryRow("SELECT COUNT(*) FROM messages WHERE requires_ack = 1").Scan(&stats.AcksRequired)
+	db.QueryRow("SELECT COUNT(*) FROM acknowledgments").Scan(&stats.AcksSent)
+	stats.PendingAcks = stats.AcksRequired - stats.AcksSent
+	if stats.PendingAcks < 0 {
+		stats.PendingAcks = 0
+	}
 
 	// Agent counts
 	db.QueryRow("SELECT COUNT(*) FROM agents WHERE status='active'").Scan(&stats.AgentsActive)
@@ -630,6 +714,23 @@ func (c *Client) Stats() (*Stats, error) {
 			var count int
 			if err := rows.Scan(&sender, &count); err == nil {
 				stats.TopSenders = append(stats.TopSenders, TopSender{sender, count})
+			}
+		}
+	}
+
+	// Task stats
+	db.QueryRow("SELECT COUNT(*) FROM tasks").Scan(&stats.TasksTotal)
+	db.QueryRow("SELECT COUNT(*) FROM tasks WHERE status='done'").Scan(&stats.TasksDone)
+	db.QueryRow("SELECT COUNT(*) FROM tasks WHERE status='blocked'").Scan(&stats.TasksBlocked)
+
+	taskRows, err := db.Query("SELECT status, COUNT(*) FROM tasks GROUP BY status")
+	if err == nil {
+		defer taskRows.Close()
+		for taskRows.Next() {
+			var status string
+			var count int
+			if err := taskRows.Scan(&status, &count); err == nil {
+				stats.TasksByStatus[status] = count
 			}
 		}
 	}
@@ -661,13 +762,15 @@ CREATE TABLE IF NOT EXISTS agents (
 );
 
 CREATE TABLE IF NOT EXISTS messages (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender      TEXT NOT NULL,
-    recipient   TEXT,
-    body        TEXT NOT NULL,
-    thread_id   TEXT,
-    ttl_seconds INTEGER,
-    created_at  REAL NOT NULL
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender          TEXT NOT NULL,
+    recipient       TEXT,
+    body            TEXT NOT NULL,
+    thread_id       TEXT,
+    ttl_seconds     INTEGER,
+    priority        INTEGER DEFAULT 3,
+    requires_ack    INTEGER DEFAULT 0,
+    created_at      REAL NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS reads (
@@ -677,9 +780,40 @@ CREATE TABLE IF NOT EXISTS reads (
     PRIMARY KEY (agent_id, message_id)
 );
 
+CREATE TABLE IF NOT EXISTS acknowledgments (
+    message_id  INTEGER NOT NULL,
+    agent_id    TEXT NOT NULL,
+    acked_at    REAL NOT NULL,
+    PRIMARY KEY (message_id, agent_id)
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    title           TEXT NOT NULL,
+    description     TEXT,
+    assigned_to     TEXT,
+    status          TEXT NOT NULL DEFAULT 'planned',
+    priority        INTEGER DEFAULT 3,
+    dependencies    TEXT,
+    result          TEXT,
+    claimed_at      REAL,
+    completed_at    REAL,
+    created_at      REAL NOT NULL,
+    updated_at      REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS task_deps (
+    task_id     INTEGER NOT NULL,
+    depends_on  INTEGER NOT NULL,
+    PRIMARY KEY (task_id, depends_on)
+);
+
 CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
 CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+CREATE INDEX IF NOT EXISTS idx_task_deps_task ON task_deps(task_id);
 `
 
 // nowSec returns sub-second precision timestamp matching Python's time.time()
@@ -787,6 +921,330 @@ func (c *Client) Touch() error {
 	}
 	defer db.Close()
 	_, err = db.Exec("UPDATE agents SET last_seen=? WHERE id=?", nowSec(), c.AgentID)
+	return err
+}
+
+// Ack acknowledges receipt of a message.
+func (c *Client) Ack(messageID int64) (bool, error) {
+	if messageID <= 0 {
+		return false, fmt.Errorf("message_id must be a positive integer")
+	}
+	db, err := c.connect()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var count int
+	if err := db.QueryRow("SELECT COUNT(1) FROM messages WHERE id=?", messageID).Scan(&count); err != nil || count == 0 {
+		return false, fmt.Errorf("message #%d not found", messageID)
+	}
+	_, err = db.Exec("INSERT OR IGNORE INTO acknowledgments(message_id, agent_id, acked_at) VALUES (?,?,?)",
+		messageID, c.AgentID, nowSec())
+	return err == nil, err
+}
+
+// PendingAcks returns messages sent to this agent that require acknowledgment but haven't been acked.
+func (c *Client) PendingAcks() ([]Message, error) {
+	db, err := c.connect()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query(
+		"SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.priority, m.requires_ack, m.created_at "+
+			"FROM messages m WHERE m.requires_ack = 1 AND m.recipient = ? "+
+			"AND NOT EXISTS (SELECT 1 FROM acknowledgments a WHERE a.message_id = m.id AND a.agent_id = ?) "+
+			"ORDER BY m.created_at ASC",
+		c.AgentID, c.AgentID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	messages := []Message{}
+	for rows.Next() {
+		var m Message
+		var priority, requiresAck int
+		if err := rows.Scan(&m.ID, &m.Sender, &m.Recipient, &m.Body, &m.ThreadID, &priority, &requiresAck, &m.CreatedAt); err != nil {
+			return nil, err
+		}
+		m.Priority = priority
+		m.RequiresAck = requiresAck == 1
+		messages = append(messages, m)
+	}
+	return messages, nil
+}
+
+// Heartbeat updates agent's last_seen and optionally status.
+// Valid statuses: "active", "working", "idle", "error".
+func (c *Client) Heartbeat(status string) error {
+	valid := map[string]bool{"active": true, "working": true, "idle": true, "error": true}
+	if !valid[status] {
+		return fmt.Errorf("status must be one of: active, working, idle, error")
+	}
+	db, err := c.connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	_, err = db.Exec("UPDATE agents SET last_seen=?, status=? WHERE id=?", nowSec(), status, c.AgentID)
+	return err
+}
+
+// StaleAgent represents an agent that has missed heartbeats.
+type StaleAgent struct {
+	ID       string  `json:"id"`
+	Status   string  `json:"status"`
+	LastSeen float64 `json:"last_seen"`
+}
+
+// HeartbeatCheck returns agents that missed too many heartbeats.
+func (c *Client) HeartbeatCheck(grace float64) ([]StaleAgent, error) {
+	if grace <= 0 {
+		return nil, fmt.Errorf("grace must be a positive number of seconds")
+	}
+	db, err := c.connect()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	threshold := nowSec() - grace
+	rows, err := db.Query("SELECT id, status, last_seen FROM agents WHERE last_seen < ? ORDER BY last_seen", threshold)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	stale := []StaleAgent{}
+	for rows.Next() {
+		var s StaleAgent
+		if err := rows.Scan(&s.ID, &s.Status, &s.LastSeen); err != nil {
+			return nil, err
+		}
+		stale = append(stale, s)
+	}
+	return stale, nil
+}
+
+// CreateTask creates a new task in the shared task queue.
+// dependsOn may be nil for no dependencies.
+func (c *Client) CreateTask(title, description, assignedTo string, priority int, dependsOn []int64) (int64, error) {
+	if strings.TrimSpace(title) == "" {
+		return 0, fmt.Errorf("task title must not be empty")
+	}
+	if priority < 1 || priority > 4 {
+		return 0, fmt.Errorf("priority must be 1-4")
+	}
+	db, err := c.connect()
+	if err != nil {
+		return 0, err
+	}
+	defer db.Close()
+
+	ts := nowSec()
+	var depsJSON *string
+	if len(dependsOn) > 0 {
+		b, _ := json.Marshal(dependsOn)
+		s := string(b)
+		depsJSON = &s
+	}
+
+	var assigned *string
+	if assignedTo != "" {
+		assigned = &assignedTo
+	}
+
+	var desc *string
+	if description != "" {
+		desc = &description
+	}
+
+	result, err := db.Exec(
+		"INSERT INTO tasks(title, description, assigned_to, status, priority, dependencies, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?)",
+		title, desc, assigned, "planned", priority, depsJSON, ts, ts,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	taskID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	for _, depID := range dependsOn {
+		db.Exec("INSERT OR IGNORE INTO task_deps(task_id, depends_on) VALUES (?,?)", taskID, depID)
+	}
+
+	return taskID, nil
+}
+
+// ListTasks returns tasks with optional status and assigned_to filters.
+// status and assignedTo may be empty to skip filtering.
+func (c *Client) ListTasks(status, assignedTo string) ([]Task, error) {
+	validStatuses := map[string]bool{"planned": true, "in_progress": true, "review_pending": true, "approved": true, "done": true, "blocked": true}
+	db, err := c.connect()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	query := "SELECT id, title, description, assigned_to, status, priority, dependencies, result, claimed_at, completed_at, created_at, updated_at FROM tasks"
+	var args []interface{}
+	var conditions []string
+
+	if status != "" {
+		if !validStatuses[status] {
+			return nil, fmt.Errorf("invalid status '%s'", status)
+		}
+		conditions = append(conditions, "status = ?")
+		args = append(args, status)
+	}
+	if assignedTo != "" {
+		conditions = append(conditions, "assigned_to = ?")
+		args = append(args, assignedTo)
+	}
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+	query += " ORDER BY priority ASC, created_at DESC"
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tasks := []Task{}
+	for rows.Next() {
+		var t Task
+		var description, assigned, deps, result sql.NullString
+		var claimedAt, completedAt sql.NullFloat64
+		err := rows.Scan(&t.ID, &t.Title, &description, &assigned, &t.Status, &t.Priority, &deps, &result, &claimedAt, &completedAt, &t.CreatedAt, &t.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		if description.Valid {
+			t.Description = &description.String
+		}
+		if assigned.Valid {
+			t.AssignedTo = &assigned.String
+		}
+		if deps.Valid {
+			t.Dependencies = &deps.String
+		}
+		if result.Valid {
+			t.Result = &result.String
+		}
+		if claimedAt.Valid {
+			t.ClaimedAt = &claimedAt.Float64
+		}
+		if completedAt.Valid {
+			t.CompletedAt = &completedAt.Float64
+		}
+		tasks = append(tasks, t)
+	}
+	return tasks, nil
+}
+
+// UpdateTaskStatus updates task status with state machine validation.
+func (c *Client) UpdateTaskStatus(taskID int64, newStatus string) error {
+	validStatuses := map[string]bool{"planned": true, "in_progress": true, "review_pending": true, "approved": true, "done": true, "blocked": true}
+	transitions := map[string]map[string]bool{
+		"planned":       {"in_progress": true},
+		"in_progress":   {"review_pending": true, "blocked": true, "done": true},
+		"review_pending": {"approved": true, "in_progress": true, "blocked": true},
+		"approved":      {"done": true, "in_progress": true},
+		"done":          {},
+		"blocked":       {"in_progress": true},
+	}
+	if taskID <= 0 {
+		return fmt.Errorf("task_id must be a positive integer")
+	}
+	if !validStatuses[newStatus] {
+		return fmt.Errorf("invalid status '%s'", newStatus)
+	}
+	db, err := c.connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var currentStatus string
+	if err := db.QueryRow("SELECT status FROM tasks WHERE id=?", taskID).Scan(&currentStatus); err != nil {
+		return fmt.Errorf("task #%d not found", taskID)
+	}
+	if !transitions[currentStatus][newStatus] {
+		return fmt.Errorf("invalid transition from '%s' to '%s'", currentStatus, newStatus)
+	}
+
+	ts := nowSec()
+	if newStatus == "done" {
+		_, err = db.Exec("UPDATE tasks SET status=?, completed_at=?, updated_at=? WHERE id=?",
+			newStatus, ts, ts, taskID)
+	} else if newStatus == "in_progress" && currentStatus != "in_progress" {
+		_, err = db.Exec("UPDATE tasks SET status=?, claimed_at=?, updated_at=? WHERE id=?",
+			newStatus, ts, ts, taskID)
+	} else {
+		_, err = db.Exec("UPDATE tasks SET status=?, updated_at=? WHERE id=?", newStatus, ts, taskID)
+	}
+	return err
+}
+
+// ClaimTask claims a task by assigning self and setting to in_progress.
+func (c *Client) ClaimTask(taskID int64) error {
+	if taskID <= 0 {
+		return fmt.Errorf("task_id must be a positive integer")
+	}
+	db, err := c.connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var currentStatus string
+	var assignedTo *string
+	if err := db.QueryRow("SELECT status, assigned_to FROM tasks WHERE id=?", taskID).Scan(&currentStatus, &assignedTo); err != nil {
+		return fmt.Errorf("task #%d not found", taskID)
+	}
+	if currentStatus == "done" {
+		return fmt.Errorf("task #%d is already done", taskID)
+	}
+	if assignedTo != nil && *assignedTo != "" && *assignedTo != c.AgentID {
+		return fmt.Errorf("task #%d already assigned to '%s'", taskID, *assignedTo)
+	}
+	ts := nowSec()
+	_, err = db.Exec("UPDATE tasks SET status='in_progress', assigned_to=?, claimed_at=?, updated_at=? WHERE id=?",
+		c.AgentID, ts, ts, taskID)
+	return err
+}
+
+// CompleteTask completes a task with an optional result description.
+func (c *Client) CompleteTask(taskID int64, result string) error {
+	if taskID <= 0 {
+		return fmt.Errorf("task_id must be a positive integer")
+	}
+	db, err := c.connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var count int
+	if err := db.QueryRow("SELECT COUNT(1) FROM tasks WHERE id=?", taskID).Scan(&count); err != nil || count == 0 {
+		return fmt.Errorf("task #%d not found", taskID)
+	}
+	ts := nowSec()
+	var resultPtr *string
+	if result != "" {
+		resultPtr = &result
+	}
+	_, err = db.Exec("UPDATE tasks SET status='done', result=?, completed_at=?, updated_at=? WHERE id=?",
+		resultPtr, ts, ts, taskID)
 	return err
 }
 

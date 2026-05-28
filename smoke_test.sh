@@ -146,13 +146,83 @@ echo "alice -> bob (or broadcast): $ALICE_TO_BOB"
 echo "bob   -> alice (or broadcast): $BOB_TO_ALICE"
 
 if [ "$ALICE_TO_BOB" -ge 1 ] && [ "$BOB_TO_ALICE" -ge 1 ]; then
-    echo "SMOKE TEST: PASS"
-    exit 0
+    echo "SMOKE TEST: PASS (agent communication)"
 else
-    echo "SMOKE TEST: FAIL"
+    echo "SMOKE TEST: FAIL (agent communication)"
     echo "--- alice.log (tail) ---"
     tail -50 "$LOG_DIR/alice.log"
     echo "--- bob.log (tail) ---"
     tail -50 "$LOG_DIR/bob.log"
     exit 1
 fi
+
+echo
+echo "== task workflow test =="
+A2A_PY="${A2A_PY:-$(dirname "$(readlink -f "$0")")/a2a.py}"
+TASK_PROJECT="${PROJECT}-tasks"
+
+# Create task via Python CLI
+echo "Creating task..."
+TASK_ID=$("$A2A_PY" task-create "Refactor login module" \
+  --description "Update auth flow" \
+  --assigned-to alice \
+  --priority 2 \
+  --json \
+  --project "$TASK_PROJECT" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+
+echo "Task #$TASK_ID created"
+
+# List tasks
+echo "Listing tasks..."
+"$A2A_PY" task-list --project "$TASK_PROJECT" --json 2>/dev/null | python3 -c "
+import json,sys
+tasks = json.load(sys.stdin)
+assert len(tasks) == 1, f'Expected 1 task, got {len(tasks)}'
+assert tasks[0]['status'] == 'planned', f'Expected planned, got {tasks[0][\"status\"]}'
+print('  task status:', tasks[0]['status'], '✅')
+"
+
+# Claim task
+echo "Claiming task #$TASK_ID..."
+"$A2A_PY" task-claim "$TASK_ID" --as alice --project "$TASK_PROJECT" 2>/dev/null
+
+# Verify claimed
+"$A2A_PY" task-list --project "$TASK_PROJECT" --json 2>/dev/null | python3 -c "
+import json,sys
+tasks = json.load(sys.stdin)
+assert tasks[0]['status'] == 'in_progress', f'Expected in_progress, got {tasks[0][\"status\"]}'
+assert tasks[0]['assigned_to'] == 'alice', f'Expected alice, got {tasks[0][\"assigned_to\"]}'
+print('  task claimed ✅')
+"
+
+# Full workflow
+echo "Running workflow: in_progress -> review_pending -> approved -> done"
+"$A2A_PY" task-status "$TASK_ID" review_pending --project "$TASK_PROJECT" 2>/dev/null
+"$A2A_PY" task-status "$TASK_ID" approved --project "$TASK_PROJECT" 2>/dev/null
+echo "Completing task #$TASK_ID..."
+"$A2A_PY" task-complete "$TASK_ID" --result "Approved with minor changes" --as alice --project "$TASK_PROJECT" 2>/dev/null
+
+# Verify completed
+"$A2A_PY" task-list --project "$TASK_PROJECT" --json 2>/dev/null | python3 -c "
+import json,sys
+tasks = json.load(sys.stdin)
+assert tasks[0]['status'] == 'done', f'Expected done, got {tasks[0][\"status\"]}'
+assert tasks[0]['result'] == 'Approved with minor changes', f'Wrong result: {tasks[0].get(\"result\")}'
+print('  task done ✅')
+"
+
+# Test invalid transitions
+echo "Testing invalid transitions..."
+"$A2A_PY" task-status "$TASK_ID" planned --project "$TASK_PROJECT" 2>/dev/null && echo "  ❌ should have failed" || echo "  done -> planned rejected ✅"
+
+# Test wrong assignee can't complete
+echo "Testing wrong assignee rejection..."
+TASK2_ID=$("$A2A_PY" task-create "Test wrong assignee" \
+  --assigned-to bob --json --project "$TASK_PROJECT" 2>/dev/null \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+"$A2A_PY" task-claim "$TASK2_ID" --as bob --project "$TASK_PROJECT" 2>/dev/null
+"$A2A_PY" task-complete "$TASK2_ID" --result "done" --as alice --project "$TASK_PROJECT" 2>/dev/null && echo "  ❌ should have failed" || echo "  wrong assignee rejected ✅"
+
+echo
+echo "TASK WORKFLOW: PASS"
+exit 0

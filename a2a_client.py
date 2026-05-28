@@ -5,6 +5,7 @@
 Provides object-oriented access to a2a messaging without shell invocation.
 """
 
+import json
 import math
 import sqlite3
 import time
@@ -64,6 +65,8 @@ class A2AClient:
         message: str,
         ttl_seconds: Optional[int] = None,
         thread_id: Optional[str] = None,
+        priority: int = 3,
+        require_ack: bool = False,
     ) -> int:
         """Send a message.
 
@@ -72,18 +75,21 @@ class A2AClient:
             message: Message body
             ttl_seconds: Optional time-to-live in seconds
             thread_id: Optional thread ID to group related messages
+            priority: Message priority 1-4 (1=URGENT, 2=HIGH, 3=NORMAL, 4=LOW)
+            require_ack: If True, recipient must acknowledge receipt
 
         Returns:
             Message ID
 
         Raises:
-            ValueError: If recipient is empty
+            ValueError: If recipient is empty or priority is invalid
         """
         conn = self._connect()
         try:
             if not to or not to.strip():
                 raise ValueError("recipient must not be empty")
-            # Validate sender is registered
+            if priority not in (1, 2, 3, 4):
+                raise ValueError("priority must be 1 (URGENT), 2 (HIGH), 3 (NORMAL), or 4 (LOW)")
             cur = conn.execute("SELECT COUNT(1) FROM agents WHERE id=?", (self.agent_id,))
             if cur.fetchone()[0] == 0:
                 raise ValueError(f"unknown sender '{self.agent_id}' — register first")
@@ -105,9 +111,9 @@ class A2AClient:
                 if cur.fetchone()[0] == 0:
                     raise ValueError(f"unknown recipient '{recipient}' — register them first")
             cur = conn.execute(
-                "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (self.agent_id, recipient, message, thread_id, ttl_seconds, time.time()),
+                "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, priority, requires_ack, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (self.agent_id, recipient, message, thread_id, ttl_seconds, priority, 1 if require_ack else 0, time.time()),
             )
             conn.commit()
             msg_id = cur.lastrowid
@@ -189,6 +195,7 @@ class A2AClient:
         unread_only: bool = True,
         include_self: bool = False,
         limit: int = 0,
+        priority_min: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """Receive messages.
 
@@ -197,12 +204,13 @@ class A2AClient:
             unread_only: Only return unread messages
             include_self: Include messages sent by this agent
             limit: Max messages to return (0 = unlimited)
+            priority_min: Min priority (1=URGENT, 4=LOW; returns >= this level)
 
         Returns:
             List of message dicts
 
         Raises:
-            ValueError: If wait is negative
+            ValueError: If wait is negative or priority_min is invalid
 
         """
         if wait < 0:
@@ -211,6 +219,8 @@ class A2AClient:
             raise ValueError("wait must be a finite number")
         if limit < 0:
             raise ValueError("limit must be a non-negative integer")
+        if priority_min is not None and (priority_min < 1 or priority_min > 4):
+            raise ValueError("priority_min must be 1-4")
         conn = self._connect()
         try:
             deadline = time.time() + wait if wait else None
@@ -219,10 +229,9 @@ class A2AClient:
             while True:
                 self._cleanup_expired(conn)
                 conn.commit()
-                # Build query
                 base = (
                     "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, "
-                    "m.created_at FROM messages m "
+                    "m.priority, m.requires_ack, m.created_at FROM messages m "
                     "WHERE (m.recipient = ? OR m.recipient IS NULL) "
                 )
                 params = [self.agent_id]
@@ -238,7 +247,11 @@ class A2AClient:
                     )
                     params.append(self.agent_id)
 
-                base += "ORDER BY m.created_at ASC"
+                if priority_min is not None:
+                    base += "AND m.priority <= ? "
+                    params.append(priority_min)
+
+                base += "ORDER BY m.priority ASC, m.created_at ASC"
                 if limit:
                     base += " LIMIT ?"
                     params.append(limit)
@@ -246,7 +259,6 @@ class A2AClient:
                 rows = conn.execute(base, params).fetchall()
 
                 if rows:
-                    # Mark as read
                     ts = time.time()
                     conn.executemany(
                         "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?,?,?)",
@@ -281,7 +293,7 @@ class A2AClient:
             self._cleanup_expired(conn)
             conn.commit()
             rows = conn.execute(
-                "SELECT id, sender, recipient, body, thread_id, created_at "
+                "SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at "
                 "FROM messages ORDER BY created_at DESC LIMIT ?",
                 (limit,),
             ).fetchall()
@@ -455,7 +467,7 @@ class A2AClient:
         conn = self._connect()
         try:
             rows = conn.execute(
-                "SELECT id, sender, recipient, body, thread_id, created_at "
+                "SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at "
                 "FROM messages WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
                 (f"%{query.lower()}%", limit),
             ).fetchall()
@@ -480,7 +492,7 @@ class A2AClient:
         conn = self._connect()
         try:
             rows = conn.execute(
-                "SELECT id, sender, recipient, body, thread_id, created_at "
+                "SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at "
                 "FROM messages WHERE thread_id = ? ORDER BY created_at ASC",
                 (thread_id,),
             ).fetchall()
@@ -492,7 +504,7 @@ class A2AClient:
         """Get bus statistics.
 
         Returns:
-            Dict with message counts, agent counts, top senders, etc.
+            Dict with message counts, agent counts, priority distribution, task stats, etc.
         """
         conn = self._connect()
         try:
@@ -504,6 +516,22 @@ class A2AClient:
                 "SELECT COUNT(*) FROM messages WHERE recipient IS NULL"
             ).fetchone()[0]
             direct_count = msg_count - broadcast_count
+
+            priority_dist = conn.execute(
+                "SELECT priority, COUNT(*) FROM messages WHERE priority IS NOT NULL GROUP BY priority"
+            ).fetchall()
+            priority_labels = {1: "URGENT", 2: "HIGH", 3: "NORMAL", 4: "LOW"}
+            priority_stats = {}
+            for row in priority_dist:
+                label = priority_labels.get(row[0], f"P{row[0]}")
+                priority_stats[label] = row[1]
+
+            ack_required = conn.execute(
+                "SELECT COUNT(*) FROM messages WHERE requires_ack = 1"
+            ).fetchone()[0]
+            acks_sent = conn.execute(
+                "SELECT COUNT(*) FROM acknowledgments"
+            ).fetchone()[0]
 
             agents = conn.execute(
                 "SELECT status, COUNT(*) FROM agents GROUP BY status"
@@ -517,17 +545,319 @@ class A2AClient:
                 "GROUP BY sender ORDER BY count DESC LIMIT 5"
             ).fetchall()
 
+            task_count = conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
+            task_statuses = conn.execute(
+                "SELECT status, COUNT(*) FROM tasks GROUP BY status"
+            ).fetchall()
+            task_status_dict = {row[0]: row[1] for row in task_statuses}
+
             return {
                 "messages": msg_count,
                 "direct_messages": direct_count,
                 "broadcasts": broadcast_count,
                 "threads": thread_count,
+                "priority_distribution": priority_stats,
+                "acks_required": ack_required,
+                "acks_sent": acks_sent,
                 "agents_active": active_count,
                 "agents_done": done_count,
+                "tasks_total": task_count,
+                "tasks_by_status": task_status_dict,
                 "top_senders": [
                     {"agent": row[0], "count": row[1]} for row in top_senders
                 ],
             }
+        finally:
+            conn.close()
+
+    def ack(self, message_id: int) -> bool:
+        """Acknowledge receipt of a message.
+
+        Args:
+            message_id: Message ID to acknowledge
+
+        Returns:
+            True on success
+
+        Raises:
+            ValueError: If message_id is not positive or message not found
+        """
+        if message_id <= 0:
+            raise ValueError("message_id must be a positive integer")
+        conn = self._connect()
+        try:
+            row = conn.execute("SELECT id FROM messages WHERE id=?", (message_id,)).fetchone()
+            if not row:
+                raise ValueError(f"message #{message_id} not found")
+            conn.execute(
+                "INSERT OR IGNORE INTO acknowledgments(message_id, agent_id, acked_at) VALUES (?,?,?)",
+                (message_id, self.agent_id, time.time()),
+            )
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+    def pending_acks(self) -> List[Dict[str, Any]]:
+        """Get messages that requested acknowledgment but haven't been acked.
+
+        Returns:
+            List of message dicts requiring acknowledgment
+        """
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.priority, m.requires_ack, m.created_at "
+                "FROM messages m "
+                "WHERE m.requires_ack = 1 AND m.recipient = ? "
+                "AND NOT EXISTS (SELECT 1 FROM acknowledgments a WHERE a.message_id = m.id AND a.agent_id = ?) "
+                "ORDER BY m.created_at ASC",
+                (self.agent_id, self.agent_id),
+            ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def heartbeat(self, status: str = "active") -> None:
+        """Send a heartbeat to keep agent registration alive.
+
+        Args:
+            status: Status update ('active', 'working', 'idle', 'error')
+
+        Raises:
+            ValueError: If status is invalid
+        """
+        valid = ("active", "working", "idle", "error")
+        if status not in valid:
+            raise ValueError(f"status must be one of {valid}")
+        conn = self._connect()
+        try:
+            conn.execute(
+                "UPDATE agents SET last_seen=?, status=? WHERE id=?",
+                (time.time(), status, self.agent_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def heartbeat_check(self, grace: float = 120) -> List[Dict[str, Any]]:
+        """Check for agents that missed too many heartbeats.
+
+        Args:
+            grace: Seconds since last_seen to consider stale (default: 120)
+
+        Returns:
+            List of stale agent dicts
+
+        Raises:
+            ValueError: If grace is not positive
+        """
+        if grace <= 0:
+            raise ValueError("grace must be a positive number of seconds")
+        conn = self._connect()
+        try:
+            threshold = time.time() - grace
+            rows = conn.execute(
+                "SELECT id, status, last_seen FROM agents WHERE last_seen < ? ORDER BY last_seen",
+                (threshold,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def create_task(
+        self,
+        title: str,
+        description: str = "",
+        assigned_to: str = "",
+        priority: int = 3,
+        depends_on: Optional[List[int]] = None,
+    ) -> int:
+        """Create a new task in the shared task queue.
+
+        Args:
+            title: Task title (required)
+            description: Optional task description
+            assigned_to: Optional agent to assign to
+            priority: Task priority 1-4 (1=highest)
+            depends_on: Optional list of task IDs this task depends on
+
+        Returns:
+            Task ID
+
+        Raises:
+            ValueError: If title is empty or priority is invalid
+        """
+        if not title or not title.strip():
+            raise ValueError("task title must not be empty")
+        if priority not in (1, 2, 3, 4):
+            raise ValueError("priority must be 1-4")
+        conn = self._connect()
+        try:
+            ts = time.time()
+            deps = json.dumps(depends_on) if depends_on else None
+            cur = conn.execute(
+                "INSERT INTO tasks(title, description, assigned_to, status, priority, dependencies, created_at, updated_at) "
+                "VALUES (?,?,?,?,?,?,?,?)",
+                (title, description, assigned_to, "planned", priority, deps, ts, ts),
+            )
+            conn.commit()
+            tid = cur.lastrowid
+            if depends_on:
+                for dep_id in depends_on:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO task_deps(task_id, depends_on) VALUES (?,?)",
+                        (tid, dep_id),
+                    )
+                conn.commit()
+            return tid
+        finally:
+            conn.close()
+
+    def list_tasks(
+        self,
+        status: Optional[str] = None,
+        assigned_to: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """List tasks with optional filters.
+
+        Args:
+            status: Filter by status ('planned', 'in_progress', 'review_pending', 'approved', 'done', 'blocked')
+            assigned_to: Filter by assigned agent
+
+        Returns:
+            List of task dicts
+        """
+        valid_statuses = {"planned", "in_progress", "review_pending", "approved", "done", "blocked"}
+        conn = self._connect()
+        try:
+            query = "SELECT * FROM tasks"
+            params = []
+            conditions = []
+            if status:
+                if status not in valid_statuses:
+                    raise ValueError(f"invalid status '{status}'")
+                conditions.append("status = ?")
+                params.append(status)
+            if assigned_to:
+                conditions.append("assigned_to = ?")
+                params.append(assigned_to)
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+            query += " ORDER BY priority ASC, created_at DESC"
+            rows = conn.execute(query, params).fetchall()
+            result = []
+            for r in rows:
+                d = dict(r)
+                if d.get("dependencies") and isinstance(d["dependencies"], str):
+                    try:
+                        d["dependencies"] = json.loads(d["dependencies"])
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                result.append(d)
+            return result
+        finally:
+            conn.close()
+
+    def update_task_status(self, task_id: int, new_status: str) -> None:
+        """Update task status with state machine validation.
+
+        Args:
+            task_id: Task ID
+            new_status: New status value
+
+        Raises:
+            ValueError: If task not found or transition is invalid
+        """
+        valid_statuses = {"planned", "in_progress", "review_pending", "approved", "done", "blocked"}
+        transitions = {
+            "planned": {"in_progress"},
+            "in_progress": {"review_pending", "blocked", "done"},
+            "review_pending": {"approved", "in_progress", "blocked"},
+            "approved": {"done", "in_progress"},
+            "done": set(),
+            "blocked": {"in_progress"},
+        }
+        if task_id <= 0:
+            raise ValueError("task_id must be a positive integer")
+        if new_status not in valid_statuses:
+            raise ValueError(f"invalid status '{new_status}'")
+        conn = self._connect()
+        try:
+            row = conn.execute("SELECT id, status FROM tasks WHERE id=?", (task_id,)).fetchone()
+            if not row:
+                raise ValueError(f"task #{task_id} not found")
+            current = row["status"]
+            if new_status not in transitions.get(current, set()):
+                allowed = transitions.get(current, set())
+                if not allowed:
+                    raise ValueError(f"cannot transition from '{current}' — terminal state")
+                raise ValueError(f"invalid transition from '{current}' to '{new_status}'")
+            ts = time.time()
+            updates = {"status": new_status, "updated_at": ts}
+            if new_status == "in_progress" and current != "in_progress":
+                updates["claimed_at"] = ts
+            if new_status == "done":
+                updates["completed_at"] = ts
+            set_clause = ", ".join(f"{k}=?" for k in updates)
+            conn.execute(f"UPDATE tasks SET {set_clause} WHERE id=?", (*updates.values(), task_id))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def claim_task(self, task_id: int) -> None:
+        """Claim a task by assigning self and setting status to in_progress.
+
+        Args:
+            task_id: Task ID
+
+        Raises:
+            ValueError: If task not found, done, or already assigned to another agent
+        """
+        if task_id <= 0:
+            raise ValueError("task_id must be a positive integer")
+        conn = self._connect()
+        try:
+            row = conn.execute("SELECT id, status, assigned_to FROM tasks WHERE id=?", (task_id,)).fetchone()
+            if not row:
+                raise ValueError(f"task #{task_id} not found")
+            if row["status"] == "done":
+                raise ValueError(f"task #{task_id} is already done")
+            if row["assigned_to"] and row["assigned_to"] != self.agent_id:
+                raise ValueError(f"task #{task_id} already assigned to '{row['assigned_to']}'")
+            ts = time.time()
+            self.update_task_status(task_id, "in_progress")
+            conn.execute(
+                "UPDATE tasks SET assigned_to=?, claimed_at=? WHERE id=?",
+                (self.agent_id, ts, task_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def complete_task(self, task_id: int, result: str = "") -> None:
+        """Complete a task.
+
+        Args:
+            task_id: Task ID
+            result: Optional result description
+
+        Raises:
+            ValueError: If task not found or cannot transition to done
+        """
+        if task_id <= 0:
+            raise ValueError("task_id must be a positive integer")
+        conn = self._connect()
+        try:
+            row = conn.execute("SELECT id, status FROM tasks WHERE id=?", (task_id,)).fetchone()
+            if not row:
+                raise ValueError(f"task #{task_id} not found")
+            ts = time.time()
+            conn.execute(
+                "UPDATE tasks SET status='done', result=?, completed_at=?, updated_at=? WHERE id=?",
+                (result, ts, ts, task_id),
+            )
+            conn.commit()
         finally:
             conn.close()
 
@@ -556,6 +886,8 @@ class A2AClient:
                     body        TEXT NOT NULL,
                     thread_id   TEXT,
                     ttl_seconds INTEGER,
+                    priority    INTEGER DEFAULT 3,
+                    requires_ack INTEGER DEFAULT 0,
                     created_at  REAL NOT NULL
                 );
                 CREATE TABLE IF NOT EXISTS reads (
@@ -564,9 +896,37 @@ class A2AClient:
                     read_at     REAL NOT NULL,
                     PRIMARY KEY (agent_id, message_id)
                 );
+                CREATE TABLE IF NOT EXISTS acknowledgments (
+                    message_id  INTEGER NOT NULL,
+                    agent_id    TEXT NOT NULL,
+                    acked_at    REAL NOT NULL,
+                    PRIMARY KEY (message_id, agent_id)
+                );
+                CREATE TABLE IF NOT EXISTS tasks (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title       TEXT NOT NULL,
+                    description TEXT,
+                    assigned_to TEXT,
+                    status      TEXT NOT NULL DEFAULT 'planned',
+                    priority    INTEGER DEFAULT 3,
+                    dependencies TEXT,
+                    result      TEXT,
+                    claimed_at  REAL,
+                    completed_at REAL,
+                    created_at  REAL NOT NULL,
+                    updated_at  REAL NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS task_deps (
+                    task_id     INTEGER NOT NULL,
+                    depends_on  INTEGER NOT NULL,
+                    PRIMARY KEY (task_id, depends_on)
+                );
                 CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
                 CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
                 CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
+                CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to);
+                CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+                CREATE INDEX IF NOT EXISTS idx_task_deps_task ON task_deps(task_id);
             """)
             conn.commit()
         finally:
@@ -623,8 +983,8 @@ if __name__ == "__main__":
     print("  client.init_project()")
     print("  client.project_info()")
     print("  client.clear()")
-    print("  client.send(to, message, ttl_seconds=None)")
-    print("  client.recv(wait=0, unread_only=True, include_self=False, limit=0)")
+    print("  client.send(to, message, ttl_seconds=None, thread_id=None, priority=3, require_ack=False)")
+    print("  client.recv(wait=0, unread_only=True, include_self=False, limit=0, priority_min=None)")
     print("  client.peek(limit=20)")
     print("  client.list_peers()")
     print("  client.set_status(status)")
@@ -633,3 +993,12 @@ if __name__ == "__main__":
     print("  client.search(query, limit=50)")
     print("  client.thread(thread_id)")
     print("  client.stats()")
+    print("  client.ack(message_id)")
+    print("  client.pending_acks()")
+    print("  client.heartbeat(status='active')")
+    print("  client.heartbeat_check(grace=120)")
+    print("  client.create_task(title, description='', assigned_to='', priority=3, depends_on=None)")
+    print("  client.list_tasks(status=None, assigned_to=None)")
+    print("  client.update_task_status(task_id, new_status)")
+    print("  client.claim_task(task_id)")
+    print("  client.complete_task(task_id, result='')")
