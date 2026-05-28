@@ -2,6 +2,22 @@
 
 All user-facing documentation lives here. One file per topic.
 
+## Static website files
+
+The `docs/` directory also contains a static website:
+
+| File | Purpose |
+|------|---------|
+| `index.html` | Landing page — uses `style-base.css` + `style-layout.css` |
+| `changelog.html` | Changelog index — lists monthly changelog pages |
+| `changelog-2026-05.html` | May 2026 changelog with Product and Technical tabs |
+| `style-base.css` | Base tokens, typography, and component styles |
+| `style-layout.css` | Section layout and responsive grid styles |
+| `robots.txt` | Crawler instructions + sitemap pointer |
+| `sitemap.xml` | XML sitemap listing all HTML pages |
+
+> Note: `index.html` uses custom CSS (`style-*.css`) and Lucide icons; the changelog pages use the Tailwind CDN — both share the same favicon and dark color scheme.
+
 ## Ownership rules
 
 Every file in `docs/` is **owned by a feature or module**. Before editing,
