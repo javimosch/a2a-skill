@@ -211,6 +211,159 @@ The `_util.py` helper `strip_html_preamble()` searches for `<!DOCTYPE` or
 **Fix:** When adding a new artifact format, add a corresponding strip function
 to `_util.py` or handle extraction in the build script directly.
 
+## Remote machine spawn
+
+### SSH becomes unresponsive when 4+ agents start simultaneously
+
+Spawning 4 claude processes on a remote host causes 60–90 seconds of SSH
+connection timeouts. Each agent starts up, reads source files, and hits the
+Claude API almost simultaneously, peaking CPU and network. Subsequent SSH
+connections time out during this window.
+
+**This is normal. The agents are running.** Do not panic or assume something
+went wrong.
+
+**Fix:** After spawning all agents, wait 90 seconds before attempting to
+monitor via SSH. Use `a2a peek` from the remote side (via an already-open
+session) rather than opening a new connection. Stagger spawns if you need
+the host to remain responsive:
+
+```bash
+for id in pm architect dev1 qa; do
+  # ... spawn $id ...
+  sleep 5  # small gap between spawns reduces peak load
+done
+```
+
+### claude is not on PATH in non-login SSH sessions
+
+`claude` is typically installed at `~/.local/bin/claude`. Non-login SSH
+sessions (e.g. `ssh host "command"`) do not source `.bashrc` or `.profile`,
+so `~/.local/bin` may not be in `$PATH`. `which claude` returns nothing even
+though the binary exists.
+
+**Diagnosis:** `ssh host "which claude"` returns empty, but
+`ssh host "ls ~/.local/bin/claude"` succeeds.
+
+**Fix:** In kit prompts and spawn scripts on remote machines, resolve claude
+explicitly:
+
+```bash
+CLAUDE=""
+for cand in "$(command -v claude 2>/dev/null)" "$HOME/.local/bin/claude"; do
+  [ -x "$cand" ] && { CLAUDE="$cand"; break; }
+done
+```
+
+`a2a-spawn` handles this internally — pass `--cli claude` and it resolves
+the binary. The issue only surfaces if you try to invoke claude directly
+in a script.
+
+### a2a-spawn is not on PATH remotely
+
+`a2a-spawn` is not typically symlinked to a system PATH location. The
+installer puts it in `~/.local/bin/` but that may not be on PATH in
+non-login SSH sessions (same issue as claude above).
+
+**Fix:** Always resolve `a2a-spawn` by full path:
+
+```bash
+SPAWN=""
+for cand in "$(command -v a2a-spawn 2>/dev/null)" \
+            "$REPO_PATH/a2a-spawn" \
+            "$HOME/.agents/skills/a2a/a2a-spawn" \
+            "$HOME/.claude/skills/a2a/a2a-spawn"; do
+  [ -x "$cand" ] && { SPAWN="$cand"; break; }
+done
+[ -z "$SPAWN" ] && { echo "ERROR: a2a-spawn not found"; exit 1; }
+```
+
+### Stale rebase blocks worktree creation
+
+If a previous session left an interactive rebase in progress (`.git/rebase-merge`
+or `.git/rebase-apply` exists), `git worktree add` produces a detached HEAD
+on the stale rebase state, not the target branch.
+
+**Diagnosis:** `git status` shows "interactive rebase in progress".
+
+**Fix:** Before creating a worktree, always check and abort:
+
+```bash
+if [ -d ".git/rebase-merge" ] || [ -d ".git/rebase-apply" ]; then
+  git rebase --abort
+fi
+```
+
+### Diverged local/origin branches must be reset before creating a worktree
+
+If local `main` and `origin/main` have the same commit message but different
+SHAs (both sides amended or cherry-picked independently), `git pull --ff-only`
+fails. A naive `git pull` would create a merge commit on the source branch,
+contaminating the worktree's lineage.
+
+**Fix:** When preparing a remote machine for a worktree, reset hard to origin:
+
+```bash
+git fetch origin main
+git reset --hard origin/main
+```
+
+Only do this when you confirm the local commit is a duplicate/stale version
+of the remote commit (same intent, different SHA).
+
+### Always pass --project explicitly; don't rely on basename($PWD)
+
+`a2a-spawn` defaults `A2A_PROJECT` to `basename($PWD)`. On a remote machine
+where the working directory is `/root`, this becomes `root` — a project name
+that collides with any other session on that host also using the default.
+
+**Fix:** Always pass `--project YOURNAME` to every `a2a-spawn` call, and
+export `A2A_PROJECT` before all `a2a` CLI calls in the spawn script.
+
+### PM agents over-poll before receiving the architect's design
+
+Without explicit "wait for signal X before re-prompting" wording, PM agents
+send repeated "where's the design?" messages every loop iteration. In the
+observed session, pm sent 3 check-in messages to architect before the design
+arrived — architect had already sent it but pm's recv window hadn't captured
+it yet.
+
+**Fix:** Add to the PM kit prompt:
+
+```
+After broadcasting GOAL, send ONE check-in to architect asking for the
+design ETA. Then recv --wait 30. Do NOT send another check-in until you
+have received a response or 3 recv loops have passed empty.
+```
+
+### Implementers must be told to ACK receipt immediately
+
+Without an explicit "ACK receipt" instruction, developer agents read the
+DESIGN spec silently and begin implementing. The PM and architect see no
+confirmation for 2+ minutes, triggering redundant check-ins that create
+noise on the bus.
+
+**Fix:** Add to dev1 and qa kit prompts:
+
+```
+When you receive a DESIGN spec or TESTPLAN, ACK it immediately before
+doing any work: "$A2A send architect 'DESIGN received, starting impl' --from dev1"
+```
+
+### Design specs must be explicit about which operations write to the DB
+
+In the agent-groups implementation, `cmd_group_create` was documented in the
+design as "create the group" but implemented as a validation-only noop (nothing
+written to DB). Groups only appear in `list` after the first member is added.
+The architect caught this in review and flagged it as a "behavior quirk" — but
+it could have caused test failures if QA's test plan had asserted group
+visibility immediately after create.
+
+**Fix:** Design specs should explicitly mark each operation:
+- `[DB-write]` — inserts/updates rows
+- `[validate-only]` — checks input, writes nothing
+- `[DB-read]` — query only
+
 ## Cross-CLI validation parity
 
 ### Python and Go CLIs must agree on invalid inputs

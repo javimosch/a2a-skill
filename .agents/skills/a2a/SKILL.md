@@ -255,6 +255,65 @@ When the user signals stop, or when every agent's status is `done`:
 Leave the database intact unless the user asks to wipe it (`/a2a clear`).
 Database survives between sessions — useful for resuming.
 
+## Remote machine spawn
+
+You can run the entire spawn sequence on a remote host via SSH. The pattern
+is identical to local spawn — `init`, `register`, write kit files, `spawn`,
+`register --pid` — but pipe it all through a single `ssh host bash << 'EOF'`
+heredoc so the bus lives on the remote machine.
+
+```bash
+ssh myhost bash << 'REMOTE'
+  export A2A_PROJECT=myproject
+  A2A=/usr/local/bin/a2a   # resolve explicitly; PATH may be minimal in non-login SSH
+  SPAWN=/path/to/a2a-spawn # a2a-spawn is often not on PATH in non-login sessions
+
+  "$A2A" init
+  "$A2A" register pm --role "product-manager" --cli claude
+  # ... register other agents ...
+
+  # write kit files, then:
+  PID=$("$SPAWN" --cli claude --id pm --model haiku \
+        --project myproject \
+        --log /tmp/a2a-myproject-pm.log \
+        --kit-file /tmp/a2a-myproject-pm.kit)
+  "$A2A" register pm --pid "$PID" --upsert
+REMOTE
+```
+
+### Remote spawn caveats
+
+**SSH goes silent for 60–90s after spawning 4+ agents.** Each agent hits
+the API simultaneously. Subsequent SSH connections time out. Wait before
+monitoring. See `docs/PITFALLS.md` → "Remote machine spawn" for full details.
+
+**claude and a2a-spawn are often not on PATH in non-login SSH sessions.**
+`~/.local/bin` is not sourced. Always resolve by full path:
+
+```bash
+# claude
+CLAUDE="$(command -v claude 2>/dev/null)"; [ -z "$CLAUDE" ] && CLAUDE="$HOME/.local/bin/claude"
+
+# a2a-spawn
+SPAWN="$(command -v a2a-spawn 2>/dev/null)"
+[ -z "$SPAWN" ] && SPAWN="$HOME/.agents/skills/a2a/a2a-spawn"
+[ -z "$SPAWN" ] && SPAWN="$HOME/.claude/skills/a2a/a2a-spawn"
+```
+
+**Always pass `--project` explicitly.** The default is `basename($PWD)`,
+which on a root home directory resolves to `root` — a collision-prone name.
+
+**Resolve stale git state before creating a worktree.** Check for
+`.git/rebase-merge` or `.git/rebase-apply` and abort before running
+`git worktree add`. Reset to `origin/main` if local and remote diverged.
+
+**Add explicit ACK instructions to implementer kit prompts.** Without them,
+developer agents silently begin work and PM/architect agents send redundant
+check-in messages while waiting for confirmation.
+
+See [`examples/remote_worktree_team.sh`](../../../examples/remote_worktree_team.sh)
+for a complete working example of this pattern.
+
 ## Related Documentation
 
 - [docs/GO_CLI_REFERENCE.md](../../../docs/GO_CLI_REFERENCE.md) — Full Go binary CLI command reference

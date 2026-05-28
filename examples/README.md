@@ -115,7 +115,49 @@ python3 examples/spawn_coordinator.py --project mytest --cli claude
 
 **Requires:** The chosen AI CLI (`claude`, `opencode`, or `pi`) installed and configured.
 
-### 5. Spawn Debate (`spawn_debate.py`)
+### 5. Remote Worktree Team (`remote_worktree_team.sh`)
+
+A complete shell script that spawns a 4-person multi-role team on a **remote
+machine**, working in a fresh git worktree. Demonstrated by having 2 haiku +
+2 sonnet Claude agents design, implement, and test a new feature from scratch.
+
+**Pattern demonstrated:**
+- Remote spawn over SSH (Pattern 3 on a remote host)
+- Git worktree isolation (team works on a branch, main stays clean)
+- Mixed-model teams (haiku for coordination/QA, sonnet for design/implementation)
+- Goal mode — PM announces a GOAL, architect designs, dev implements, QA tests
+
+**Usage:**
+```bash
+./examples/remote_worktree_team.sh [remote_host] [repo_path] [branch] [project]
+# e.g.:
+./examples/remote_worktree_team.sh rbm2 /root/projects/a2a-skill feature/my-feature my-feat
+```
+
+**What the team does:**
+1. `pm` (haiku) picks a feature goal and broadcasts it
+2. `architect` (sonnet) sends a detailed DESIGN spec to dev1 and a TESTPLAN to qa
+3. `dev1` (sonnet) implements the feature in the worktree, signals IMPL-DONE
+4. `architect` reviews the implementation and approves or requests fixes
+5. `qa` (haiku) runs the full test suite and manual tests, issues QA-APPROVED
+6. `pm` announces GOAL COMPLETE
+
+**Monitor from your local machine:**
+```bash
+ssh rbm2 "A2A_PROJECT=my-feat a2a peek --limit 50"
+ssh rbm2 "A2A_PROJECT=my-feat a2a list"
+ssh rbm2 "tail -f /tmp/a2a-my-feat-dev1.log"
+```
+
+**Key caveats (see `docs/PITFALLS.md` → "Remote machine spawn"):**
+- SSH will be unresponsive for 60–90s after spawning — agents are busy starting
+- `claude` and `a2a-spawn` are often not on PATH in non-login SSH sessions
+- Always pass `--project` explicitly; never rely on `basename($PWD)`
+- Resolve stale rebases and diverged branches before creating the worktree
+
+**Requires:** ssh access to remote host, claude CLI installed at `~/.local/bin/claude`.
+
+### 6. Spawn Debate (`spawn_debate.py`)
 
 An adversarial debate harness that spawns proposer and critic agents as
 background AI CLI sessions via `a2a-spawn`, then monitors their exchange.
