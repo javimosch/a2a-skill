@@ -195,6 +195,66 @@ match client.stats() {
 }
 ```
 
+### list() -> Result<Vec<Peer>>
+
+Alias for `list_peers()`.
+
+```rust
+let peers = client.list()?;
+```
+
+### status(new_status: Option<&str>) -> Result<Option<String>>
+
+Get or set agent status. If `new_status` is `Some`, sets and returns `Ok(None)`. If `None`, returns the current status.
+
+```rust
+// Get current status
+let current = client.status(None)?;
+
+// Set status
+client.status(Some("idle"))?;
+```
+
+### wait(count, timeout_secs) -> Result<bool>
+
+Alias for `wait_for_messages()`.
+
+### wait_for_messages(count: i64, timeout: f64) -> Result<bool>
+
+Block until `count` unread messages arrive or timeout elapses. Returns `true` if enough messages arrived.
+
+```rust
+let got_enough = client.wait_for_messages(3, 30.0)?;
+if !got_enough {
+    println!("Timed out waiting for messages");
+}
+```
+
+### init_project() -> Result<()>
+
+Initialize the project database, creating tables if they don't exist. Safe to call multiple times.
+
+```rust
+client.init_project()?;
+```
+
+### clear() -> Result<()>
+
+Delete the project database and all WAL-related files. **Warning:** permanently deletes all messages and agent registrations.
+
+```rust
+client.clear()?;
+```
+
+### project_info() -> ProjectInfo
+
+Get resolved project information (project name, database path, whether DB exists).
+
+```rust
+let info = client.project_info();
+println!("Project: {}, DB: {}, exists: {}", info.project, info.db, info.exists);
+```
+
 ## Example: Task Worker
 
 ```rust

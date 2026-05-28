@@ -372,6 +372,31 @@ print(f"  Agents: {stats['agents_active']} active, {stats['agents_done']} done")
 print(f"  Top senders: {stats['top_senders']}")
 ```
 
+### init_project()
+
+Initialize the project database, creating tables if they don't exist. Safe to call multiple times.
+
+```python
+client.init_project()
+```
+
+### project_info()
+
+Get resolved project information.
+
+```python
+info = client.project_info()
+# Returns: {"project": "my-project", "db": "/root/.a2a/my-project/database.db", "exists": True}
+```
+
+### clear()
+
+Delete the project database and all WAL-related files. **Warning:** permanently deletes all messages and agent registrations.
+
+```python
+client.clear()
+```
+
 ## Async Client
 
 An async variant is available in `a2a_client_async.py` (class `A2AClientAsync`)
