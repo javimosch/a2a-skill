@@ -2,6 +2,14 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.14] — 2026-05-28 (Async Parity Bugfix — Read tracking, limit handling, validation)
+
+### Fixed
+- **a2a_priority_async.py: missing input validation in `__init__`** — async skipped empty-string checks for `project` and `agent_id`; now raises `ValueError` matching sync `A2AClient.__init__` behavior.
+- **a2a_priority_async.py: `recv()`, `recv_by_priority()`, `recv_above_priority()` missing read tracking** — all three methods returned messages without marking them as read via the `reads` table. Every call with `unread_only=True` re-delivered the same messages. Sync version correctly adds `INSERT OR IGNORE INTO reads` after fetching. Three instances of `executemany` added.
+- **a2a_routing_async.py: `recv_with_routing(limit=N)` applied limit before routing (SQL level)** — async version used `LIMIT ?` in the SQL query, restricting which messages were available for routing decisions. Sync version fetches ALL messages, routes them all, then truncates each category. Removed SQL-level limit, added per-category post-routing truncation matching sync behavior.
+- **a2a_routing_async.py: `apply_routing()` had separate discard vs other-category read marking loops** — consolidated into a single loop over all five categories (`deliver`, `forward`, `discard`, `queue`, `escalate`) matching sync implementation. Added `or ''` fallback for forwarded message body.
+
 ## [1.3.13] — 2026-05-28 (Doc Audit — SKILL.md sync, README tree, pitfalls)
 
 ### Docs
