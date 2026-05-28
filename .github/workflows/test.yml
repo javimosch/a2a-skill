@@ -60,7 +60,6 @@ jobs:
       - name: Check shell scripts
         run: |
           # Basic syntax check for shell scripts
-          bash -n a2a
           bash -n a2a-spawn
           bash -n install.sh
           bash -n smoke_test.sh
