@@ -1,30 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Changelog - a2a-skill</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-    <style>
-      body { font-family: 'Inter', system-ui, sans-serif; background-color: #0a0a0b; color: #e2e8f0; }
-      h1 { font-family: 'Geist', system-ui, sans-serif; }
-    </style>
-  </head>
-  <body class="bg-[#0a0a0b] min-h-screen">
-    <div class="max-w-5xl mx-auto px-6 py-16">
-      <header class="mb-16">
-        <a href="index.html" class="text-blue-400 hover:text-blue-300 text-sm mb-6 inline-block transition-colors">&larr; Back to Docs</a>
-        <h1 class="text-5xl font-bold text-white mt-4 tracking-tight">Changelog</h1>
-        <p class="text-slate-400 mt-3 text-lg">Monthly changelogs</p>
-      </header>
-      <div class="space-y-4">
-        <a href="changelog-2026-05.html" class="block p-6 bg-slate-900 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors">
-          <span class="text-blue-400">May 2026</span>
-          <span class="text-slate-400 ml-4">→ View</span>
-        </a>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Releases · a2a-skill</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <style>
+    :root {
+      --bg: #050505;
+      --surface: #0d0d0d;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0f0f0;
+      --muted: #6b7280;
+      --accent: #4ade80;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0.02;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(5,5,5,0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 3.5rem;
+    }
+    .nav-logo { font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.025em; color: #fff; text-decoration: none; }
+    .nav-logo em { font-style: normal; color: var(--accent); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-right a { font-size: 0.8125rem; font-weight: 500; color: var(--muted); text-decoration: none; transition: color 0.25s; }
+    .nav-right a:hover { color: #fff; }
+
+    .page { max-width: 760px; margin: 0 auto; padding: 5rem 1.5rem 8rem; }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.875rem;
+      background: rgba(74,222,128,0.08);
+      border: 1px solid rgba(74,222,128,0.15);
+      border-radius: 9999px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4.5vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.07;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+    .subtitle {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.75;
+      margin-bottom: 4rem;
+    }
+
+    .releases { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .release-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 1.5rem 2rem;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 1.125rem;
+      text-decoration: none;
+      transition: all 0.35s cubic-bezier(0.32,0.72,0,1);
+    }
+    .release-link:hover {
+      background: rgba(255,255,255,0.045);
+      border-color: rgba(255,255,255,0.12);
+      transform: translateX(4px);
+    }
+
+    .release-left { display: flex; flex-direction: column; gap: 0.25rem; }
+    .release-name { font-size: 1rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+    .release-meta { font-size: 0.8125rem; color: var(--muted); font-weight: 500; }
+
+    .release-right { display: flex; align-items: center; gap: 0.875rem; flex-shrink: 0; }
+    .release-badge {
+      padding: 0.2rem 0.625rem;
+      border-radius: 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .badge-latest { background: rgba(74,222,128,0.1); color: var(--accent); border: 1px solid rgba(74,222,128,0.2); }
+    .badge-stable { background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid var(--border); }
+    .release-arrow { font-size: 1rem; color: var(--muted); transition: color 0.3s, transform 0.3s cubic-bezier(0.32,0.72,0,1); }
+    .release-link:hover .release-arrow { color: #fff; transform: translateX(3px); }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 2rem 0 1.5rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">a2a<em>skill</em></a>
+  <div class="nav-right">
+    <a href="index.html">Home</a>
+    <a href="https://github.com/javimosch/a2a-skill" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="eyebrow">Release History</div>
+  <h1>All Releases</h1>
+  <p class="subtitle">Monthly changelogs — Product and Technical views. v1.3 is the current stable series.</p>
+
+  <div class="releases">
+
+    <div class="divider">2026</div>
+
+    <a href="changelog-2026-05.html" class="release-link">
+      <div class="release-left">
+        <span class="release-name">May 2026 — The Founding Month</span>
+        <span class="release-meta">v1.0-alpha → v1.3.17 · 18 releases · 800+ tests · 5 language clients</span>
       </div>
-    </div>
-  </body>
+      <div class="release-right">
+        <span class="release-badge badge-latest">Latest</span>
+        <span class="release-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
+</div>
+
+</body>
 </html>

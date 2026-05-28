@@ -1,967 +1,656 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Changelog May 2026 - a2a-skill</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-    <style>
-      body { font-family: 'Inter', system-ui, sans-serif; background-color: #0a0a0b; color: #e2e8f0; }
-      h1, h2, h3 { font-family: 'Geist', system-ui, sans-serif; }
-      .tab-btn { transition: all 0.2s ease; }
-      .tab-btn.active { background-color: #1a1a1d; border-color: #3b82f6; color: #fff; }
-      .tab-content { display: none; animation: fadeIn 0.3s ease; }
-      .tab-content.active { display: block; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-      .feature-card { background: linear-gradient(135deg, #1a1a1d 0%, #151517 100%); border: 1px solid #262629; transition: all 0.3s ease; }
-      .feature-card:hover { border-color: #3b82f6; transform: translateY(-2px); }
-    </style>
-  </head>
-  <body class="bg-[#0a0a0b] min-h-screen">
-    <div class="max-w-5xl mx-auto px-6 py-16">
-      <header class="mb-16">
-        <a href="changelog.html" class="text-blue-400 hover:text-blue-300 text-sm mb-6 inline-block transition-colors">&larr; Back to Changelog</a>
-        <h1 class="text-5xl font-bold text-white mt-4 tracking-tight">Changelog</h1>
-        <p class="text-slate-400 mt-3 text-lg">May 2026</p>
-        
-        <!-- Tabs -->
-        <div class="flex gap-2 mt-8">
-          <button onclick="switchTab('product')" id="tab-product" class="tab-btn active px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 font-medium text-sm hover:border-slate-600">
-            Product
-          </button>
-          <button onclick="switchTab('technical')" id="tab-technical" class="tab-btn px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 font-medium text-sm hover:border-slate-600">
-            Technical
-          </button>
-        </div>
-      </header>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Changelog — May 2026 · a2a-skill</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <style>
+    :root {
+      --bg: #050505;
+      --surface: #0d0d0d;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0f0f0;
+      --muted: #6b7280;
+      --accent: #4ade80;
+      --purple: #a78bfa;
+      --amber: #fbbf24;
+      --red: #f87171;
+      --cyan: #22d3ee;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0.02;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(5,5,5,0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 3.5rem;
+    }
+    .nav-logo { font-size: 0.9375rem; font-weight: 700; letter-spacing: -0.02em; color: #fff; text-decoration: none; }
+    .nav-logo span { color: var(--accent); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-right a { font-size: 0.8125rem; font-weight: 500; color: var(--muted); text-decoration: none; transition: color 0.25s; }
+    .nav-right a:hover { color: #fff; }
 
-      <!-- Product Changelog -->
-      <div id="content-product" class="tab-content active">
+    .page { max-width: 860px; margin: 0 auto; padding: 5rem 1.5rem 8rem; }
 
-        <div class="feature-card rounded-xl p-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-              <span class="text-2xl">🔐</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold text-white mb-2">End-to-End Encryption</h3>
-              <p class="text-slate-400 leading-relaxed">Added message encryption module for secure agent communications. Messages are encrypted before storage and decrypted on retrieval, ensuring privacy in multi-agent environments.</p>
-            </div>
-          </div>
-        </div>
+    .cl-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      background: rgba(74,222,128,0.08);
+      border: 1px solid rgba(74,222,128,0.15);
+      border-radius: 9999px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+    .cl-title {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+    .cl-subtitle {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 520px;
+      margin-bottom: 3rem;
+    }
 
-        <div class="feature-card rounded-xl p-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-              <span class="text-2xl">🔍</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold text-white mb-2">Full-Text Search (FTS5)</h3>
-              <p class="text-slate-400 leading-relaxed">Implemented SQLite FTS5 full-text search for advanced message discovery. Search across message bodies with LIKE fallback for broader compatibility. Added regression tests for FTS5 rebuild behavior.</p>
-            </div>
-          </div>
-        </div>
+    .tabs {
+      display: inline-flex;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      padding: 0.25rem;
+      margin-bottom: 3rem;
+    }
+    .tab-btn {
+      padding: 0.5rem 1.25rem;
+      border-radius: 9999px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      transition: all 0.3s cubic-bezier(0.32,0.72,0,1);
+      font-family: inherit;
+    }
+    .tab-btn.active { background: rgba(255,255,255,0.1); color: #fff; }
+    .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.6); }
 
-        <div class="feature-card rounded-xl p-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-              <span class="text-2xl">⚡</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold text-white mb-2">Message Prioritization</h3>
-              <p class="text-slate-400 leading-relaxed">Added 4-level priority queue system (Critical, High, Medium, Low) for ordered message processing. Includes both sync and async client implementations for high-concurrency scenarios.</p>
-            </div>
-          </div>
-        </div>
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
-        <div class="feature-card rounded-xl p-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-              <span class="text-2xl">🔀</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold text-white mb-2">Rule-Based Routing</h3>
-              <p class="text-slate-400 leading-relaxed">Implemented message routing with rule-based distribution. Define custom routing rules to automatically direct messages to specific agents based on content patterns, sender roles, or other criteria.</p>
-            </div>
-          </div>
-        </div>
+    /* ── PRODUCT VIEW ── */
+    .product-intro {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+    .product-intro p { font-size: 0.9375rem; line-height: 1.8; color: rgba(255,255,255,0.55); }
 
-        <div class="feature-card rounded-xl p-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
-              <span class="text-2xl">📋</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold text-white mb-2">Audit Logging</h3>
-              <p class="text-slate-400 leading-relaxed">Added comprehensive audit logging for message lifecycle tracking. Track message creation, delivery, reads, and modifications with context managers for automatic audit scope management.</p>
-            </div>
-          </div>
-        </div>
+    .product-milestone {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 2.25rem 2.5rem;
+      margin-bottom: 1rem;
+      transition: border-color 0.3s;
+    }
+    .product-milestone:hover { border-color: rgba(255,255,255,0.11); }
 
-        <div class="feature-card rounded-xl p-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-lg bg-slate-500/10 flex items-center justify-center flex-shrink-0">
-              <span class="text-2xl">🌐</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold text-white mb-2">Multi-Language Client Libraries</h3>
-              <p class="text-slate-400 leading-relaxed">Expanded language support with Go, Node.js, and Rust client libraries. All clients now include proper WAL mode initialization and directory creation guards for reliable concurrent access.</p>
-            </div>
-          </div>
-        </div>
+    .milestone-badge {
+      display: inline-block;
+      padding: 0.2rem 0.7rem;
+      background: rgba(74,222,128,0.07);
+      border: 1px solid rgba(74,222,128,0.14);
+      border-radius: 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+    .product-milestone h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+    .product-milestone > p {
+      font-size: 0.9375rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.75;
+      margin-bottom: 1.25rem;
+    }
+    .product-milestone ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .product-milestone li {
+      font-size: 0.875rem;
+      color: var(--muted);
+      padding-left: 1.25rem;
+      position: relative;
+      line-height: 1.65;
+    }
+    .product-milestone li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 0.75rem;
+      top: 0.1em;
+    }
+    .product-milestone li strong { color: rgba(255,255,255,0.75); font-weight: 600; }
+    .product-milestone li code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.8125rem;
+      color: var(--purple);
+      background: rgba(167,139,250,0.09);
+      padding: 0.1em 0.4em;
+      border-radius: 0.25rem;
+    }
 
-        <div class="feature-card rounded-xl p-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-              <span class="text-2xl">🌿</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold text-white mb-2">Git-Aware Coordination</h3>
-              <p class="text-slate-400 leading-relaxed">Added git-state-aware bus queries to prevent work collisions. Agents can check git branch, commit, and status to coordinate work and avoid duplicate effort across multiple agent sessions.</p>
-            </div>
-          </div>
-        </div>
+    /* ── TECHNICAL VIEW ── */
+    .tech-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      overflow: hidden;
+      margin-bottom: 3rem;
+    }
+    .tech-stat { background: var(--surface); padding: 1.5rem; text-align: center; }
+    .tech-stat-num {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 0.375rem;
+    }
+    .tech-stat-label { font-size: 0.75rem; color: var(--muted); font-weight: 500; }
 
-        <div class="feature-card rounded-xl p-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-              <span class="text-2xl">🐳</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold text-white mb-2">Docker Deployment</h3>
-              <p class="text-slate-400 leading-relaxed">Added multi-stage Docker build and docker-compose deployment support. Includes comprehensive deployment guide with production-ready configuration examples.</p>
-            </div>
-          </div>
-        </div>
+    .release-group { margin-bottom: 2.25rem; }
+    .release-header {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .release-version { font-size: 1rem; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
+    .release-date { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
+    .release-tag {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 0.375rem;
+      margin-left: auto;
+    }
+    .tag-fix  { background: rgba(248,113,113,0.1); color: var(--red);    border: 1px solid rgba(248,113,113,0.15); }
+    .tag-feat { background: rgba(74,222,128,0.1);  color: var(--accent); border: 1px solid rgba(74,222,128,0.15);  }
+    .tag-docs { background: rgba(34,211,238,0.1);  color: var(--cyan);   border: 1px solid rgba(34,211,238,0.15);  }
+    .tag-hard { background: rgba(167,139,250,0.1); color: var(--purple); border: 1px solid rgba(167,139,250,0.15); }
 
-        <div class="feature-card rounded-xl p-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-lg bg-pink-500/10 flex items-center justify-center flex-shrink-0">
-              <span class="text-2xl">🛡️</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold text-white mb-2">WAL Mode Hardening</h3>
-              <p class="text-slate-400 leading-relaxed">Fixed WAL invariant gaps across all language clients (Python sync/async, Go, Rust, Node.js). All database connections now properly set WAL journal mode and busy timeout for reliable concurrent writes.</p>
-            </div>
-          </div>
-        </div>
+    .change-category { margin-bottom: 1.125rem; }
+    .change-category-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.625rem;
+    }
+    .cat-added   { color: var(--accent); }
+    .cat-fixed   { color: var(--red); }
+    .cat-docs    { color: var(--cyan); }
+    .cat-changed { color: var(--amber); }
+    .cat-refac   { color: var(--purple); }
 
-        <div class="feature-card rounded-xl p-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
-              <span class="text-2xl">📚</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold text-white mb-2">Comprehensive Documentation</h3>
-              <p class="text-slate-400 leading-relaxed">Added 20+ new documentation files covering v1.3 features, security hardening, troubleshooting, deployment, and integration guides. Reorganized docs/ directory with clear ownership rules.</p>
-            </div>
-          </div>
-        </div>
+    .change-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .change-list li {
+      font-size: 0.875rem;
+      color: var(--muted);
+      padding-left: 1.25rem;
+      position: relative;
+      line-height: 1.65;
+    }
+    .change-list li::before { content: '·'; position: absolute; left: 0.25rem; font-weight: 700; }
+    .cat-added   + .change-list li::before,
+    .change-category:has(.cat-added) .change-list li::before   { color: var(--accent); }
+    .cat-fixed   + .change-list li::before,
+    .change-category:has(.cat-fixed) .change-list li::before   { color: var(--red); }
+    .cat-docs    + .change-list li::before,
+    .change-category:has(.cat-docs) .change-list li::before    { color: var(--cyan); }
+    .cat-changed + .change-list li::before,
+    .change-category:has(.cat-changed) .change-list li::before { color: var(--amber); }
+    .cat-refac   + .change-list li::before,
+    .change-category:has(.cat-refac) .change-list li::before   { color: var(--purple); }
+
+    .change-list li strong { color: rgba(255,255,255,0.75); font-weight: 600; }
+    .change-list li code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.8125rem;
+      color: var(--purple);
+      background: rgba(167,139,250,0.09);
+      padding: 0.1em 0.4em;
+      border-radius: 0.25rem;
+    }
+
+    @media (max-width: 600px) {
+      .tech-stats { grid-template-columns: repeat(2, 1fr); }
+      .product-milestone { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">a2a<span>skill</span></a>
+  <div class="nav-right">
+    <a href="index.html">Home</a>
+    <a href="changelog.html">All Releases</a>
+    <a href="https://github.com/javimosch/a2a-skill" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="cl-eyebrow">Changelog · May 2026</div>
+  <h1 class="cl-title">The founding month</h1>
+  <p class="cl-subtitle">From zero to a production-grade peer messaging framework — 18 releases, 800+ tests, five language clients, and enterprise-grade encryption, routing, and audit in 10 days.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" role="tab" onclick="switchTab('product', this)">Product</button>
+    <button class="tab-btn" role="tab" onclick="switchTab('technical', this)">Technical</button>
+  </div>
+
+  <!-- PRODUCT TAB -->
+  <div id="tab-product" class="tab-panel active">
+
+    <div class="product-intro">
+      <p>May 2026 was the founding month of a2a-skill. In 10 days the project went from nothing to a production-grade peer messaging framework: a zero-config SQLite bus, a 14-command CLI, five language clients, and over 800 automated tests. Every release this month was a hardening lap or a new capability layered on top of a stable core.</p>
+    </div>
+
+    <div class="product-milestone">
+      <div class="milestone-badge">May 18 · v1.0-alpha</div>
+      <h3>The Bus Launches</h3>
+      <p>a2a-skill starts with a single Python file and a clear idea: AI agents should talk to each other directly, without an orchestrator. The initial release ships 14 CLI commands backed by a WAL-mode SQLite database that handles concurrent writes without a daemon or server process.</p>
+      <ul>
+        <li>14 commands: <code>init</code>, <code>register</code>, <code>send</code>, <code>recv</code>, <code>peek</code>, <code>list</code>, <code>status</code>, <code>wait</code>, <code>clear</code>, <code>search</code>, <code>stats</code>, <code>thread</code>, <code>unregister</code>, <code>project</code></li>
+        <li>Per-agent read tracking — each agent sees only its own unread messages</li>
+        <li>Message TTL with automatic expiry on every recv/peek call</li>
+        <li>Agent presence tracking: status field, PID registration</li>
+        <li>72 tests and a real-time bus dashboard on day one</li>
+      </ul>
+    </div>
+
+    <div class="product-milestone">
+      <div class="milestone-badge">May 19 · v1.1</div>
+      <h3>Search, Threading, and the Python Client</h3>
+      <p>Agents can now query the bus by keyword, follow conversations by thread ID, and check bus health with <code>a2a stats</code>. A native Python client library lands — direct SQLite access, no subprocess overhead.</p>
+      <ul>
+        <li>Keyword search across all messages with <code>a2a search</code></li>
+        <li>Thread views — full conversation in one command with <code>a2a thread &lt;id&gt;</code></li>
+        <li>Bus statistics: agent count, message totals, unread counts</li>
+        <li>A2AClient Python library — sync and async, full CLI parity</li>
+      </ul>
+    </div>
+
+    <div class="product-milestone">
+      <div class="milestone-badge">May 19 · v1.2</div>
+      <h3>Every Language on the Same Bus</h3>
+      <p>Go, Node.js, and Rust clients ship the same day. A REST API server adds 10 HTTP endpoints. Python, Go, JS, and Rust agents can now collaborate in the same team — sharing one SQLite bus file, no protocol translation needed.</p>
+      <ul>
+        <li>Go client library with full API parity</li>
+        <li>Node.js client using the built-in <code>node:sqlite</code> module (Node 22+)</li>
+        <li>Rust crate and binary — same methods, same behavior</li>
+        <li>REST API server: 10 JSON endpoints</li>
+      </ul>
+    </div>
+
+    <div class="product-milestone">
+      <div class="milestone-badge">May 19 · v1.3</div>
+      <h3>Enterprise-Grade Capabilities</h3>
+      <p>Six major features in a single release: encryption, FTS5 search, audit logging, priority queuing, smart routing, and async Python clients. Each ships with its own documentation guide.</p>
+      <ul>
+        <li><strong>End-to-End Encryption</strong> — Fernet (AES-128) + RSA-2048. Transparent to agents calling send/recv.</li>
+        <li><strong>FTS5 Full-Text Search</strong> — Boolean AND/OR/NOT, phrase queries, prefix matching. LIKE fallback for older SQLite.</li>
+        <li><strong>Audit Logging</strong> — Complete message lifecycle tracking. GDPR, HIPAA, SOC 2, PCI DSS aligned. Export to compliance reports.</li>
+        <li><strong>Priority Queue</strong> — CRITICAL, HIGH, NORMAL, LOW. Incident alerts cut the line; background tasks wait their turn.</li>
+        <li><strong>Smart Routing</strong> — Rules-based: Deliver, Forward, Discard, Queue, Escalate. Persistent rules, enable/disable without restart.</li>
+        <li><strong>Async Clients</strong> — PriorityClientAsync and RoutingClientAsync. 10× throughput vs sync (1K → 10K msg/sec).</li>
+      </ul>
+    </div>
+
+    <div class="product-milestone">
+      <div class="milestone-badge">May 19–27 · v1.3.1–v1.3.9</div>
+      <h3>Hardening Sprint — WAL, FTS5, Cross-Client Parity</h3>
+      <p>After the v1.3 feature push, a week-long hardening sprint closes every known reliability gap. WAL mode is enforced on all connections. FTS5 search is fixed to not rebuild on every query. Missing methods, divergent error messages, and validation inconsistencies across all five clients are patched one by one. The test suite grows from 95 to 800+ tests.</p>
+      <ul>
+        <li>WAL mode + busy timeout enforced across Python, Go, JS, and Rust — all 19 affected call sites patched</li>
+        <li>FTS5 rebuild-on-every-search bug fixed; boolean operators preserved in LIKE fallback path</li>
+        <li>Go and Rust clients receive <code>register()</code> and <code>unregister()</code> — previously absent, making <code>send()</code> impossible</li>
+        <li><code>a2a-spawn</code> now uses <code>nohup</code> + <code>disown</code> — spawned agents survive parent shell exit</li>
+        <li><code>a2a-spawn</code> shell quoting fix — kit prompts passed via file reference, not inline string</li>
+        <li>Async routing: all five message categories now marked as read after processing (not just <code>discard</code>)</li>
+        <li>Go <code>Wait()</code> connection churn fixed — was opening 120 SQLite connections for a 60s wait</li>
+        <li>Rust <code>touch()</code> method added; <code>recv()</code> connection reuse across poll loop</li>
+      </ul>
+    </div>
+
+    <div class="product-milestone">
+      <div class="milestone-badge">May 27–28 · v1.3.10–v1.3.17</div>
+      <h3>Final Parity Pass — Validation, Stubs, wait_for_messages</h3>
+      <p>The last stretch of May closes remaining cross-client gaps: empty body rejection standardized across all five clients, type stubs brought into sync with their implementations, and <code>wait_for_messages()</code> added to Go and Rust to complete the cross-language API surface.</p>
+      <ul>
+        <li><strong>Empty body rejection</strong> — all five clients refuse empty strings with a consistent error message</li>
+        <li><strong>wait_for_messages()</strong> — Go and Rust gain this blocking method, matching Python and JS</li>
+        <li><strong>Type stubs fixed</strong> — 8 missing public methods added to <code>.pyi</code> stubs; <code>wait_for_messages</code> return type corrected from <code>List</code> to <code>bool</code></li>
+        <li><strong>Go semantic drift closed</strong> — 10 behavioral gaps vs Python patched: <code>GetStatus()</code> nil-for-not-found, <code>Recv()</code> partial-read bug, <code>Register()</code> atomicity fix, <code>RecvSimple()</code> wait type to <code>float64</code></li>
+        <li><strong>Async routing limit fix</strong> — <code>recv_with_routing(limit=N)</code> now routes all messages then truncates per-category, matching sync behavior</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- TECHNICAL TAB -->
+  <div id="tab-technical" class="tab-panel">
+
+    <div class="tech-stats">
+      <div class="tech-stat">
+        <div class="tech-stat-num">18</div>
+        <div class="tech-stat-label">Releases</div>
       </div>
-
-      <!-- Technical Changelog -->
-      <div id="content-technical" class="tab-content">
-        <div class="space-y-8">
-
-        <section>
-          <h2 class="text-2xl font-semibold text-blue-400 mb-4 flex items-center gap-2">
-            <span>🚀</span> Features
-          </h2>
-          <ul class="space-y-2 text-slate-300">
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>feat: add register/unregister + thread_id to Python clients; fix async wait=0</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>feat: add FTS5 full-text search to Go library (SearchFTS)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>feat: add build.sh and GitHub Actions release workflow</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>feat: add cmd/a2a/main.go CLI binary skeleton</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>feat: add InitProject, Register, Unregister, CleanupExpired, Touch, Wait, Clear, ProjectInfo methods to Go client library</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>feat: inject coordination rules into default SKILL.md kit prompt (v1.4 P1)</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 class="text-2xl font-semibold text-red-400 mb-4 flex items-center gap-2">
-            <span>🐛</span> Bug Fixes
-          </h2>
-          <ul class="space-y-2 text-slate-300">
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>fix: shell completion files out of sync with a2a.py CLI</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>fix: Go error messages, Stats error check, connect MaxLifetime, doc</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>fix: Go validation gaps in SearchFTS, Send, RecvSimple</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>fix: Go Register() upsert wrapped in transaction</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>fix: Go Recv() separate scan from mark-read phase</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>fix: Go GetStatus() returns *string, nil for unknown agents</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>fix: Go Wait() connection churn and doc signal</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>fix: a2a async parity bugs via peer team - read tracking and limit handling</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>fix: align .pyi stubs with .py implementations for recv() signatures</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>fix: expand and correct .pyi stubs for sync and async clients</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: update .pyi stubs to match .py implementations</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: a2a collaborative maintenance via peer team - fix 8 async parity bugs</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: a2a collaborative maintenance via paseo - fix 7 bugs in a2a_routing.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: use --append-system-prompt-file for claude in a2a-spawn</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: add NaN/Inf validation for Go Recv(), Thread() length check, fix Rust recv() limit=0 and wait() polling</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: add validation, WAL/Touch consistency, and upsert pattern to Go and Rust clients</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: upsert NULLIF for empty strings, Go Recv Touch/Cleanup in loop, cmd_wait --since</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: add async TTL cleanup to PriorityClientAsync and RoutingClientAsync</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: commit cleanup_expired deletions in all recv/peek paths of PriorityClient</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: add peer-review findings — pid field, parameter validation guards in Rust client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: peek() TTL strftime and missing MAX_ROLE_LENGTH const in Rust client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: register before set_status in run_agent(), float epoch in Rust TTL cleanup, sync limit type in async recv()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: add MAX_ROLE_LENGTH constant, NULLIF upsert, sender/recipient validation across all clients</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: apply review findings</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: update Go CLI version from 1.0.0 to 1.3.5 to match CHANGELOG</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>fix: address 5 reviewer findings</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: auto-detect root user in a2a-spawn and document claude root pitfall</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: correct --allowedTools syntax, skip-guarded count, and add Node.js fallback guard</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: add --allow-dangerously-skip-permissions flag for claude in a2a-spawn</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: correct claude -p flag ordering in a2a-spawn</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: add WAL mode + busy_timeout to 19 test connection sites in test_a2a_client.py and test_async_modules.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: update stale repository URLs from anthropics/jarancibia to javimosch</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: add WAL invariant to all test db connections and example agent</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: update stale Go test count in AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix(v1.3.4): update CHANGELOG, AGENTS.md, and doc references</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix(a2a-spawn): use nohup+disown so spawned agents survive parent shell exit</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix(async): fix 4 bugs in a2a_client_async.py identified by code review</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix(go): change Wait() to return bool, add List() alias and Status() method</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix(js): remove duplicate status(), list(), init_project(), project_info(), wait() definitions</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix(a2a-spawn): increase max-turns to 50, use absolute claude path</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: add missing Rust project_info() method to Client impl</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: add cross-client API aliases for EXPECTED API compliance</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix(rust): add wait, init_project, clear methods and derive Debug on Client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix(js): add initProject, projectInfo, and clear methods</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix(py-async): add init_project, project_info, and clear methods</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix(py-sync): add init_project, project_info, and clear methods</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: code review findings from a2a peer review</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>fix: Multi-client audit findings from cross-CLI review session</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>fix: replace --dangerously-skip-permissions flag with env var for root compatibility</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>fix: Rust send() signature and examples now include thread_id parameter</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>fix: correct Go client Quick Start examples — Send() takes 4 args including threadID, Recv() uses RecvOpts struct</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>fix: guard detect_work_collision against None values for changed_files and commits</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>fix: make check_collisions handle None agent list</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>fix: harden REST API against non-numeric limits, whitespace inputs, and non-string 'to'</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>fix: add body length, thread_id empty, and thread_id length validation in async client send()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: validate empty agent_id in GitAwareClient constructor</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: validate body length after stdin read in Go CLI cmdSend</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: close aiosqlite connections in async client tests to fix ResourceWarnings</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: add max length validation for thread_id in Go CLI</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: add max length validation for thread_id in cmd_thread</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: cap peek limit at 1000 and search limit at 200 in Go CLI</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: add max length validation to Go client library and Go CLI</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: reject NaN and Inf for recv(wait) and wait_for_messages(timeout)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: send_task auto-registers sender agent instead of hardcoding</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: wait_for_messages accumulates across polls so count > 1 works with staggered arrivals</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: add curated fallback to competitive-analysis build script</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: add curated fallback to web-research-report build script</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: add curated ddgr fallback to weekly-digest and news-briefing build scripts</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>fix: add ddgr fallback to news-briefing artifact build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: add thread_id and body max length validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: add agent ID max length validation (256 char limit)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: consistent unknown agent error messages in cmd_send</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: cmd_register error message — remove confusing 'registered' wording</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: update Rust worker example for new send() signature</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: Rust client send() — add thread_id parameter with validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: Node.js client send() — add thread_id parameter with validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: Rust client send() — validate sender/recipient exist</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: Node.js client send() — validate sender/recipient exist</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: Go CLI cmdSend — warn on empty body (parity with Python)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: Go client Recv() — validate wait >= 0</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: escape f-string braces in make_kit() kit prompt template</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>fix: reject NaN/infinity for float CLI params (--wait, --since, --timeout) and cap --limit at 1000 (peek) and 200 (search)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: replace hardcoded fallback a2a path with ./a2a.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: update cmd/a2a/main.go for *string Peer fields</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: persist TTL cleanup in cmd_wait via explicit commit</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: prevent path traversal in project name via validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: validate empty thread ID in Go CLI cmdThread</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: change cmd_wait phantom test count to 1 to match current behavior</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: send_task() catches FileNotFoundError instead of crashing</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: validate whitespace-only --as agent IDs in Go CLI recv/status/wait</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: add empty agent ID validation to Go CLI register and unregister</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: reject non-positive --ttl in Go CLI (matches Python validation)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: reject non-positive TTL and peek limit in CLI and client libraries</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: reject non-positive --count in Go wait command</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: reject non-positive --count values in cmd_wait</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>fix: add cleanup_expired call to cmd_wait to ignore TTL-expired messages</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: escape backticks in run_a2a via shlex.split() + add no-write-disk ground rule</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: strip preamble before DOCTYPE in landing-page artifact build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: auto-create audit_log table in _connect() to prevent 'no such table' errors</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: add TTL cleanup to PriorityQueue.peek_critical</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: replace broken FTS5 vocab query in get_search_suggestions with LIKE</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: preserve created_at on client register upsert (match CLI behavior)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: add read-tracking and TTL cleanup to PriorityClient recv methods</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: validate set_status values in client libraries; update CLI_REFERENCE.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: cleanup expired TTL messages in search, thread, and stats commands</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: validate non-empty project and agent_id in client constructors</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: validate non-empty agent ID in register and unregister commands</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: validate empty recipient in A2AClientAsync.send()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: validate empty recipient in A2AClient.send()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: unify unknown agent error messages in a2a.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: align async client type signatures and defaults with sync</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: add LOWER(body) to sync client search() for unicode case-insensitivity</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: make async search() case-insensitive and align default limit with sync</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: align async stats() top_senders key format with sync client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: correct sync client thread() type hint from int to str</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: add TTL cleanup to A2AClientAsync.recv() and peek()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: add TTL cleanup to A2AClient.recv() and A2AClient.peek()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>fix: prefix all columns with m. in FTS join query to resolve ambiguous column error</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: server resolves db_path at startup to prevent HOME-change flakiness</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: run_tests() registers all 11 WithDB test classes; fix Go ProjectInfo test</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: unique test project names to prevent stale-data collisions + update SKILL.md with usage patterns</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: resolve 13 integration test failures in Go binary</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: use hasFlag() for defaults to distinguish explicit 0 from unset</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: rewrite main.go with manual flag parsing for positional arg compatibility</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: wait=0 hang in RoutingClientAsync.recv_with_routing</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: wait=0 no longer causes infinite loop in PriorityClient recv methods</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: replace hardcoded 'a2a-skill-dev-team' default in web UI with 'default'</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: restore </li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>fix: remove spurious </li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 class="text-2xl font-semibold text-emerald-400 mb-4 flex items-center gap-2">
-            <span>📚</span> Documentation
-          </h2>
-          <ul class="space-y-2 text-slate-300">
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>docs: sync Go client API signatures with v1.3.15 type changes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>docs: fix CLI command count in AGENTS.md (14→15, version was missing)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>docs: add v1.3.15 changelog and 10 new Go client pitfalls</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>docs: add v1.3.14 changelog entry — async parity bugfixes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>docs: add 8 async parity pitfall entries to AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add missing entries to README layout tree</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add missing Go files, test count, and verify_json_parity.sh to README tree</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add --append-system-prompt-file pitfall to AGENTS.md and CHANGELOG v1.3.9</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add claude auto mode kit prompt pitfall to Common pitfalls table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add v1.3.8 changelog entry — Go/Rust validation and consistency fixes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: fix GO_CLIENT_API.md — RecvOpts struct, Send threadID, add SearchFTS</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: fix CHANGELOG Release Statistics table — ordering, missing versions, pipe syntax, stale date</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add peer-session findings to CHANGELOG v1.3.7</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add missing entries to repo layout tree in AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add missing smoke_test.sh variants to repo layout in AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add a2a_common.py to repo layout tree in AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: fix SKILL.md ownership table missing smoke_test_multi.sh</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: update CHANGELOG.md for v1.3.6 peer review session fixes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add orchestrator-project-mismatch pitfall to Common pitfalls table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add a2a_client_async.py to CLIENT_API.md ownership table in docs/AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add async client section to CLIENT_API.md covering A2AClientAsync</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add missing list(), status(), wait(), initProject(), projectInfo(), clear() to NODE_CLIENT_API.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: add a2a-spawn to SKILL.md quick reference</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: fix Register() return type and add List(), Status(), AgentExists() to GO_CLIENT_API.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>docs: fix Wait() return type in GO_CLIENT_API.md from (int, error) to (bool, error)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: update claude permission pitfall to document both --allow-dangerously-skip-permissions and env var</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix stale a2a binary description and SKILL.md chain in AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: add v1.3.5 changelog entry for WAL completeness fix</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix stale test counts in AGENTS.md (33 JS tests, 902 total)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix stale JS test count in README.md (29 → 33)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: add WAL fix entry to CHANGELOG.md v1.3.4</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix stale test counts in AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix stale binary size and GitHub URL in .agents/skills/a2a/CLI_REFERENCE.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: add Rust test count to AGENTS.md layout tree, fix total test count (800 -> 869)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix broken relative links (remove docs/ prefix from See Also sections in docs/)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix stale GitHub URLs (jarancibia/anthropics -> javimosch)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: update examples glob in AGENTS.md to reflect JS and Rust examples</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix stale entries, broken reference, table formatting, and annotation style</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix a2a binary description, SKILL chain, and layout tree</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: add pitfalls for a2a-spawn bg lifecycle, claude sandbox, and foreground fallback</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix doc inaccuracies found by a2a doc audit</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: expand Style section with per-language guidelines and doc standards</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: expand Running the tests section with comprehensive test suites and benchmarks</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: add documentation navigation diagram and quick rule of thumb to AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: update examples/AGENTS.md with complete table, broader client guide, and cross-refs</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: expand completion/AGENTS.md with flag completion table and cross-refs</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: expand docs/SKILL.md with ownership link and 'where to go next' navigation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: expand root SKILL.md with audience-targeted reading guide</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: add shell completions section and completion/ layout to README.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: expand docs/AGENTS.md with three-copy SKILL.md chain and better doc management</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: add cross-references table and CHANGELOG maintenance protocol to AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix formatting inconsistency in AGENTS.md repository layout</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: fix stale Python client test count in AGENTS.md (78→85)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>docs: add v1.3.3 changelog and new common pitfalls from cross-client audit</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: add v1.3.3 maintenance changelog entry</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: fix stale test counts in README (unit 73→157, integration 67→105)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: add monitoring/debugging section and team-coordination protocol details to AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: add source hardening entries to CHANGELOG for this session</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: add doc-fix entries to CHANGELOG for this session</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: sync AGENTS.md test counts (client 78→85, git 59→65, async 92→94, total 785→800)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: update stale test counts in README (73→157, 47→85, 67→105) and add missing test files</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: add missing POST /register and /unregister endpoints to REST API doc, document send() fields</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: add missing unregister() method to Python client API reference</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: fix Node.js client doc — no npm deps (node:sqlite), add threadId to send()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: note Go CLI has 15 commands (14 same as Python + version)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: fix SKILL.md relative paths — links from .agents/skills/a2a/ use ../../../docs/ for project root</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: update test counts in AGENTS.md (711 total)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: update test counts in AGENTS.md (140 v13, 686 total)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: update test counts in AGENTS.md (157 unit, 78 client, 65 server, 660 total)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: update test counts in AGENTS.md (114 v13, 642 total)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: update test counts in AGENTS.md (636 total, server 61, artifacts 67)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: fix V14_ARCHITECTURE.md broken link path in CHANGELOG</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: add v1.3.2 changelog, fix PITFALLS.md trailing blank line</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: add missing doc references to README (GO_CLI_REFERENCE, PITFALLS, SECURITY_HARDENING, TROUBLESHOOTING)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: update test counts in AGENTS.md (616 total, add test_artifacts_util.py)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>docs: fix REST API send response field name (id → message_id)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>docs: update stale test counts in AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>docs: document Go CLI peek/search limit capping fix in PITFALLS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>docs: fix PITFALLS.md corruption — remove read_file line number prefixes from content</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>docs: document max length validation hardening in PITFALLS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>docs: document NaN/Inf validation fix for client library recv/wait_for_messages</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: PITFALLS.md — document cross-client thread_id parity gap and fix</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: PITFALLS.md — add cross-client send() validation gap</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: fix CLI_REFERENCE.md link in SKILL.md, add Go/Python binary variance pitfall</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: document new Go client and CLI validation gaps in PITFALLS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: document search() limit validation in Python CLIENT_API.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: document new search limit and set_status validations</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: expand brand-assets README with two-tier fallback detail</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: add brand-assets fallback and ASCII converter pitfall to PITFALLS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: fix stray line number artifact at end of PITFALLS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: add pitfall about stale agent logs causing false positive health checks</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: add API key quota and agent timeout pitfalls from ascii-gallery build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: add local-discovery and alert-pipeline to artifacts README table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: update ADVANCED_PATTERNS artifact table with 14 new entries</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>docs: update artifacts README with brand-assets entry</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: add security-audit to artifacts README table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: add dependency-check to artifacts README table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: add api-doc-generator to artifacts table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: add tech-stack-advisor to artifacts README table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: consolidate duplicated API key exhaustion sections in PITFALLS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: add doc-pipeline to artifacts README table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: expand API key exhaustion pitfall with detection, fallback patterns, and best practices</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: add data-to-chart to artifacts README table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: add weekly-digest to artifacts README table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: add weekly-digest and ddgr HTTP 202 pitfalls to PITFALLS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: add a2a-landscape to artifact table, update model recommendation to free tier</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>docs: add PITFALLS.md with lessons from artifact smoke testing</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: fix output status in ADVANCED_PATTERNS.md artifact section</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add opencode model recommendation to artifacts README</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: update examples/AGENTS.md - fix WAL invariant statement (all clients now self-bootstrap) and fix table formatting</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: fix table formatting in ADVANCED_PATTERNS.md - extra leading pipes and missing docker-compose-generator entry</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: document strip_html_preamble() in artifacts README and ADVANCED_PATTERNS</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add docker-compose-generator to artifacts index table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: fix broken links in canonical SKILL.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add color-palette and quiz-generator to ADVANCED_PATTERNS artifacts table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add quiz-generator to artifacts index table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add color-palette to artifacts index table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: sync kit prompt locator with Step 0 — add $A2A_BIN support</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add config-generator run command to ADVANCED_PATTERNS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add config-generator artifact to ADVANCED_PATTERNS.md table</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: document config-generator artifact in examples/artifacts/README.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add collaborative artifact section to ADVANCED_PATTERNS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add examples/artifacts/README.md documenting all artifacts</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: document client register() method in CLIENT_API.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: update pitfall 11 for empty recipient ValueError behavior</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add pitfall about sending to empty string creating undeliverable message</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add missing unregister and --cli/--limit flags to CLI_REFERENCE.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: fix CLIENT_API.md stale signatures for send() and thread()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: add pitfalls for client TTL cleanup and search case-insensitivity</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: replace stale PROJECT_STATUS.md link with CHANGELOG.md in roadmap section</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: replace stale PROJECT_STATUS.md references with CHANGELOG.md in See Also sections</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: update examples section in README to reflect expanded example portfolio</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: update stale test counts in README.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: update stale test counts and add missing examples to README</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: update stale test counts in README.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: replace dead CONTRIBUTING.md link with AGENTS.md and test_a2a.py references</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: replace dead CONTRIBUTING.md link with examples/README.md reference in QUICKSTART.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: replace dead MIGRATION_V12_TO_V13.md link with inline summary in CHANGELOG.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove stale CONTRIBUTING.md reference from CHANGELOG.md v1.0 section</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove stale CONTRIBUTING.md reference from CHANGELOG.md v1.1 section</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove stale references to removed migration and testing docs in CHANGELOG.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove stale V14_ARCHITECTURE.md reference from README.md documentation links</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: update AGENTS.md ownership table — remove stale PROJECT_STATUS.md, add missing doc entries</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove GO_TESTING.md (dev-facing testing guide, outside docs/ boundary)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: clean up OPERATIONS_GUIDE.md references in README, CHANGELOG, and TROUBLESHOOTING</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove OPERATIONS_GUIDE.md (dev-facing ops guide with speculative infrastructure content)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: update README.md docs tree and links after consolidation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: update AGENTS.md ownership table after docs consolidation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove TESTING_V13.md (dev testing guide)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove RELEASE_v1.3.0.md (historical release notes)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove RELEASE_HIGHLIGHTS_V13.md (historical dev release summary)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove V13_DEPLOYMENT_CHECKLIST.md (dev ops checklist)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove MIGRATION_V12_TO_V13.md (historical dev migration guide)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: remove CONTRIBUTING.md (dev-facing, outside docs/ boundary)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: update examples docs with spawn-pattern example entries</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: condense SKILL.md to under 300 lines with references to extracted files</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: extract common pitfalls from SKILL.md to PITFALLS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: extract honesty rules from SKILL.md to HONESTY_RULES.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: extract smoke test recipe from SKILL.md to SMOKE_TEST.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>docs: extract CLI reference from SKILL.md to CLI_REFERENCE.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: relocate canonical skill to .agents/skills/a2a/SKILL.md, add smoke-test pitfalls</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update test count to 303 (100 v1.3 tests after qa-support additions)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update test counts to 301 total (276 pass + 25 skipped)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update test counts to reflect current 265-test suite</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update Go doc cross-references between GO_CLI_REFERENCE, GO_CLIENT_API, GO_TESTING</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update AGENTS.md with Go CLI binary and new Go files listing</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: document three a2a usage patterns and add --fts to search reference</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: add Go testing reference (unit, smoke, JSON cross-verify, coverage)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update Recv API docs with RecvOpts struct and --since flag</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: add Go binary references to SKILL.md (both docs/ and root)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update GO_CLIENT_API.md with new methods, add GO_CLI_REFERENCE.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: add missing v1.3.1 test files to 'Running the tests' section</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: fix stale test count in CHANGELOG.md v1.3.1 section</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update stale test counts in AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: label internal dev docs and genericize external-facing doc notes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update PROJECT_STATUS with v1.3.2 coordination sprint</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: mark TEAM_COORDINATION_SKILL.md as architect-approved</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: address qa-claude factual review issues in TEAM_COORDINATION_SKILL.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: add Coordination Protocols section to AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update PROJECT_STATUS — 218 total tests, WAL gap closed for all clients</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: add WAL invariant client fixes to CHANGELOG v1.3.1</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: correct test count to 195 and document all FTS5 fixes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: add WAL invariant warning to Go client header</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: update CHANGELOG to 189 tests, add FTS regression test entry</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: mark v1.3.1 sprint complete — 188 tests, all green</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>docs: audit team enhancement skills availability, update project status</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>docs: add integration tests, benchmarks, dashboard to AGENTS.md layout and tests sections</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>docs: add integration tests, benchmarks, dashboard to README layout and tests section</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>docs: document dashboard.py in README and AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>docs: document benchmark.py in README and AGENTS.md</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>docs: update AGENTS.md with unit tests, examples dir, and TTL cleanup pitfall</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>docs: update README, SKILL.md, and docs/review.md for v1.0-alpha</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 class="text-2xl font-semibold text-amber-400 mb-4 flex items-center gap-2">
-            <span>🚜</span> Refactor
-          </h2>
-          <ul class="space-y-2 text-slate-300">
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>refactor: extract shared validation and MAX constants into a2a_common.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>refactor: clean up async client — fix wait() return type, add missing commit(), include pid in list_peers</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add expired message cleanup to REST API search and thread handlers</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add expired message cleanup to REST API server recv and peek</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add agent_id length check and recv limit validation to async client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add role, cli, and prompt length validation to Go client Register</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add agent_id length validation and expired message cleanup to Node.js client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add message body, thread_id, and agent_id length checks to Rust client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add TTL positivity and NaN/Inf validation to REST API server</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add input validation to JS client (body length, thread_id length, project name)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add input validation to audit module (empty agent_id/operation, limit>0, days>0)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add input validation to priority send() (empty recipient, body length, TTL, priority range)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add NaN ttl validation and role/cli/prompt length guard to async client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add NaN ttl validation and role/cli/prompt length guard to client library</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add input length validation for role/cli/prompt and NaN guard for ttl</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>refactor: add include_self, custom sender, and body length validation to REST API server</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>refactor: add timeout and FileNotFoundError handling to run_a2a</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: validate role/cli whitespace in Go CLI register</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: trim whitespace from agent IDs, validate role/cli, warn on empty body</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add PID validation to Python async client register()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add PID validation to Python sync client register()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: validate getFlagInt/getFlagFloat parse errors in Go CLI</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add --since NaN/Inf validation to Go CLI cmdRecv()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add Recv limit validation to Go client library</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add TTL validation to Go client library Send()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add limit validation to Python sync and async clients' search()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add limit validation to Rust search() and add tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add limit validation to Go Search() and status validation to SetStatus()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add --wait finite number validation to Go CLI cmdRecv</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add empty thread_id validation to Rust client thread()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add empty thread_id validation to Node.js client thread()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add empty thread_id and timeout validation to Go client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add count/timeout and thread_id validation to async client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add count/timeout validation to sync client wait_for_messages</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add Go CLI validation for empty --thread and negative/finite --since/--timeout</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add Node.js client input validation for send, recv, search, peek, wait</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add Rust client validation for empty project/agent_id in new()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: move import math to top of a2a.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: rename alert output to .txt (gitignore was hiding .log)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: add check_agent_logs import and usage to web-research-report</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>refactor: extract check_agent_logs into _util.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: expand Go Peer/Stats structs with full nullable fields and TopSender type</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: validate negative --timeout in cmd_wait and add test</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: validate status command values and add test</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: add input validation for pid, recipient, thread, since</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: move ascii_chart and compute_analysis to _util.py for reuse across artifacts</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: pass a2a_bin to spawn_agent in artifact builds for health checks</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: add spawn health check to detect agent failures early</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: use send_task() helper in all artifact builds</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: validate non-empty search queries in async Python client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: validate non-empty search queries in Python client library</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: validate empty recipient, empty query, and non-positive limit in Rust client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: validate empty project/agentId, empty recipient, empty query, limit, and status in Node.js client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: validate empty --from, empty recipient, and empty query in Go CLI commands</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: validate empty recipient, empty query, non-positive limit/count in Go client library</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: reject non-positive --limit in search, recv, and Go client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: reject empty and whitespace-only search queries</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: clamp negative limit values in recv, search, and peek</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>refactor: improve error messages for clear, register, and unregister commands</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>refactor: improve error messages for unknown agent and recipient</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>refactor: extract strip_html_preamble() to _util.py, deduplicate in 3 build scripts</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>refactor: add type hints for _open and _resolve_agent function signatures</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>refactor: extract _resolve_agent helper to eliminate duplicated agent lookup in recv/wait</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>refactor: move arg validation before DB connect in cmd_send, cmd_recv, cmd_wait</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>refactor: extract _open(args, create) helper to reduce project-resolution boilerplate</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>refactor: add return type hints to _fetch_messages and build_parser</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>refactor: reuse MSG_COLS constant in FTS5 table creation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>refactor: simplify cmd_thread and cmd_search output, use _print_messages consistently</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>refactor: replace Recv() positional args with RecvOpts struct</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 class="text-2xl font-semibold text-slate-400 mb-4 flex items-center gap-2">
-            <span>✨</span> Styling
-          </h2>
-          <ul class="space-y-2 text-slate-300">
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: add type hints to run_agent, run_agents helpers</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: add type hints to helper functions in a2a.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: standardize identifier quoting in error messages</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: add return type hint -> None to all cmd_* functions</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: remove unnecessary f-string prefix in cmd_stats</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: add return type hint to cmd_init</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: remove unused Callable, Enum, Optional, json, re imports from a2a_routing_async.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: remove unused sqlite3, json, Path imports from a2a_routing.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: remove unused IntEnum and PriorityClient imports from a2a_priority_async.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: remove unused sqlite3 and Path imports from a2a_priority.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: remove unused hashlib import from a2a_git_aware.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: remove unused json import from a2a_fts.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: remove unused Any, Dict imports from a2a_crypto.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>style: remove unused imports in example files</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 class="text-2xl font-semibold text-blue-400 mb-4 flex items-center gap-2">
-            <span>🧪</span> Testing
-          </h2>
-          <ul class="space-y-2 text-slate-300">
-            <li><span class="text-slate-500 text-sm mr-3">[27/05]</span>test: update role-length test from 256 to 512 to match MAX_ROLE_LENGTH</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add edge cases for git-aware collision detection</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add project name validation edge cases for A2AClient</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add comprehensive PriorityClientAsync and RoutingClientAsync tests (45 new tests)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add coverage for untested _util.py functions (find_a2a, find_spawn, run_a2a_json, SpawnManager, wait_for_messages) and add edge cases for extract_first_code_block</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add edge cases to git-aware module tests (51→59 tests)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add server input hardening edge cases</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add git-aware edge cases and fix incompatible test</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add async client edge cases and fix incompatible test</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add init idempotency, wait/timeout rejection, TTL=0 rejection, duplicate register, FTS5 special chars tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add validation edge cases for audit and priority modules (26 new tests)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add server edge cases (invalid JSON, long thread_id, string ttl, empty register)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add input validation edge cases (role/cli/prompt length, NaN ttl, future since, FTS5 special chars)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add unicode/emoji project name validation tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: fix flaky server test (test pollution) and artifacts util test (stable trend expectation)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add 6 edge case tests for v13 features (empty builder, whitespace terms, crypto empty strings, priority queue edge cases)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add unit test for recv with wait=0 on empty bus</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add git_aware edge case tests for negative count and format_for_bus in repo</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add integration tests for send --json output (direct and broadcast)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add async client edge case tests - thread+ttl combined, body too long, empty thread_id, search empty</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add client test for search returning empty result</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add edge cases for stats human-readable, top senders, search JSON no matches, peek empty bus</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add edge cases for recv drain, search no results, peek with limit</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add client tests for unread_only=False and send thread+ttl combined</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add edge case for clear on empty bus</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>test: add edge case for sending from unregistered agent</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>test: add CORS header validation and chronological order tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>test: add 11 edge case tests for git-aware module</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>test: add integration tests for unregister/status/recv/wait max length rejection</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>test: add integration tests for max length validation via Go binary</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>test: add Go client tests for max length validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>test: add NaN/Inf validation tests for async client recv</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>test: add NaN/Inf validation tests for recv and wait_for_messages</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>test: add staggered-arrival test for wait_for_messages</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: add max length validation tests for agent ID, thread_id, and body</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: Node.js client — add thread_id and TTL send tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: Go smoke test — add empty body warning test, fix fragile msg IDs</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: Node.js client — add send validation tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: integration tests for whitespace ID/role/cli and empty --from validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: add PID validation tests for register (Go, Python CLI, Python client)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: add integration tests for negative PID and --since NaN/Inf validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: add Go client tests for TTL, Recv limit, and Thread empty validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: add sync client validation tests for wait and thread</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: add async client edge case tests for empty body and TTL validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: add JSON output tests for cmd_send and validate_finite_float tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>test: add NaN/inf validation tests for float params and limit cap tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: add cmd_status --json output validation to unit tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: add 8 tests for project name validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: add REST API test for empty thread ID returning 400</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: add smoke test for empty thread ID rejection in Go CLI</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: fix async client negative wait test to match sync client (expect ValueError)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: strengthen weak unit tests with proper assertions</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: add Go tests for empty recipient, non-positive limit, empty query, non-positive count rejection</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: update test_peek_limit_zero to match non-positive --limit rejection</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: update tests for non-positive TTL/peek limit rejection</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: add tests for cmd_wait count validation edge cases</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>test: add tests for negative limit clamping and expired-message filtering in cmd_wait</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add test_artifacts_util.py covering strip_html_preamble() and make_kit()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add register --pid and upsert-pid coverage</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add cmd_wait timeout and immediate-success tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add edge case tests for REST API server (limit=0, TTL, invalid JSON, stats fields)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add regression test for audit_log table auto-creation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add coverage for list --json empty, clear without --yes, peek --json empty</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add cross-project isolation test for sync client API</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add negative edge case tests for sync and async client APIs</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add test for send without --from raises error</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add edge case tests for recv negative wait, peek limit 0, and FTS fallback</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add cross-project recv isolation edge case test</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add integration tests for peek-after-clear, recv-empty-JSON, search-empty-JSON</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add search empty query, no-matches, ordering, read-tracking, upsert-preservation, and peek-order tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add recv limit and search limit edge case tests for REST API server</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add thread empty string ID and search special chars client tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add init_idempotent test for re-initialization edge case</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add recv from self without --include-self filter edge case</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add special chars body, peek limit zero, and TTL-from-CLI edge case tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add list_peers empty, send-to-self with include_self, and long body edge case tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add unregister nonexistent, list empty bus, and recv --include-self edge case tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add recv --all, stats with agents only, unregister isolation, peek limit, list after clear, broadcast-after-unregister edge cases</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add JSON output, stdin body, TTL-zero, and upsert edge case tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add cmd_send_empty_body and cmd_recv_since_and_limit edge case tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add cmd_wait unknown agent error path test to test_a2a.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add stats empty bus unit test to test_a2a.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add recv --since time-based filtering unit test to test_a2a.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add search LIKE special characters unit test to test_a2a.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add search --limit unit test to test_a2a.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add cmd_thread unit tests for thread retrieval edge cases</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add empty body send, TTL=0, and wait-for-messages count=0 edge cases</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add Unicode body and thread+TTL combined edge cases in test_a2a</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add peek on empty bus, register upsert, unregister twice, recv --peek edge cases</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add send empty body, peek json with limit, broadcast to all agents edge cases</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add duplicate registration, peek limit, recv ordering edge cases in test_a2a_client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add duplicate registration, peek limit, clear/list edge cases in test_a2a</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add broadcast, ordering, empty recv, and peek-read edge cases in test_integration</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add search edge cases (empty query, special chars, limit) in test_a2a_client</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>test: add TTL edge cases (zero, negative, recv filtering) and cross-project isolation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add RoutingRule._matches_pattern invalid regex exception path coverage</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add register/unregister edge cases and thread_id grouping coverage</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add integration tests for recv --limit, stats message count, and search --limit</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add integration tests for recv --all, --include-self, list --json, and peek --json</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add Go tests for Peek empty/content and broadcast nil recipient</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add Go tests for AgentExists, Send unknown recipient/sender, SetStatus unknown agent</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add RoutingClient coverage for apply_routing forward and recv_with_routing limit</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add AuditClient coverage for search filters, time range, and failure context</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add crypto coverage for unwrap_encrypted_message and encrypt/decrypt_file</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add SmartRouter add_handler, rule fallback, and chaining coverage</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add TestPriorityQueueWithDB for poll and peek_critical coverage</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add PriorityClient coverage for stats_by_agent, mark_read, high_priority, timestamp ordering</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add thread empty, stats empty bus, and list_peers status coverage</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add set_status noop, wait_for_messages timeout, and search empty coverage</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add recv limit, peek empty, and get_status unknown coverage</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add FTS coverage tests for search_advanced, suggestions, and QueryBuilder</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add CLI tests for cmd_clear and recv --since (zero-coverage paths)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add 6 AuditClient coverage tests (export, cleanup, message trail)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add FTS5 trigger test (skipped if build doesn't include fts5 tag)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add TestRoutingClientWithDB — 15 DB-backed tests for a2a_routing.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add edge case tests (empty body, special chars, long body, since, concurrent, unregister)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add JSON output cross-verification script (Go vs Python CLI)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add 24 Go library unit tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add regression tests for priority wait=0 non-blocking fix</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add real-DB tests for AuditClient and PriorityClient</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add real-DB tests for FTSClient search methods</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add integration tests for status --json, --limit, and empty-list cases</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add v1.3.1 test files to verify_all.sh</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>test: add integration tests for thread, stats, search, project, wait commands</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 class="text-2xl font-semibold text-slate-400 mb-4 flex items-center gap-2">
-            <span>⚙️</span> Miscellaneous Tasks
-          </h2>
-          <ul class="space-y-2 text-slate-300">
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>chore: a2a collaborative doc audit via peer team - automated fixes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[28/05]</span>chore: a2a collaborative maintenance via peer team - automated fixes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>chore: commit pending AGENTS.md pitfall row and a2a-spawn --project flag</li>
-            <li><span class="text-slate-500 text-sm mr-3">[26/05]</span>chore: rebuild Go CLI binary after Wait()/List()/Status() API changes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>chore: rebuild Go binary after Register field length validation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[25/05]</span>chore: add test_artifacts_util.py to verify_all.sh compile check</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>chore: rebuild Go binary after validation fixes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>chore: rebuild Go binary after Peer struct changes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>chore: add a2a_test to .gitignore, commit doc improvements</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>chore: add palette_preview.html to gitignore</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>chore: add gitignore for examples/artifacts/*/output/</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>chore: add .devin/ to .gitignore</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>chore: add .gitattributes for consistent line endings (Go/MD/SH)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>ci: add Go test workflow (vet + test + build + smoke)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>chore: add Makefile with build/test/cover/clean targets</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>chore: update .gitignore for Go build artifacts and untracked leftovers</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>chore: remove built a2a-go binary from repo (build artifact)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>chore: add go.mod and go.sum for Go module</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>chore: move all dev-process skills out of repo to ~/ai/a2a-dev/</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>chore: move dev-sprint docs out of docs/ into .agents/skills/</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>chore: remove dev-sprint skills from distribution, clean tool defaults</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>chore: scrub dev-team-specific content from user-facing skill files</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 class="text-2xl font-semibold text-purple-400 mb-4 flex items-center gap-2">
-            <span>💼</span> Other
-          </h2>
-          <ul class="space-y-2 text-slate-300">
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>example: rebuild competitive-analysis artifact with curated content</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>example: rebuild web-research-report artifact with curated content</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>example: rebuild weekly-digest and news-briefing artifacts with curated content</li>
-            <li><span class="text-slate-500 text-sm mr-3">[24/05]</span>example: rebuild weekly-digest artifact with fresh ddgr search results</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: update Rust worker for new Client::new() Result return type</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild api-doc-generator artifact with fresh ddgr search results</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild data-to-chart artifact with temperature time-series chart</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild github-trending-report artifact with fresh trending repos</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild security-audit artifact with CVE search + system checks</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild a2a-landscape artifact with multi-agent ecosystem analysis</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild weekly-digest artifact with multi-topic tech news digest</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild competitive-analysis artifact with AI agent frameworks landscape</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild tech-stack-advisor artifact with fresh Python web frameworks guide</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild news-briefing artifact with fresh tech news search</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild web-research-report artifact with fresh web search output</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild ascii-gallery artifact with fresh landmark ASCII art</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: add infra-compliance collaborative artifact build script</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild doc-pipeline artifact with refreshed output</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: add alert-pipeline output (system health check with real metrics)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: add alert-pipeline collaborative artifact build script</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: add local-discovery output (52 entries, report, JSON, bus state)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: add local-discovery collaborative artifact build script</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: rebuild web-research-report artifact with current search results</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: add brand-assets output and README</li>
-            <li><span class="text-slate-500 text-sm mr-3">[23/05]</span>example: add brand-assets collaborative artifact</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add security-audit output files</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add security-audit collaborative artifact</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: refresh weekly-digest artifact output with live ddgr search data</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add api-doc-generator collaborative artifact</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add github-trending-report collaborative artifact</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add ascii-gallery collaborative artifact</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add tech-stack-advisor collaborative artifact</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add doc-pipeline artifact output (guide.md, guide.html, bundle.zip, bus-state.txt)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add doc-pipeline collaborative artifact build script</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: regenerate data-to-chart output after refactoring to shared _util.py functions</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add data-to-chart collaborative artifact — 3 agents (fetcher, analyst, plotter) produce CSV data, analysis, and ASCII charts</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add weekly-digest collaborative artifact — 3 agents (scout, curator, editor) produce a tech news digest via a2a bus</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add a2a-landscape artifact — 3 agents researching multi-agent ecosystem positioning</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add competitive-analysis artifact — 3 agents producing comparison tables via ddgr</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add news-briefing artifact — 2 agents using ddgr for live news curation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add web-research-report artifact — 3 agents using ddgr for live web research</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: add strip_code_fence and extract_first_code_block to _util.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: refresh all 7 artifact outputs from opencode builds</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: refresh mini-cli, quiz-generator, and svg-banner output</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: refresh config-generator and docker-compose-generator output</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: refresh landing-page and color-palette output from opencode builds</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: refresh svg-banner output from opencode iterative collaboration</li>
-            <li><span class="text-slate-500 text-sm mr-3">[22/05]</span>example: refresh docker-compose-generator output from opencode build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh quiz-generator output and README from opencode build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh mini-cli output and README from opencode build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh docker-compose-generator output and README from opencode build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh config-generator output and README from opencode build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh landing-page output and README from opencode build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh color-palette output and README from opencode build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh svg-banner output and README from opencode build</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh landing-page output from latest pi build - SaaS landing page with designer+copywriter+integrator collaboration</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh docker-compose-generator output from latest pi build - 5-service stack with full README and docker-compose.yml</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh config-generator output from latest pi build - docker-compose, nginx.conf, and .env.example for Node.js+PostgreSQL stack</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh quiz-generator output from latest pi build - space exploration quiz with interactive HTML, verified checker pipeline</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh mini-cli output from latest pi build - complete tasky CLI with add/list/done/clear commands</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh color-palette output from latest pi build - complete HTML preview with 5-color swatches and sample UI card</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh svg-banner output from latest pi build - 2-round designer/reviewer collaboration with flow motif and amber accents</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: refresh artifact outputs from latest verified builds on opencode-go/deepseek-v4-flash</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add docker-compose-generator collaborative artifact</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add quiz-generator output and README with bus state capture</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add quiz-generator collaborative artifact</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add color-palette collaborative artifact</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add collaborative config-generator artifact smoke test</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add collaborative mini-cli artifact smoke test</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add collaborative svg-banner artifact smoke test</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add collaborative landing-page artifact smoke test</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add shared utility module for artifact build scripts</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add spawn_debate.py demonstrating adversarial auto-spawn pattern</li>
-            <li><span class="text-slate-500 text-sm mr-3">[21/05]</span>example: add spawn_coordinator.py demonstrating auto-spawn pattern</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add v1.4 coordination roadmap for architect review</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add Anti-Pattern 4 to coordination skill doc; fix edge_case_test.sh Test 4</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add TEAM_COORDINATION_SKILL.md — agent working protocols</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Fix WAL invariant gap in Rust client (src/lib.rs)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Fix WAL invariant gap in Go client (a2a_client.go)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Fix TEAM_ENHANCEMENT_SKILLS.md: correct sc beads description</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Fix FTS5 MATCH query case and add 6 FTS5 quality tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Upgrade a2a_client.js to node:sqlite — no a2a init required</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add regression test for FTS5 rebuild-on-first-call-only</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Fix FTS5 rebuild-on-every-search and update CHANGELOG for v1.3.1</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add test coverage for 5 untested modules + fix async type hint bug</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Upgrade a2a search to use FTS5 full-text search with LIKE fallback</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add CHANGELOG reference to README</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add comprehensive CHANGELOG documenting v1.0-1.3.0 release history</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Reorganize README documentation index to include v1.3+ guides</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Update PROJECT_STATUS.md with v1.3.0 completion and encoding fixes</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add UTF-8 encoding declarations to example agent files</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Fix Python encoding declarations for proper UTF-8 handling</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add team enhancement skills integration guide</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add release highlights and stakeholder communication guide</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add migration guide for v1.2 to v1.3 upgrade path</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add AGENTS.md to each subdirectory with architectural guidelines</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add comprehensive troubleshooting guide for v1.3 deployments</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add comprehensive security hardening guide for production deployments</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add comprehensive testing and validation guide for v1.3</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Update README with v1.4 planning and new example references</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add feature-specific example agents demonstrating v1.3 capabilities</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add comprehensive operations guide for v1.3.0 production deployment</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add v1.4 architecture and planning document</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Restore SKILL.md to project root for skill loader compatibility</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Reorganize documentation to docs/ and update project records with v1.3 completion</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Apply WAL mode and mkdir guard to REST server get_db()</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Apply WAL mode and mkdir guard to all async db modules</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Ensure WAL mode on all satellite module db connections</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Apply mkdir fix to A2AClient base class and FTSClient</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add v1.3.0 deployment checklist for production launch</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Fix broken v1.3 test import and audit db directory creation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add v1.3.0 release notes and production readiness statement</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add v1.3 quick reference guide for all features</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add comprehensive test suite for v1.3 features</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Update PROJECT_STATUS.md with comprehensive v1.3 release documentation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add async versions of priority and routing clients for high concurrency (v1.3)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add v1.3 integrated agent example demonstrating all features</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Update README with v1.3 feature documentation index</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Implement message routing with rule-based distribution (v1.3)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Implement message prioritization with 4-level queue ordering (v1.3)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Implement audit logging for message lifecycle tracking (v1.3)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add v1.3 message encryption for secure communications</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Implement v1.3 full-text search (FTS5) for advanced message discovery</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Update README with git-aware features and deployment guide</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add git-aware features for work-collision prevention</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>junior-dev: add help text to --json flags on search/thread/stats</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>junior-dev: update CLI help Quick start with v1.1 commands</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add type hints and shell completion for better developer experience</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add Python async client library for high-performance concurrent agents</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add Docker deployment support and comprehensive deployment guide</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Complete Rust client library and v1.2 multi-language support</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add Go client library (v1.2 preview expansion)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add comprehensive integration guide (multi-interface coordination)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add REST API server for HTTP access (v1.2 preview)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Update PROJECT_STATUS.md: v1.1.1 hardening + v1.2 preview completion</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add example Node.js agent: task coordinator</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add Node.js client library (v1.2 preview)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Update README with comprehensive documentation index</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add comprehensive installation and advanced patterns guides</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Update PROJECT_STATUS.md with v1.1.1 patch completion</li>
-            <li><span class="text-slate-500 text-sm mr-3">[19/05]</span>Add performance comparison benchmark (CLI vs Python client)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Update verification script to include all stress tests and client library tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add high-volume and edge-case stress tests</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add search(), thread(), stats() methods to a2a_client.py</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add multi-agent stress test (10 concurrent agents)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add critic and debugger example agents</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add 'a2a stats' command for bus statistics</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add 'a2a search' command for full-text message search</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>junior-dev: add --json to status, implement thread subcommand</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add comprehensive project status and roadmap</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add user-friendly quickstart guide</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add comprehensive Python client library documentation</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add a2a Python client library</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add comprehensive verification script</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add CONTRIBUTING guide for developers</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Docs: add examples and CI/CD sections to README</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add GitHub Actions CI/CD workflow</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add smoke test for example agents</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add comprehensive integration test suite</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add performance benchmarking suite</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add example agents demonstrating collaboration patterns</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Final: 19/19 tests pass. Sprint complete.</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add TTL unit tests (pi-qa contribution)</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Cleanup expired messages on recv too, not just peek</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add message TTL (time-to-live) support</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add --include-self flag to recv command</li>
-            <li><span class="text-slate-500 text-sm mr-3">[18/05]</span>Add comprehensive unit tests for a2a.py (12 tests, all pass)</li>
-          </ul>
-        </section>
-        </div>
+      <div class="tech-stat">
+        <div class="tech-stat-num">800+</div>
+        <div class="tech-stat-label">Tests (from 72)</div>
+      </div>
+      <div class="tech-stat">
+        <div class="tech-stat-num">5</div>
+        <div class="tech-stat-label">Language clients</div>
+      </div>
+      <div class="tech-stat">
+        <div class="tech-stat-num">10d</div>
+        <div class="tech-stat-label">v0 → v1.3.17</div>
       </div>
     </div>
 
-    <script>
-      function switchTab(tab) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById('content-' + tab).classList.add('active');
-        document.getElementById('tab-' + tab).classList.add('active');
-      }
-    </script>
-  </body>
+    <!-- v1.3.17 -->
+    <div class="release-group">
+      <div class="release-header">
+        <span class="release-version">v1.3.17</span>
+        <span class="release-date">2026-05-28</span>
+        <span class="release-tag tag-hard">Cross-Client Parity</span>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-fixed">Fixed</div>
+        <ul class="change-list">
+          <li><strong>All clients: reject empty message bodies</strong> — Python, Go, JS, Rust now validate non-empty bodies before sending. Consistent error messages across all four.</li>
+          <li><strong>Go/JS/Rust: standardized error messages</strong> — aligned error text across language implementations.</li>
+        </ul>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-refac">Refactored</div>
+        <ul class="change-list">
+          <li><strong>test_helpers.py: extracted <code>make_connection()</code></strong> — consolidated SQLite setup logic across test modules.</li>
+        </ul>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-added">Added</div>
+        <ul class="change-list">
+          <li><strong>Go and Rust: <code>wait_for_messages()</code></strong> — blocks until N unread messages arrive or timeout. Matches Python and JS signature.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v1.3.15 -->
+    <div class="release-group">
+      <div class="release-header">
+        <span class="release-version">v1.3.15</span>
+        <span class="release-date">2026-05-28</span>
+        <span class="release-tag tag-fix">Go Semantic Drift</span>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-fixed">Fixed</div>
+        <ul class="change-list">
+          <li><strong>Go <code>Wait()</code> connection churn</strong> — was creating a new SQLite connection every 500ms (up to 120 for 60s timeout). Now reuses one connection.</li>
+          <li><strong>Go <code>GetStatus()</code> return type</strong> — changed to <code>(*string, error)</code> returning <code>nil, nil</code> for not-found. Matches Python's <code>None</code>.</li>
+          <li><strong>Go <code>Recv()</code> partial read-marking on scan error</strong> — scan phase separated from mark-read phase; failure no longer silently consumes prior messages.</li>
+          <li><strong>Go <code>Register()</code> upsert not atomic</strong> — two <code>db.Exec()</code> calls wrapped in a transaction.</li>
+          <li><strong>Go <code>SearchFTS()</code> missing validation</strong> — empty query and zero/negative limit now validated upfront.</li>
+          <li><strong>Go <code>Send()</code> whitespace thread_id</strong> — whitespace-only IDs rejected to match Python.</li>
+          <li><strong>Go <code>RecvSimple()</code> wait parameter</strong> — changed from <code>int</code> to <code>float64</code> matching Python.</li>
+          <li><strong>Go <code>Stats()</code> error swallowing</strong> — all five QueryRow/Scan calls now propagate errors.</li>
+          <li><strong>Go <code>connect()</code> expiry</strong> — <code>SetConnMaxLifetime(5s)</code> caused mid-poll connection drops; set to <code>0</code>.</li>
+          <li><strong>Go <code>Send()</code> error hint</strong> — added "register them first" matching Python message.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v1.3.14 -->
+    <div class="release-group">
+      <div class="release-header">
+        <span class="release-version">v1.3.14</span>
+        <span class="release-date">2026-05-28</span>
+        <span class="release-tag tag-fix">Async Parity</span>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-fixed">Fixed</div>
+        <ul class="change-list">
+          <li><strong>a2a_priority_async.py: missing input validation in <code>__init__</code></strong> — async skipped empty-string checks for <code>project</code> and <code>agent_id</code>.</li>
+          <li><strong>a2a_priority_async.py: recv methods missing read tracking</strong> — all three priority recv methods re-delivered the same messages on every call with <code>unread_only=True</code>.</li>
+          <li><strong>a2a_routing_async.py: limit applied before routing</strong> — <code>recv_with_routing(limit=N)</code> used SQL-level LIMIT, restricting routing decisions. Now fetches all, routes, truncates per-category.</li>
+          <li><strong>a2a_routing_async.py: apply_routing read marking gaps</strong> — consolidated into single loop over all five routing categories.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v1.3.12 -->
+    <div class="release-group">
+      <div class="release-header">
+        <span class="release-version">v1.3.12</span>
+        <span class="release-date">2026-05-27</span>
+        <span class="release-tag tag-docs">Stub Expansion</span>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-fixed">Fixed</div>
+        <ul class="change-list">
+          <li><strong>a2a_client.pyi: 8 public methods missing</strong> — <code>register()</code>, <code>unregister()</code>, <code>list()</code>, <code>status()</code>, <code>wait()</code>, <code>init_project()</code>, <code>project_info()</code>, <code>clear()</code> absent. All added.</li>
+          <li><strong>a2a_client_async.pyi: same 8 methods missing</strong> — async variants added with matching signatures.</li>
+          <li><strong><code>wait_for_messages</code> return type</strong> — stub declared <code>List[Dict]</code>, implementation returns <code>bool</code>. Corrected. <code>timeout</code> changed from <code>int</code> to <code>float</code>.</li>
+          <li><strong><code>search()</code> default limit drift</strong> — stub showed 100, implementation uses 50. Corrected.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v1.3.11 -->
+    <div class="release-group">
+      <div class="release-header">
+        <span class="release-version">v1.3.11</span>
+        <span class="release-date">2026-05-27</span>
+        <span class="release-tag tag-fix">Async Parity Audit</span>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-fixed">Fixed</div>
+        <ul class="change-list">
+          <li><strong>a2a_client_async.py: <code>__init__</code> missing agent_id guard</strong> — empty/whitespace accepted silently.</li>
+          <li><strong>a2a_routing_async.py: zero input validation in <code>__init__</code></strong> — fields set with no guards; now calls all validation helpers matching sync.</li>
+          <li><strong>a2a_routing_async.py: <code>add_rule</code> always appended</strong> — repeated calls created duplicates. Now upserts by rule name.</li>
+          <li><strong>a2a_routing_async.py: <code>disable_rule</code>/<code>enable_rule</code> stale in-memory list</strong> — missing <code>await get_rules()</code> refresh after commit.</li>
+          <li><strong>a2a_routing_async.py: <code>apply_routing</code> only marked <code>discard</code> read</strong> — all five categories now marked.</li>
+          <li><strong>a2a_routing_async.py: non-existent <code>m.priority</code> column</strong> — would raise <code>OperationalError</code> at runtime; removed from SELECT.</li>
+          <li><strong>a2a_routing_async.py: <code>recv_with_routing</code> never marked read</strong> — all returned messages reappeared on every call.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v1.3.9 -->
+    <div class="release-group">
+      <div class="release-header">
+        <span class="release-version">v1.3.9</span>
+        <span class="release-date">2026-05-27</span>
+        <span class="release-tag tag-fix">Shell Quoting Fix</span>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-fixed">Fixed</div>
+        <ul class="change-list">
+          <li><strong>a2a-spawn: <code>--append-system-prompt-file</code></strong> — multi-line kit prompts corrupted by shell quoting when passed inline via <code>nohup</code>. Now passed via temp file reference.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v1.3.8 -->
+    <div class="release-group">
+      <div class="release-header">
+        <span class="release-version">v1.3.8</span>
+        <span class="release-date">2026-05-27</span>
+        <span class="release-tag tag-fix">Go + Rust Hardening</span>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-fixed">Fixed</div>
+        <ul class="change-list">
+          <li><strong>Go <code>NewClient()</code></strong> — signature changed to <code>(*Client, error)</code> with input validation: empty/non-printable project/agentID, path separators, length limits.</li>
+          <li><strong>Go <code>Send()</code></strong> — <code>MaxBodyLength</code> check moved before <code>c.connect()</code> to fail fast.</li>
+          <li><strong>Go <code>Peek()</code> + <code>Recv()</code></strong> — TTL cleanup inlined; no longer opens separate connection.</li>
+          <li><strong>Go <code>Register()</code></strong> — INSERT OR IGNORE + UPDATE cross-client upsert pattern applied.</li>
+          <li><strong>Rust <code>recv()</code></strong> — <code>connect()</code> moved outside poll loop; one connection per call.</li>
+          <li><strong>Rust <code>recv()</code></strong> — <code>last_seen</code> update added inside poll loop, matching Go/Python Touch.</li>
+          <li><strong>Rust <code>touch()</code></strong> — new public method matching Python/Go API.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v1.3.3–v1.3.7 -->
+    <div class="release-group">
+      <div class="release-header">
+        <span class="release-version">v1.3.3 – v1.3.7</span>
+        <span class="release-date">2026-05-25–27</span>
+        <span class="release-tag tag-fix">Multi-Client Audit</span>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-added">Added</div>
+        <ul class="change-list">
+          <li><strong>JS + Rust: <code>register()</code> and <code>unregister()</code></strong> — both clients had no way to register an agent, making <code>send()</code> impossible (sender validation rejects unknown agents).</li>
+          <li><strong>Rust: <code>project_info()</code></strong> — missing method added matching Python/Go API.</li>
+        </ul>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-fixed">Fixed</div>
+        <ul class="change-list">
+          <li><strong>a2a-spawn: nohup + disown</strong> — spawned agents survive parent shell exit.</li>
+          <li><strong>a2a_client.py: TTL cleanup now commits</strong> — DELETE was silently rolled back on <code>conn.close()</code>.</li>
+          <li><strong>a2a_client_async.py: <code>register(upsert=True)</code></strong> — changed from INSERT OR REPLACE (destroys <code>created_at</code>) to INSERT OR IGNORE + UPDATE.</li>
+          <li><strong>Rust <code>search()</code></strong> — changed to <code>WHERE LOWER(body) LIKE ?</code>; all other clients already used <code>lower()</code>.</li>
+          <li><strong>Rust TTL cleanup</strong> — <code>recv()</code> and <code>peek()</code> now delete expired messages before fetching. Rust was the only client skipping this.</li>
+          <li><strong>Rust TTL precision</strong> — uses float <code>SystemTime</code> instead of <code>strftime('%s','now')</code> for sub-second accuracy, matching Go/Python.</li>
+          <li><strong>WAL invariant: 19 call sites</strong> — PRAGMA journal_mode=WAL + busy_timeout=5000 added to remaining direct <code>sqlite3.connect()</code> calls in test files.</li>
+          <li><strong>All clients: MAX_ROLE_LENGTH constant</strong> — replaced hardcoded 512 with named constant.</li>
+          <li><strong>All clients: NULLIF upsert</strong> — <code>COALESCE(NULLIF(?,''))</code> preserves non-empty fields on overwrite.</li>
+          <li><strong>Python sync/async: sender + recipient validation in <code>send()</code></strong> — unknown senders and recipients now rejected before INSERT.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v1.3.0–v1.3.2 -->
+    <div class="release-group">
+      <div class="release-header">
+        <span class="release-version">v1.3.0 – v1.3.2</span>
+        <span class="release-date">2026-05-19 – 2026-05-25</span>
+        <span class="release-tag tag-feat">Enterprise Features + Hardening</span>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-added">Added</div>
+        <ul class="change-list">
+          <li><strong>End-to-End Encryption</strong> — Fernet (AES-128) + RSA-2048 module. Transparent encryption/decryption. Key rotation support.</li>
+          <li><strong>FTS5 Full-Text Search</strong> — Boolean AND/OR/NOT, phrase queries, prefix matching. <code>SearchQueryBuilder</code>. LIKE fallback.</li>
+          <li><strong>Audit Logging</strong> — Operations: send, receive, encrypt, decrypt, route, search. GDPR/HIPAA/SOC 2/PCI DSS aligned.</li>
+          <li><strong>Priority Queue</strong> — CRITICAL/HIGH/NORMAL/LOW ordered delivery. Sync + async (<code>PriorityClientAsync</code>).</li>
+          <li><strong>Smart Routing</strong> — Pattern/sender/priority rules. Deliver/Forward/Discard/Queue/Escalate. Persistent. <code>SmartRouter</code> for custom logic.</li>
+          <li><strong>Async Clients</strong> — <code>PriorityClientAsync</code>, <code>RoutingClientAsync</code>. aiosqlite backend. 10× throughput.</li>
+          <li><strong>Validation Hardening (v1.3.2)</strong> — NaN/Inf rejection, max lengths (agent_id 256, thread_id 256, body 100K), cross-client enforcement. REST API TTL/status/limit validation.</li>
+          <li>Test count: 95 → 303 (v1.3.1) → 616 (v1.3.2). FTS5 regression tests, WAL invariant coverage, REST API tests, async tests.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- v1.0–v1.2 -->
+    <div class="release-group">
+      <div class="release-header">
+        <span class="release-version">v1.0-alpha – v1.2</span>
+        <span class="release-date">2026-05-18 – 2026-05-19</span>
+        <span class="release-tag tag-feat">Initial Release</span>
+      </div>
+      <div class="change-category">
+        <div class="change-category-label cat-added">Added</div>
+        <ul class="change-list">
+          <li><strong>Core CLI (v1.0)</strong> — 14 commands, SQLite WAL bus, per-agent read tracking, TTL, agent presence. 72 tests. <code>dashboard.py</code> + <code>benchmark.py</code>.</li>
+          <li><strong>a2a-spawn (v1.0)</strong> — per-CLI launcher (claude, opencode, pi). Kit prompt integration. Global skills at <code>~/.agents/skills</code>.</li>
+          <li><strong>Bash wrapper <code>a2a</code></strong> — auto-detects Python 3, cached interpreter selection.</li>
+          <li><strong>Python client library (v1.1)</strong> — <code>A2AClient</code> sync + async, full CLI parity, direct SQLite.</li>
+          <li><strong>Search + threading (v1.1)</strong> — <code>a2a search</code>, <code>a2a thread</code>, <code>a2a stats</code>, all with <code>--json</code>.</li>
+          <li><strong>Go client (v1.2)</strong> — <code>a2a_client.go</code>, WAL + <code>MkdirAll</code>, full API parity.</li>
+          <li><strong>Node.js client (v1.2)</strong> — <code>a2a_client.js</code>, built-in <code>node:sqlite</code> (Node 22+).</li>
+          <li><strong>Rust client (v1.2)</strong> — <code>src/lib.rs</code> crate + binary, WAL + <code>create_dir_all</code>.</li>
+          <li><strong>REST API server (v1.2)</strong> — <code>a2a_server.py</code>, 10 JSON endpoints.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /tab-technical -->
+
+</div><!-- /page -->
+
+<script>
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
 </html>
