@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS messages (
     body        TEXT NOT NULL,
     thread_id   TEXT,
     ttl_seconds INTEGER,
+    priority    INTEGER DEFAULT 3,
+    requires_ack INTEGER DEFAULT 0,
     created_at  REAL NOT NULL
 );
 
@@ -57,6 +59,37 @@ CREATE TABLE IF NOT EXISTS reads (
     message_id  INTEGER NOT NULL,
     read_at     REAL NOT NULL,
     PRIMARY KEY (agent_id, message_id)
+);
+
+CREATE TABLE IF NOT EXISTS acknowledgments (
+    message_id  INTEGER NOT NULL,
+    agent_id    TEXT NOT NULL,
+    acked_at    REAL NOT NULL,
+    PRIMARY KEY (message_id, agent_id)
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    title       TEXT NOT NULL,
+    description TEXT,
+    assigned_to TEXT,
+    status      TEXT NOT NULL DEFAULT 'planned',
+    priority    INTEGER DEFAULT 3,
+    created_at  REAL NOT NULL,
+    updated_at  REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS task_dependencies (
+    task_id     INTEGER NOT NULL,
+    depends_on  INTEGER NOT NULL,
+    PRIMARY KEY (task_id, depends_on)
+);
+
+CREATE TABLE IF NOT EXISTS workflow_state (
+    task_id     INTEGER PRIMARY KEY,
+    state       TEXT NOT NULL,
+    context     TEXT,
+    updated_at  REAL NOT NULL
 );
 """
 

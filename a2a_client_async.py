@@ -8,6 +8,7 @@ Provides async/await interface for concurrent agent patterns.
 
 import aiosqlite
 import asyncio
+import json
 import math
 import time
 from pathlib import Path
@@ -73,6 +74,8 @@ class A2AClientAsync:
         message: str,
         ttl_seconds: Optional[int] = None,
         thread_id: Optional[str] = None,
+        priority: int = 3,
+        require_ack: bool = False,
     ) -> int:
         """Send a message.
 
@@ -81,17 +84,20 @@ class A2AClientAsync:
             message: Message body
             ttl_seconds: Optional time-to-live in seconds
             thread_id: Optional thread ID to group related messages
+            priority: Message priority 1-4 (1=URGENT, 2=HIGH, 3=NORMAL, 4=LOW)
+            require_ack: If True, recipient must acknowledge receipt
 
         Returns:
             Message ID
 
         Raises:
-            ValueError: If recipient is empty or ttl_seconds is not positive
+            ValueError: If recipient is empty or priority is invalid
         """
         conn = await self._connect()
         if not to or not to.strip():
             raise ValueError("recipient must not be empty")
-        # Validate sender is registered
+        if priority not in (1, 2, 3, 4):
+            raise ValueError("priority must be 1 (URGENT), 2 (HIGH), 3 (NORMAL), or 4 (LOW)")
         cur = await conn.execute("SELECT COUNT(1) FROM agents WHERE id=?", (self.agent_id,))
         row = await cur.fetchone()
         if row[0] == 0:
@@ -115,9 +121,9 @@ class A2AClientAsync:
             if row[0] == 0:
                 raise ValueError(f"unknown recipient '{recipient}' — register them first")
         cursor = await conn.execute(
-            "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (self.agent_id, recipient, message, thread_id, ttl_seconds, time.time()),
+            "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, priority, requires_ack, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (self.agent_id, recipient, message, thread_id, ttl_seconds, priority, 1 if require_ack else 0, time.time()),
         )
         msg_id = cursor.lastrowid
         await conn.commit()
@@ -191,6 +197,7 @@ class A2AClientAsync:
         unread_only: bool = True,
         include_self: bool = False,
         limit: int = 0,
+        priority_min: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """Receive messages.
 
@@ -199,12 +206,13 @@ class A2AClientAsync:
             unread_only: Only return unread messages
             include_self: Include messages from self
             limit: Max number of messages to return (0 = unlimited)
+            priority_min: Min priority (1=URGENT, 4=LOW; returns >= this level)
 
         Returns:
             List of message dicts
 
         Raises:
-            ValueError: If wait is negative
+            ValueError: If wait is negative or priority_min is invalid
 
         """
         conn = await self._connect()
@@ -214,13 +222,15 @@ class A2AClientAsync:
             raise ValueError("wait must be a finite number")
         if limit < 0:
             raise ValueError("limit must be a non-negative integer")
+        if priority_min is not None and (priority_min < 1 or priority_min > 4):
+            raise ValueError("priority_min must be 1-4")
         deadline = time.time() + wait if wait > 0 else None
 
         while True:
             await self._cleanup_expired(conn)
             await conn.commit()
             query = (
-                "SELECT id, sender, recipient, body, thread_id, created_at "
+                "SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at "
                 "FROM messages WHERE (recipient = ? OR recipient IS NULL)"
             )
             params = [self.agent_id]
@@ -236,7 +246,11 @@ class A2AClientAsync:
                 )
                 params.append(self.agent_id)
 
-            query += " ORDER BY created_at ASC"
+            if priority_min is not None:
+                query += " AND priority <= ?"
+                params.append(priority_min)
+
+            query += " ORDER BY priority ASC, created_at ASC"
             if limit > 0:
                 query += " LIMIT ?"
                 params.append(limit)
@@ -245,7 +259,6 @@ class A2AClientAsync:
             rows = await cursor.fetchall()
 
             if rows:
-                # Mark as read
                 ts = time.time()
                 for row in rows:
                     await conn.execute(
@@ -283,7 +296,7 @@ class A2AClientAsync:
         await self._cleanup_expired(conn)
         await conn.commit()
         cursor = await conn.execute(
-            "SELECT id, sender, recipient, body, thread_id, created_at "
+            "SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at "
             "FROM messages ORDER BY created_at DESC LIMIT ?",
             (limit,),
         )
@@ -309,7 +322,7 @@ class A2AClientAsync:
             raise ValueError("limit must be a positive integer")
         conn = await self._connect()
         cursor = await conn.execute(
-            "SELECT id, sender, recipient, body, thread_id, created_at "
+            "SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at "
             "FROM messages WHERE lower(body) LIKE ? ORDER BY created_at DESC LIMIT ?",
             (f"%{query.lower()}%", limit),
         )
@@ -332,7 +345,7 @@ class A2AClientAsync:
             raise ValueError("thread_id must not be empty")
         conn = await self._connect()
         cursor = await conn.execute(
-            "SELECT id, sender, recipient, body, thread_id, created_at "
+            "SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at "
             "FROM messages WHERE thread_id = ? ORDER BY created_at ASC",
             (thread_id,),
         )
@@ -412,6 +425,183 @@ class A2AClientAsync:
         row = await cursor.fetchone()
         return row["status"] if row else None
 
+    # ---- task methods (phase 2) ----
+
+    def _validate_task_status(self, status: str) -> None:
+        valid = {"planned", "in_progress", "review_pending", "approved", "done", "blocked"}
+        if status not in valid:
+            raise ValueError(f"invalid status '{status}'")
+
+    def _validate_task_transition(self, current: str, next_status: str) -> None:
+        transitions = {
+            "planned": {"in_progress"},
+            "in_progress": {"review_pending", "blocked", "done"},
+            "review_pending": {"approved", "in_progress", "blocked"},
+            "approved": {"done", "in_progress"},
+            "done": set(),
+            "blocked": {"in_progress"},
+        }
+        self._validate_task_status(current)
+        self._validate_task_status(next_status)
+        allowed = transitions.get(current, set())
+        if next_status not in allowed:
+            if not allowed:
+                raise ValueError(f"cannot transition from '{current}' — terminal state")
+            raise ValueError(f"invalid transition from '{current}' to '{next_status}'")
+
+    async def create_task(
+        self,
+        title: str,
+        description: str = "",
+        assigned_to: str = "",
+        priority: int = 3,
+        depends_on: Optional[List[int]] = None,
+    ) -> int:
+        """Create a new task in the shared task queue.
+
+        Args:
+            title: Task title (required)
+            description: Optional task description
+            assigned_to: Optional agent to assign to
+            priority: Task priority 1-4 (1=highest)
+            depends_on: Optional list of task IDs this task depends on
+
+        Returns:
+            Task ID
+        """
+        if not title or not title.strip():
+            raise ValueError("task title must not be empty")
+        if priority not in (1, 2, 3, 4):
+            raise ValueError("priority must be 1-4")
+        conn = await self._connect()
+        try:
+            ts = time.time()
+            deps = json.dumps(depends_on) if depends_on else None
+            cursor = await conn.execute(
+                "INSERT INTO tasks(title, description, assigned_to, status, priority, dependencies, created_at, updated_at) "
+                "VALUES (?,?,?,?,?,?,?,?)",
+                (title, description, assigned_to, "planned", priority, deps, ts, ts),
+            )
+            await conn.commit()
+            tid = cursor.lastrowid
+            if depends_on:
+                for dep_id in depends_on:
+                    await conn.execute(
+                        "INSERT OR IGNORE INTO task_deps(task_id, depends_on) VALUES (?,?)",
+                        (tid, dep_id),
+                    )
+                await conn.commit()
+            return tid
+        finally:
+            await conn.close()
+
+    async def list_tasks(
+        self,
+        status: Optional[str] = None,
+        assigned_to: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """List tasks with optional filters."""
+        conn = await self._connect()
+        try:
+            query = "SELECT * FROM tasks"
+            params = []
+            conditions = []
+            if status:
+                self._validate_task_status(status)
+                conditions.append("status = ?")
+                params.append(status)
+            if assigned_to:
+                conditions.append("assigned_to = ?")
+                params.append(assigned_to)
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+            query += " ORDER BY priority ASC, created_at DESC"
+            cursor = await conn.execute(query, params)
+            rows = await cursor.fetchall()
+            result = []
+            for r in rows:
+                d = dict(r)
+                if d.get("dependencies") and isinstance(d["dependencies"], str):
+                    try:
+                        d["dependencies"] = json.loads(d["dependencies"])
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                result.append(d)
+            return result
+        finally:
+            await conn.close()
+
+    async def update_task_status(self, task_id: int, new_status: str) -> None:
+        """Update task status with state machine validation."""
+        if task_id <= 0:
+            raise ValueError("task_id must be a positive integer")
+        conn = await self._connect()
+        try:
+            cursor = await conn.execute("SELECT id, status FROM tasks WHERE id=?", (task_id,))
+            row = await cursor.fetchone()
+            if not row:
+                raise ValueError(f"task #{task_id} not found")
+            current = row["status"]
+            self._validate_task_transition(current, new_status)
+            ts = time.time()
+            updates = {"status": new_status, "updated_at": ts}
+            if new_status == "in_progress" and current != "in_progress":
+                updates["claimed_at"] = ts
+            if new_status == "done":
+                updates["completed_at"] = ts
+            set_clause = ", ".join(f"{k}=?" for k in updates)
+            await conn.execute(
+                f"UPDATE tasks SET {set_clause} WHERE id=?",
+                (*updates.values(), task_id),
+            )
+            await conn.commit()
+        finally:
+            await conn.close()
+
+    async def claim_task(self, task_id: int) -> None:
+        """Claim a task by assigning self and setting status to in_progress."""
+        if task_id <= 0:
+            raise ValueError("task_id must be a positive integer")
+        conn = await self._connect()
+        try:
+            cursor = await conn.execute(
+                "SELECT id, status, assigned_to FROM tasks WHERE id=?", (task_id,)
+            )
+            row = await cursor.fetchone()
+            if not row:
+                raise ValueError(f"task #{task_id} not found")
+            if row["status"] == "done":
+                raise ValueError(f"task #{task_id} is already done")
+            if row["assigned_to"] and row["assigned_to"] != self.agent_id:
+                raise ValueError(f"task #{task_id} already assigned to '{row['assigned_to']}'")
+            ts = time.time()
+            await conn.execute(
+                "UPDATE tasks SET status='in_progress', assigned_to=?, claimed_at=?, updated_at=? WHERE id=?",
+                (self.agent_id, ts, ts, task_id),
+            )
+            await conn.commit()
+        finally:
+            await conn.close()
+
+    async def complete_task(self, task_id: int, result: str = "") -> None:
+        """Complete a task."""
+        if task_id <= 0:
+            raise ValueError("task_id must be a positive integer")
+        conn = await self._connect()
+        try:
+            cursor = await conn.execute("SELECT id, status FROM tasks WHERE id=?", (task_id,))
+            row = await cursor.fetchone()
+            if not row:
+                raise ValueError(f"task #{task_id} not found")
+            ts = time.time()
+            await conn.execute(
+                "UPDATE tasks SET status='done', result=?, completed_at=?, updated_at=? WHERE id=?",
+                (result, ts, ts, task_id),
+            )
+            await conn.commit()
+        finally:
+            await conn.close()
+
     async def stats(self) -> Dict[str, Any]:
         """Get bus statistics.
 
@@ -424,20 +614,33 @@ class A2AClientAsync:
         cursor = await conn.execute("SELECT COUNT(*) as count FROM messages")
         messages = (await cursor.fetchone())["count"]
 
-        # Count broadcasts
         cursor = await conn.execute(
             "SELECT COUNT(*) as count FROM messages WHERE recipient IS NULL"
         )
         broadcasts = (await cursor.fetchone())["count"]
 
-        # Count threads
         cursor = await conn.execute(
             "SELECT COUNT(DISTINCT thread_id) as count "
             "FROM messages WHERE thread_id IS NOT NULL"
         )
         threads = (await cursor.fetchone())["count"]
 
-        # Count agents by status
+        cursor = await conn.execute(
+            "SELECT priority, COUNT(*) as count FROM messages WHERE priority IS NOT NULL GROUP BY priority"
+        )
+        priority_rows = await cursor.fetchall()
+        priority_labels = {1: "URGENT", 2: "HIGH", 3: "NORMAL", 4: "LOW"}
+        priority_stats = {}
+        for row in priority_rows:
+            label = priority_labels.get(row["priority"], f"P{row['priority']}")
+            priority_stats[label] = row["count"]
+
+        cursor = await conn.execute("SELECT COUNT(*) as count FROM messages WHERE requires_ack = 1")
+        ack_required = (await cursor.fetchone())["count"]
+
+        cursor = await conn.execute("SELECT COUNT(*) as count FROM acknowledgments")
+        acks_sent = (await cursor.fetchone())["count"]
+
         cursor = await conn.execute(
             "SELECT COUNT(*) as count FROM agents WHERE status = 'active'"
         )
@@ -448,7 +651,6 @@ class A2AClientAsync:
         )
         agents_done = (await cursor.fetchone())["count"]
 
-        # Top senders
         cursor = await conn.execute(
             "SELECT sender, COUNT(*) as count FROM messages "
             "GROUP BY sender ORDER BY count DESC LIMIT 5"
@@ -458,13 +660,27 @@ class A2AClientAsync:
             for row in await cursor.fetchall()
         ]
 
+        cursor = await conn.execute("SELECT COUNT(*) as count FROM tasks")
+        task_count = (await cursor.fetchone())["count"]
+
+        cursor = await conn.execute(
+            "SELECT status, COUNT(*) as count FROM tasks GROUP BY status"
+        )
+        task_statuses = await cursor.fetchall()
+        task_status_dict = {row["status"]: row["count"] for row in task_statuses}
+
         return {
             "messages": messages,
             "direct_messages": messages - broadcasts,
             "broadcasts": broadcasts,
             "threads": threads,
+            "priority_distribution": priority_stats,
+            "acks_required": ack_required,
+            "acks_sent": acks_sent,
             "agents_active": agents_active,
             "agents_done": agents_done,
+            "tasks_total": task_count,
+            "tasks_by_status": task_status_dict,
             "top_senders": top_senders,
         }
 
@@ -516,6 +732,254 @@ class A2AClientAsync:
 
         return False
 
+    async def ack(self, message_id: int) -> bool:
+        """Acknowledge receipt of a message.
+
+        Args:
+            message_id: Message ID to acknowledge
+
+        Returns:
+            True on success
+        """
+        if message_id <= 0:
+            raise ValueError("message_id must be a positive integer")
+        conn = await self._connect()
+        row = await (await conn.execute("SELECT id FROM messages WHERE id=?", (message_id,))).fetchone()
+        if not row:
+            raise ValueError(f"message #{message_id} not found")
+        await conn.execute(
+            "INSERT OR IGNORE INTO acknowledgments(message_id, agent_id, acked_at) VALUES (?,?,?)",
+            (message_id, self.agent_id, time.time()),
+        )
+        await conn.commit()
+        return True
+
+    async def pending_acks(self) -> List[Dict[str, Any]]:
+        """Get messages that requested acknowledgment but haven't been acked.
+
+        Returns:
+            List of message dicts requiring acknowledgment
+        """
+        conn = await self._connect()
+        cursor = await conn.execute(
+            "SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.priority, m.requires_ack, m.created_at "
+            "FROM messages m "
+            "WHERE m.requires_ack = 1 AND m.recipient = ? "
+            "AND NOT EXISTS (SELECT 1 FROM acknowledgments a WHERE a.message_id = m.id AND a.agent_id = ?) "
+            "ORDER BY m.created_at ASC",
+            (self.agent_id, self.agent_id),
+        )
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+
+    async def heartbeat(self, status: str = "active") -> None:
+        """Send a heartbeat to keep agent registration alive.
+
+        Args:
+            status: Status update ('active', 'working', 'idle', 'error')
+        """
+        valid = ("active", "working", "idle", "error")
+        if status not in valid:
+            raise ValueError(f"status must be one of {valid}")
+        conn = await self._connect()
+        await conn.execute(
+            "UPDATE agents SET last_seen=?, status=? WHERE id=?",
+            (time.time(), status, self.agent_id),
+        )
+        await conn.commit()
+
+    async def heartbeat_check(self, grace: float = 120) -> List[Dict[str, Any]]:
+        """Check for agents that missed too many heartbeats.
+
+        Args:
+            grace: Seconds since last_seen to consider stale (default: 120)
+
+        Returns:
+            List of stale agent dicts
+        """
+        if grace <= 0:
+            raise ValueError("grace must be a positive number of seconds")
+        conn = await self._connect()
+        threshold = time.time() - grace
+        cursor = await conn.execute(
+            "SELECT id, status, last_seen FROM agents WHERE last_seen < ? ORDER BY last_seen",
+            (threshold,),
+        )
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+
+    async def create_task(
+        self,
+        title: str,
+        description: str = "",
+        assigned_to: str = "",
+        priority: int = 3,
+        depends_on: Optional[List[int]] = None,
+    ) -> int:
+        """Create a new task in the shared task queue.
+
+        Args:
+            title: Task title (required)
+            description: Optional task description
+            assigned_to: Optional agent to assign to
+            priority: Task priority 1-4 (1=highest)
+            depends_on: Optional list of task IDs this task depends on
+
+        Returns:
+            Task ID
+        """
+        if not title or not title.strip():
+            raise ValueError("task title must not be empty")
+        if priority not in (1, 2, 3, 4):
+            raise ValueError("priority must be 1-4")
+        conn = await self._connect()
+        ts = time.time()
+        deps = json.dumps(depends_on) if depends_on else None
+        cursor = await conn.execute(
+            "INSERT INTO tasks(title, description, assigned_to, status, priority, dependencies, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (title, description, assigned_to, "planned", priority, deps, ts, ts),
+        )
+        tid = cursor.lastrowid
+        if depends_on:
+            for dep_id in depends_on:
+                await conn.execute(
+                    "INSERT OR IGNORE INTO task_deps(task_id, depends_on) VALUES (?,?)",
+                    (tid, dep_id),
+                )
+        await conn.commit()
+        return tid
+
+    async def list_tasks(
+        self,
+        status: Optional[str] = None,
+        assigned_to: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """List tasks with optional filters.
+
+        Args:
+            status: Filter by status
+            assigned_to: Filter by assigned agent
+
+        Returns:
+            List of task dicts
+        """
+        valid_statuses = {"planned", "in_progress", "review_pending", "approved", "done", "blocked"}
+        conn = await self._connect()
+        query = "SELECT * FROM tasks"
+        params = []
+        conditions = []
+        if status:
+            if status not in valid_statuses:
+                raise ValueError(f"invalid status '{status}'")
+            conditions.append("status = ?")
+            params.append(status)
+        if assigned_to:
+            conditions.append("assigned_to = ?")
+            params.append(assigned_to)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY priority ASC, created_at DESC"
+        cursor = await conn.execute(query, params)
+        rows = await cursor.fetchall()
+        result = []
+        for r in rows:
+            d = dict(r)
+            if d.get("dependencies") and isinstance(d["dependencies"], str):
+                try:
+                    d["dependencies"] = json.loads(d["dependencies"])
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            result.append(d)
+        return result
+
+    async def update_task_status(self, task_id: int, new_status: str) -> None:
+        """Update task status with state machine validation.
+
+        Args:
+            task_id: Task ID
+            new_status: New status value
+        """
+        valid_statuses = {"planned", "in_progress", "review_pending", "approved", "done", "blocked"}
+        transitions = {
+            "planned": {"in_progress"},
+            "in_progress": {"review_pending", "blocked", "done"},
+            "review_pending": {"approved", "in_progress", "blocked"},
+            "approved": {"done", "in_progress"},
+            "done": set(),
+            "blocked": {"in_progress"},
+        }
+        if task_id <= 0:
+            raise ValueError("task_id must be a positive integer")
+        if new_status not in valid_statuses:
+            raise ValueError(f"invalid status '{new_status}'")
+        conn = await self._connect()
+        cursor = await conn.execute("SELECT id, status FROM tasks WHERE id=?", (task_id,))
+        row = await cursor.fetchone()
+        if not row:
+            raise ValueError(f"task #{task_id} not found")
+        current = row["status"]
+        if new_status not in transitions.get(current, set()):
+            allowed = transitions.get(current, set())
+            if not allowed:
+                raise ValueError(f"cannot transition from '{current}' — terminal state")
+            raise ValueError(f"invalid transition from '{current}' to '{new_status}'")
+        ts = time.time()
+        updates = {"status": new_status, "updated_at": ts}
+        if new_status == "in_progress" and current != "in_progress":
+            updates["claimed_at"] = ts
+        if new_status == "done":
+            updates["completed_at"] = ts
+        set_clause = ", ".join(f"{k}=?" for k in updates)
+        await conn.execute(f"UPDATE tasks SET {set_clause} WHERE id=?", (*updates.values(), task_id))
+        await conn.commit()
+
+    async def claim_task(self, task_id: int) -> None:
+        """Claim a task by assigning self and setting status to in_progress.
+
+        Args:
+            task_id: Task ID
+        """
+        if task_id <= 0:
+            raise ValueError("task_id must be a positive integer")
+        conn = await self._connect()
+        cursor = await conn.execute("SELECT id, status, assigned_to FROM tasks WHERE id=?", (task_id,))
+        row = await cursor.fetchone()
+        if not row:
+            raise ValueError(f"task #{task_id} not found")
+        if row["status"] == "done":
+            raise ValueError(f"task #{task_id} is already done")
+        if row["assigned_to"] and row["assigned_to"] != self.agent_id:
+            raise ValueError(f"task #{task_id} already assigned to '{row['assigned_to']}'")
+        ts = time.time()
+        await self.update_task_status(task_id, "in_progress")
+        await conn.execute(
+            "UPDATE tasks SET assigned_to=?, claimed_at=? WHERE id=?",
+            (self.agent_id, ts, task_id),
+        )
+        await conn.commit()
+
+    async def complete_task(self, task_id: int, result: str = "") -> None:
+        """Complete a task.
+
+        Args:
+            task_id: Task ID
+            result: Optional result description
+        """
+        if task_id <= 0:
+            raise ValueError("task_id must be a positive integer")
+        conn = await self._connect()
+        cursor = await conn.execute("SELECT id, status FROM tasks WHERE id=?", (task_id,))
+        row = await cursor.fetchone()
+        if not row:
+            raise ValueError(f"task #{task_id} not found")
+        ts = time.time()
+        await conn.execute(
+            "UPDATE tasks SET status='done', result=?, completed_at=?, updated_at=? WHERE id=?",
+            (result, ts, ts, task_id),
+        )
+        await conn.commit()
+
     async def __aenter__(self):
         """Context manager entry."""
         return self
@@ -548,6 +1012,8 @@ class A2AClientAsync:
                 body        TEXT NOT NULL,
                 thread_id   TEXT,
                 ttl_seconds INTEGER,
+                priority    INTEGER DEFAULT 3,
+                requires_ack INTEGER DEFAULT 0,
                 created_at  REAL NOT NULL
             );
             CREATE TABLE IF NOT EXISTS reads (
@@ -556,9 +1022,37 @@ class A2AClientAsync:
                 read_at     REAL NOT NULL,
                 PRIMARY KEY (agent_id, message_id)
             );
+            CREATE TABLE IF NOT EXISTS acknowledgments (
+                message_id  INTEGER NOT NULL,
+                agent_id    TEXT NOT NULL,
+                acked_at    REAL NOT NULL,
+                PRIMARY KEY (message_id, agent_id)
+            );
+            CREATE TABLE IF NOT EXISTS tasks (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                title       TEXT NOT NULL,
+                description TEXT,
+                assigned_to TEXT,
+                status      TEXT NOT NULL DEFAULT 'planned',
+                priority    INTEGER DEFAULT 3,
+                dependencies TEXT,
+                result      TEXT,
+                claimed_at  REAL,
+                completed_at REAL,
+                created_at  REAL NOT NULL,
+                updated_at  REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS task_deps (
+                task_id     INTEGER NOT NULL,
+                depends_on  INTEGER NOT NULL,
+                PRIMARY KEY (task_id, depends_on)
+            );
             CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
             CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
             CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
+            CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to);
+            CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+            CREATE INDEX IF NOT EXISTS idx_task_deps_task ON task_deps(task_id);
         """)
         await conn.commit()
 

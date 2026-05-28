@@ -57,6 +57,8 @@ class TestA2AClient(unittest.TestCase):
                 body        TEXT NOT NULL,
                 thread_id   TEXT,
                 ttl_seconds INTEGER,
+                priority    INTEGER DEFAULT 3,
+                requires_ack INTEGER DEFAULT 0,
                 created_at  REAL NOT NULL
             );
 
@@ -65,6 +67,31 @@ class TestA2AClient(unittest.TestCase):
                 message_id  INTEGER NOT NULL,
                 read_at     REAL NOT NULL,
                 PRIMARY KEY (agent_id, message_id)
+            );
+            CREATE TABLE IF NOT EXISTS acknowledgments (
+                message_id  INTEGER NOT NULL,
+                agent_id    TEXT NOT NULL,
+                acked_at    REAL NOT NULL,
+                PRIMARY KEY (message_id, agent_id)
+            );
+            CREATE TABLE IF NOT EXISTS tasks (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                title       TEXT NOT NULL,
+                description TEXT,
+                assigned_to TEXT,
+                status      TEXT NOT NULL DEFAULT 'planned',
+                priority    INTEGER DEFAULT 3,
+                dependencies TEXT,
+                result      TEXT,
+                claimed_at  REAL,
+                completed_at REAL,
+                created_at  REAL NOT NULL,
+                updated_at  REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS task_deps (
+                task_id     INTEGER NOT NULL,
+                depends_on  INTEGER NOT NULL,
+                PRIMARY KEY (task_id, depends_on)
             );
         """)
 
@@ -863,6 +890,8 @@ class TestA2AClient(unittest.TestCase):
                 body        TEXT NOT NULL,
                 thread_id   TEXT,
                 ttl_seconds INTEGER,
+                priority    INTEGER DEFAULT 3,
+                requires_ack INTEGER DEFAULT 0,
                 created_at  REAL NOT NULL
             );
             CREATE TABLE IF NOT EXISTS reads (
@@ -978,6 +1007,185 @@ class TestA2AClient(unittest.TestCase):
         alice = A2AClient(self.project, "alice")
         with self.assertRaises(ValueError):
             alice.register(role="tester", prompt="p" * 100_001)
+
+    # ---- task tests (phase 2) ----
+
+    def test_create_task_returns_positive_id(self):
+        """create_task returns a positive task ID."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task("Test task")
+        self.assertIsInstance(tid, int)
+        self.assertGreater(tid, 0)
+
+    def test_create_task_with_description_and_assignee(self):
+        """create_task with description and assigned_to."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task(
+            "Build feature",
+            description="Implement X",
+            assigned_to="bob",
+            priority=1,
+        )
+        tasks = alice.list_tasks()
+        self.assertEqual(len(tasks), 1)
+        self.assertEqual(tasks[0]["title"], "Build feature")
+        self.assertEqual(tasks[0]["description"], "Implement X")
+        self.assertEqual(tasks[0]["assigned_to"], "bob")
+        self.assertEqual(tasks[0]["priority"], 1)
+        self.assertEqual(tasks[0]["status"], "planned")
+
+    def test_create_task_with_dependencies(self):
+        """create_task with depends_on creates deps."""
+        alice = A2AClient(self.project, "alice")
+        t1 = alice.create_task("First task")
+        t2 = alice.create_task("Second task", depends_on=[t1])
+        tasks = alice.list_tasks()
+        t2_data = [t for t in tasks if t["id"] == t2][0]
+        self.assertEqual(t2_data["dependencies"], [t1])
+
+    def test_create_task_empty_title_raises_error(self):
+        """create_task with empty title raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.create_task("")
+        with self.assertRaises(ValueError):
+            alice.create_task("   ")
+
+    def test_create_task_invalid_priority_raises_error(self):
+        """create_task with invalid priority raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.create_task("test", priority=5)
+        with self.assertRaises(ValueError):
+            alice.create_task("test", priority=0)
+
+    def test_list_tasks_empty_returns_empty_list(self):
+        """list_tasks returns empty list when no tasks."""
+        alice = A2AClient(self.project, "alice")
+        self.assertEqual(alice.list_tasks(), [])
+
+    def test_list_tasks_filter_by_status(self):
+        """list_tasks filters by status."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_task("Task A")
+        alice.create_task("Task B")
+        tasks = alice.list_tasks(status="planned")
+        self.assertEqual(len(tasks), 2)
+        tasks = alice.list_tasks(status="done")
+        self.assertEqual(len(tasks), 0)
+
+    def test_list_tasks_filter_by_assigned(self):
+        """list_tasks filters by assigned agent."""
+        alice = A2AClient(self.project, "alice")
+        alice.create_task("Task A", assigned_to="alice")
+        alice.create_task("Task B", assigned_to="bob")
+        tasks = alice.list_tasks(assigned_to="alice")
+        self.assertEqual(len(tasks), 1)
+        self.assertEqual(tasks[0]["title"], "Task A")
+
+    def test_list_tasks_invalid_status_raises_error(self):
+        """list_tasks with invalid status raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.list_tasks(status="invalid")
+
+    def test_update_task_status_transitions(self):
+        """update_task_status follows state machine transitions."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task("Workflow test")
+
+        alice.update_task_status(tid, "in_progress")
+        self.assertEqual(alice.list_tasks()[0]["status"], "in_progress")
+
+        alice.update_task_status(tid, "review_pending")
+        self.assertEqual(alice.list_tasks()[0]["status"], "review_pending")
+
+        alice.update_task_status(tid, "approved")
+        self.assertEqual(alice.list_tasks()[0]["status"], "approved")
+
+        alice.update_task_status(tid, "done")
+        self.assertEqual(alice.list_tasks()[0]["status"], "done")
+
+    def test_update_task_status_invalid_transition_raises_error(self):
+        """Invalid state machine transitions raise ValueError."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task("Test")
+
+        with self.assertRaises(ValueError):
+            alice.update_task_status(tid, "done")
+        with self.assertRaises(ValueError):
+            alice.update_task_status(tid, "blocked")
+        with self.assertRaises(ValueError):
+            alice.update_task_status(tid, "invalid_status")
+
+    def test_update_task_status_done_is_terminal(self):
+        """Done is a terminal state."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task("Test")
+        alice.update_task_status(tid, "in_progress")
+        alice.update_task_status(tid, "done")
+        with self.assertRaises(ValueError):
+            alice.update_task_status(tid, "in_progress")
+
+    def test_update_task_status_blocked_and_unblock(self):
+        """Blocked -> in_progress is valid."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task("Test")
+        alice.update_task_status(tid, "in_progress")
+        alice.update_task_status(tid, "blocked")
+        self.assertEqual(alice.list_tasks()[0]["status"], "blocked")
+        alice.update_task_status(tid, "in_progress")
+        self.assertEqual(alice.list_tasks()[0]["status"], "in_progress")
+
+    def test_update_task_status_not_found_raises_error(self):
+        """update_task_status on non-existent task raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.update_task_status(9999, "in_progress")
+
+    def test_claim_task_changes_status_and_assigns(self):
+        """claim_task sets status to in_progress and assigns agent."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task("Claimable task")
+        alice.claim_task(tid)
+        task = alice.list_tasks()[0]
+        self.assertEqual(task["status"], "in_progress")
+        self.assertEqual(task["assigned_to"], "alice")
+        self.assertIsNotNone(task["claimed_at"])
+
+    def test_claim_task_already_done_raises_error(self):
+        """claim_task on a done task raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task("Done task")
+        alice.update_task_status(tid, "in_progress")
+        alice.update_task_status(tid, "done")
+        with self.assertRaises(ValueError):
+            alice.claim_task(tid)
+
+    def test_claim_task_assigned_to_other_raises_error(self):
+        """claim_task on task assigned to another agent raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        bob = A2AClient(self.project, "bob")
+        tid = alice.create_task("Others task", assigned_to="bob")
+        with self.assertRaises(ValueError):
+            alice.claim_task(tid)
+
+    def test_complete_task_sets_done_and_result(self):
+        """complete_task sets status to done with optional result."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task("Completable")
+        alice.update_task_status(tid, "in_progress")
+        alice.complete_task(tid, result="All done")
+        task = alice.list_tasks()[0]
+        self.assertEqual(task["status"], "done")
+        self.assertEqual(task["result"], "All done")
+        self.assertIsNotNone(task["completed_at"])
+
+    def test_complete_task_not_found_raises_error(self):
+        """complete_task on non-existent task raises ValueError."""
+        alice = A2AClient(self.project, "alice")
+        with self.assertRaises(ValueError):
+            alice.complete_task(9999)
 
 
 if __name__ == "__main__":

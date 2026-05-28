@@ -34,13 +34,22 @@ CREATE TABLE IF NOT EXISTS agents (
 );
 
 CREATE TABLE IF NOT EXISTS messages (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender      TEXT NOT NULL,
-    recipient   TEXT,                  -- NULL = broadcast
-    body        TEXT NOT NULL,
-    thread_id   TEXT,
-    ttl_seconds INTEGER,               -- NULL = never expire
-    created_at  REAL NOT NULL
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender          TEXT NOT NULL,
+    recipient       TEXT,
+    body            TEXT NOT NULL,
+    thread_id       TEXT,
+    ttl_seconds     INTEGER,
+    priority        INTEGER DEFAULT 3,
+    requires_ack    INTEGER DEFAULT 0,
+    created_at      REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS acknowledgments (
+    message_id  INTEGER NOT NULL,
+    agent_id    TEXT NOT NULL,
+    acked_at    REAL NOT NULL,
+    PRIMARY KEY (message_id, agent_id)
 );
 
 CREATE TABLE IF NOT EXISTS reads (
@@ -50,11 +59,68 @@ CREATE TABLE IF NOT EXISTS reads (
     PRIMARY KEY (agent_id, message_id)
 );
 
+CREATE TABLE IF NOT EXISTS acknowledgments (
+    message_id  INTEGER NOT NULL,
+    agent_id    TEXT NOT NULL,
+    acked_at    REAL NOT NULL,
+    PRIMARY KEY (message_id, agent_id)
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    title           TEXT NOT NULL,
+    description     TEXT,
+    assigned_to     TEXT,
+    status          TEXT NOT NULL DEFAULT 'planned',
+    priority        INTEGER DEFAULT 3,
+    dependencies    TEXT,
+    result          TEXT,
+    claimed_at      REAL,
+    completed_at    REAL,
+    created_at      REAL NOT NULL,
+    updated_at      REAL NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tasks_assigned   ON tasks(assigned_to);
+CREATE INDEX IF NOT EXISTS idx_tasks_status     ON tasks(status);
+
+CREATE TABLE IF NOT EXISTS task_deps (
+    task_id     INTEGER NOT NULL,
+    depends_on  INTEGER NOT NULL,
+    PRIMARY KEY (task_id, depends_on)
+);
+
 CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
 CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
 """
 
+
+# ---------- task state machine ----------
+
+TASK_VALID_STATUSES = {"planned", "in_progress", "review_pending", "approved", "done", "blocked"}
+
+TASK_TRANSITIONS = {
+    "planned":       {"in_progress"},
+    "in_progress":   {"review_pending", "blocked", "done"},
+    "review_pending": {"approved", "in_progress", "blocked"},
+    "approved":      {"done", "in_progress"},
+    "done":          set(),
+    "blocked":       {"in_progress"},
+}
+
+TASK_STATUS_ORDER = ["planned", "in_progress", "review_pending", "approved", "done", "blocked"]
+
+def validate_task_transition(current: str, next_status: str) -> None:
+    if current not in TASK_VALID_STATUSES:
+        die(f"invalid current status '{current}'")
+    if next_status not in TASK_VALID_STATUSES:
+        die(f"invalid status '{next_status}' — must be one of: {', '.join(sorted(TASK_VALID_STATUSES))}")
+    if next_status not in TASK_TRANSITIONS.get(current, set()):
+        valid = TASK_TRANSITIONS.get(current, set())
+        if not valid:
+            die(f"cannot transition from '{current}' — terminal state")
+        die(f"invalid transition from '{current}' to '{next_status}' — allowed: {', '.join(sorted(valid))}")
 
 # ---------- paths & db ----------
 
@@ -70,8 +136,8 @@ MAX_PROMPT_LENGTH = 100_000
 MAX_BODY_LENGTH = 100_000
 
 # Column list used in all message queries (avoids repetition and drift)
-MSG_COLS = "id, sender, recipient, body, thread_id, created_at"
-MSG_COLS_M = "m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at"
+MSG_COLS = "id, sender, recipient, body, thread_id, priority, requires_ack, created_at"
+MSG_COLS_M = "m.id, m.sender, m.recipient, m.body, m.thread_id, m.priority, m.requires_ack, m.created_at"
 
 def project_name(explicit: str | None) -> str:
     if explicit is not None:
@@ -117,6 +183,56 @@ def connect(name: str, create: bool = False) -> sqlite3.Connection:
         conn.execute("SELECT ttl_seconds FROM messages WHERE 1=0")
     except sqlite3.OperationalError:
         conn.execute("ALTER TABLE messages ADD COLUMN ttl_seconds INTEGER")
+    # migrate: add priority if missing (v1.4)
+    try:
+        conn.execute("SELECT priority FROM messages WHERE 1=0")
+    except sqlite3.OperationalError:
+        conn.execute("ALTER TABLE messages ADD COLUMN priority INTEGER DEFAULT 3")
+    # migrate: add requires_ack if missing (v1.4)
+    try:
+        conn.execute("SELECT requires_ack FROM messages WHERE 1=0")
+    except sqlite3.OperationalError:
+        conn.execute("ALTER TABLE messages ADD COLUMN requires_ack INTEGER DEFAULT 0")
+    # migrate: add tasks table if missing (phase 2)
+    try:
+        conn.execute("SELECT id FROM tasks WHERE 1=0")
+    except sqlite3.OperationalError:
+        conn.executescript("""
+            CREATE TABLE tasks (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                title           TEXT NOT NULL,
+                description     TEXT,
+                assigned_to     TEXT,
+                status          TEXT NOT NULL DEFAULT 'planned',
+                priority        INTEGER DEFAULT 3,
+                dependencies    TEXT,
+                result          TEXT,
+                claimed_at      REAL,
+                completed_at    REAL,
+                created_at      REAL NOT NULL,
+                updated_at      REAL NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to);
+            CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+            CREATE TABLE IF NOT EXISTS task_deps (
+                task_id     INTEGER NOT NULL,
+                depends_on  INTEGER NOT NULL,
+                PRIMARY KEY (task_id, depends_on)
+            );
+            CREATE INDEX IF NOT EXISTS idx_task_deps_task ON task_deps(task_id);
+        """)
+    # migrate: add task columns if missing (phased rollout)
+    try:
+        conn.execute("SELECT description FROM tasks WHERE 1=0")
+    except sqlite3.OperationalError:
+        conn.executescript(
+            "ALTER TABLE tasks ADD COLUMN description TEXT;"
+            "ALTER TABLE tasks ADD COLUMN priority INTEGER DEFAULT 3;"
+            "ALTER TABLE tasks ADD COLUMN dependencies TEXT;"
+            "ALTER TABLE tasks ADD COLUMN result TEXT;"
+            "ALTER TABLE tasks ADD COLUMN claimed_at REAL;"
+            "ALTER TABLE tasks ADD COLUMN completed_at REAL;"
+        )
     return conn
 
 
@@ -350,27 +466,33 @@ def cmd_send(args) -> None:
         die(f"--thread too long ({len(thread_id)} chars, max {MAX_THREAD_ID_LENGTH})")
     if len(body) > MAX_BODY_LENGTH:
         die(f"message body too long ({len(body)} chars, max {MAX_BODY_LENGTH})")
+    priority = getattr(args, "priority", 3)
+    if priority not in (1, 2, 3, 4):
+        die("--priority must be 1 (URGENT), 2 (HIGH), 3 (NORMAL), or 4 (LOW)")
+    requires_ack = 1 if getattr(args, "require_ack", False) else 0
     cur = conn.execute(
-        "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) "
-        "VALUES (?,?,?,?,?,?)",
-        (sender, recipient, body, thread_id, ttl, now()),
+        "INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, priority, requires_ack, created_at) "
+        "VALUES (?,?,?,?,?,?,?,?)",
+        (sender, recipient, body, thread_id, ttl, priority, requires_ack, now()),
     )
     _touch(conn, sender)
     conn.commit()
     mid = cur.lastrowid
     conn.close()
     target = recipient if recipient else "ALL"
+    prio_labels = {1: "URGENT", 2: "HIGH", 3: "NORMAL", 4: "LOW"}
     if getattr(args, "json", False):
         print(json.dumps({
             "id": mid,
             "sender": sender,
             "recipient": target,
+            "priority": prio_labels[priority],
         }, indent=2))
     else:
-        print(f"#{mid} {sender} -> {target}")
+        print(f"#{mid} {sender} -> {target} ({prio_labels[priority]})")
 
 
-def _fetch_messages(conn: sqlite3.Connection, agent_id: str, unread_only: bool, since: float | None, limit: int | None, mark_read: bool, include_self: bool = False) -> list[sqlite3.Row]:
+def _fetch_messages(conn: sqlite3.Connection, agent_id: str, unread_only: bool, since: float | None, limit: int | None, mark_read: bool, include_self: bool = False, priority_min: int | None = None) -> list[sqlite3.Row]:
     # messages addressed to agent OR broadcast (recipient IS NULL)
     base = (
         f"SELECT {MSG_COLS_M} "
@@ -390,7 +512,10 @@ def _fetch_messages(conn: sqlite3.Connection, agent_id: str, unread_only: bool, 
     if since is not None:
         base += "AND m.created_at > ? "
         params.append(since)
-    base += "ORDER BY m.created_at ASC"
+    if priority_min is not None:
+        base += "AND m.priority <= ? "
+        params.append(priority_min)
+    base += "ORDER BY m.priority ASC, m.created_at ASC"
     if limit:
         base += " LIMIT ?"
         params.append(limit)
@@ -406,7 +531,13 @@ def _fetch_messages(conn: sqlite3.Connection, agent_id: str, unread_only: bool, 
 
 def _print_messages(rows: list[sqlite3.Row], as_json: bool) -> None:
     if as_json:
-        print(json.dumps([dict(r) for r in rows], indent=2))
+        data = []
+        for r in rows:
+            d = dict(r)
+            if d.get("priority") is not None:
+                d["priority"] = int(d["priority"])
+            data.append(d)
+        print(json.dumps(data, indent=2))
         return
     if not rows:
         return
@@ -414,8 +545,16 @@ def _print_messages(rows: list[sqlite3.Row], as_json: bool) -> None:
         tgt = r["recipient"] or "ALL"
         ts = time.strftime("%H:%M:%S", time.localtime(r["created_at"]))
         thread = f" [thread:{r['thread_id']}]" if r["thread_id"] else ""
-        print(f"[{ts}] #{r['id']} {r['sender']} -> {tgt}{thread}")
-        # indent body
+        p = r["priority"] if r["priority"] is not None else 3
+        prio_labels = {1: "URGT", 2: "HIGH", 3: "NORM", 4: "LOW"}
+        prio_tag = f" [{prio_labels.get(p, 'NORM')}]"
+        ack_tag = ""
+        try:
+            if r["requires_ack"]:
+                ack_tag = " [ACK]"
+        except (KeyError, IndexError, TypeError):
+            pass
+        print(f"[{ts}] #{r['id']} {r['sender']} -> {tgt}{thread}{prio_tag}{ack_tag}")
         for line in r["body"].splitlines() or [""]:
             print(f"    {line}")
 
@@ -429,6 +568,9 @@ def cmd_recv(args) -> None:
         die("--since must be a non-negative timestamp")
     _validate_finite_float(args.wait, "wait")
     _validate_finite_float(args.since, "since")
+    priority_min = getattr(args, "priority_min", None)
+    if priority_min is not None and (priority_min < 1 or priority_min > 4):
+        die("--priority-min must be 1-4")
 
     deadline = now() + args.wait if args.wait else None
     poll_interval = 0.5
@@ -441,6 +583,7 @@ def cmd_recv(args) -> None:
             limit=limit,
             mark_read=not args.peek,
             include_self=args.include_self,
+            priority_min=priority_min,
         )
         if rows or not args.wait:
             _touch(conn, agent)
@@ -512,6 +655,192 @@ def cmd_clear(args) -> None:
         if p.exists():
             p.unlink()
     print(f"cleared {name} project database")
+
+
+# ---------- task commands (phase 2) ----------
+
+def _task_json(task: sqlite3.Row) -> dict:
+    d = dict(task)
+    if d.get("dependencies") and isinstance(d["dependencies"], str):
+        try:
+            d["dependencies"] = json.loads(d["dependencies"])
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return d
+
+
+def cmd_task_create(args) -> None:
+    _, conn = _open(args)
+    title = args.title.strip()
+    if not title:
+        conn.close()
+        die("task title must not be empty")
+    ts = now()
+    deps = json.dumps(args.depends_on) if args.depends_on else None
+    cur = conn.execute(
+        "INSERT INTO tasks(title, description, assigned_to, status, priority, dependencies, created_at, updated_at) "
+        "VALUES (?,?,?,?,?,?,?,?)",
+        (title, args.description, args.assigned_to, "planned", args.priority, deps, ts, ts),
+    )
+    conn.commit()
+    tid = cur.lastrowid
+    if args.depends_on:
+        for dep_id in args.depends_on:
+            conn.execute(
+                "INSERT OR IGNORE INTO task_deps(task_id, depends_on) VALUES (?,?)",
+                (tid, dep_id),
+            )
+    conn.commit()
+    conn.close()
+    if args.json:
+        print(json.dumps({"id": tid, "title": title, "status": "planned"}, indent=2))
+    else:
+        print(f"task #{tid} created: {title} (planned)")
+
+
+def cmd_task_list(args) -> None:
+    _, conn = _open(args)
+    status_filter = args.status
+    assigned_filter = args.assigned_to
+    query = "SELECT * FROM tasks"
+    params = []
+    conditions = []
+    if status_filter:
+        if status_filter not in TASK_VALID_STATUSES:
+            conn.close()
+            die(f"invalid status '{status_filter}' — must be one of: {', '.join(sorted(TASK_VALID_STATUSES))}")
+        conditions.append("status = ?")
+        params.append(status_filter)
+    if assigned_filter:
+        conditions.append("assigned_to = ?")
+        params.append(assigned_filter)
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    query += " ORDER BY priority ASC, created_at DESC"
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    if args.json:
+        print(json.dumps([_task_json(r) for r in rows], indent=2))
+        return
+    if not rows:
+        print("(no tasks)")
+        return
+    print(f"{'ID':<5} {'TITLE':<40} {'STATUS':<16} {'ASSIGNED':<20} {'PRIO':<5}")
+    print("-" * 90)
+    for r in rows:
+        assigned = r["assigned_to"] or "-"
+        status = r["status"]
+        title = (r["title"][:37] + "...") if len(r["title"]) > 40 else r["title"]
+        deps_str = ""
+        raw_deps = r["dependencies"]
+        if raw_deps:
+            try:
+                deps_list = json.loads(raw_deps) if isinstance(raw_deps, str) else raw_deps
+                if deps_list:
+                    deps_str = f" [deps: {','.join(str(d) for d in deps_list)}]"
+            except (json.JSONDecodeError, TypeError):
+                pass
+        print(f"{r['id']:<5} {title:<40} {status:<16} {assigned:<20} {r['priority'] or 3:<5}{deps_str}")
+
+
+def cmd_task_status(args) -> None:
+    _, conn = _open(args)
+    tid = args.task_id
+    if tid <= 0:
+        conn.close()
+        die("task_id must be a positive integer")
+    agent_id = getattr(args, "as_", None)
+    agent_id = agent_id.strip() if agent_id else ""
+    row = conn.execute("SELECT id, status, assigned_to FROM tasks WHERE id=?", (tid,)).fetchone()
+    if not row:
+        conn.close()
+        die(f"task #{tid} not found")
+    new_status = args.state
+    validate_task_transition(row["status"], new_status)
+    if agent_id and row["assigned_to"] and row["assigned_to"] != agent_id:
+        conn.close()
+        die(f"task #{tid} is assigned to '{row['assigned_to']}', not '{agent_id}'")
+    ts = now()
+    updates = {"status": new_status, "updated_at": ts}
+    if new_status == "in_progress" and row["status"] != "in_progress":
+        updates["claimed_at"] = ts
+    if new_status == "done":
+        updates["completed_at"] = ts
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    conn.execute(
+        f"UPDATE tasks SET {set_clause} WHERE id=?",
+        (*updates.values(), tid),
+    )
+    conn.commit()
+    conn.close()
+    label = f" ({agent_id})" if agent_id else ""
+    print(f"task #{tid} status: {row['status']} -> {new_status}{label}")
+
+
+def cmd_task_claim(args) -> None:
+    """Claim a task by assigning self and setting status to in_progress."""
+    _, conn = _open(args)
+    tid = args.task_id
+    if tid <= 0:
+        conn.close()
+        die("task_id must be a positive integer")
+    agent_id = args.as_.strip()
+    if not agent_id:
+        conn.close()
+        die("--as <agent-id> is required")
+    row = conn.execute("SELECT id, status, assigned_to FROM tasks WHERE id=?", (tid,)).fetchone()
+    if not row:
+        conn.close()
+        die(f"task #{tid} not found")
+    if row["status"] == "done":
+        conn.close()
+        die(f"task #{tid} is already done")
+    if row["assigned_to"] and row["assigned_to"] != agent_id:
+        conn.close()
+        die(f"task #{tid} already assigned to '{row['assigned_to']}'")
+    validate_task_transition(row["status"], "in_progress")
+    ts = now()
+    conn.execute(
+        "UPDATE tasks SET status='in_progress', assigned_to=?, claimed_at=?, updated_at=? WHERE id=?",
+        (agent_id, ts, ts, tid),
+    )
+    conn.commit()
+    conn.close()
+    print(f"task #{tid} claimed by '{agent_id}' -> in_progress")
+
+
+def cmd_task_complete(args) -> None:
+    """Complete a task with an optional result description."""
+    _, conn = _open(args)
+    tid = args.task_id
+    if tid <= 0:
+        conn.close()
+        die("task_id must be a positive integer")
+    agent_id = getattr(args, "as_", None)
+    if not agent_id or not agent_id.strip():
+        conn.close()
+        die("--as <agent-id> is required")
+    agent_id = agent_id.strip()
+    result = args.result
+    row = conn.execute("SELECT id, status, assigned_to FROM tasks WHERE id=?", (tid,)).fetchone()
+    if not row:
+        conn.close()
+        die(f"task #{tid} not found")
+    if row["assigned_to"] and row["assigned_to"] != agent_id:
+        conn.close()
+        die(f"task #{tid} is assigned to '{row['assigned_to']}', not '{agent_id}'")
+    validate_task_transition(row["status"], "done")
+    ts = now()
+    conn.execute(
+        "UPDATE tasks SET status='done', result=?, completed_at=?, updated_at=? WHERE id=?",
+        (result, ts, ts, tid),
+    )
+    conn.commit()
+    conn.close()
+    if result:
+        print(f"task #{tid} completed by {agent_id}: {result}")
+    else:
+        print(f"task #{tid} completed by {agent_id}")
 
 
 def _init_fts(conn: sqlite3.Connection) -> bool:
@@ -610,6 +939,25 @@ def cmd_stats(args) -> None:
     ).fetchone()[0]
     direct_count = msg_count - broadcast_count
 
+    # Priority distribution
+    priority_dist = conn.execute(
+        "SELECT priority, COUNT(*) FROM messages WHERE priority IS NOT NULL GROUP BY priority ORDER BY priority DESC"
+    ).fetchall()
+    priority_labels = {1: "URGENT", 2: "HIGH", 3: "NORMAL", 4: "LOW"}
+    priority_stats = {}
+    for row in priority_dist:
+        label = priority_labels.get(row[0], f"P{row[0]}")
+        priority_stats[label] = row[1]
+
+    # Ack stats
+    ack_required = conn.execute(
+        "SELECT COUNT(*) FROM messages WHERE requires_ack = 1"
+    ).fetchone()[0]
+    acks_sent = conn.execute(
+        "SELECT COUNT(*) FROM acknowledgments"
+    ).fetchone()[0]
+    pending_acks = ack_required - acks_sent if ack_required > acks_sent else 0
+
     # Count agents and their statuses
     agents = conn.execute("SELECT status, COUNT(*) FROM agents GROUP BY status").fetchall()
     agent_status = {row[0]: row[1] for row in agents}
@@ -621,6 +969,15 @@ def cmd_stats(args) -> None:
         "SELECT sender, COUNT(*) as count FROM messages GROUP BY sender ORDER BY count DESC LIMIT 5"
     ).fetchall()
 
+    # Task stats
+    task_count = conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
+    task_statuses = conn.execute(
+        "SELECT status, COUNT(*) FROM tasks GROUP BY status"
+    ).fetchall()
+    task_status_dict = {row[0]: row[1] for row in task_statuses}
+    task_blocked = task_status_dict.get("blocked", 0)
+    task_done = task_status_dict.get("done", 0)
+
     conn.close()
 
     stats = {
@@ -629,8 +986,16 @@ def cmd_stats(args) -> None:
         "direct_messages": direct_count,
         "broadcasts": broadcast_count,
         "threads": thread_count,
+        "priority_distribution": priority_stats,
+        "acks_required": ack_required,
+        "acks_sent": acks_sent,
+        "pending_acks": pending_acks,
         "agents_active": active_count,
         "agents_done": done_count,
+        "tasks_total": task_count,
+        "tasks_blocked": task_blocked,
+        "tasks_done": task_done,
+        "tasks_by_status": task_status_dict,
         "top_senders": [{"agent": row[0], "count": row[1]} for row in top_senders],
     }
 
@@ -640,7 +1005,14 @@ def cmd_stats(args) -> None:
         print(f"Project: {stats['project']}")
         print(f"  Messages: {msg_count} total ({direct_count} direct + {broadcast_count} broadcast)")
         print(f"  Threads: {thread_count}")
+        if priority_stats:
+            ps = ", ".join(f"{k}={v}" for k, v in priority_stats.items())
+            print(f"  Priority: {ps}")
+        print(f"  Acks: {acks_sent} sent, {pending_acks} pending")
         print(f"  Agents: {active_count} active, {done_count} done")
+        if task_count > 0:
+            task_summary = ", ".join(f"{k}={v}" for k, v in task_status_dict.items())
+            print(f"  Tasks: {task_count} total ({task_summary})")
         if top_senders:
             print("  Top senders:")
             for sender, count in top_senders:
@@ -673,6 +1045,94 @@ def cmd_wait(args) -> None:
             conn.close()
             die(f"timeout: only {len(rows)} unread (wanted {args.count})", code=2)
         time.sleep(0.5)
+
+
+def cmd_ack(args) -> None:
+    """Acknowledge receipt of a message."""
+    agent, conn = _resolve_agent(args)
+    mid = args.message_id
+    if mid <= 0:
+        conn.close()
+        die("message_id must be a positive integer")
+    # Verify message exists
+    row = conn.execute("SELECT id FROM messages WHERE id=?", (mid,)).fetchone()
+    if not row:
+        conn.close()
+        die(f"message #{mid} not found")
+    ts = now()
+    conn.execute(
+        "INSERT OR IGNORE INTO acknowledgments(message_id, agent_id, acked_at) VALUES (?,?,?)",
+        (mid, agent, ts),
+    )
+    _touch(conn, agent)
+    conn.commit()
+    conn.close()
+    print(f"acknowledged message #{mid}")
+
+
+def cmd_pending_acks(args) -> None:
+    """Show messages sent TO this agent that requested acknowledgment but haven't been acked yet."""
+    agent, conn = _resolve_agent(args)
+    rows = conn.execute(
+        f"SELECT {MSG_COLS_M} "
+        "FROM messages m "
+        "WHERE m.requires_ack = 1 "
+        "AND m.recipient = ? "
+        "AND NOT EXISTS ("
+        "  SELECT 1 FROM acknowledgments a "
+        "  WHERE a.message_id = m.id AND a.agent_id = ?"
+        ") "
+        "ORDER BY m.created_at ASC",
+        (agent, agent),
+    ).fetchall()
+    conn.close()
+    if args.json:
+        print(json.dumps([dict(r) for r in rows], indent=2))
+    elif not rows:
+        print("(no pending acknowledgments)")
+    else:
+        print(f"Pending acknowledgments for '{agent}':")
+        _print_messages(rows, False)
+
+
+def cmd_heartbeat(args) -> None:
+    """Send a heartbeat to keep agent registration alive and healthy."""
+    agent, conn = _resolve_agent(args)
+    status = getattr(args, "status", None)
+    if status and status not in ("active", "working", "idle", "error"):
+        conn.close()
+        die("--status must be one of: active, working, idle, error")
+    ts = now()
+    conn.execute("UPDATE agents SET last_seen=?, status=? WHERE id=?",
+                 (ts, status if status else "active", agent))
+    conn.commit()
+    conn.close()
+    print(f"heartbeat '{agent}' -> {status if status else 'active'} at {ts:.3f}")
+
+
+def cmd_heartbeat_check(args) -> None:
+    """Check for agents that missed too many heartbeats (stale/unhealthy)."""
+    _, conn = _open(args)
+    grace = args.grace
+    if grace <= 0:
+        conn.close()
+        die("--grace must be a positive number of seconds")
+    threshold = now() - grace
+    stale = conn.execute(
+        "SELECT id, status, last_seen FROM agents WHERE last_seen < ? ORDER BY last_seen",
+        (threshold,),
+    ).fetchall()
+    conn.close()
+    if args.json:
+        print(json.dumps([dict(r) for r in stale], indent=2))
+        return
+    if not stale:
+        print("all agents healthy (no stale heartbeats)")
+        return
+    print(f"Stale agents (last_seen > {grace}s ago):")
+    for r in stale:
+        age = int(now() - r["last_seen"])
+        print(f"  {r['id']:<20} status={r['status']:<10} last_seen={age}s ago")
 
 
 # ---------- arg parsing ----------
@@ -739,6 +1199,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--from", dest="from_", required=True)
     s.add_argument("--thread", help="optional thread/topic id")
     s.add_argument("--ttl", type=int, help="message expires after N seconds (default: never)")
+    s.add_argument("--priority", type=int, default=3, choices=[1, 2, 3, 4],
+                   help="priority: 1=URGENT, 2=HIGH, 3=NORMAL, 4=LOW (default: 3)")
+    s.add_argument("--require-ack", action="store_true",
+                   help="require acknowledgment from recipient (creates an ACK obligation)")
     s.add_argument("--json", action="store_true", help="output as JSON")
     s.set_defaults(func=cmd_send)
 
@@ -754,6 +1218,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="include messages sent by this agent")
     s.add_argument("--peek", action="store_true",
                    help="do not mark as read")
+    s.add_argument("--priority-min", type=int, default=None, choices=[1, 2, 3, 4],
+                   help="min priority: 1=URGENT, 2=HIGH, 3=NORMAL, 4=LOW (shows >= this level)")
     s.add_argument("--json", action="store_true")
     s.set_defaults(func=cmd_recv)
 
@@ -784,6 +1250,63 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--timeout", type=float, default=60)
     s.add_argument("--since", type=float, help="only count messages after this Unix timestamp")
     s.set_defaults(func=cmd_wait)
+
+    s = sub.add_parser("ack", help="acknowledge receipt of a message")
+    s.add_argument("message_id", type=int, help="message id to acknowledge")
+    s.add_argument("--as", dest="as_", required=True)
+    s.set_defaults(func=cmd_ack)
+
+    s = sub.add_parser("pending-acks", help="show messages requiring ack")
+    s.add_argument("--as", dest="as_", required=True)
+    s.add_argument("--json", action="store_true", help="output as JSON")
+    s.set_defaults(func=cmd_pending_acks)
+
+    # ---- task commands (phase 2) ----
+    s = sub.add_parser("task-create", help="create a new task")
+    s.add_argument("title", help="task title")
+    s.add_argument("--description", help="task description")
+    s.add_argument("--assigned-to", dest="assigned_to", help="assign to agent")
+    s.add_argument("--priority", type=int, default=3, choices=[1, 2, 3, 4],
+                   help="priority: 1=highest, 4=lowest (default: 3)")
+    s.add_argument("--depends-on", nargs="*", type=int, default=None,
+                   help="task IDs this task depends on")
+    s.add_argument("--json", action="store_true", help="output as JSON")
+    s.set_defaults(func=cmd_task_create)
+
+    s = sub.add_parser("task-list", help="list tasks")
+    s.add_argument("--status", choices=sorted(TASK_VALID_STATUSES), help="filter by status")
+    s.add_argument("--assigned-to", dest="assigned_to", help="filter by assigned agent")
+    s.add_argument("--json", action="store_true", help="output as JSON")
+    s.set_defaults(func=cmd_task_list)
+
+    s = sub.add_parser("task-status", help="update task status with state machine validation")
+    s.add_argument("task_id", type=int, help="task id")
+    s.add_argument("state", choices=sorted(TASK_VALID_STATUSES), help="new status")
+    s.add_argument("--as", dest="as_", help="your agent id (validates assignment)")
+    s.set_defaults(func=cmd_task_status)
+
+    s = sub.add_parser("task-claim", help="claim a task (assign self, set in_progress)")
+    s.add_argument("task_id", type=int, help="task id")
+    s.add_argument("--as", dest="as_", required=True, help="your agent id")
+    s.set_defaults(func=cmd_task_claim)
+
+    s = sub.add_parser("task-complete", help="complete a task with result")
+    s.add_argument("task_id", type=int, help="task id")
+    s.add_argument("--result", help="result description")
+    s.add_argument("--as", dest="as_", required=True, help="your agent id")
+    s.set_defaults(func=cmd_task_complete)
+
+    s = sub.add_parser("heartbeat", help="send a heartbeat to keep agent alive")
+    s.add_argument("--as", dest="as_", required=True)
+    s.add_argument("--status", choices=["active", "working", "idle", "error"],
+                   help="optional status update with heartbeat")
+    s.set_defaults(func=cmd_heartbeat)
+
+    s = sub.add_parser("heartbeat-check", help="check for stale/unhealthy agents")
+    s.add_argument("--grace", type=float, default=120,
+                   help="seconds since last_seen to consider stale (default: 120)")
+    s.add_argument("--json", action="store_true", help="output as JSON")
+    s.set_defaults(func=cmd_heartbeat_check)
 
     s = sub.add_parser("clear", help="delete the project database")
     s.add_argument("--yes", action="store_true")

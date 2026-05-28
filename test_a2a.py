@@ -6,6 +6,7 @@ Covers: DB schema, message send/recv, read-tracking, filtering, edge cases.
 Run: python3 test_a2a.py
 """
 from test_helpers import make_connection
+import json
 import os
 import sqlite3
 import tempfile
@@ -2806,6 +2807,434 @@ class TestProjectNameValidation(unittest.TestCase):
         """Project names with emoji should be allowed (no path chars)."""
         name = a2a.project_name("project-🚀-test")
         self.assertEqual(name, "project-🚀-test")
+
+
+class TestTaskCommands(unittest.TestCase):
+    """Task CLI commands (phase 2): task-create, task-list, task-status, task-claim, task-complete."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.project = f"test-{os.getpid()}"
+        self.db_path = a2a.db_path(self.project)
+        a2a.connect(self.project, create=True).close()
+
+    def tearDown(self):
+        if self.db_path.exists():
+            self.db_path.unlink()
+        self.tmpdir.cleanup()
+
+    # ---- task-create ----
+
+    def test_cmd_task_create_basic(self):
+        """task-create creates a task with planned status."""
+        args = a2a.argparse.Namespace(
+            project=self.project, title="Test task", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        )
+        a2a.cmd_task_create(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT title, status FROM tasks").fetchone()
+        self.assertEqual(row["title"], "Test task")
+        self.assertEqual(row["status"], "planned")
+        conn.close()
+
+    def test_cmd_task_create_with_assignee_and_description(self):
+        """task-create with --description and --assigned-to."""
+        args = a2a.argparse.Namespace(
+            project=self.project, title="Feature X", description="Implement X",
+            assigned_to="alice", priority=1, depends_on=None, json=False,
+        )
+        a2a.cmd_task_create(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT title, description, assigned_to, priority FROM tasks").fetchone()
+        self.assertEqual(row["title"], "Feature X")
+        self.assertEqual(row["description"], "Implement X")
+        self.assertEqual(row["assigned_to"], "alice")
+        self.assertEqual(row["priority"], 1)
+        conn.close()
+
+    def test_cmd_task_create_with_dependencies(self):
+        """task-create with --depends-on creates dependency records."""
+        args1 = a2a.argparse.Namespace(
+            project=self.project, title="First", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        )
+        a2a.cmd_task_create(args1)
+        args2 = a2a.argparse.Namespace(
+            project=self.project, title="Second", description=None,
+            assigned_to=None, priority=3, depends_on=[1], json=False,
+        )
+        a2a.cmd_task_create(args2)
+        conn = a2a.connect(self.project)
+        dep = conn.execute("SELECT * FROM task_deps").fetchone()
+        self.assertIsNotNone(dep)
+        self.assertEqual(dep["task_id"], 2)
+        self.assertEqual(dep["depends_on"], 1)
+        conn.close()
+
+    def test_cmd_task_create_empty_title_rejected(self):
+        """task-create with empty title exits with error."""
+        args = a2a.argparse.Namespace(
+            project=self.project, title="  ", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_task_create(args)
+
+    def test_cmd_task_create_json_output(self):
+        """task-create --json outputs valid JSON."""
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(
+                project=self.project, title="JSON task", description=None,
+                assigned_to=None, priority=3, depends_on=None, json=True,
+            )
+            a2a.cmd_task_create(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertIn("id", data)
+        self.assertEqual(data["title"], "JSON task")
+        self.assertEqual(data["status"], "planned")
+
+    # ---- task-list ----
+
+    def test_cmd_task_list_empty(self):
+        """task-list shows '(no tasks)' when empty."""
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(
+                project=self.project, status=None, assigned_to=None, json=False,
+            )
+            a2a.cmd_task_list(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("no tasks", output.lower())
+
+    def test_cmd_task_list_with_tasks(self):
+        """task-list shows created tasks."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Task A", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(
+                project=self.project, status=None, assigned_to=None, json=False,
+            )
+            a2a.cmd_task_list(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("Task A", output)
+        self.assertIn("planned", output)
+
+    def test_cmd_task_list_filter_by_status(self):
+        """task-list --status filters correctly."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Task planned", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Task done", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        conn = a2a.connect(self.project)
+        conn.execute("UPDATE tasks SET status='done', updated_at=? WHERE id=2", (a2a.now(),))
+        conn.commit()
+        conn.close()
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(
+                project=self.project, status="done", assigned_to=None, json=False,
+            )
+            a2a.cmd_task_list(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("Task done", output)
+        self.assertNotIn("Task planned", output)
+
+    def test_cmd_task_list_filter_by_assigned(self):
+        """task-list --assigned-to filters by agent."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Alice task", description=None,
+            assigned_to="alice", priority=3, depends_on=None, json=False,
+        ))
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Bob task", description=None,
+            assigned_to="bob", priority=3, depends_on=None, json=False,
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(
+                project=self.project, status=None, assigned_to="alice", json=False,
+            )
+            a2a.cmd_task_list(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("Alice task", output)
+        self.assertNotIn("Bob task", output)
+
+    def test_cmd_task_list_invalid_status_rejected(self):
+        """task-list --status invalid exits with error."""
+        args = a2a.argparse.Namespace(
+            project=self.project, status="invalid", assigned_to=None, json=False,
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_task_list(args)
+
+    def test_cmd_task_list_json_output(self):
+        """task-list --json outputs valid JSON array."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Json task", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            args = a2a.argparse.Namespace(
+                project=self.project, status=None, assigned_to=None, json=True,
+            )
+            a2a.cmd_task_list(args)
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        data = json.loads(output)
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["title"], "Json task")
+
+    # ---- task-status ----
+
+    def test_cmd_task_status_valid_transition(self):
+        """task-status follows valid state machine transitions."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="State test", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        args = a2a.argparse.Namespace(
+            project=self.project, task_id=1, state="in_progress",
+        )
+        a2a.cmd_task_status(args)
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT status FROM tasks WHERE id=1").fetchone()
+        self.assertEqual(row["status"], "in_progress")
+        conn.close()
+
+    def test_cmd_task_status_planned_to_done_rejected(self):
+        """planned -> done is invalid."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Skip test", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        args = a2a.argparse.Namespace(
+            project=self.project, task_id=1, state="done",
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_task_status(args)
+
+    def test_cmd_task_status_full_workflow(self):
+        """Complete workflow: planned -> in_progress -> review_pending -> approved -> done."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Workflow", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        for state in ["in_progress", "review_pending", "approved", "done"]:
+            a2a.cmd_task_status(a2a.argparse.Namespace(
+                project=self.project, task_id=1, state=state,
+            ))
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT status, completed_at FROM tasks WHERE id=1").fetchone()
+        self.assertEqual(row["status"], "done")
+        self.assertIsNotNone(row["completed_at"])
+        conn.close()
+
+    def test_cmd_task_status_blocked_and_unblock(self):
+        """blocked -> in_progress is valid."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Block test", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        a2a.cmd_task_status(a2a.argparse.Namespace(
+            project=self.project, task_id=1, state="in_progress",
+        ))
+        a2a.cmd_task_status(a2a.argparse.Namespace(
+            project=self.project, task_id=1, state="blocked",
+        ))
+        conn = a2a.connect(self.project)
+        self.assertEqual(conn.execute("SELECT status FROM tasks WHERE id=1").fetchone()["status"], "blocked")
+        conn.close()
+        a2a.cmd_task_status(a2a.argparse.Namespace(
+            project=self.project, task_id=1, state="in_progress",
+        ))
+        conn = a2a.connect(self.project)
+        self.assertEqual(conn.execute("SELECT status FROM tasks WHERE id=1").fetchone()["status"], "in_progress")
+        conn.close()
+
+    def test_cmd_task_status_done_is_terminal(self):
+        """done -> any state is rejected."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Terminal", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        a2a.cmd_task_status(a2a.argparse.Namespace(
+            project=self.project, task_id=1, state="in_progress",
+        ))
+        a2a.cmd_task_status(a2a.argparse.Namespace(
+            project=self.project, task_id=1, state="done",
+        ))
+        for state in ["planned", "in_progress", "review_pending", "approved", "blocked"]:
+            with self.assertRaises(SystemExit):
+                a2a.cmd_task_status(a2a.argparse.Namespace(
+                    project=self.project, task_id=1, state=state,
+                ))
+
+    def test_cmd_task_status_unknown_task(self):
+        """task-status on non-existent task exits with error."""
+        args = a2a.argparse.Namespace(
+            project=self.project, task_id=9999, state="in_progress",
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_task_status(args)
+
+    def test_cmd_task_status_invalid_state_rejected(self):
+        """task-status with invalid status exits with error."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Bad status", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        args = a2a.argparse.Namespace(
+            project=self.project, task_id=1, state="invalid_status",
+        )
+        with self.assertRaises(SystemExit):
+            a2a.cmd_task_status(args)
+
+    # ---- task-claim ----
+
+    def test_cmd_task_claim(self):
+        """task-claim assigns agent and sets in_progress."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Claimable", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        a2a.cmd_task_claim(a2a.argparse.Namespace(
+            project=self.project, task_id=1, as_="alice",
+        ))
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT status, assigned_to, claimed_at FROM tasks WHERE id=1").fetchone()
+        self.assertEqual(row["status"], "in_progress")
+        self.assertEqual(row["assigned_to"], "alice")
+        self.assertIsNotNone(row["claimed_at"])
+        conn.close()
+
+    def test_cmd_task_claim_already_done_rejected(self):
+        """task-claim on a done task exits with error."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Done task", description=None,
+            assigned_to=None, priority=3, depends_on=None, json=False,
+        ))
+        a2a.cmd_task_status(a2a.argparse.Namespace(
+            project=self.project, task_id=1, state="in_progress",
+        ))
+        a2a.cmd_task_status(a2a.argparse.Namespace(
+            project=self.project, task_id=1, state="done",
+        ))
+        with self.assertRaises(SystemExit):
+            a2a.cmd_task_claim(a2a.argparse.Namespace(
+                project=self.project, task_id=1, as_="alice",
+            ))
+
+    def test_cmd_task_claim_assigned_to_other_rejected(self):
+        """task-claim on task assigned to another agent exits with error."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Others task", description=None,
+            assigned_to="bob", priority=3, depends_on=None, json=False,
+        ))
+        with self.assertRaises(SystemExit):
+            a2a.cmd_task_claim(a2a.argparse.Namespace(
+                project=self.project, task_id=1, as_="alice",
+            ))
+
+    def test_cmd_task_claim_unknown_task(self):
+        """task-claim on non-existent task exits with error."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_task_claim(a2a.argparse.Namespace(
+                project=self.project, task_id=9999, as_="alice",
+            ))
+
+    def test_cmd_task_claim_reclaim_owned(self):
+        """task-claim on already-owned task is OK."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Mine", description=None,
+            assigned_to="alice", priority=3, depends_on=None, json=False,
+        ))
+        a2a.cmd_task_claim(a2a.argparse.Namespace(
+            project=self.project, task_id=1, as_="alice",
+        ))
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT status FROM tasks WHERE id=1").fetchone()
+        self.assertEqual(row["status"], "in_progress")
+        conn.close()
+
+    # ---- task-complete ----
+
+    def test_cmd_task_complete_with_result(self):
+        """task-complete sets done and records result."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Completable", description=None,
+            assigned_to="alice", priority=3, depends_on=None, json=False,
+        ))
+        a2a.cmd_task_claim(a2a.argparse.Namespace(
+            project=self.project, task_id=1, as_="alice",
+        ))
+        a2a.cmd_task_complete(a2a.argparse.Namespace(
+            project=self.project, task_id=1, result="All done!", as_="alice",
+        ))
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT status, result, completed_at FROM tasks WHERE id=1").fetchone()
+        self.assertEqual(row["status"], "done")
+        self.assertEqual(row["result"], "All done!")
+        self.assertIsNotNone(row["completed_at"])
+        conn.close()
+
+    def test_cmd_task_complete_without_result(self):
+        """task-complete without --result still works."""
+        a2a.cmd_task_create(a2a.argparse.Namespace(
+            project=self.project, title="Quick task", description=None,
+            assigned_to="bob", priority=3, depends_on=None, json=False,
+        ))
+        a2a.cmd_task_claim(a2a.argparse.Namespace(
+            project=self.project, task_id=1, as_="bob",
+        ))
+        a2a.cmd_task_complete(a2a.argparse.Namespace(
+            project=self.project, task_id=1, result=None, as_="bob",
+        ))
+        conn = a2a.connect(self.project)
+        row = conn.execute("SELECT status FROM tasks WHERE id=1").fetchone()
+        self.assertEqual(row["status"], "done")
+        conn.close()
+
+    def test_cmd_task_complete_unknown_task(self):
+        """task-complete on non-existent task exits with error."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_task_complete(a2a.argparse.Namespace(
+                project=self.project, task_id=9999, result="nope", as_="alice",
+            ))
 
 
 if __name__ == "__main__":

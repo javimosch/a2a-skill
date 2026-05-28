@@ -69,13 +69,15 @@ class A2AClient {
 
   /**
    * Send a message.
-   * @param {string}  to            - Recipient ID or "all"/"*" for broadcast
-   * @param {string}  message       - Message body
-   * @param {number}  [ttlSeconds]  - Optional TTL
+   * @param {string}  to             - Recipient ID or "all"/"*" for broadcast
+   * @param {string}  message        - Message body
+   * @param {number}  [ttlSeconds]   - Optional TTL
    * @param {string}  [threadId]     - Optional thread ID
+   * @param {number}  [priority=3]   - Priority 1-4 (1=URGENT, 4=LOW)
+   * @param {boolean} [requireAck]   - Require acknowledgment
    * @returns {Promise<number>} Message ID
    */
-  async send(to, message, ttlSeconds = null, threadId = null) {
+  async send(to, message, ttlSeconds = null, threadId = null, priority = 3, requireAck = false) {
     if (!to || !to.trim()) {
       throw new Error('recipient must not be empty');
     }
@@ -93,6 +95,9 @@ class A2AClient {
         throw new Error('ttl_seconds must be a positive number of seconds');
       }
     }
+    if (![1, 2, 3, 4].includes(priority)) {
+      throw new Error('priority must be 1 (URGENT), 2 (HIGH), 3 (NORMAL), or 4 (LOW)');
+    }
     if (threadId !== null && threadId !== undefined) {
       if (!threadId.trim()) {
         throw new Error('thread_id must not be empty');
@@ -102,14 +107,12 @@ class A2AClient {
       }
     }
     const db = this._connect();
-    // Validate sender exists
     const senderRow = db.prepare('SELECT 1 FROM agents WHERE id=?').get(this.agentId);
     if (!senderRow) {
       db.close();
       throw new Error(`unknown sender '${this.agentId}' — register first`);
     }
     const recipient = ['all', '*', 'broadcast'].includes(to.toLowerCase()) ? null : to;
-    // Validate recipient exists (for non-broadcast)
     if (recipient !== null) {
       const recipRow = db.prepare('SELECT 1 FROM agents WHERE id=?').get(recipient);
       if (!recipRow) {
@@ -118,23 +121,25 @@ class A2AClient {
       }
     }
     const now = Date.now() / 1000;
+    const ackVal = requireAck ? 1 : 0;
     const stmt = db.prepare(
-      'INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO messages(sender, recipient, body, thread_id, ttl_seconds, priority, requires_ack, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
-    const result = stmt.run(this.agentId, recipient, message, threadId, ttlSeconds, now);
+    const result = stmt.run(this.agentId, recipient, message, threadId, ttlSeconds, priority, ackVal, now);
     db.close();
     return result.lastInsertRowid;
   }
 
   /**
    * Receive messages addressed to this agent.
-   * @param {number}  [wait=0]        - Block up to N seconds
-   * @param {boolean} [unreadOnly]    - Only return unread messages
-   * @param {boolean} [includeSelf]   - Include messages from self
-   * @param {number}  [limit=0]       - Max results (0 = unlimited)
+   * @param {number}  [wait=0]         - Block up to N seconds
+   * @param {boolean} [unreadOnly]     - Only return unread messages
+   * @param {boolean} [includeSelf]    - Include messages from self
+   * @param {number}  [limit=0]        - Max results (0 = unlimited)
+   * @param {number}  [priorityMin]    - Min priority (1=URGENT, 4=LOW)
    * @returns {Promise<Array>}
    */
-  async recv(wait = 0, unreadOnly = true, includeSelf = false, limit = 0) {
+  async recv(wait = 0, unreadOnly = true, includeSelf = false, limit = 0, priorityMin = null) {
     if (typeof wait !== 'number' || !Number.isFinite(wait)) {
       throw new Error('wait must be a finite number');
     }
@@ -144,13 +149,16 @@ class A2AClient {
     if (limit !== 0 && (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 0)) {
       throw new Error('limit must be a non-negative integer');
     }
+    if (priorityMin !== null && (![1, 2, 3, 4].includes(priorityMin))) {
+      throw new Error('priorityMin must be 1-4');
+    }
     const deadline = wait ? Date.now() + wait * 1000 : null;
 
     while (true) {
       const db = this._connect();
       this._cleanupExpired(db);
       let query = `
-        SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.created_at
+        SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.priority, m.requires_ack, m.created_at
         FROM messages m
         WHERE (m.recipient = ? OR m.recipient IS NULL)
       `;
@@ -168,7 +176,11 @@ class A2AClient {
         `;
         params.push(this.agentId);
       }
-      query += ' ORDER BY m.created_at ASC';
+      if (priorityMin !== null) {
+        query += ' AND m.priority <= ?';
+        params.push(priorityMin);
+      }
+      query += ' ORDER BY m.priority ASC, m.created_at ASC';
       if (limit) {
         query += ' LIMIT ?';
         params.push(limit);
@@ -209,7 +221,7 @@ class A2AClient {
     const db = this._connect();
     this._cleanupExpired(db);
     const rows = db.prepare(
-      'SELECT id, sender, recipient, body, thread_id, created_at FROM messages ORDER BY created_at DESC LIMIT ?'
+      'SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at FROM messages ORDER BY created_at DESC LIMIT ?'
     ).all(limit);
     db.close();
     return rows.reverse();
@@ -331,7 +343,7 @@ class A2AClient {
     }
     const db = this._connect();
     const rows = db.prepare(
-      'SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE LOWER(body) LIKE ? ORDER BY created_at DESC LIMIT ?'
+      'SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at FROM messages WHERE LOWER(body) LIKE ? ORDER BY created_at DESC LIMIT ?'
     ).all(`%${query.toLowerCase()}%`, limit);
     db.close();
     return rows;
@@ -351,7 +363,7 @@ class A2AClient {
     }
     const db = this._connect();
     const rows = db.prepare(
-      'SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE thread_id = ? ORDER BY created_at ASC'
+      'SELECT id, sender, recipient, body, thread_id, priority, requires_ack, created_at FROM messages WHERE thread_id = ? ORDER BY created_at ASC'
     ).all(threadId);
     db.close();
     return rows;
@@ -366,20 +378,39 @@ class A2AClient {
     const msgCount = db.prepare('SELECT COUNT(*) as c FROM messages').get().c;
     const broadcastCount = db.prepare('SELECT COUNT(*) as c FROM messages WHERE recipient IS NULL').get().c;
     const threadCount = db.prepare('SELECT COUNT(DISTINCT thread_id) as c FROM messages WHERE thread_id IS NOT NULL').get().c;
+
+    const priorityRows = db.prepare('SELECT priority, COUNT(*) as c FROM messages WHERE priority IS NOT NULL GROUP BY priority ORDER BY priority').all();
+    const prioLabels = { 1: 'URGENT', 2: 'HIGH', 3: 'NORMAL', 4: 'LOW' };
+    const priorityDist = priorityRows.map(r => ({ label: prioLabels[r.priority] || `P${r.priority}`, count: r.c }));
+
+    const ackReq = db.prepare('SELECT COUNT(*) as c FROM messages WHERE requires_ack = 1').get().c;
+    const acksSent = db.prepare('SELECT COUNT(*) as c FROM acknowledgments').get().c;
+
     const statusRows = db.prepare('SELECT status, COUNT(*) as c FROM agents GROUP BY status').all();
     const senderRows = db.prepare('SELECT sender, COUNT(*) as c FROM messages GROUP BY sender ORDER BY c DESC LIMIT 5').all();
+
+    const taskCount = db.prepare('SELECT COUNT(*) as c FROM tasks').get().c;
+    const taskStatusRows = db.prepare('SELECT status, COUNT(*) as c FROM tasks GROUP BY status').all();
     db.close();
 
     const statusMap = {};
     for (const r of statusRows) statusMap[r.status] = r.c;
+    const taskStatusMap = {};
+    for (const r of taskStatusRows) taskStatusMap[r.status] = r.c;
 
     return {
       messages: msgCount,
       direct_messages: msgCount - broadcastCount,
       broadcasts: broadcastCount,
       threads: threadCount,
+      priority_distribution: priorityDist,
+      acks_required: ackReq,
+      acks_sent: acksSent,
+      pending_acks: Math.max(0, ackReq - acksSent),
       agents_active: statusMap['active'] || 0,
       agents_done: statusMap['done'] || 0,
+      tasks_total: taskCount,
+      tasks_by_status: taskStatusMap,
       top_senders: senderRows.map(r => ({ agent: r.sender, count: r.c })),
     };
   }
@@ -436,6 +467,205 @@ class A2AClient {
   }
 
   /**
+   * Acknowledge receipt of a message.
+   * @param {number} messageId - Message ID to acknowledge
+   * @returns {Promise<boolean>}
+   */
+  async ack(messageId) {
+    if (typeof messageId !== 'number' || messageId <= 0) {
+      throw new Error('message_id must be a positive integer');
+    }
+    const db = this._connect();
+    const row = db.prepare('SELECT 1 FROM messages WHERE id=?').get(messageId);
+    if (!row) {
+      db.close();
+      throw new Error(`message #${messageId} not found`);
+    }
+    db.prepare(
+      'INSERT OR IGNORE INTO acknowledgments(message_id, agent_id, acked_at) VALUES (?, ?, ?)'
+    ).run(messageId, this.agentId, Date.now() / 1000);
+    db.close();
+    return true;
+  }
+
+  /**
+   * Get messages that requested acknowledgment but haven't been acked.
+   * @returns {Promise<Array>}
+   */
+  async pendingAcks() {
+    const db = this._connect();
+    const rows = db.prepare(`
+      SELECT m.id, m.sender, m.recipient, m.body, m.thread_id, m.priority, m.requires_ack, m.created_at
+      FROM messages m
+      WHERE m.requires_ack = 1 AND m.recipient = ?
+      AND NOT EXISTS (SELECT 1 FROM acknowledgments a WHERE a.message_id = m.id AND a.agent_id = ?)
+      ORDER BY m.created_at ASC
+    `).all(this.agentId, this.agentId);
+    db.close();
+    return rows;
+  }
+
+  /**
+   * Send a heartbeat to keep agent registration alive.
+   * @param {string} [status='active'] - Status ('active', 'working', 'idle', 'error')
+   */
+  async heartbeat(status = 'active') {
+    const valid = ['active', 'working', 'idle', 'error'];
+    if (!valid.includes(status)) throw new Error(`status must be one of: ${valid.join(', ')}`);
+    const db = this._connect();
+    db.prepare('UPDATE agents SET last_seen=?, status=? WHERE id=?').run(Date.now() / 1000, status, this.agentId);
+    db.close();
+  }
+
+  /**
+   * Check for agents that missed too many heartbeats.
+   * @param {number} [grace=120] - Seconds since last_seen to consider stale
+   * @returns {Promise<Array>}
+   */
+  async heartbeatCheck(grace = 120) {
+    if (typeof grace !== 'number' || grace <= 0) throw new Error('grace must be a positive number');
+    const db = this._connect();
+    const threshold = Date.now() / 1000 - grace;
+    const rows = db.prepare('SELECT id, status, last_seen FROM agents WHERE last_seen < ? ORDER BY last_seen').all(threshold);
+    db.close();
+    return rows;
+  }
+
+  /**
+   * Create a new task in the shared task queue.
+   * @param {string}  title         - Task title
+   * @param {string}  [description] - Task description
+   * @param {string}  [assignedTo]  - Agent to assign to
+   * @param {number}  [priority=3]  - Priority 1-4
+   * @param {Array}   [dependsOn]   - Task IDs this depends on
+   * @returns {Promise<number>} Task ID
+   */
+  async createTask(title, description = '', assignedTo = '', priority = 3, dependsOn = null) {
+    if (!title || !title.trim()) throw new Error('task title must not be empty');
+    if (![1, 2, 3, 4].includes(priority)) throw new Error('priority must be 1-4');
+    const db = this._connect();
+    const ts = Date.now() / 1000;
+    const depsJson = dependsOn && dependsOn.length ? JSON.stringify(dependsOn) : null;
+    const result = db.prepare(`
+      INSERT INTO tasks(title, description, assigned_to, status, priority, dependencies, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(title, description || null, assignedTo || null, 'planned', priority, depsJson, ts, ts);
+    const taskId = result.lastInsertRowid;
+    if (dependsOn && dependsOn.length) {
+      const depStmt = db.prepare('INSERT OR IGNORE INTO task_deps(task_id, depends_on) VALUES (?, ?)');
+      for (const depId of dependsOn) depStmt.run(taskId, depId);
+    }
+    db.close();
+    return taskId;
+  }
+
+  /**
+   * List tasks with optional filters.
+   * @param {string} [status]      - Filter by status
+   * @param {string} [assignedTo]  - Filter by assigned agent
+   * @returns {Promise<Array>}
+   */
+  async listTasks(status = null, assignedTo = null) {
+    const validStatuses = ['planned', 'in_progress', 'review_pending', 'approved', 'done', 'blocked'];
+    const db = this._connect();
+    let query = 'SELECT * FROM tasks';
+    const params = [];
+    const conditions = [];
+    if (status) {
+      if (!validStatuses.includes(status)) throw new Error(`invalid status '${status}'`);
+      conditions.push('status = ?');
+      params.push(status);
+    }
+    if (assignedTo) {
+      conditions.push('assigned_to = ?');
+      params.push(assignedTo);
+    }
+    if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+    query += ' ORDER BY priority ASC, created_at DESC';
+    const rows = db.prepare(query).all(...params);
+    db.close();
+    for (const r of rows) {
+      if (r.dependencies && typeof r.dependencies === 'string') {
+        try { r.dependencies = JSON.parse(r.dependencies); } catch (e) { /* keep as string */ }
+      }
+    }
+    return rows;
+  }
+
+  /**
+   * Update task status with state machine validation.
+   * @param {number} taskId    - Task ID
+   * @param {string} newStatus - New status
+   */
+  async updateTaskStatus(taskId, newStatus) {
+    const validStatuses = ['planned', 'in_progress', 'review_pending', 'approved', 'done', 'blocked'];
+    const transitions = {
+      planned: ['in_progress'],
+      in_progress: ['review_pending', 'blocked', 'done'],
+      review_pending: ['approved', 'in_progress', 'blocked'],
+      approved: ['done', 'in_progress'],
+      done: [],
+      blocked: ['in_progress'],
+    };
+    if (typeof taskId !== 'number' || taskId <= 0) throw new Error('task_id must be a positive integer');
+    if (!validStatuses.includes(newStatus)) throw new Error(`invalid status '${newStatus}'`);
+    const db = this._connect();
+    const row = db.prepare('SELECT status FROM tasks WHERE id=?').get(taskId);
+    if (!row) { db.close(); throw new Error(`task #${taskId} not found`); }
+    const current = row.status;
+    if (!transitions[current].includes(newStatus)) {
+      db.close();
+      if (!transitions[current].length) throw new Error(`cannot transition from '${current}' — terminal state`);
+      throw new Error(`invalid transition from '${current}' to '${newStatus}'`);
+    }
+    const ts = Date.now() / 1000;
+    if (newStatus === 'done') {
+      db.prepare('UPDATE tasks SET status=?, completed_at=?, updated_at=? WHERE id=?').run(newStatus, ts, ts, taskId);
+    } else if (newStatus === 'in_progress' && current !== 'in_progress') {
+      db.prepare('UPDATE tasks SET status=?, claimed_at=?, updated_at=? WHERE id=?').run(newStatus, ts, ts, taskId);
+    } else {
+      db.prepare('UPDATE tasks SET status=?, updated_at=? WHERE id=?').run(newStatus, ts, taskId);
+    }
+    db.close();
+  }
+
+  /**
+   * Claim a task by assigning self and setting to in_progress.
+   * @param {number} taskId - Task ID
+   */
+  async claimTask(taskId) {
+    if (typeof taskId !== 'number' || taskId <= 0) throw new Error('task_id must be a positive integer');
+    const db = this._connect();
+    const row = db.prepare('SELECT status, assigned_to FROM tasks WHERE id=?').get(taskId);
+    if (!row) { db.close(); throw new Error(`task #${taskId} not found`); }
+    if (row.status === 'done') { db.close(); throw new Error(`task #${taskId} is already done`); }
+    if (row.assigned_to && row.assigned_to !== this.agentId) {
+      db.close();
+      throw new Error(`task #${taskId} already assigned to '${row.assigned_to}'`);
+    }
+    const ts = Date.now() / 1000;
+    db.prepare('UPDATE tasks SET status=?, assigned_to=?, claimed_at=?, updated_at=? WHERE id=?')
+      .run('in_progress', this.agentId, ts, ts, taskId);
+    db.close();
+  }
+
+  /**
+   * Complete a task with an optional result description.
+   * @param {number} taskId    - Task ID
+   * @param {string} [result]  - Result description
+   */
+  async completeTask(taskId, result = '') {
+    if (typeof taskId !== 'number' || taskId <= 0) throw new Error('task_id must be a positive integer');
+    const db = this._connect();
+    const row = db.prepare('SELECT 1 FROM tasks WHERE id=?').get(taskId);
+    if (!row) { db.close(); throw new Error(`task #${taskId} not found`); }
+    const ts = Date.now() / 1000;
+    db.prepare('UPDATE tasks SET status=?, result=?, completed_at=?, updated_at=? WHERE id=?')
+      .run('done', result || null, ts, ts, taskId);
+    db.close();
+  }
+
+  /**
    * Alias for initProject() — matches EXPECTED API.
    */
   init_project() {
@@ -468,13 +698,15 @@ class A2AClient {
         last_seen   REAL NOT NULL
       );
       CREATE TABLE IF NOT EXISTS messages (
-        id          INTEGER PRIMARY KEY AUTOINCREMENT,
-        sender      TEXT NOT NULL,
-        recipient   TEXT,
-        body        TEXT NOT NULL,
-        thread_id   TEXT,
-        ttl_seconds INTEGER,
-        created_at  REAL NOT NULL
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender          TEXT NOT NULL,
+        recipient       TEXT,
+        body            TEXT NOT NULL,
+        thread_id       TEXT,
+        ttl_seconds     INTEGER,
+        priority        INTEGER DEFAULT 3,
+        requires_ack    INTEGER DEFAULT 0,
+        created_at      REAL NOT NULL
       );
       CREATE TABLE IF NOT EXISTS reads (
         agent_id    TEXT NOT NULL,
@@ -482,9 +714,37 @@ class A2AClient {
         read_at     REAL NOT NULL,
         PRIMARY KEY (agent_id, message_id)
       );
+      CREATE TABLE IF NOT EXISTS acknowledgments (
+        message_id  INTEGER NOT NULL,
+        agent_id    TEXT NOT NULL,
+        acked_at    REAL NOT NULL,
+        PRIMARY KEY (message_id, agent_id)
+      );
+      CREATE TABLE IF NOT EXISTS tasks (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        title           TEXT NOT NULL,
+        description     TEXT,
+        assigned_to     TEXT,
+        status          TEXT NOT NULL DEFAULT 'planned',
+        priority        INTEGER DEFAULT 3,
+        dependencies    TEXT,
+        result          TEXT,
+        claimed_at      REAL,
+        completed_at    REAL,
+        created_at      REAL NOT NULL,
+        updated_at      REAL NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS task_deps (
+        task_id     INTEGER NOT NULL,
+        depends_on  INTEGER NOT NULL,
+        PRIMARY KEY (task_id, depends_on)
+      );
       CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
       CREATE INDEX IF NOT EXISTS idx_messages_thread    ON messages(thread_id);
       CREATE INDEX IF NOT EXISTS idx_messages_created   ON messages(created_at);
+      CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to);
+      CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+      CREATE INDEX IF NOT EXISTS idx_task_deps_task ON task_deps(task_id);
     `);
     db.close();
   }

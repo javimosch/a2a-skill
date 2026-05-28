@@ -36,7 +36,7 @@ fn main() {
 
     loop {
         // Wait for task (30 second timeout)
-        match client.recv(30.0, true, false, Some(1)) {
+        match client.recv(30.0, true, false, Some(1), None) {
             Ok(messages) => {
                 if messages.is_empty() {
                     println!("No tasks received, exiting");
@@ -66,7 +66,7 @@ fn main() {
                                 .as_secs_f64()
                         });
 
-                        if let Err(e) = client.send("coordinator", &result.to_string(), None, None) {
+                        if let Err(e) = client.send("coordinator", &result.to_string(), None, None, 3, false) {
                             eprintln!("Failed to send result: {}", e);
                         } else {
                             println!("Result sent for task {}", task.id);
