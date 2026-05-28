@@ -27,6 +27,35 @@ The default project name is the basename of the current working directory. Set
 For the full list of CLI commands and their usage (Python & Go binaries), see
 [docs/GO_CLI_REFERENCE.md](../../../docs/GO_CLI_REFERENCE.md).
 
+## ⚠️ Critical: Use Pattern 3 for Multi-Agent Teams
+
+**When spawning 2+ agents, ALWAYS use Pattern 3 auto-spawn.** Manual spawning or ad-hoc approaches will fail — agents will work independently without bus coordination.
+
+**Pattern 3 is the only reliable method** because:
+- Agents register BEFORE spawning (critical for bus communication)
+- Kit prompts are written to files (avoids shell escaping bugs)
+- `--project` flag ensures all agents connect to the same bus
+- PIDs are updated after spawn with `--upsert`
+- Agents coordinate via the bus, not just file editing
+
+**See Step 2-4 below for the Pattern 3 workflow.** Reference implementation: `examples/remote_worktree_team.sh`
+
+### Common Command Syntax Mistakes
+
+These mistakes will cause agents to fail:
+
+❌ **Wrong**: `a2a register --as agent-1`  
+✅ **Correct**: `a2a register agent-1 --role "Dev"`
+
+❌ **Wrong**: `a2a send --as agent-1 "hello"`  
+✅ **Correct**: `a2a send agent-2 "hello" --from agent-1`
+
+❌ **Wrong**: `a2a recv agent-1`  
+✅ **Correct**: `a2a recv --as agent-1`
+
+❌ **Wrong**: Inline kit prompts in spawn commands  
+✅ **Correct**: Write kit prompts to files first, then reference with `--kit-file`
+
 ## When to use
 
 - The user asks for "multiple claude sessions talking to each other"
@@ -146,6 +175,15 @@ If `a2a-spawn` is not on PATH, invoke it directly: `~/.agents/skills/a2a/a2a-spa
 `~/.claude/skills/a2a/a2a-spawn`.
 
 ### Step 4 — The peer kit prompt (what every agent receives)
+
+**⚠️ Critical: Kit prompts must include coordination instructions.**
+
+Without explicit instructions to:
+1. Register themselves on the bus
+2. Introduce themselves to peers  
+3. Use `a2a send/recv` for coordination
+
+Agents will skip bus coordination and work directly on files, defeating the purpose of A2A. Always include these steps in every kit prompt.
 
 This is CLI-agnostic. Substitute `{AGENT_ID}`, `{ROLE}`, `{USER_PROMPT}`,
 `{PEER_LIST}`, `{PROJECT}`. The `{A2A_PATH}` line is computed dynamically by

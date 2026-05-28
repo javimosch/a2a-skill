@@ -71,6 +71,88 @@ standard repo-level skill location. The root `SKILL.md` and `docs/SKILL.md`
 are stubs that point there. Always edit `.agents/skills/a2a/SKILL.md`
 directly.
 
+## Multi-Agent Teams: Use Pattern 3 Auto-Spawn
+
+**When spawning multi-agent teams (2+ agents), always use Pattern 3 auto-spawn.**
+
+Pattern 3 is the **only reliable method** for multi-agent coordination. Manual spawning or ad-hoc approaches lead to agents working independently without bus coordination.
+
+### Pattern 3: Auto-Spawn Workflow
+
+1. **Register agents BEFORE spawning** — This is critical. Agents must exist on the bus before they can communicate.
+2. **Write kit prompts to files** — Never inline prompts in spawn commands (shell escaping is fragile).
+3. **Use `a2a-spawn` with `--project` flag** — Ensures all agents connect to the same bus.
+4. **Update PIDs after spawn** — Use `--upsert` to register the actual process IDs.
+5. **Kit prompts must include coordination instructions** — Agents should register, introduce themselves, and use the bus.
+
+### Reference Implementation
+
+See `examples/remote_worktree_team.sh` for a complete, working example. Key pattern:
+
+```bash
+# 1. Register agents first
+a2a register agent-1 --role "Developer" --cli opencode
+a2a register agent-2 --role "Reviewer" --cli opencode
+
+# 2. Write kit prompts to files
+cat > /tmp/agent-1.kit << 'KIT'
+You are agent-1 on the a2a bus.
+First: register yourself, then introduce yourself to agent-2.
+Use: a2a send <to> <body> --from agent-1
+Use: a2a recv --as agent-1 --wait 30
+KIT
+
+# 3. Spawn with --project flag
+PID1=$(a2a-spawn --cli opencode --id agent-1 --project myproj --kit-file /tmp/agent-1.kit)
+a2a register agent-1 --pid $PID1 --upsert  # Update with actual PID
+```
+
+### Critical Command Syntax (Common Mistakes)
+
+**Wrong** (agents will fail):
+```bash
+a2a register --as agent-1              # ❌ No --as flag on register
+a2a send --as agent-1 "hello"         # ❌ Wrong flag, use --from
+a2a recv agent-1                      # ❌ Missing --as flag
+```
+
+**Correct**:
+```bash
+a2a register agent-1 --role "Dev"      # ✅ Just the ID
+a2a send agent-2 "hello" --from agent-1 # ✅ --from for sender
+a2a recv --as agent-1                  # ✅ --as for recipient
+```
+
+### Why Pattern 3 Works
+
+Agents spawned with Pattern 3:
+- ✅ Coordinate via the message bus (not just file editing)
+- ✅ Negotiate task division before starting work
+- ✅ Broadcast progress updates
+- ✅ Handle dependencies and handoffs properly
+- ✅ Use the bus as the source of truth
+
+### Anti-Patterns to Avoid
+
+❌ **Manual spawning without registration** — Agents work independently, no coordination  
+❌ **Inline kit prompts** — Shell escaping breaks multi-line prompts  
+❌ **Missing `--project` flag** — Agents connect to different buses  
+❌ **Wrong command syntax** — Agents fail to register/send messages  
+❌ **Skipping agent introduction** — No negotiation of work division  
+
+### Monitoring Running Teams
+
+```bash
+# Check bus activity
+a2a peek --limit 20
+
+# Check agent status
+a2a list --json
+
+# Follow agent logs
+tail -f /tmp/a2a-{project}-{agent}.log
+```
+
 ## Repository layout
 
 ```
