@@ -233,8 +233,11 @@ func TestSetAndGetStatus(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetStatus: %v", err)
 	}
-	if status != "done" {
-		t.Fatalf("expected 'done', got '%s'", status)
+	if status == nil {
+		t.Fatal("expected non-nil status, got nil")
+	}
+	if *status != "done" {
+		t.Fatalf("expected 'done', got '%s'", *status)
 	}
 }
 

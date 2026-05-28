@@ -397,11 +397,7 @@ func (c *Client) Status(newStatus string) (*string, error) {
 		}
 		return nil, nil
 	}
-	status, err := c.GetStatus(c.AgentID)
-	if err != nil {
-		return nil, err
-	}
-	return &status, nil
+	return c.GetStatus(c.AgentID)
 }
 
 // AgentExists returns true if the agent is registered in the project.
@@ -443,24 +439,27 @@ func (c *Client) SetStatus(status string) (float64, error) {
 	return ts, nil
 }
 
-// GetStatus gets agent status
-func (c *Client) GetStatus(agentID string) (string, error) {
+// GetStatus gets agent status. Returns nil if agent not found (matching Python returning None).
+func (c *Client) GetStatus(agentID string) (*string, error) {
 	if agentID == "" {
 		agentID = c.AgentID
 	}
 
 	db, err := c.connect()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer db.Close()
 
 	var status string
 	err = db.QueryRow("SELECT status FROM agents WHERE id=?", agentID).Scan(&status)
 	if err == sql.ErrNoRows {
-		return "", nil
+		return nil, nil
 	}
-	return status, err
+	if err != nil {
+		return nil, err
+	}
+	return &status, nil
 }
 
 // Search searches messages by content (LIKE-based substring search).
