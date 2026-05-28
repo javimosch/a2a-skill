@@ -101,8 +101,7 @@ class A2AClient:
                 raise ValueError(f"message body too long ({len(message)} chars, max {MAX_BODY_LENGTH})")
             recipient = None if to.lower() in ("all", "*", "broadcast") else to
             if recipient is not None and recipient.startswith('@'):
-                group_name = recipient.lstrip('@').strip()
-                _validate_group_name(group_name)
+                group_name = _validate_group_name(recipient.lstrip('@').strip())
                 members = conn.execute(
                     "SELECT member_id FROM agent_groups WHERE name=?", (group_name,)
                 ).fetchall()
@@ -600,12 +599,39 @@ class A2AClient:
                 p.unlink()
 
     def create_group(self, name: str) -> None:
-        """Create a named group (validates name; members added separately)."""
-        _validate_group_name(name)
+        """Create a named group with a sentinel row.
+
+        Args:
+            name: Group name (validated and stripped)
+
+        Raises:
+            ValueError: If name is empty, too long, or contains invalid characters
+        """
+        name = _validate_group_name(name)
+        conn = self._connect()
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO agent_groups(name, member_id, created_at) VALUES (?,?,?)",
+                (name, '__group__', time.time()),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
     def add_to_group(self, name: str, *member_ids: str) -> int:
-        """Add members to a group. Returns count of rows inserted."""
-        _validate_group_name(name)
+        """Add one or more members to a group.
+
+        Args:
+            name: Group name
+            *member_ids: One or more agent IDs to add
+
+        Returns:
+            Number of rows inserted
+
+        Raises:
+            ValueError: If group name is invalid
+        """
+        name = _validate_group_name(name)
         conn = self._connect()
         try:
             ts = time.time()
@@ -630,8 +656,19 @@ class A2AClient:
             conn.close()
 
     def remove_from_group(self, name: str, member_id: str) -> bool:
-        """Remove a member from a group. Returns True if a row was deleted."""
-        _validate_group_name(name)
+        """Remove a member from a group.
+
+        Args:
+            name: Group name
+            member_id: Agent ID to remove
+
+        Returns:
+            True if a row was deleted
+
+        Raises:
+            ValueError: If group name is invalid
+        """
+        name = _validate_group_name(name)
         conn = self._connect()
         try:
             cur = conn.execute(
@@ -643,8 +680,18 @@ class A2AClient:
             conn.close()
 
     def delete_group(self, name: str) -> int:
-        """Delete an entire group. Returns count of rows deleted."""
-        _validate_group_name(name)
+        """Delete an entire group, removing all memberships.
+
+        Args:
+            name: Group name
+
+        Returns:
+            Number of rows deleted (all memberships including sentinel)
+
+        Raises:
+            ValueError: If group name is invalid
+        """
+        name = _validate_group_name(name)
         conn = self._connect()
         try:
             cur = conn.execute("DELETE FROM agent_groups WHERE name=?", (name,))
@@ -654,7 +701,11 @@ class A2AClient:
             conn.close()
 
     def list_groups(self) -> List[Dict[str, Any]]:
-        """List all groups with member counts."""
+        """List all groups with their member counts.
+
+        Returns:
+            List of dicts with keys: name, member_count
+        """
         conn = self._connect()
         try:
             rows = conn.execute(
@@ -665,8 +716,18 @@ class A2AClient:
             conn.close()
 
     def group_members(self, name: str) -> List[str]:
-        """Return list of member IDs in a group."""
-        _validate_group_name(name)
+        """Return list of member IDs in a group.
+
+        Args:
+            name: Group name
+
+        Returns:
+            List of agent IDs in the group
+
+        Raises:
+            ValueError: If group name is invalid
+        """
+        name = _validate_group_name(name)
         conn = self._connect()
         try:
             rows = conn.execute(
