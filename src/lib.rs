@@ -624,37 +624,78 @@ impl Client {
     /// until `count` unread messages arrive. Returns true if the required
     /// count was reached before timeout.
     pub fn wait(&self, count: i64, timeout_secs: f64) -> SqliteResult<bool> {
+        self.wait_for_messages(count, timeout_secs)
+    }
+
+    /// Block until N unread messages arrive or timeout elapses.
+    ///
+    /// Accumulates messages across polls so count > 1 works even when
+    /// messages arrive one at a time. Messages are marked as read as
+    /// they arrive via `recv(unread_only=true)`.
+    /// Matches Python a2a_client.py wait_for_messages() behavior.
+    pub fn wait_for_messages(&self, count: i64, timeout: f64) -> SqliteResult<bool> {
         if count <= 0 {
             return Err(rusqlite::Error::InvalidParameterName(
                 "count must be a positive integer".to_string(),
             ));
         }
-        if timeout_secs < 0.0 {
+        if timeout < 0.0 {
             return Err(rusqlite::Error::InvalidParameterName(
                 "timeout must be a non-negative number of seconds".to_string(),
             ));
         }
-        if !timeout_secs.is_finite() {
+        if !timeout.is_finite() {
             return Err(rusqlite::Error::InvalidParameterName(
                 "timeout must be a finite number".to_string(),
             ));
         }
-        let deadline = SystemTime::now() + Duration::from_secs_f64(timeout_secs);
-        let mut remaining = count;
+        let deadline = SystemTime::now() + Duration::from_secs_f64(timeout);
+        let mut seen: i64 = 0;
         loop {
-            if remaining <= 0 {
+            let need = count - seen;
+            if need <= 0 {
                 return Ok(true);
             }
             if SystemTime::now() >= deadline {
                 return Ok(false);
             }
-            let msgs = self.recv(0.0, true, false, Some(remaining))?;
+            let msgs = self.recv(0.0, true, false, Some(need))?;
+            seen += msgs.len() as i64;
+            if seen >= count {
+                return Ok(true);
+            }
             if msgs.is_empty() {
                 thread::sleep(Duration::from_millis(500));
-                continue;
             }
-            remaining -= msgs.len() as i64;
         }
+    }
+        if timeout < 0.0 {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "timeout must be a non-negative number of seconds".to_string(),
+            ));
+        }
+        if !timeout.is_finite() {
+            return Err(rusqlite::Error::InvalidParameterName(
+                "timeout must be a finite number".to_string(),
+            ));
+        }
+        let deadline = SystemTime::now() + Duration::from_secs_f64(timeout);
+        let mut seen: i64 = 0;
+        while SystemTime::now() < deadline {
+            let need = count - seen;
+            if need <= 0 {
+                return Ok(true);
+            }
+            let msgs = self.recv(0.0, true, false, Some(need))?;
+            seen += msgs.len() as i64;
+            if seen >= count {
+                return Ok(true);
+            }
+            if msgs.is_empty() {
+                thread::sleep(Duration::from_millis(500));
+            }
+        }
+        Ok(seen >= count)
     }
 
     /// Initialize the project database, creating tables if they don't exist.
@@ -872,5 +913,24 @@ mod tests {
         let result = client.send("bob", "hello", None, Some("   "));
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("thread_id must not be empty"));
+    }
+
+    #[test]
+    fn test_wait_for_messages_validation() {
+        let client = Client::new("test_wfm_validate", "tester").unwrap();
+        let result = client.wait_for_messages(0, 1.0);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("count must be a positive integer"));
+
+        let result = client.wait_for_messages(-1, 1.0);
+        assert!(result.is_err());
+
+        let result = client.wait_for_messages(1, -1.0);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("timeout must be a non-negative"));
+
+        let result = client.wait_for_messages(1, f64::NAN);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("finite"));
     }
 }

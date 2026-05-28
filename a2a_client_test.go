@@ -950,6 +950,96 @@ func TestWaitNonPositiveCountFails(t *testing.T) {
 	}
 }
 
+func TestWaitForMessages(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "bob"
+	c.Register("critic", "", "", nil, false)
+
+	c2 := setupTestClient(t, c.Project, "alice")
+	c2.InitProject()
+	c2.Register("planner", "", "", nil, false)
+	c2.Send("bob", "msg for wait test", nil, "")
+
+	ok, err := c.WaitForMessages(1, 5)
+	if err != nil {
+		t.Fatalf("WaitForMessages: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected WaitForMessages to return true (messages found)")
+	}
+}
+
+func TestWaitForMessagesTimeout(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "lonely"
+	c.Register("waiting", "", "", nil, false)
+
+	ok, err := c.WaitForMessages(1, 1)
+	if err != nil {
+		t.Fatalf("WaitForMessages: %v", err)
+	}
+	if ok {
+		t.Fatal("expected WaitForMessages to return false (timeout)")
+	}
+}
+
+func TestWaitForMessagesNonPositiveCountFails(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "tester"
+	c.Register("waiting", "", "", nil, false)
+
+	_, err := c.WaitForMessages(0, 1)
+	if err == nil {
+		t.Fatal("expected error for WaitForMessages(0, 1), got nil")
+	}
+	_, err = c.WaitForMessages(-1, 1)
+	if err == nil {
+		t.Fatal("expected error for WaitForMessages(-1, 1), got nil")
+	}
+}
+
+func TestWaitForMessagesTimeoutNegative(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "tester"
+	c.Register("waiting", "", "", nil, false)
+
+	_, err := c.WaitForMessages(1, -1)
+	if err == nil {
+		t.Fatal("expected error for WaitForMessages(1, -1), got nil")
+	}
+}
+
+func TestWaitForMessagesMultipleCount(t *testing.T) {
+	c, cleanup := setupTestProject(t)
+	defer cleanup()
+
+	c.AgentID = "bob"
+	c.Register("critic", "", "", nil, false)
+
+	c2 := setupTestClient(t, c.Project, "alice")
+	c2.InitProject()
+	c2.Register("planner", "", "", nil, false)
+	c2.Send("bob", "msg1", nil, "")
+	c2.Send("bob", "msg2", nil, "")
+	c2.Send("bob", "msg3", nil, "")
+
+	ok, err := c.WaitForMessages(3, 5)
+	if err != nil {
+		t.Fatalf("WaitForMessages(3, 5): %v", err)
+	}
+	if !ok {
+		t.Fatal("expected WaitForMessages to return true for count=3")
+	}
+}
+
 func TestSendNonPositiveTTLFails(t *testing.T) {
 	c, cleanup := setupTestProject(t)
 	defer cleanup()

@@ -832,22 +832,34 @@ func (c *Client) Clear() error {
 // or until timeout seconds elapse. Returns true if the required count was reached.
 // Messages are marked as read as they arrive (matching Python/JS/Rust behavior).
 func (c *Client) Wait(count int, timeoutSec float64) (bool, error) {
+	return c.WaitForMessages(count, timeoutSec)
+}
+
+// WaitForMessages blocks until N unread messages arrive or timeout elapses.
+// Accumulates messages across polls so count > 1 works even when messages
+// arrive one at a time. Messages are marked as read as they arrive.
+// Matches Python a2a_client.py wait_for_messages() behavior.
+func (c *Client) WaitForMessages(count int, timeout float64) (bool, error) {
 	if count <= 0 {
 		return false, fmt.Errorf("count must be a positive integer")
 	}
-	if timeoutSec < 0 {
+	if timeout < 0 {
 		return false, fmt.Errorf("timeout must be a non-negative number of seconds")
 	}
-	if math.IsInf(timeoutSec, 0) || math.IsNaN(timeoutSec) {
+	if math.IsInf(timeout, 0) || math.IsNaN(timeout) {
 		return false, fmt.Errorf("timeout must be a finite number")
 	}
-	deadline := time.Now().Add(time.Duration(timeoutSec * float64(time.Second)))
+	deadline := time.Now().Add(time.Duration(timeout * float64(time.Second)))
 	seen := 0
 	for {
+		need := count - seen
+		if need <= 0 {
+			return true, nil
+		}
 		if time.Now().After(deadline) {
 			return false, nil
 		}
-		msgs, err := c.Recv(RecvOpts{Wait: 0, UnreadOnly: true, IncludeSelf: false, Limit: count - seen})
+		msgs, err := c.Recv(RecvOpts{Wait: 0, UnreadOnly: true, IncludeSelf: false, Limit: need})
 		if err != nil {
 			return false, err
 		}
@@ -855,6 +867,37 @@ func (c *Client) Wait(count int, timeoutSec float64) (bool, error) {
 		if seen >= count {
 			return true, nil
 		}
-		time.Sleep(500 * time.Millisecond)
+		if len(msgs) == 0 {
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+}
+	if timeout < 0 {
+		return false, fmt.Errorf("timeout must be a non-negative number of seconds")
+	}
+	if math.IsInf(timeout, 0) || math.IsNaN(timeout) {
+		return false, fmt.Errorf("timeout must be a finite number")
+	}
+	deadline := time.Now().Add(time.Duration(timeout * float64(time.Second)))
+	seen := 0
+	for {
+		if time.Now().After(deadline) {
+			return false, nil
+		}
+		need := count - seen
+		if need <= 0 {
+			return true, nil
+		}
+		msgs, err := c.Recv(RecvOpts{Wait: 0, UnreadOnly: true, IncludeSelf: false, Limit: need})
+		if err != nil {
+			return false, err
+		}
+		seen += len(msgs)
+		if seen >= count {
+			return true, nil
+		}
+		if len(msgs) == 0 {
+			time.Sleep(500 * time.Millisecond)
+		}
 	}
 }
