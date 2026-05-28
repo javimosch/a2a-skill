@@ -49,14 +49,11 @@ type Message struct {
 
 // Peer represents an agent on the bus
 type Peer struct {
-	ID        string  `json:"id"`
-	Role      *string `json:"role"`
-	Prompt    *string `json:"prompt"`
-	CLI       *string `json:"cli"`
-	Status    string  `json:"status"`
-	PID       *int    `json:"pid"`
-	CreatedAt float64 `json:"created_at"`
-	LastSeen  float64 `json:"last_seen"`
+	ID     string  `json:"id"`
+	Role   *string `json:"role"`
+	CLI    *string `json:"cli"`
+	Status string  `json:"status"`
+	PID    *int    `json:"pid"`
 }
 
 // TopSender represents one entry in the top senders stats list.
@@ -67,7 +64,6 @@ type TopSender struct {
 
 // Stats represents bus statistics
 type Stats struct {
-	Project        string      `json:"project"`
 	Messages       int         `json:"messages"`
 	DirectMessages int         `json:"direct_messages"`
 	Broadcasts     int         `json:"broadcasts"`
@@ -120,10 +116,8 @@ func (c *Client) connect() (*sql.DB, error) {
 
 // Send sends a message to a peer (or broadcast if recipient is "all"/"*"/"broadcast").
 // threadID may be empty string for no thread. ttlSeconds may be nil for no expiry.
-// NOTE: parameter order differs from Python send(): threadID comes before ttlSeconds here.
-// Python: send(to, message, ttl_seconds=None, thread_id=None)
-// Go:     Send(to, message, threadID, ttlSeconds)
-func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, error) {
+// Matches Python/JS/Rust order: send(to, message, ttl_seconds, thread_id).
+func (c *Client) Send(to, message string, ttlSeconds *int, threadID string) (int64, error) {
 	if len(c.AgentID) > MaxAgentIDLength {
 		return 0, fmt.Errorf("sender agent id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
 	}
@@ -185,7 +179,7 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 
 // SendSimple sends a message without thread or TTL. Backward-compat wrapper for old 3-arg calls.
 func (c *Client) SendSimple(to, message string) (int64, error) {
-	return c.Send(to, message, "", nil)
+	return c.Send(to, message, nil, "")
 }
 
 // RecvOpts configures the Recv call
@@ -233,7 +227,6 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 
 	for {
 		db.Exec("DELETE FROM messages WHERE ttl_seconds IS NOT NULL AND created_at + ttl_seconds < ?", nowSec())
-		db.Exec("UPDATE agents SET last_seen=? WHERE id=?", nowSec(), c.AgentID)
 		query := "SELECT id, sender, recipient, body, thread_id, created_at FROM messages WHERE (recipient = ? OR recipient IS NULL)"
 		args := []interface{}{c.AgentID}
 
@@ -355,7 +348,7 @@ func (c *Client) ListPeers() ([]Peer, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT id, role, prompt, cli, status, pid, created_at, last_seen FROM agents ORDER BY created_at")
+	rows, err := db.Query("SELECT id, role, cli, status, pid FROM agents ORDER BY created_at")
 	if err != nil {
 		return nil, err
 	}
@@ -364,17 +357,14 @@ func (c *Client) ListPeers() ([]Peer, error) {
 	peers := []Peer{}
 	for rows.Next() {
 		var p Peer
-		var role, prompt, cli sql.NullString
+		var role, cli sql.NullString
 		var pid sql.NullInt64
-		err := rows.Scan(&p.ID, &role, &prompt, &cli, &p.Status, &pid, &p.CreatedAt, &p.LastSeen)
+		err := rows.Scan(&p.ID, &role, &cli, &p.Status, &pid)
 		if err != nil {
 			return nil, err
 		}
 		if role.Valid {
 			p.Role = &role.String
-		}
-		if prompt.Valid {
-			p.Prompt = &prompt.String
 		}
 		if cli.Valid {
 			p.CLI = &cli.String
@@ -610,7 +600,6 @@ func (c *Client) Stats() (*Stats, error) {
 	defer db.Close()
 
 	stats := &Stats{
-		Project:    c.Project,
 		TopSenders: []TopSender{},
 	}
 
@@ -773,15 +762,18 @@ func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) (bool
 	return true, nil
 }
 
-// Unregister removes an agent from the bus.
-func (c *Client) Unregister() error {
+// Unregister removes an agent from the bus. Returns true on success.
+func (c *Client) Unregister() (bool, error) {
 	db, err := c.connect()
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer db.Close()
 	_, err = db.Exec("DELETE FROM agents WHERE id=?", c.AgentID)
-	return err
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // Touch updates last_seen for the agent.
@@ -835,8 +827,7 @@ func (c *Client) Clear() error {
 
 // Wait blocks until at least count unread messages exist for this agent,
 // or until timeout seconds elapse. Returns true if the required count was reached.
-// NOTE: unlike Python wait_for_messages(), this does NOT mark messages as read.
-// Messages remain unread after Wait() returns true — call Recv() to consume them.
+// Messages are marked as read as they arrive (matching Python/JS/Rust behavior).
 func (c *Client) Wait(count int, timeoutSec float64) (bool, error) {
 	if count <= 0 {
 		return false, fmt.Errorf("count must be a positive integer")
@@ -848,30 +839,19 @@ func (c *Client) Wait(count int, timeoutSec float64) (bool, error) {
 		return false, fmt.Errorf("timeout must be a non-negative number")
 	}
 	deadline := time.Now().Add(time.Duration(timeoutSec * float64(time.Second)))
-	pollInterval := 500 * time.Millisecond
-	db, err := c.connect()
-	if err != nil {
-		return false, err
-	}
-	defer db.Close()
+	seen := 0
 	for {
-		var unread int
-		err = db.QueryRow(
-			`SELECT COUNT(*) FROM messages m
-			 WHERE (m.recipient = ? OR m.recipient IS NULL)
-			 AND m.sender != ?
-			 AND NOT EXISTS (SELECT 1 FROM reads r WHERE r.agent_id = ? AND r.message_id = m.id)`,
-			c.AgentID, c.AgentID, c.AgentID,
-		).Scan(&unread)
-		if err != nil {
-			return false, err
-		}
-		if unread >= count {
-			return true, nil
-		}
 		if time.Now().After(deadline) {
 			return false, nil
 		}
-		time.Sleep(pollInterval)
+		msgs, err := c.Recv(RecvOpts{Wait: 0, UnreadOnly: true, IncludeSelf: false, Limit: count - seen})
+		if err != nil {
+			return false, err
+		}
+		seen += len(msgs)
+		if seen >= count {
+			return true, nil
+		}
+		time.Sleep(500 * time.Millisecond)
 	}
 }

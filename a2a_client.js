@@ -79,9 +79,6 @@ class A2AClient {
     if (!to || !to.trim()) {
       throw new Error('recipient must not be empty');
     }
-    if (!message || !message.trim()) {
-      throw new Error('message body must not be empty');
-    }
     if (typeof message === 'string' && message.length > _MAX_BODY_LENGTH) {
       throw new Error(`message body too long (${message.length} chars, max ${_MAX_BODY_LENGTH})`);
     }
@@ -300,7 +297,7 @@ class A2AClient {
     }
     const deadline = Date.now() + timeout * 1000;
     while (Date.now() < deadline) {
-      const messages = await this.recv(1, true);
+      const messages = await this.recv(0, true);
       if (messages.length >= count) return true;
       await new Promise(r => setTimeout(r, 500));
     }
@@ -336,6 +333,9 @@ class A2AClient {
   async thread(threadId) {
     if (!threadId || !threadId.trim()) {
       throw new Error('thread id must not be empty');
+    }
+    if (threadId.length > _MAX_THREAD_ID_LENGTH) {
+      throw new Error(`thread_id too long (${threadId.length} chars, max ${_MAX_THREAD_ID_LENGTH})`);
     }
     const db = this._connect();
     const rows = db.prepare(

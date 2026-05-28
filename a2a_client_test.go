@@ -111,7 +111,7 @@ func TestSendRecv(t *testing.T) {
 	c2.Register("critic", "", "", nil, false)
 
 	// Send from alice to bob
-	mid, err := c.Send("bob", "hello bob", "", nil)
+	mid, err := c.Send("bob", "hello bob", nil, "")
 	if err != nil {
 		t.Fatalf("Send: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestSendBroadcast(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("planner", "", "", nil, false)
 
-	mid, err := c.Send("all", "hello everyone", "", nil)
+	mid, err := c.Send("all", "hello everyone", nil, "")
 	if err != nil {
 		t.Fatalf("Send broadcast: %v", err)
 	}
@@ -159,8 +159,8 @@ func TestPeek(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	c.Send("bob", "msg1", "", nil)
-	c.Send("bob", "msg2", "", nil)
+	c.Send("bob", "msg1", nil, "")
+	c.Send("bob", "msg2", nil, "")
 
 	msgs, err := c.Peek(10)
 	if err != nil {
@@ -182,8 +182,8 @@ func TestSearch(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	c.Send("bob", "hello world", "", nil)
-	c.Send("bob", "goodbye moon", "", nil)
+	c.Send("bob", "hello world", nil, "")
+	c.Send("bob", "goodbye moon", nil, "")
 
 	msgs, err := c.Search("hello", 10)
 	if err != nil {
@@ -205,9 +205,9 @@ func TestThread(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	c.Send("bob", "msg1", "thread-1", nil)
-	c.Send("bob", "msg2", "thread-1", nil)
-	c.Send("bob", "other", "", nil)
+	c.Send("bob", "msg1", nil, "thread-1")
+	c.Send("bob", "msg2", nil, "thread-1")
+	c.Send("bob", "other", nil, "")
 
 	msgs, err := c.Thread("thread-1")
 	if err != nil {
@@ -252,8 +252,8 @@ func TestStats(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	c.Send("bob", "msg1", "", nil)
-	c.Send("bob", "msg2", "", nil)
+	c.Send("bob", "msg1", nil, "")
+	c.Send("bob", "msg2", nil, "")
 
 	stats, err := c.Stats()
 	if err != nil {
@@ -280,7 +280,7 @@ func TestStatsJSON(t *testing.T) {
 	c2 := setupTestClient(t, c.Project, "bob")
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
-	c.Send("bob", "test", "", nil)
+	c.Send("bob", "test", nil, "")
 
 	json, err := c.StatsJSON()
 	if err != nil {
@@ -302,7 +302,7 @@ func TestWait(t *testing.T) {
 	c2 := setupTestClient(t, c.Project, "alice")
 	c2.InitProject()
 	c2.Register("planner", "", "", nil, false)
-	c2.Send("bob", "msg for wait test", "", nil)
+	c2.Send("bob", "msg for wait test", nil, "")
 
 	// Bob waits
 	ok, err := c.Wait(1, 5)
@@ -395,7 +395,7 @@ func TestSendWithThread(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	mid, err := c.Send("bob", "with thread", "my-thread", nil)
+	mid, err := c.Send("bob", "with thread", nil, "my-thread")
 	if err != nil {
 		t.Fatalf("Send with thread: %v", err)
 	}
@@ -416,7 +416,7 @@ func TestSendWithTTL(t *testing.T) {
 	c2.Register("critic", "", "", nil, false)
 
 	ttl := 3600
-	mid, err := c.Send("bob", "with ttl", "", &ttl)
+	mid, err := c.Send("bob", "with ttl", &ttl, "")
 	if err != nil {
 		t.Fatalf("Send with TTL: %v", err)
 	}
@@ -454,7 +454,7 @@ func TestRecvWithTTLCleanup(t *testing.T) {
 
 	// Send expired message
 	ttl := 0
-	c.Send("bob", "will expire", "", &ttl)
+	c.Send("bob", "will expire", &ttl, "")
 
 	// recv should call CleanupExpired internally and not return expired
 	c2 := setupTestClient(t, c.Project, "bob")
@@ -528,7 +528,7 @@ func TestSendEmptyBody(t *testing.T) {
 	c2.InitProject()
 	c2.Register("critic", "", "", nil, false)
 
-	mid, err := c.Send("bob", "", "", nil)
+	mid, err := c.Send("bob", "", nil, "")
 	if err != nil {
 		t.Fatalf("Send empty body: %v", err)
 	}
@@ -561,7 +561,7 @@ func TestSendSpecialChars(t *testing.T) {
 	c2.Register("critic", "", "", nil, false)
 
 	special := "hello\nmulti\nline\nwith\ttabs\nand🚀emoji\nand\"quotes\""
-	mid, err := c.Send("bob", special, "", nil)
+	mid, err := c.Send("bob", special, nil, "")
 	if err != nil {
 		t.Fatalf("Send special chars: %v", err)
 	}
@@ -589,7 +589,7 @@ func TestSendLongBody(t *testing.T) {
 
 	// 10KB body
 	longBody := strings.Repeat("Lorem ipsum dolor sit amet. ", 500)
-	mid, err := c.Send("bob", longBody, "", nil)
+	mid, err := c.Send("bob", longBody, nil, "")
 	if err != nil {
 		t.Fatalf("Send long body (10KB): %v", err)
 	}
@@ -621,10 +621,10 @@ func TestRecvSince(t *testing.T) {
 	c2.Register("critic", "", "", nil, false)
 
 	// Create message at a known timestamp
-	c.Send("bob", "old message", "", nil)
+	c.Send("bob", "old message", nil, "")
 	time.Sleep(10 * time.Millisecond)
 	since := nowSec()
-	c.Send("bob", "new message", "", nil)
+	c.Send("bob", "new message", nil, "")
 
 	msgs, err := c2.Recv(RecvOpts{Since: &since, UnreadOnly: true, Wait: 2})
 	if err != nil {
@@ -655,7 +655,7 @@ func TestUnregister(t *testing.T) {
 	}
 
 	// Unregister
-	if err := c.Unregister(); err != nil {
+	if _, err := c.Unregister(); err != nil {
 		t.Fatalf("Unregister: %v", err)
 	}
 
@@ -683,7 +683,7 @@ func TestConcurrentSendRecv(t *testing.T) {
 	done := make(chan bool)
 	go func() {
 		for i := 0; i < 5; i++ {
-			c.Send("bob", fmt.Sprintf("msg-%d", i), "", nil)
+			c.Send("bob", fmt.Sprintf("msg-%d", i), nil, "")
 			time.Sleep(10 * time.Millisecond)
 		}
 		done <- true
@@ -764,7 +764,7 @@ func TestSendToUnknownRecipientFails(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("tester", "", "", nil, false)
 
-	_, err := c.Send("nonexistent-bob", "hello", "", nil)
+	_, err := c.Send("nonexistent-bob", "hello", nil, "")
 	if err == nil {
 		t.Fatal("expected error sending to unknown recipient, got nil")
 	}
@@ -779,7 +779,7 @@ func TestSendFromUnregisteredSenderFails(t *testing.T) {
 	c2 := setupTestClient(t, c.Project, "bob")
 	c2.Register("tester", "", "", nil, false)
 
-	_, err := c.Send("bob", "hello", "", nil)
+	_, err := c.Send("bob", "hello", nil, "")
 	if err == nil {
 		t.Fatal("expected error sending from unregistered sender, got nil")
 	}
@@ -822,7 +822,7 @@ func TestPeekJSON(t *testing.T) {
 	c2 := setupTestClient(t, c.Project, "bob")
 	c2.Register("tester", "", "", nil, false)
 
-	c.Send("bob", "peek test", "", nil)
+	c.Send("bob", "peek test", nil, "")
 	msgs, err := c.Peek(10)
 	if err != nil {
 		t.Fatalf("Peek: %v", err)
@@ -842,7 +842,7 @@ func TestBroadcastRecipientIsNil(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("tester", "", "", nil, false)
 
-	_, err := c.Send("all", "broadcast msg", "", nil)
+	_, err := c.Send("all", "broadcast msg", nil, "")
 	if err != nil {
 		t.Fatalf("Send broadcast: %v", err)
 	}
@@ -867,7 +867,7 @@ func TestSendEmptyRecipientFails(t *testing.T) {
 	c.AgentID = "alice"
 	c.Register("tester", "", "", nil, false)
 
-	_, err := c.Send("", "hello", "", nil)
+	_, err := c.Send("", "hello", nil, "")
 	if err == nil {
 		t.Fatal("expected error sending to empty recipient, got nil")
 	}
@@ -965,7 +965,7 @@ func TestSendNonPositiveTTLFails(t *testing.T) {
 
 	// TTL zero
 	zeroTTL := 0
-	_, err := c.Send("bob", "test", "", &zeroTTL)
+	_, err := c.Send("bob", "test", &zeroTTL, "")
 	if err == nil {
 		t.Fatal("expected error for Send with TTL=0, got nil")
 	}
@@ -975,7 +975,7 @@ func TestSendNonPositiveTTLFails(t *testing.T) {
 
 	// TTL negative
 	negTTL := -5
-	_, err = c.Send("bob", "test", "", &negTTL)
+	_, err = c.Send("bob", "test", &negTTL, "")
 	if err == nil {
 		t.Fatal("expected error for Send with TTL=-5, got nil")
 	}
@@ -1076,7 +1076,7 @@ func TestSendMaxSenderIDLengthFails(t *testing.T) {
 	// Sender ID too long
 	longID := strings.Repeat("b", MaxAgentIDLength+1)
 	c.AgentID = longID
-	_, err := c.Send("alice", "hello", "", nil)
+	_, err := c.Send("alice", "hello", nil, "")
 	if err == nil {
 		t.Fatal("expected error for Send with too-long sender ID, got nil")
 	}
@@ -1094,7 +1094,7 @@ func TestSendMaxRecipientIDLengthFails(t *testing.T) {
 
 	// Recipient ID too long (not broadcast)
 	longID := strings.Repeat("b", MaxAgentIDLength+1)
-	_, err := c.Send(longID, "hello", "", nil)
+	_, err := c.Send(longID, "hello", nil, "")
 	if err == nil {
 		t.Fatal("expected error for Send with too-long recipient ID, got nil")
 	}
@@ -1112,7 +1112,7 @@ func TestSendMaxThreadIDLengthFails(t *testing.T) {
 
 	// Thread ID too long
 	longThread := strings.Repeat("t", MaxThreadIDLength+1)
-	_, err := c.Send("alice", "hello", longThread, nil)
+	_, err := c.Send("alice", "hello", nil, longThread)
 	if err == nil {
 		t.Fatal("expected error for Send with too-long thread ID, got nil")
 	}
@@ -1130,7 +1130,7 @@ func TestSendMaxBodyLengthFails(t *testing.T) {
 
 	// Body too long
 	longBody := strings.Repeat("x", MaxBodyLength+1)
-	_, err := c.Send("alice", longBody, "", nil)
+	_, err := c.Send("alice", longBody, nil, "")
 	if err == nil {
 		t.Fatal("expected error for Send with too-long body, got nil")
 	}
@@ -1148,7 +1148,7 @@ func TestSendMaxBodyLengthBoundaryOk(t *testing.T) {
 
 	// Body at max length should succeed
 	exactBody := strings.Repeat("x", MaxBodyLength)
-	_, err := c.Send("alice", exactBody, "", nil)
+	_, err := c.Send("alice", exactBody, nil, "")
 	if err != nil {
 		t.Fatalf("expected body at max length to succeed, got: %v", err)
 	}

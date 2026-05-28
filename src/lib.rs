@@ -526,6 +526,13 @@ impl Client {
                 "thread id must not be empty".to_string(),
             ));
         }
+        if thread_id.len() > MAX_THREAD_ID_LENGTH {
+            return Err(rusqlite::Error::InvalidParameterName(format!(
+                "thread_id too long ({} chars, max {})",
+                thread_id.len(),
+                MAX_THREAD_ID_LENGTH
+            )));
+        }
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             "SELECT id, sender, recipient, body, thread_id, created_at FROM messages \

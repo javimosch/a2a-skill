@@ -289,7 +289,7 @@ func cmdUnregister() {
 	}
 	validateMaxLength(agentID, maxCLIAgentIDLength, "agent id")
 	c := newClient(agentID)
-	if err := c.Unregister(); err != nil {
+	if _, err := c.Unregister(); err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: unregister error: %v\n", err)
 		os.Exit(1)
 	}
@@ -421,7 +421,7 @@ func cmdSend() {
 	}
 
 	c := newClient(from)
-	mid, err := c.Send(to, body, thread, ttlPtr)
+	mid, err := 	c.Send(to, body, ttlPtr, thread)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "a2a: send error: %v\n", err)
 		os.Exit(1)

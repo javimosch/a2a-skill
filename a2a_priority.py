@@ -90,6 +90,7 @@ class PriorityClient(A2AClient):
         message: str,
         priority: int = Priority.NORMAL,
         ttl_seconds: Optional[int] = None,
+        thread_id: Optional[str] = None,
     ) -> int:
         """Send a message with priority.
 
@@ -98,6 +99,7 @@ class PriorityClient(A2AClient):
             message: Message body
             priority: Priority level (1=LOW, 2=NORMAL, 3=HIGH, 4=CRITICAL)
             ttl_seconds: Optional time-to-live in seconds
+            thread_id: Optional thread ID to group related messages
 
         Returns:
             Message ID
@@ -110,15 +112,25 @@ class PriorityClient(A2AClient):
                 raise ValueError("ttl_seconds must be a positive number of seconds")
             if ttl_seconds is not None and (math.isnan(ttl_seconds) or math.isinf(ttl_seconds)):
                 raise ValueError("ttl_seconds must be a finite number")
+            if thread_id is not None and not thread_id.strip():
+                raise ValueError("thread_id must not be empty")
             if len(message) > _MAX_BODY_LENGTH:
                 raise ValueError(f"message body too long ({len(message)} chars, max {_MAX_BODY_LENGTH})")
             if priority < 1 or priority > 4:
                 raise ValueError(f"priority must be between 1 (LOW) and 4 (CRITICAL), got {priority}")
+            # Validate sender is registered
+            cur = conn.execute("SELECT COUNT(1) FROM agents WHERE id=?", (self.agent_id,))
+            if cur.fetchone()[0] == 0:
+                raise ValueError(f"unknown sender '{self.agent_id}' — register first")
             recipient = None if to.lower() in ("all", "*", "broadcast") else to
+            if recipient is not None:
+                cur = conn.execute("SELECT COUNT(1) FROM agents WHERE id=?", (recipient,))
+                if cur.fetchone()[0] == 0:
+                    raise ValueError(f"unknown recipient '{recipient}' — register them first")
             cur = conn.execute(
-                "INSERT INTO messages(sender, recipient, body, priority, ttl_seconds, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (self.agent_id, recipient, message, priority, ttl_seconds, time.time()),
+                "INSERT INTO messages(sender, recipient, body, priority, ttl_seconds, thread_id, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (self.agent_id, recipient, message, priority, ttl_seconds, thread_id, time.time()),
             )
             conn.commit()
             return cur.lastrowid
