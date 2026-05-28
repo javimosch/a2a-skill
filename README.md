@@ -1,225 +1,78 @@
-# a2a-skill
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <img src="https://img.shields.io/badge/python-3.8+-blue" alt="Python">
+  <img src="https://img.shields.io/badge/transport-SQLite-lightgrey" alt="SQLite">
+</p>
 
-Peer-to-peer messaging for agentic CLI sessions (claude, opencode, pi, …)
-over a shared SQLite bus. No central chain of command — each agent decides
-who to talk to.
+<h1 align="center">a2a ⎯ Peer-to-peer messaging for AI agent teams</h1>
 
-## What this is
+<p align="center">
+  No central orchestrator. No fixed topology.<br>
+  Spin up N agentic CLI sessions and let them self-coordinate over a shared SQLite bus.
+</p>
 
-A small Python CLI (`a2a`) plus a Claude Code skill (`/a2a`) that lets you
-spin up N agentic-CLI sessions and have them collaborate, debate, or divide
-work as peers. The transport is a SQLite database at
-`~/.a2a/{projectName}/database.db`.
+<p align="center">
+  <a href="#-quick-start"><b>Quick Start →</b></a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="#-three-patterns"><b>Usage Patterns →</b></a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="#-for-ai-agents"><b>For AI Agents →</b></a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="#-install"><b>Install →</b></a>
+</p>
 
-## Three ways to use a2a — pick your pattern
+---
 
-a2a supports three fundamentally different usage patterns. All share the same
-SQLite bus at `~/.a2a/{project}/database.db` — agents from one pattern can
-even coexist with another.
+**The problem:** Getting multiple AI coding sessions to collaborate means manually copy-pasting context between terminals, or building a custom orchestration layer.
+
+**a2a fixes this.** Register agents, send messages, let them drive. One SQLite database. Zero infra.
+
+---
+
+## ⚡ Quick Start
+
+```bash
+# 1. Create a project bus
+a2a init
+
+# 2. Register two agents
+a2a register alice --role architect
+a2a register bob   --role developer
+
+# 3. Send messages
+a2a send bob "review the auth module" --from alice
+a2a recv --as bob --wait 30
+
+# 4. Broadcast to everyone
+a2a send all "standup in 5" --from alice
+
+# 5. Check who's on the bus
+a2a list
+```
+
+> **Prerequisite:** Python 3 with `sqlite3` built-in (standard on 3.8+).
+> Install with `./install.sh` — see [Install →](#-install).
+
+---
+
+## 🔀 Three Patterns
+
+All patterns share the same bus at `~/.a2a/{project}/database.db`.
 
 | # | Pattern | Who drives | Best for |
 |---|---------|------------|----------|
-| **1** | **Human-drive CLI** — you open terminals and type `a2a send/recv` by hand | You (the human) | Learning the bus, testing, scripting one-off tasks |
-| **2** | **Multi-terminal AI team** — you open N terminals, tell each AI agent to join the bus with a role, and they self-coordinate | AI agents (you instruct them) | Role-based teamwork (dev + architect + QA + PM), debates, multi-perspective analysis |
-| **3** | **Auto-spawn** — one agent launches N background sessions via `/a2a spawn` | AI agents (spawned automatically) | Fire-and-forget collaboration from inside a coding session |
+| **1** | **Human-driven CLI** — you type `a2a send/recv` by hand | You | Learning the bus, scripting, one-off tasks |
+| **2** | **Multi-terminal AI team** — open N terminals, give each agent a role, they self-coordinate | AI agents (you instruct) | Role-based teamwork (dev + architect + QA + PM), debates |
+| **3** | **Auto-spawn** — one agent spawns N peers via `/a2a spawn` | AI agents (spawned automatically) | Fire-and-forget collaboration from inside a coding session |
 
-**Which one should I use?**
-- New to a2a? Start with **Pattern 1** to understand the bus.
-- Working on a complex problem with clear roles? **Pattern 2** gives you the most control — you hand-pick each agent's model and instructions, watch their reasoning live, and intervene freely.
-- Inside an AI coding session and need to spawn a quick team? **Pattern 3** via `/a2a spawn`.
+**Which one?**
+- New to a2a? Start with Pattern 1.
+- Complex problem with clear roles? Pattern 2 — you watch each agent's reasoning live.
+- Inside a Claude Code session? Pattern 3 via `/a2a spawn`.
 
-See [docs/QUICKSTART.md](docs/QUICKSTART.md) for hands-on examples of Patterns 1 & 2,
-and [`.agents/skills/a2a/SKILL.md`](.agents/skills/a2a/SKILL.md) for the Pattern 3 protocol.
+---
 
-## Layout
-
-```
-a2a-skill/
-├── a2a                  # Go CLI binary (companion, ~3.6MB ELF, zero deps)
-├── a2a.py               # core CLI (stdlib only: argparse, sqlite3, json)
-├── a2a_client.py        # Python client library (sync, no subprocess overhead)
-├── a2a_client.pyi       # Python type stubs (sync)
-├── a2a_client_async.py  # Python async client (asyncio-based, high concurrency)
-├── a2a_client_async.pyi # Python type stubs (async)
-├── a2a_git_aware.py     # Git-aware features (work-collision prevention)
-├── a2a_client.go        # Go client library (direct DB access)
-├── a2a_client_test.go   # Go client tests (55 tests)
-├── go.mod               # Go module definition
-├── go.sum               # Go module checksums
-├── Makefile             # Go build/test/cover targets
-├── build.sh             # Go binary build script
-├── cmd/a2a/main.go      # Go CLI binary entry point
-├── smoke_test_go.sh     # Go CLI smoke test (30 tests)
-├── Cargo.toml           # Rust workspace configuration
-├── Cargo.lock           # Rust lock file
-├── Dockerfile.multi     # Multi-stage Docker build
-├── docker-compose.yml   # Docker Compose deployment
-├── server.js            # Web UI server
-├── public/              # Web UI static assets
-├── SKILL.md             # skill spec (stub)
-├── CHANGELOG.md         # version history
-├── a2a_client.js        # Node.js client library (async/Promise)
-├── src/lib.rs           # Rust client library (async, idiomatic)
-├── a2a_server.py        # REST API server (HTTP interface)
-├── a2a_common.py        # shared validation constants and helpers
-├── a2a_audit.py         # v1.3: audit logging
-├── a2a_crypto.py        # v1.3: end-to-end encryption
-├── a2a_fts.py           # v1.3: full-text search (FTS5)
-├── a2a_priority.py      # v1.3: priority queuing (sync)
-├── a2a_priority_async.py# v1.3: priority queuing (async)
-├── a2a_routing.py       # v1.3: rule-based routing (sync)
-├── a2a_routing_async.py # v1.3: rule-based routing (async)
-├── a2a-spawn            # CLI-agnostic peer launcher (claude, opencode, pi, ...)
-├── install.sh           # one-command installer (symlinks CLI + skill)
-
-📚 Documentation
-├── README.md                 # overview (this file)
-├── AGENTS.md                 # guide for AI agents working on this repo
-├── WEB_UI_README.md          # web-based dashboard documentation
-│
-🚀 Getting Started
-├── docs/QUICKSTART.md        # 5-minute quick start
-├── docs/INSTALLATION.md      # setup & troubleshooting
-├── docs/SKILL.md             # stub → points to .agents/skills/a2a/SKILL.md
-│
-📖 Core Guides
-├── docs/CLIENT_API.md        # Python client library reference
-├── docs/NODE_CLIENT_API.md   # Node.js client library reference
-├── docs/GO_CLIENT_API.md     # Go client library reference
-├── docs/GO_CLI_REFERENCE.md  # Go binary CLI flags and commands
-├── docs/RUST_CLIENT_API.md   # Rust client library reference
-├── docs/REST_API.md          # HTTP REST interface reference
-├── docs/ADVANCED_PATTERNS.md # optimization & patterns guide
-├── docs/INTEGRATION_GUIDE.md # multi-interface coordination guide
-├── docs/GIT_AWARE.md         # work-collision detection & prevention
-├── docs/PITFALLS.md          # common pitfalls from smoke testing
-│
-🔐 v1.3 Features & Security
-├── docs/ENCRYPTION.md        # end-to-end encryption (symmetric & asymmetric)
-├── docs/PRIORITY.md          # 4-level priority queue ordering
-├── docs/ROUTING.md           # rule-based message distribution
-├── docs/AUDIT.md             # message lifecycle audit logging
-├── docs/FTS_SEARCH.md        # full-text search with relevance ranking
-├── docs/SECURITY_HARDENING.md # production security setup
-├── docs/TROUBLESHOOTING.md   # common issues & solutions
-│
-🔧 Operations & Deployment
-├── docs/DEPLOYMENT.md        # Docker, Kubernetes, systemd deployment
-│
-🔐 v1.3 Quick Reference
-├── docs/V13_QUICKREF.md      # v1.3 quick reference
-│
-🧪 Tests & Benchmarks (902+ total: 800 Python + 55 Go + 33 JS + 14 Rust)
-├── test_a2a.py          # unit tests (157 tests)
-├── test_a2a_client.py   # Python client tests (85 tests)
-├── test_integration.py  # integration tests (105 tests)
-├── test_v13_features.py # v1.3 feature tests (140 tests)
-├── test_git_aware.py    # git-aware module tests (65 tests)
-├── test_server.py       # REST API tests (70 tests)
-├── test_async_modules.py# async client tests (94 tests)
-├── test_artifacts_util.py# artifact util tests (84 tests)
-├── test_a2a_client.js   # Node.js client tests (33 tests)
-├── stress_test.sh       # 10-agent concurrent stress test
-├── high_volume_stress_test.sh  # 20-agent, 1000+ message test
-├── edge_case_test.sh    # edge-case hardening validation
-├── verify_all.sh        # complete test suite runner
-├── verify_json_parity.sh# Go vs Python JSON cross-verify
-├── perf_comparison_test.py  # CLI vs SDK benchmark
-├── benchmark.py         # latency, throughput, TTL benchmarks
-├── dashboard.py         # real-time bus dashboard
-
-🔨 Tools & Examples
-├── examples/
-│   ├── researcher_agent.py          # Broadcast + aggregation pattern
-│   ├── code_reviewer_agent.py        # Async request-response pattern
-│   ├── task_coordinator_agent.py     # Work distribution pattern
-│   ├── critic_agent.py               # Debate and feedback loop
-│   ├── debugger_agent.py             # Debugging and error investigation
-│   ├── async_task_worker.py          # High-concurrency async agent
-│   ├── collision_detector.py         # Work-collision prevention agent
-│   ├── v13_integrated_agent.py       # All v1.3 features in action
-│   ├── secure_team_agent.py          # Asymmetric encryption + routing + audit
-│   ├── compliance_archival_agent.py  # Full-text search + audit + archival
-│   ├── spawn_coordinator.py          # Auto-spawn coordinator (Pattern 3)
-│   ├── spawn_debate.py               # Adversarial debate via a2a-spawn
-│   ├── nodejs_coordinator.js         # Coordinator in Node.js
-│   └── task_worker.rs                # Rust agent example
-├── smoke_test.sh            # 2-claude haiku peer dialog
-├── smoke_test_multi.sh      # cross-CLI peer dialog (claude + opencode + pi)
-├── smoke_test_examples.sh   # example agent smoke test
-
-🔧 Shell Completions
-├── completion/a2a.bash      # Bash completion
-├── completion/a2a.zsh       # Zsh completion
-├── completion/AGENTS.md     # Completion docs and maintenance guide
-
-📋 Project
-├── Cargo.toml           # Rust library configuration
-├── LICENSE              # MIT (attribution required)
-├── .gitignore
-└── docs/                # feature guides, API refs, deployment
-```
-
-## Install
-
-Run the installer (symlinks CLI + skill to standard locations):
-
-```bash
-./install.sh
-```
-
-This links into `~/.local/bin/`, `~/.claude/skills/`, and `~/.agents/skills/` (cross-CLI).
-
-Or manually:
-
-```bash
-ln -sf "$PWD/a2a"      ~/.local/bin/a2a            # or anywhere on PATH
-ln -sf "$PWD/a2a-spawn" ~/.local/bin/a2a-spawn
-ln -sf "$PWD"          ~/.claude/skills/a2a        # exposes /a2a in Claude Code
-ln -sf "$PWD"          ~/.agents/skills/a2a        # cross-CLI global skills
-```
-
-Restart your CLI session so it picks up the new skill.
-
-> **Prerequisite:** a Python 3 with `sqlite3` built-in. The `a2a` wrapper auto-detects
-> one by probing common paths (python3.10, python3.12, etc.).
-
-## Documentation
-
-Comprehensive guides for different use cases:
-
-- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — 5-minute introduction with examples
-- **[docs/INSTALLATION.md](docs/INSTALLATION.md)** — Setup, prerequisites, platform-specific notes
-
-**Client Libraries:**
-- **[docs/CLIENT_API.md](docs/CLIENT_API.md)** — Python client library reference
-- **[docs/GO_CLIENT_API.md](docs/GO_CLIENT_API.md)** — Go client library reference
-- **[docs/GO_CLI_REFERENCE.md](docs/GO_CLI_REFERENCE.md)** — Go binary CLI flags and commands
-- **[docs/NODE_CLIENT_API.md](docs/NODE_CLIENT_API.md)** — Node.js client library reference
-- **[docs/RUST_CLIENT_API.md](docs/RUST_CLIENT_API.md)** — Rust client library reference
-- **[docs/REST_API.md](docs/REST_API.md)** — HTTP REST interface for microservices
-- **[docs/INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md)** — Multi-interface coordination examples
-
-**v1.3 Feature Guides:**
-- **[docs/V13_QUICKREF.md](docs/V13_QUICKREF.md)** — Quick copy-paste examples for all v1.3 features
-- **[docs/ENCRYPTION.md](docs/ENCRYPTION.md)** — End-to-end encryption (symmetric & asymmetric)
-- **[docs/FTS_SEARCH.md](docs/FTS_SEARCH.md)** — Full-text search with phrase & boolean queries
-- **[docs/AUDIT.md](docs/AUDIT.md)** — Message lifecycle audit logging for compliance
-- **[docs/PRIORITY.md](docs/PRIORITY.md)** — 4-level priority queue ordering
-- **[docs/ROUTING.md](docs/ROUTING.md)** — Rule-based message distribution with pattern matching
-
-**Advanced Topics:**
-- **[docs/ADVANCED_PATTERNS.md](docs/ADVANCED_PATTERNS.md)** — Performance optimization, monitoring, error recovery
-- **[docs/GIT_AWARE.md](docs/GIT_AWARE.md)** — Work-collision prevention with git state tracking
-- **[docs/PITFALLS.md](docs/PITFALLS.md)** — Lessons from artifact smoke testing and agent behavior
-- **[docs/SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md)** — Enterprise security and production hardening
-- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** — Common issues, diagnosis, and solutions
-- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — Docker, Kubernetes, systemd, and security
-- **[`.agents/skills/a2a/SKILL.md`](.agents/skills/a2a/SKILL.md)** — `/a2a` skill architecture and spawn protocol (canonical)
-- **[AGENTS.md](AGENTS.md)** — Guide for AI agents and agent development
-- **[CHANGELOG.md](CHANGELOG.md)** — Complete release history and versioning
-
-## CLI cheatsheet
+## 🛠️ CLI Cheatsheet
 
 ```bash
 a2a init                                                        # create project bus
@@ -228,186 +81,94 @@ a2a register bob   --role critic
 
 a2a send bob "what about Y?" --from alice                       # direct
 a2a send all "team sync at noon" --from alice                   # broadcast
-a2a send alice "expiring msg" --from bob --ttl 3600             # message expires in 1 hour
+a2a send alice "expiring msg" --from bob --ttl 3600             # expires in 1 hour
 
 a2a recv --as bob --wait 30                                     # block-poll inbox (unread only)
 a2a recv --as bob --all --include-self                          # all messages including self-sent
 a2a recv --as bob --peek                                        # look without marking read
 a2a recv --as bob --json                                        # machine-readable output
-a2a recv --as bob --since 1700000000                            # messages after timestamp
 
-a2a search "keyword"                                             # search messages by content
-a2a search "keyword" --json --limit 10                           # search with JSON output
-
-a2a thread <id>                                                  # view all messages in a thread
-a2a thread <id> --json                                           # thread contents as JSON
+a2a search "keyword"                                            # full-text search messages
+a2a thread <id>                                                 # view a message thread
 
 a2a list                                                        # who's on the bus
-a2a list --json                                                 # machine-readable
-
-a2a unregister alice                                            # remove an agent from the bus
-
 a2a stats                                                       # bus statistics
-a2a stats --json                                                # stats as JSON
-
 a2a peek                                                        # last 20 messages (observer view)
-a2a peek --limit 50 --json                                      # last 50 in JSON
 
-a2a status done --as alice                                      # update presence (supports --json)
+a2a status done --as alice                                      # update presence
 a2a wait --as bob --count 3 --timeout 30                        # block until 3 unread or 30s
-a2a unregister alice                                            # remove agent from bus
+a2a unregister alice                                            # remove agent
 a2a clear --yes                                                 # wipe the bus
 a2a project                                                     # show resolved project info
 ```
 
-Project name resolves from `--project NAME`, then `$A2A_PROJECT`, then
-`basename($PWD)`. One project = one database = one isolated bus.
+Project name resolves from `--project NAME`, then `$A2A_PROJECT`, then `basename($PWD)`.
+One project = one database = one isolated bus.
 
-## How agents use it
+---
 
-Each spawned CLI session is given a *peer kit* prompt that tells it:
+## 🤖 For AI Agents
 
-- who it is (`agent_id`, role, the user's instruction)
-- how to call `a2a recv / send / list / status`
-- the rules: no inventing peers, stay terse, mark `done` when finished
+a2a was built for agents first.
 
-The `a2a-spawn` launcher handles CLI-specific flags for **claude**, **opencode**, and
-**pi** — each agent receives the same kit prompt regardless of CLI. From then on,
-agents drive themselves. See `.agents/skills/a2a/SKILL.md` for the exact kit prompt template.
+Each agent gets a *peer kit* prompt telling it who it is, how to call `send/recv/list/status`, and the rules (no inventing peers, stay terse, mark `done` when finished). From there, agents drive themselves.
 
-### Cross-CLI support
-
-| CLI | Flag for kit prompt | Non-interactive mode |
-|-----|-------------------|---------------------|
-| claude | `--append-system-prompt` | `-p` + `--dangerously-skip-permissions` |
-| opencode | embedded in first message | `run "Begin."` |
-| pi | `--append-system-prompt` | `-p` + `--provider` + `--model` |
-
-## Shell Completions
-
-Bash and Zsh completion scripts live in [`completion/`](completion/). They
-complete subcommands (`init`, `register`, `send`, `recv`, `peek`, `list`,
-`status`, `wait`, `clear`, `project`, `unregister`, `search`, `stats`,
-`thread`) and flag values (agent IDs, status choices).
+The `/a2a` Claude Code skill handles spawning automatically — just type `/a2a` in a session.
 
 ```bash
-# Bash — source or install system-wide
-source completion/a2a.bash
-# Or copy to /etc/bash_completion.d/
-
-# Zsh — copy to a directory in your $fpath, then run compinit
-# See completion/AGENTS.md for details
+# Agent workflow inside a Claude Code session
+/a2a spawn dev architect qa --project myapp
+# → three background sessions registered on the bus, collaborating
 ```
 
-The `send` completion dynamically suggests registered agent IDs by calling
-`a2a list` at completion time. If `a2a` is not on PATH or the bus is empty,
-it falls back silently.
+**Cross-CLI support:** `a2a-spawn` handles flag differences for `claude`, `opencode`, and `pi` — every agent gets the same kit prompt regardless of CLI.
 
-**Important:** Completions hard-code the subcommand list. When adding a new
-CLI command in `a2a.py`, update both `completion/a2a.bash` and
-`completion/a2a.zsh`. See [`completion/AGENTS.md`](completion/AGENTS.md)
-for the full maintenance guide.
+See [`.agents/skills/a2a/SKILL.md`](.agents/skills/a2a/SKILL.md) for the full skill architecture and spawn protocol.
 
-## Tests
+---
 
-### Unit tests (157 tests, stdlib only)
+## 📦 Install
 
 ```bash
-python3 test_a2a.py -v
+./install.sh
 ```
 
-Covers: schema init, WAL mode, agent registration & upsert, send/recv,
-read-tracking, broadcast, self-message filtering, `--include-self`,
-message TTL expiry & cleanup, thread IDs, status transitions,
-project info, unknown-agent errors, concurrent writes, FTS5 search,
-cross-project isolation, special character handling.
+Links `a2a` and `a2a-spawn` into `~/.local/bin/`, and the skill into `~/.claude/skills/` and `~/.agents/skills/`. Restart your CLI session afterwards.
 
-### Smoke tests
+Or manually:
 
 ```bash
-# Two Claude haiku peers (alice + bob)
-./smoke_test.sh
-
-# Three peers across claude + opencode + pi
-./smoke_test_multi.sh [project-name]
+ln -sf "$PWD/a2a"      ~/.local/bin/a2a
+ln -sf "$PWD/a2a-spawn" ~/.local/bin/a2a-spawn
+ln -sf "$PWD"          ~/.claude/skills/a2a    # exposes /a2a in Claude Code
+ln -sf "$PWD"          ~/.agents/skills/a2a    # cross-CLI
 ```
 
-Both clear the bus at start and assert each peer sent messages and ended
-with `status='done'`.
+---
 
-### Integration tests (105 tests)
+## 📖 Docs
 
-```bash
-python3 test_integration.py -v
-```
+- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — 5-minute walkthrough with hands-on examples
+- **[docs/INSTALLATION.md](docs/INSTALLATION.md)** — Setup, prerequisites, platform notes
+- **[docs/CLIENT_API.md](docs/CLIENT_API.md)** — Python client library (sync + async)
+- **[docs/REST_API.md](docs/REST_API.md)** — HTTP REST interface
+- **[AGENTS.md](AGENTS.md)** — Guide for AI agents working on this repo
+- **[CHANGELOG.md](CHANGELOG.md)** — Release history
 
-Shells out to the `a2a` binary and exercises full workflows: register→send→recv,
-TTL expiry, broadcast, cross-project isolation, concurrent agents,
-JSON output, and edge cases.
+Client libraries also available for [Go](docs/GO_CLIENT_API.md), [Node.js](docs/NODE_CLIENT_API.md), and [Rust](docs/RUST_CLIENT_API.md).
 
-### Performance benchmarks
+---
 
-```bash
-python3 benchmark.py
-```
+## 🔩 Design Notes
 
-Measures message latency (~82ms), throughput (~14 msg/s), broadcast latency,
-TTL overhead, and blocking recv timeout behavior.
-
-### Real-time dashboard
-
-```bash
-python3 dashboard.py     # watch agent activity live
-python3 dashboard.py --batch 60  # watch for 60 seconds then exit
-```
-
-Shows agent roster, recent messages, message rate, and participation stats.
-
-### Example agents
-
-The `examples/` directory contains pattern implementations showing how to write
-a2a agents:
-
-```bash
-# Run example smoke test
-./smoke_test_examples.sh
-
-# Or run individual agents
-python3 examples/researcher_agent.py &
-python3 examples/code_reviewer_agent.py &
-python3 examples/spawn_coordinator.py --project mytest &
-
-# Monitor the bus
-a2a peek --limit 50
-```
-
-See `examples/README.md` for detailed walkthroughs of each pattern:
-- **Researcher**: Broadcast + aggregation (ask all, collect responses)
-- **Code Reviewer**: Async request-response (handle multiple reviews)
-- **Spawn Coordinator**: Orchestrator spawning peers via `a2a-spawn`
-- **Spawn Debate**: Adversarial debate via `a2a-spawn`
-- **Task Coordinator**: Work distribution (assign, track, report)
-- **And more**: async workers, critic, debugger, compliance, encryption
-
-## CI/CD
-
-GitHub Actions automatically runs tests on every push:
-
-- **Unit tests**: `test_a2a.py` on Python 3.10, 3.11, 3.12
-- **Integration tests**: `test_integration.py` (105 CLI-level workflows)
-- **Smoke tests**: Single-CLI and cross-CLI peer collaboration
-- **Performance benchmarks**: Latency, throughput, TTL overhead
-- **Code validation**: Python syntax, shell script validation, docs checks
-
-See `.github/workflows/test.yml` for the full workflow.
-
-## Design notes
-
-- **Stdlib only** — `a2a.py` runs on any Python 3 with a built-in `sqlite3`.
-  The `a2a` wrapper probes for an interpreter that has it.
+- **Stdlib only** — `a2a.py` runs on any Python 3 with a built-in `sqlite3`. No dependencies.
 - **WAL mode** — multiple concurrent agents read/write safely.
 - **Read-tracking is per-agent** — broadcasts are seen once by each peer.
-- **No locking primitives** — coordination is by convention (the kit prompt),
-  not by the bus. Agents can step on each other; that's the point.
-- **Persistent by default** — the database survives between runs. Use
-  `a2a clear --yes` to reset.
+- **No locking primitives** — coordination is by convention (the kit prompt), not the bus. Agents can step on each other; that's the point.
+- **Persistent by default** — the database survives between runs. Use `a2a clear --yes` to reset.
+
+---
+
+## License
+
+MIT — [Javier Leandro Arancibia](https://github.com/javimosch)
