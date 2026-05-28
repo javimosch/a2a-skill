@@ -2,6 +2,13 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.13] — 2026-05-28 (Doc Audit — SKILL.md sync, README tree, pitfalls)
+
+### Docs
+- **root SKILL.md and docs/SKILL.md: descriptions out of sync with canonical** — both stubs had an older, shorter description; updated to match `.agents/skills/a2a/SKILL.md` canonical description.
+- **README.md file tree: missing files added** — added `a2a_client.pyi`, `a2a_client_async.pyi`, `Cargo.toml`, `verify_all.sh`, `verify_json_parity.sh`, `dashboard.py`, `benchmark.py`, `perf_comparison_test.py`, `smoke_test_examples.sh`, `smoke_test_multi.sh`. Removed duplicate entries.
+- **AGENTS.md: new pitfall for opencode model name** — documented that `a2a-spawn --model deepseek-v4-flash-free` fails with a misleading error; the full `opencode/deepseek-v4-flash-free` prefix is required.
+
 ## [1.3.12] — 2026-05-27 (a2a Peer Session — Stub Expansion & Pitfall Audit)
 
 ### Fixed

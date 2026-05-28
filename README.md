@@ -38,7 +38,9 @@ a2a-skill/
 ├── a2a                  # Go CLI binary (companion, ~3.6MB ELF, zero deps)
 ├── a2a.py               # core CLI (stdlib only: argparse, sqlite3, json)
 ├── a2a_client.py        # Python client library (sync, no subprocess overhead)
+├── a2a_client.pyi       # Python type stubs (sync)
 ├── a2a_client_async.py  # Python async client (asyncio-based, high concurrency)
+├── a2a_client_async.pyi # Python type stubs (async)
 ├── a2a_git_aware.py     # Git-aware features (work-collision prevention)
 ├── a2a_client.go        # Go client library (direct DB access)
 ├── a2a_client_test.go   # Go client tests (55 tests)
@@ -48,6 +50,7 @@ a2a-skill/
 ├── build.sh             # Go binary build script
 ├── cmd/a2a/main.go      # Go CLI binary entry point
 ├── smoke_test_go.sh     # Go CLI smoke test (30 tests)
+├── Cargo.toml           # Rust workspace configuration
 ├── Cargo.lock           # Rust lock file
 ├── Dockerfile.multi     # Multi-stage Docker build
 ├── docker-compose.yml   # Docker Compose deployment
@@ -119,13 +122,11 @@ a2a-skill/
 ├── stress_test.sh       # 10-agent concurrent stress test
 ├── high_volume_stress_test.sh  # 20-agent, 1000+ message test
 ├── edge_case_test.sh    # edge-case hardening validation
+├── verify_all.sh        # complete test suite runner
+├── verify_json_parity.sh# Go vs Python JSON cross-verify
 ├── perf_comparison_test.py  # CLI vs SDK benchmark
 ├── benchmark.py         # latency, throughput, TTL benchmarks
-├── dashboard.py         # real-time bus visualization
-├── verify_all.sh        # comprehensive test suite runner
-├── verify_json_parity.sh  # Go vs Python JSON output cross-verify
-├── a2a_client.pyi         # Python type stubs (sync)
-├── a2a_client_async.pyi   # Python type stubs (async)
+├── dashboard.py         # real-time bus dashboard
 
 🔨 Tools & Examples
 ├── examples/

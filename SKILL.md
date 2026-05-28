@@ -1,6 +1,6 @@
 ---
 name: a2a
-description: Peer-to-peer messaging for agentic CLI sessions over a shared SQLite bus. Spawn N agents across any CLI (claude, opencode, pi, ...) — no central orchestrator.
+description: Spawn a team of agentic-CLI sessions (claude, opencode, pi, ...) that talk to each other as peers via a shared SQLite message bus at ~/.a2a/{project}/database.db. No central chain of command — each agent decides who to message. Use when the user wants multiple AI sessions to collaborate, debate, or divide work without a fixed orchestrator.
 trigger: /a2a
 ---
 
