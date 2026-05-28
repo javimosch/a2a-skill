@@ -392,7 +392,7 @@ def cmd_send(args) -> None:
     if recipient is not None and recipient.startswith('@'):
         group_name = _resolve_group_name(recipient)
         members = conn.execute(
-            'SELECT member_id FROM agent_groups WHERE name=?', (group_name,)
+            'SELECT member_id FROM agent_groups WHERE name=? AND member_id != ?', (group_name, '__group__')
         ).fetchall()
         if not members:
             conn.close()
@@ -835,7 +835,7 @@ def cmd_group_list(args) -> None:
     """List all groups with their member counts."""
     _, conn = _open(args)
     rows = conn.execute(
-        "SELECT name, COUNT(*) as member_count FROM agent_groups GROUP BY name ORDER BY name"
+        "SELECT name, COUNT(*) as member_count FROM agent_groups WHERE member_id != '__group__' GROUP BY name ORDER BY name"
     ).fetchall()
     conn.close()
     if getattr(args, 'json', False):
@@ -854,7 +854,7 @@ def cmd_group_show(args) -> None:
     name = _resolve_group_name(args.name)
     _, conn = _open(args)
     rows = conn.execute(
-        "SELECT member_id FROM agent_groups WHERE name=? ORDER BY member_id", (name,)
+        "SELECT member_id FROM agent_groups WHERE name=? AND member_id != '__group__' ORDER BY member_id", (name,)
     ).fetchall()
     conn.close()
     if getattr(args, 'json', False):
@@ -992,24 +992,24 @@ def build_parser() -> argparse.ArgumentParser:
     gsub = sg.add_subparsers(dest="group_cmd", required=True)
 
     s = gsub.add_parser("create", help="create a group")
-    s.add_argument("name")
+    s.add_argument("name", metavar="NAME", help="Group name (alphanumeric, dashes, underscores)")
     s.add_argument("--json", action="store_true")
     s.set_defaults(group_func=cmd_group_create)
 
     s = gsub.add_parser("add", help="add members to a group")
-    s.add_argument("name")
-    s.add_argument("members", nargs="+")
+    s.add_argument("name", metavar="NAME", help="Group name (alphanumeric, dashes, underscores)")
+    s.add_argument("members", nargs="+", metavar="MEMBER", help="Agent ID(s) to add")
     s.add_argument("--json", action="store_true")
     s.set_defaults(group_func=cmd_group_add)
 
     s = gsub.add_parser("remove", help="remove a member from a group")
-    s.add_argument("name")
-    s.add_argument("member")
+    s.add_argument("name", metavar="NAME", help="Group name (alphanumeric, dashes, underscores)")
+    s.add_argument("member", metavar="MEMBER", help="Agent ID to remove")
     s.add_argument("--json", action="store_true")
     s.set_defaults(group_func=cmd_group_remove)
 
     s = gsub.add_parser("delete", help="delete an entire group")
-    s.add_argument("name")
+    s.add_argument("name", metavar="NAME", help="Group name (alphanumeric, dashes, underscores)")
     s.add_argument("--json", action="store_true")
     s.set_defaults(group_func=cmd_group_delete)
 
@@ -1018,7 +1018,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(group_func=cmd_group_list)
 
     s = gsub.add_parser("show", help="show members of a group")
-    s.add_argument("name")
+    s.add_argument("name", metavar="NAME", help="Group name (alphanumeric, dashes, underscores)")
     s.add_argument("--json", action="store_true")
     s.set_defaults(group_func=cmd_group_show)
 

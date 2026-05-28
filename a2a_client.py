@@ -103,7 +103,7 @@ class A2AClient:
             if recipient is not None and recipient.startswith('@'):
                 group_name = _validate_group_name(recipient.lstrip('@').strip())
                 members = conn.execute(
-                    "SELECT member_id FROM agent_groups WHERE name=?", (group_name,)
+                    "SELECT member_id FROM agent_groups WHERE name=? AND member_id != ?", (group_name, '__group__')
                 ).fetchall()
                 if not members:
                     raise ValueError(f"group '@{group_name}' not found or has no members")
@@ -709,7 +709,7 @@ class A2AClient:
         conn = self._connect()
         try:
             rows = conn.execute(
-                "SELECT name, COUNT(*) as member_count FROM agent_groups GROUP BY name ORDER BY name"
+                "SELECT name, COUNT(*) as member_count FROM agent_groups WHERE member_id != '__group__' GROUP BY name ORDER BY name"
             ).fetchall()
             return [dict(r) for r in rows]
         finally:
@@ -731,7 +731,7 @@ class A2AClient:
         conn = self._connect()
         try:
             rows = conn.execute(
-                "SELECT member_id FROM agent_groups WHERE name=? ORDER BY member_id", (name,)
+                "SELECT member_id FROM agent_groups WHERE name=? AND member_id != '__group__' ORDER BY member_id", (name,)
             ).fetchall()
             return [r["member_id"] for r in rows]
         finally:
