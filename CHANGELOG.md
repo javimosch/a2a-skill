@@ -2,6 +2,23 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.15] — 2026-05-28 (Go Client Pitfall Discovery — Semantic drift, validation gaps, transactions)
+
+### Fixed
+- **Go `Wait()` connection churn** — `Wait()` called `c.connect()` inside the `for` loop, creating a new SQLite connection every 500ms poll cycle (up to 120 connections for 60s timeout). Moved `connect()` before the loop, reusing one connection matching `Recv()` pattern.
+- **Go `GetStatus()` return type** — previously returned `("", nil)` for unknown agents, indistinguishable from a legitimate empty status. Changed to `(*string, error)` returning `nil, nil` for not-found, matching Python's `None` return. Simplified `Status()` to delegate to `GetStatus()`.
+- **Go `Recv()` partial read-marking on scan error** — previously marked each message as read inside `rows.Next()` loop; a `Scan()` failure on message N silently consumed messages 0..N-1. Separated scan phase from mark-read phase, matching Python's `fetchall()` + `executemany()` pattern.
+- **Go `Register()` upsert not atomic** — two `db.Exec()` calls (INSERT OR IGNORE + UPDATE) each auto-committed; a concurrent reader could see partial state. Wrapped in `tx.Begin()`/`tx.Commit()` transaction.
+- **Go `SearchFTS()` missing validation** — `limit` and `query` parameters not validated before FTS5 query; empty query or zero/negative limit could cause undefined behavior. Now validates upfront matching `Search()`.
+- **Go `Send()` whitespace thread_id** — accepted whitespace-only thread IDs that Python rejects. Now treats `TrimSpace(threadID) == ""` as empty.
+- **Go `RecvSimple()` float64 wait** — `wait` parameter was `int`, truncating fractional seconds. Changed to `float64` matching Python.
+- **Go `Stats()` error swallowing** — all five `QueryRow().Scan()` calls ignored errors. Now checks first COUNT query error and returns descriptive error.
+- **Go `connect()` connection expiry** — `SetConnMaxLifetime(5s)` caused mid-poll connection expiry in `Recv(wait=N)`. Set to `0` (no limit).
+- **Go `Send()` recipient error message** — missing "— register them first" hint that Python includes. Added for consistency.
+
+### Docs
+- **AGENTS.md**: Added 10 new Go-specific pitfalls to the common pitfalls table documenting semantic drift from Python, compilation errors, and silent behavior differences.
+
 ## [1.3.14] — 2026-05-28 (Async Parity Bugfix — Read tracking, limit handling, validation)
 
 ### Fixed
@@ -510,5 +527,5 @@ See [CHANGELOG.md](CHANGELOG.md) for release history and roadmap.
 
 ---
 
-**Last Updated**: 2026-05-27
+**Last Updated**: 2026-05-28
 
