@@ -21,6 +21,8 @@ import textwrap
 import time
 from pathlib import Path
 
+from a2a_common import MAX_GROUP_NAME_LENGTH
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS agents (
     id          TEXT PRIMARY KEY,
@@ -69,7 +71,6 @@ CREATE INDEX IF NOT EXISTS idx_agent_groups_member ON agent_groups(member_id);
 
 # Max length for agent IDs (prevents SQLite/text abuse)
 MAX_ID_LENGTH = 256
-MAX_GROUP_NAME_LENGTH = 64
 # Max length for thread IDs
 MAX_THREAD_ID_LENGTH = 256
 # Max length for agent role, cli, prompt fields
@@ -98,7 +99,13 @@ def project_name(explicit: str | None) -> str:
     return name
 
 
-def _validate_group_name(name: str) -> None:
+def _validate_group_name(name: str) -> str:
+    """Validate and normalize a group name.
+
+    Strips whitespace, checks length and character constraints.
+    Exits via die() on failure.
+    Returns the normalized (stripped) name on success.
+    """
     import re
     name = name.strip()
     if not name:
@@ -107,11 +114,16 @@ def _validate_group_name(name: str) -> None:
         die(f"group name too long ({len(name)} chars, max {MAX_GROUP_NAME_LENGTH})")
     if not re.match(r'^[a-zA-Z0-9_-]+$', name):
         die("group name must contain only alphanumeric characters, dashes, or underscores")
+    return name
 
 
 def _resolve_group_name(raw: str) -> str:
-    name = raw.strip().lstrip('@')
-    _validate_group_name(name)
+    """Strip leading '@' and whitespace, then validate the group name.
+
+    Returns the normalized group name.
+    """
+    name = raw.strip().lstrip('@').strip()
+    name = _validate_group_name(name)
     return name
 
 
@@ -732,9 +744,19 @@ def cmd_wait(args) -> None:
 # ---------- group commands ----------
 
 def cmd_group_create(args) -> None:
+    """Create a named agent group.
+
+    Persists a sentinel row in agent_groups so the group exists even before
+    members are added.
+    """
     name = _resolve_group_name(args.name)
     _, conn = _open(args)
-    # upsert-safe: just ensures the name is valid; rows added via add
+    ts = now()
+    conn.execute(
+        "INSERT OR IGNORE INTO agent_groups(name, member_id, created_at) VALUES (?,?,?)",
+        (name, '__group__', ts),
+    )
+    conn.commit()
     conn.close()
     if getattr(args, 'json', False):
         print(json.dumps({"group": name, "created": True}, indent=2))
@@ -743,6 +765,10 @@ def cmd_group_create(args) -> None:
 
 
 def cmd_group_add(args) -> None:
+    """Add members to an existing group.
+
+    Skips unregistered agents with a warning.
+    """
     name = _resolve_group_name(args.name)
     _, conn = _open(args)
     ts = now()
@@ -773,6 +799,7 @@ def cmd_group_add(args) -> None:
 
 
 def cmd_group_remove(args) -> None:
+    """Remove a single member from a group."""
     name = _resolve_group_name(args.name)
     member = args.member.strip()
     if not member:
@@ -791,6 +818,7 @@ def cmd_group_remove(args) -> None:
 
 
 def cmd_group_delete(args) -> None:
+    """Delete an entire group, removing all its member associations."""
     name = _resolve_group_name(args.name)
     _, conn = _open(args)
     cur = conn.execute("DELETE FROM agent_groups WHERE name=?", (name,))
@@ -804,6 +832,7 @@ def cmd_group_delete(args) -> None:
 
 
 def cmd_group_list(args) -> None:
+    """List all groups with their member counts."""
     _, conn = _open(args)
     rows = conn.execute(
         "SELECT name, COUNT(*) as member_count FROM agent_groups GROUP BY name ORDER BY name"
@@ -821,6 +850,7 @@ def cmd_group_list(args) -> None:
 
 
 def cmd_group_show(args) -> None:
+    """Show all members of a specific group."""
     name = _resolve_group_name(args.name)
     _, conn = _open(args)
     rows = conn.execute(
@@ -839,6 +869,7 @@ def cmd_group_show(args) -> None:
 
 
 def cmd_group(args) -> None:
+    """Dispatch to the appropriate group sub-command."""
     args.group_func(args)
 
 
