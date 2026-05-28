@@ -339,9 +339,6 @@ class RoutingClientAsync:
                     params.append(self.agent_id)
 
                 base += "ORDER BY m.created_at ASC"
-                if limit:
-                    base += " LIMIT ?"
-                    params.append(limit)
 
                 cursor = await conn.execute(base, params)
                 messages = []
@@ -393,6 +390,11 @@ class RoutingClientAsync:
             if not matched:
                 routed["deliver"].append({"message": msg, "rule": None})
 
+        # Apply limits per-category post-routing (match sync behavior)
+        if limit:
+            for key in routed:
+                routed[key] = routed[key][:limit]
+
         return routed
 
     async def apply_routing(self, routed: Dict[str, List[Dict[str, Any]]]) -> bool:
@@ -418,28 +420,20 @@ class RoutingClientAsync:
                         (
                             self.agent_id,
                             forward_to,
-                            f"[Forwarded] {msg['body']}",
+                            f"[Forwarded] {msg.get('body') or ''}",
                             msg.get("priority", 2),
                             msg.get("thread_id"),
                             time.time(),
                         ),
                     )
 
-            # Handle discards
-            for item in routed.get("discard", []):
-                msg = item["message"]
-                # Mark as read to hide
-                await conn.execute(
-                    "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) "
-                    "VALUES (?, ?, ?)",
-                    (self.agent_id, msg["id"], time.time()),
-                )
-
-            for category in ("deliver", "forward", "queue", "escalate"):
+            # Mark all processed messages as read to prevent re-processing
+            for category in ("deliver", "forward", "discard", "queue", "escalate"):
                 for item in routed.get(category, []):
                     msg = item["message"]
                     await conn.execute(
-                        "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?, ?, ?)",
+                        "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) "
+                        "VALUES (?, ?, ?)",
                         (self.agent_id, msg["id"], time.time()),
                     )
             await conn.commit()

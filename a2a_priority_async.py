@@ -40,6 +40,10 @@ class PriorityClientAsync:
                 "aiosqlite library required: pip install aiosqlite"
             )
 
+        if not project or not project.strip():
+            raise ValueError("project must not be empty")
+        if not agent_id or not agent_id.strip():
+            raise ValueError("agent_id must not be empty")
         self.project = project
         self.agent_id = agent_id
         self.db_path = Path.home() / ".a2a" / project / "database.db"
@@ -196,6 +200,13 @@ class PriorityClientAsync:
                     messages.append(dict(row))
 
                 if messages:
+                    ts = time.time()
+                    for msg in messages:
+                        await conn.execute(
+                            "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?, ?, ?)",
+                            (self.agent_id, msg["id"], ts),
+                        )
+                    await conn.commit()
                     return messages
 
                 if wait <= 0:
@@ -207,6 +218,7 @@ class PriorityClientAsync:
                 await asyncio.sleep(poll_interval)
         finally:
             await conn.close()
+
 
     async def recv_by_priority(
         self,
@@ -267,6 +279,13 @@ class PriorityClientAsync:
                     messages.append(dict(row))
 
                 if messages:
+                    ts = time.time()
+                    for msg in messages:
+                        await conn.execute(
+                            "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?, ?, ?)",
+                            (self.agent_id, msg["id"], ts),
+                        )
+                    await conn.commit()
                     return messages
 
                 if wait <= 0:
@@ -338,6 +357,13 @@ class PriorityClientAsync:
                     messages.append(dict(row))
 
                 if messages:
+                    ts = time.time()
+                    for msg in messages:
+                        await conn.execute(
+                            "INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?, ?, ?)",
+                            (self.agent_id, msg["id"], ts),
+                        )
+                    await conn.commit()
                     return messages
 
                 if wait <= 0:
