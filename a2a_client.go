@@ -159,6 +159,9 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 	}
 
 	var tid *string
+	if strings.TrimSpace(threadID) == "" {
+		threadID = ""
+	}
 	if threadID != "" {
 		if len(threadID) > MaxThreadIDLength {
 			return 0, fmt.Errorf("thread id too long (%d chars, max %d)", len(threadID), MaxThreadIDLength)
@@ -290,9 +293,9 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 }
 
 // RecvSimple is a backward-compatible wrapper for Recv with positional args.
-func (c *Client) RecvSimple(wait int, unreadOnly, includeSelf bool, limit int) ([]Message, error) {
+func (c *Client) RecvSimple(wait float64, unreadOnly, includeSelf bool, limit int) ([]Message, error) {
 	return c.Recv(RecvOpts{
-		Wait:        float64(wait),
+		Wait:        wait,
 		UnreadOnly:  unreadOnly,
 		IncludeSelf: includeSelf,
 		Limit:       limit,
@@ -504,6 +507,12 @@ func (c *Client) Search(query string, limit int) ([]Message, error) {
 // Requires the binary to be built with -tags fts5.
 // Falls back to LIKE search if FTS5 is unavailable.
 func (c *Client) SearchFTS(query string, limit int) ([]Message, error) {
+	if strings.TrimSpace(query) == "" {
+		return nil, fmt.Errorf("search query must not be empty")
+	}
+	if limit <= 0 {
+		return nil, fmt.Errorf("limit must be a positive integer")
+	}
 	db, err := c.connect()
 	if err != nil {
 		return nil, err
