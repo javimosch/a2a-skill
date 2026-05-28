@@ -2,6 +2,21 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.17] — 2026-05-28 (Cross-Client Parity — Empty bodies, error standardization, wait_for_messages)
+
+### Fixed
+- **All clients: reject empty message bodies** — Python, Go, JS, and Rust clients now validate that message bodies are non-empty before sending. Empty strings are rejected with consistent error messages across all implementations.
+- **Go/JS/Rust clients: standardized error messages** — aligned error message text across language implementations for consistency in API contracts and user-facing errors.
+
+### Refactored
+- **test_helpers.py: extracted `make_connection()` helper** — consolidated SQLite connection setup logic used across multiple test modules into a shared helper function to reduce duplication and improve test maintainability.
+
+### Added
+- **Go and Rust clients: `wait_for_messages()` method** — added to match Python, JS, and async Python implementations. Blocks until N unread messages arrive or timeout, with identical signature and behavior across all clients.
+
+### Docs
+- **README.md: rewritten for clarity and brevity** — simplified structure, improved examples, and updated file tree to reflect current project layout.
+
 ## [1.3.16] — 2026-05-28
 
 ### Fixed
