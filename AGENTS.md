@@ -44,7 +44,7 @@ CLI (`claude`, `opencode`, `pi`, …) share a SQLite bus at
 orchestrator, no central chain of command.
 
 **Core** (stdlib-only, zero deps):
-- `a2a.py` — CLI: 15 commands (init, register, send, recv, peek, list, status, wait, clear, project, unregister, search, stats, thread, version)
+- `a2a.py` — CLI: 14 commands (init, register, send, recv, peek, list, status, wait, clear, project, unregister, search, stats, thread)
 - `a2a` — Go CLI binary (companion, ~3.6MB ELF, zero deps)
 - `a2a-spawn` — per-CLI launcher that hides flag differences
 
