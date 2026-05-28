@@ -311,6 +311,49 @@ git reset --hard origin/main
 Only do this when you confirm the local commit is a duplicate/stale version
 of the remote commit (same intent, different SHA).
 
+### Root + claude: the only fully working method is a dedicated non-root user
+
+Several methods have been tried on Claude Code 2.1.147 as root. Here is what actually works:
+
+| Method | As root | Bash tool auto-runs |
+|--------|---------|---------------------|
+| `--dangerously-skip-permissions` | ❌ blocked | — |
+| `--permission-mode bypassPermissions` | ❌ blocked | — |
+| `--permission-mode dontAsk` | ✅ accepted | ❌ still prompts |
+| `--permission-mode auto` | ✅ accepted | ❌ still prompts |
+| `CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS=1` (env var) | ✅ accepted | ❌ still prompts for bash |
+| non-root user + `--allow-dangerously-skip-permissions --permission-mode bypassPermissions` | ✅ | ✅ fully autonomous |
+
+**The only method that makes agents fully autonomous (no bash permission prompts) on
+Claude Code 2.1.147 is running as a non-root user.** Even though
+`CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS=1` is documented as the env var equivalent of
+`--dangerously-skip-permissions`, it does not suppress in-session bash tool prompts
+when the session runs as root.
+
+**Recommended setup for spawning agents on root-only machines:**
+
+```bash
+# 1. Create a dedicated agent user once
+useradd -m -s /bin/bash agent
+cp -r /root/.claude/. /home/agent/.claude/
+chown -R agent:agent /home/agent/.claude
+
+# 2. Share the a2a bus
+ln -sf /root/.a2a /home/agent/.a2a
+chown -R agent:agent /root/.a2a
+
+# 3. Make the project writable by agent
+chown -R agent:agent /root/projects/myproject
+
+# 4. Patch a2a-spawn claude case to use sudo
+# Change: CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
+# To:     sudo -u agent env A2A_PROJECT="$A2A_PROJECT" \
+# And keep FLAGS=(-p --dangerously-skip-permissions --max-turns 16)
+```
+
+Note: `sudo -u agent env A2A_PROJECT="..."` passes the project env var through `sudo`'s
+env stripping (which drops most vars by default). Always use `env KEY=VAL` explicitly.
+
 ### Always pass --project explicitly; don't rely on basename($PWD)
 
 `a2a-spawn` defaults `A2A_PROJECT` to `basename($PWD)`. On a remote machine
