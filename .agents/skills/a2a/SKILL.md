@@ -352,6 +352,58 @@ check-in messages while waiting for confirmation.
 See [`examples/remote_worktree_team.sh`](../../../examples/remote_worktree_team.sh)
 for a complete working example of this pattern.
 
+## Common Pitfalls & Gotchas
+
+### 12. Cross-user database ownership
+
+When the spawning agent (orchestrator) runs as one user (e.g. `root`) but
+spawned agents run as a different user (e.g. via `sudo -u agent`), the a2a
+database at `~/.a2a/{project}/database.db` is created with the orchestrator's
+ownership. The spawned agents then get:
+
+```
+a2a: list error: attempt to write a readonly database
+```
+
+**Fix:** After `a2a init`, `chown` the database directory to the agent user:
+
+```bash
+chown -R agent:agent ~agent/.a2a/{project}/
+```
+
+Or run `a2a init` as the target user in the first place:
+
+```bash
+sudo -u agent a2a --project {project} init
+sudo -u agent a2a --project {project} register ...
+```
+
+### 13. Sudo spawns lose the parent's PATH and env vars
+
+When spawning agents via `sudo -u user`, the child process inherits a minimal
+environment. The `A2A_PROJECT` env var, `PATH` entries, and shell configs
+(`.bashrc`, `.zshrc`) are **not** inherited. The kit prompt's a2a locator
+snippet handles this by probing standard paths.
+
+**Fix:** Either:
+- Pass `env` explicitly: `sudo -u agent env A2A_PROJECT=... a2a ...`
+- Use absolute paths for `a2a` in the kit prompt locator
+- Install `a2a` to a system-wide location like `/usr/local/bin/a2a`
+
+### 14. `--dangerously-skip-permissions` blocked on root
+
+The claude CLI refuses `--dangerously-skip-permissions` when running as
+root/sudo:
+
+```
+--dangerously-skip-permissions cannot be used with root/sudo privileges
+```
+
+**Fix:** Either:
+- Run claude as a non-root user (via `sudo -u user claude ...`)
+- Use the env var `CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1` combined with
+  `--permission-mode acceptEdits` instead of the flag
+
 ## Related Documentation
 
 - [docs/GO_CLI_REFERENCE.md](../../../docs/GO_CLI_REFERENCE.md) — Full Go binary CLI command reference
