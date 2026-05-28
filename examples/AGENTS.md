@@ -30,6 +30,7 @@ Do **not** put tests here. Tests live in `test_*.py` at the project root.
 | `v13_integrated_agent.py` | All v1.3 features together (async) | `a2a_client_async.py` + all modules |
 | `nodejs_coordinator.js` | Coordinator in Node.js | `a2a_client.js` |
 | `task_worker.rs` | Worker in Rust | `src/lib.rs` |
+| `remote_worktree_team.sh` | Multi-agent team on remote worktree | `a2a-spawn` + shell |
 
 ## Rules for adding a new example
 

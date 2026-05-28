@@ -135,6 +135,7 @@ a2a-skill/
 ├── high_volume_stress_test.sh 20-agent, 1000+ message test
 ├── verify_all.sh         Complete test suite runner
 ├── examples/             AGENTS.md documents patterns
+│   └── remote_worktree_team.sh  Multi-agent team on remote git worktree
 ├── completion/           AGENTS.md documents shell completions
 ├── docs/                 AGENTS.md documents doc ownership
 └── src/                  AGENTS.md documents Rust crate
@@ -497,6 +498,7 @@ When working in those areas, read the corresponding file first.
 |-----------|------|-------|
 | `docs/` | `docs/AGENTS.md` | Doc file ownership table, rules for adding new docs |
 | `examples/` | `examples/AGENTS.md` | Example agent patterns, client choice guide, adding new examples |
+| `docs/` | `docs/PITFALLS.md` | Lessons from artifact smoke testing (see also `examples/artifacts/`) |
 | `completion/` | `completion/AGENTS.md` | Shell completion scripts for Bash and Zsh |
 | `src/` | `src/AGENTS.md` | Rust library API surface, WAL invariant, build instructions |
 
