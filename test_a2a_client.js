@@ -388,6 +388,30 @@ test('getStatus() returns null for unknown agent', async () => {
   assert.strictEqual(status, null);
 });
 
+// --- touch ---
+
+test('touch() updates last_seen', async () => {
+  const { alice, dbPath } = makeClients('touch-test');
+  const db = new DatabaseSync(dbPath);
+  const before = db.prepare("SELECT last_seen FROM agents WHERE id='alice'").get().last_seen;
+  db.close();
+  await new Promise(r => setTimeout(r, 10));
+  await alice.touch();
+  const db2 = new DatabaseSync(dbPath);
+  const after = db2.prepare("SELECT last_seen FROM agents WHERE id='alice'").get().last_seen;
+  db2.close();
+  assert.ok(after > before, 'last_seen should increase after touch()');
+});
+
+test('touch() on unknown agent does not throw', async () => {
+  const { dir, dbPath } = makeClients('touch-ghost');
+  const ghost = new A2AClient('touch-ghost', 'ghost');
+  ghost.dbDir = dir;
+  ghost.dbPath = dbPath;
+  // Should not throw
+  await ghost.touch();
+});
+
 // --- search ---
 
 test('search() finds messages by keyword', async () => {

@@ -2,6 +2,17 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.18] — 2026-05-28 (Cross-Client `touch()` — Python sync/async, JS)
+
+### Added
+- **Python sync client: `touch()` method** — updates `last_seen` timestamp for heartbeat/keep-alive signaling. Matches Go and Rust implementations. `a2a_client.py`.
+- **Python async client: `touch()` method** — async variant of `touch()` in `a2a_client_async.py`.
+- **JS client: `touch()` method** — JavaScript variant in `a2a_client.js`.
+- **Tests for `touch()` across all three clients** — `test_touch_updates_last_seen` and `test_touch_nonexistent_agent_is_noop` in both test files. Net +4 tests (802 Python tests passing).
+
+### Changed
+- **Test count updated** — Python tests now 802 (was 798).
+
 ## [1.3.17] — 2026-05-28 (Cross-Client Parity — Empty bodies, error standardization, wait_for_messages)
 
 ### Fixed

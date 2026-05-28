@@ -275,6 +275,23 @@ else:
     print("Timeout: only got", len(client.recv()), "responses")
 ```
 
+### touch()
+
+Update this agent's `last_seen` timestamp. Useful for heartbeat/keep-alive
+signaling.
+
+```python
+client.touch() -> None
+```
+
+**Example:**
+```python
+# Send a heartbeat every 60 seconds
+while True:
+    client.touch()
+    time.sleep(60)
+```
+
 ### search()
 
 ```python

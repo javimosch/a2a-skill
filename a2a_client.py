@@ -336,6 +336,22 @@ class A2AClient:
         finally:
             conn.close()
 
+    def touch(self) -> None:
+        """Update this agent's last_seen timestamp to the current time.
+
+        Useful for heartbeat / keep-alive signals so other agents know this
+        agent is still active.
+        """
+        conn = self._connect()
+        try:
+            conn.execute(
+                "UPDATE agents SET last_seen=? WHERE id=?",
+                (time.time(), self.agent_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
     def get_status(self, agent_id: Optional[str] = None) -> Optional[str]:
         """Get an agent's status.
 
