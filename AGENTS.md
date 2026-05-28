@@ -188,24 +188,24 @@ a2a-skill/
 ├── cmd/a2a/main.go       Go CLI binary entry point
 ├── build.sh              Go build script
 ├── Makefile              Go build/test/cover targets
-├── smoke_test_go.sh      Go CLI smoke test (30 tests)
+├── smoke_test_go.sh      Go CLI smoke test (33 tests)
 ├── smoke_test.sh          Python CLI smoke test (2 claude haiku peers)
 ├── smoke_test_multi.sh    Multi-CLI smoke test (3 peers: claude+opencode+pi)
 ├── smoke_test_examples.sh Example agent patterns smoke test
 ├── verify_json_parity.sh Go vs Python JSON cross-verify
 ├── a2a_client.js         Node.js client
-├── test_a2a_client.js    Node.js client tests (33)
+├── test_a2a_client.js    Node.js client tests (35)
 ├── src/lib.rs            Rust client (15 tests)
 ├── Cargo.toml            Rust workspace configuration
 ├── Cargo.lock
 ├── test_a2a.py           unit tests (157)
-├── test_a2a_client.py    Python client tests (85)
+├── test_a2a_client.py    Python client tests (87)
 ├── test_integration.py   integration tests (105)
 ├── test_v13_features.py   v1.3 satellite module tests (140)
 ├── test_git_aware.py     git-aware module tests (65)
 ├── test_server.py        REST API tests (70)
-├── test_async_modules.py async client tests (94, 3 skip-guarded classes)
-├── test_artifacts_util.py artifact build util tests (84)     ← 914 tests total (804 Python + 60 Go + 35 JS + 15 Rust)
+├── test_async_modules.py async client tests (96, 3 skip-guarded classes)
+├── test_artifacts_util.py artifact build util tests (84)     ← 914 unit tests total (804 Python + 60 Go + 35 JS + 15 Rust)
 ├── benchmark.py
 ├── dashboard.py
 ├── WEB_UI_README.md      Web UI documentation
