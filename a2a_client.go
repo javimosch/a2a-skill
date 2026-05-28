@@ -811,6 +811,8 @@ func (c *Client) Clear() error {
 
 // Wait blocks until at least count unread messages exist for this agent,
 // or until timeout seconds elapse. Returns true if the required count was reached.
+// NOTE: unlike Python wait_for_messages(), this does NOT mark messages as read.
+// Messages remain unread after Wait() returns true — call Recv() to consume them.
 func (c *Client) Wait(count int, timeoutSec float64) (bool, error) {
 	if count <= 0 {
 		return false, fmt.Errorf("count must be a positive integer")
@@ -823,11 +825,12 @@ func (c *Client) Wait(count int, timeoutSec float64) (bool, error) {
 	}
 	deadline := time.Now().Add(time.Duration(timeoutSec * float64(time.Second)))
 	pollInterval := 500 * time.Millisecond
+	db, err := c.connect()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
 	for {
-		db, err := c.connect()
-		if err != nil {
-			return false, err
-		}
 		var unread int
 		err = db.QueryRow(
 			`SELECT COUNT(*) FROM messages m
@@ -836,7 +839,6 @@ func (c *Client) Wait(count int, timeoutSec float64) (bool, error) {
 			 AND NOT EXISTS (SELECT 1 FROM reads r WHERE r.agent_id = ? AND r.message_id = m.id)`,
 			c.AgentID, c.AgentID, c.AgentID,
 		).Scan(&unread)
-		db.Close()
 		if err != nil {
 			return false, err
 		}
