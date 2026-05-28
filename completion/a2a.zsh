@@ -1,6 +1,12 @@
 #!/bin/zsh
 # Zsh completion script for a2a CLI
 
+_a2a_agents() {
+    local -a agents
+    agents=(${(f)"$(a2a list 2>/dev/null | awk 'NR>1{print $1}')"})
+    _describe 'agent' agents
+}
+
 _a2a() {
     local context state state_descr line
     local -a args
@@ -17,37 +23,99 @@ _a2a() {
         args)
             case "${words[2]}" in
                 send)
-                    # Recipient agent
-                    _values "recipient" "all" "*" "broadcast"
+                    _arguments \
+                        '--from[agent ID]:agent:->agents' \
+                        '--thread[thread ID]:thread:' \
+                        '--ttl[TTL seconds]:seconds:' \
+                        '--json[output JSON]' \
+                        '1:recipient:->agents_or_all' \
+                        '2:message body:'
+                    ;;
+                recv)
+                    _arguments \
+                        '--as[agent ID]:agent:->agents' \
+                        '--wait[wait seconds]:seconds:' \
+                        '--limit[message limit]:limit:' \
+                        '--since[unix timestamp]:timestamp:' \
+                        '--all[include already-read messages]' \
+                        '--include-self[include own messages]' \
+                        '--peek[do not mark as read]' \
+                        '--json[output JSON]'
+                    ;;
+                register)
+                    _arguments \
+                        '--role[agent role]:role:' \
+                        '--prompt[system prompt]:prompt:' \
+                        '--cli[CLI type]:cli:->cli_types' \
+                        '--pid[process ID]:pid:' \
+                        '--upsert[update if exists]' \
+                        '1:agent id:'
+                    ;;
+                search)
+                    _arguments \
+                        '--limit[result limit]:limit:' \
+                        '--json[output JSON]' \
+                        '--fts[force FTS5 full-text search]' \
+                        '1:query:'
+                    ;;
+                list)
+                    _arguments \
+                        '--json[output JSON]'
                     ;;
                 status)
-                    # Status value
-                    _values "status" "active" "idle" "done" "blocked"
-                    ;;
-                project)
-                    # Project name
-                    _values "project" "default" "production" "development" "test"
-                    ;;
-                recv|wait|peek)
-                    # Global options
                     _arguments \
-                        '--limit[limit messages]:num:' \
-                        '--wait[wait seconds]:seconds:' \
+                        '--as[agent ID]:agent:->agents' \
                         '--json[output JSON]' \
-                        '--include-self[include own messages]' \
-                        '--unread[unread only]' \
-                        '--as[agent ID]:agent:' \
-                        '--project[project name]:project:'
+                        '1:status:(active idle done blocked)'
+                    ;;
+                wait)
+                    _arguments \
+                        '--as[agent ID]:agent:->agents' \
+                        '--count[message count]:count:' \
+                        '--timeout[timeout seconds]:timeout:' \
+                        '--since[unix timestamp]:timestamp:'
+                    ;;
+                peek)
+                    _arguments \
+                        '--limit[message limit]:limit:' \
+                        '--json[output JSON]'
+                    ;;
+                clear)
+                    _arguments \
+                        '--yes[skip confirmation]'
+                    ;;
+                stats)
+                    _arguments \
+                        '--json[output JSON]'
+                    ;;
+                thread)
+                    _arguments \
+                        '--json[output JSON]' \
+                        '1:thread id:'
+                    ;;
+                init|project|unregister)
+                    :
                     ;;
                 *)
-                    # Generic options for any command
                     _arguments \
                         '--project[project name]:project:' \
-                        '--json[output JSON]' \
-                        '--help[show help]' \
-                        '--version[show version]'
+                        '--help[show help]'
                     ;;
             esac
+            ;;
+    esac
+
+    case "${state}" in
+        agents)
+            _a2a_agents
+            ;;
+        agents_or_all)
+            local -a alist
+            alist=("all" ${(f)"$(a2a list 2>/dev/null | awk 'NR>1{print $1}')"})
+            _describe 'recipient' alist
+            ;;
+        cli_types)
+            _values 'cli' 'claude' 'opencode' 'pi' 'gemini'
             ;;
     esac
 }
