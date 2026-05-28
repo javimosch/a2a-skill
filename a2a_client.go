@@ -258,7 +258,6 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 		}
 
 		messages := []Message{}
-		ts := nowSec()
 
 		for rows.Next() {
 			var m Message
@@ -268,12 +267,15 @@ func (c *Client) Recv(opts RecvOpts) ([]Message, error) {
 				return nil, err
 			}
 			messages = append(messages, m)
+		}
+		rows.Close()
 
-			// Mark as read
+		// Mark all fetched messages as read (separate phase to avoid partial read-marking on scan error)
+		ts := nowSec()
+		for _, m := range messages {
 			db.Exec("INSERT OR IGNORE INTO reads(agent_id, message_id, read_at) VALUES (?,?,?)",
 				c.AgentID, m.ID, ts)
 		}
-		rows.Close()
 
 		if len(messages) > 0 {
 			return messages, nil
