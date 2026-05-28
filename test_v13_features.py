@@ -1172,11 +1172,12 @@ class TestPriorityClientSendValidation(unittest.TestCase):
         import a2a
         self.project = f"priority-send-validation-{os.getpid()}-{id(self)}"
         conn = a2a.connect(self.project, create=True)
-        conn.execute(
-            "INSERT INTO agents(id, role, status, created_at, last_seen) "
-            "VALUES (?,?,?,?,?)",
-            ("alice", "tester", "active", 1000.0, 1000.0),
-        )
+        for agent_id in ("alice", "bob"):
+            conn.execute(
+                "INSERT INTO agents(id, role, status, created_at, last_seen) "
+                "VALUES (?,?,?,?,?)",
+                (agent_id, "tester", "active", 1000.0, 1000.0),
+            )
         conn.commit()
         conn.close()
         self.alice = PriorityClient(self.project, "alice")

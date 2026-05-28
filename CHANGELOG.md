@@ -2,6 +2,11 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [1.3.16] — 2026-05-28
+
+### Fixed
+- **test_v13_features.py: TestPriorityClientSendValidation missing bob registration** — setUp only registered `alice` but all send tests use `bob` as recipient. The parent `A2AClient.send()` validates recipient existence, causing `test_send_body_max_length_ok` (and any send-to-bob test) to fail with "unknown recipient 'bob'". Added `bob` to setUp registration loop matching `TestPriorityClientWithDB`.
+
 ## [1.3.15] — 2026-05-28 (Go Client Pitfall Discovery — Semantic drift, validation gaps, transactions)
 
 ### Fixed
