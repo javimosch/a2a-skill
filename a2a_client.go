@@ -726,18 +726,27 @@ func (c *Client) Register(role, prompt, cli string, pid *int, upsert bool) (bool
 
 	ts := nowSec()
 	if upsert {
-		_, err = db.Exec(
+		tx, err := db.Begin()
+		if err != nil {
+			return false, err
+		}
+		defer tx.Rollback()
+		if _, err = tx.Exec(
 			`INSERT OR IGNORE INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen)
 			 VALUES (?,?,?,?,?,?,?,?)`,
 			c.AgentID, role, prompt, cli, "active", pid, ts, ts,
-		)
-		_, err = db.Exec(
+		); err != nil {
+			return false, err
+		}
+		if _, err = tx.Exec(
 			`UPDATE agents SET role=COALESCE(NULLIF(?,''),role), prompt=COALESCE(NULLIF(?,''),prompt),
 			 cli=COALESCE(NULLIF(?,''),cli), pid=COALESCE(?,pid), status='active', last_seen=?
 			 WHERE id=?`,
 			role, prompt, cli, pid, ts, c.AgentID,
-		)
-		return true, err
+		); err != nil {
+			return false, err
+		}
+		return true, tx.Commit()
 	}
 	_, err = db.Exec(
 		`INSERT INTO agents(id, role, prompt, cli, status, pid, created_at, last_seen)
