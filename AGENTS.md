@@ -100,7 +100,7 @@ a2a-skill/
 ├── Dockerfile.multi      Multi-stage Docker build
 ├── docker-compose.yml    Docker Compose deployment
 ├── a2a_client.go         Go client library
-├── a2a_client_test.go    Go library tests (55)
+├── a2a_client_test.go    Go library tests (60)
 ├── go.mod                Go module (companion binary)
 ├── go.sum
 ├── cmd/a2a/main.go       Go CLI binary entry point
@@ -113,7 +113,7 @@ a2a-skill/
 ├── verify_json_parity.sh Go vs Python JSON cross-verify
 ├── a2a_client.js         Node.js client
 ├── test_a2a_client.js    Node.js client tests (33)
-├── src/lib.rs            Rust client (14 tests)
+├── src/lib.rs            Rust client (15 tests)
 ├── Cargo.toml            Rust workspace configuration
 ├── Cargo.lock
 ├── test_a2a.py           unit tests (157)
@@ -123,7 +123,7 @@ a2a-skill/
 ├── test_git_aware.py     git-aware module tests (65)
 ├── test_server.py        REST API tests (70)
 ├── test_async_modules.py async client tests (94, 3 skip-guarded classes)
-├── test_artifacts_util.py artifact build util tests (84)     ← 902 tests total (800 Python + 55 Go + 14 Rust + 33 JS)
+├── test_artifacts_util.py artifact build util tests (84)     ← 908 tests total (800 Python + 60 Go + 33 JS + 15 Rust)
 ├── benchmark.py
 ├── dashboard.py
 ├── WEB_UI_README.md      Web UI documentation
