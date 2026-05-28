@@ -145,7 +145,7 @@ a2a-skill/
 `~/.a2a/{project}/database.db` (WAL mode for concurrent writers):
 
 - `agents(id, role, prompt, cli, status, pid, created_at, last_seen)`
-- `messages(id, sender, recipient, body, thread_id, created_at)` —
+- `messages(id, sender, recipient, body, thread_id, ttl_seconds, created_at)` —
   `recipient = NULL` means broadcast
 - `reads(agent_id, message_id, read_at)` — per-agent unread tracking
 

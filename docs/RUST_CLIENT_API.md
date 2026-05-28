@@ -158,7 +158,7 @@ match client.thread("42") {
 Register this agent on the bus.
 
 ```rust
-match client.register("researcher", "Research things", "rust", 0, true) {
+match client.register("researcher", "Research things", "rust", None, true) {
     Ok(_) => println!("Registered"),
     Err(e) => eprintln!("Error: {}", e),
 }

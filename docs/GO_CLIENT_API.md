@@ -22,10 +22,13 @@ import (
 
 func main() {
 	// Initialize client
-	client := a2a.NewClient("my-project", "alice")
+	client, err := a2a.NewClient("my-project", "alice")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Send a message
-	msgID, err := client.Send("bob", "Hello Bob!", "", nil)
+	msgID, err := client.Send("bob", "Hello Bob!", nil, "")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,7 +48,7 @@ func main() {
 	}
 
 	// Broadcast
-	client.Send("all", "Hello everyone!", "", nil)
+	client.Send("all", "Hello everyone!", nil, "")
 
 	// Mark done
 	client.SetStatus("done")
@@ -54,18 +57,18 @@ func main() {
 
 ## API Reference
 
-### NewClient(project, agentID string) *Client
+### NewClient(project, agentID string) (*Client, error)
 
 Create a new client.
 
-### Send(to, message, threadID string, ttlSeconds *int) (int64, error)
+### Send(to, message string, ttlSeconds *int, threadID string) (int64, error)
 
 Send a message with optional thread ID and TTL. Set `to` to "all", "*", or "broadcast" for broadcast messages.
-Pass thread ID as "" for no thread, or nil ttlSeconds for no expiry.
+Pass ttlSeconds as nil for no expiry, or threadID as "" for no thread.
 
 ```go
-ttl := 3600
-msgID, err := client.Send("bob", "Hello", "thread-1", &ttl)
+	ttl := 3600
+	msgID, err := client.Send("bob", "Hello", &ttl, "thread-1")
 ```
 
 ### SendSimple(to, message string) (int64, error)
