@@ -2808,5 +2808,469 @@ class TestProjectNameValidation(unittest.TestCase):
         self.assertEqual(name, "project-🚀-test")
 
 
+# ========== Agent Groups tests ==========
+
+
+class TestAgentGroups(unittest.TestCase):
+    """Test agent group creation, management, and messaging."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.project = f"test-{os.getpid()}"
+        self.db_path = a2a.db_path(self.project)
+        conn = a2a.connect(self.project, create=True)
+        for agent_id in ("alice", "bob", "carol"):
+            conn.execute(
+                "INSERT INTO agents(id, role, status, created_at, last_seen) "
+                "VALUES (?,?,?,?,?)",
+                (agent_id, "tester", "active", a2a.now(), a2a.now())
+            )
+        conn.commit()
+        conn.close()
+
+    def tearDown(self):
+        if self.db_path.exists():
+            self.db_path.unlink()
+        self.tmpdir.cleanup()
+
+    # --- cmd_group_create ---
+
+    def test_cmd_group_create_ok(self):
+        """Create a valid group."""
+        args = a2a.argparse.Namespace(
+            project=self.project, name="my-team"
+        )
+        a2a.cmd_group_create(args)
+        conn = a2a.connect(self.project)
+        rows = conn.execute(
+            "SELECT name, member_id FROM agent_groups WHERE name=?", ("my-team",)
+        ).fetchall()
+        conn.close()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["member_id"], "__group__")
+
+    def test_cmd_group_create_empty_rejected(self):
+        """Create group with empty name is rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_group_create(a2a.argparse.Namespace(
+                project=self.project, name=""
+            ))
+
+    def test_cmd_group_create_whitespace_rejected(self):
+        """Create group with whitespace-only name is rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_group_create(a2a.argparse.Namespace(
+                project=self.project, name="   "
+            ))
+
+    def test_cmd_group_create_too_long_rejected(self):
+        """Create group with name exceeding MAX_GROUP_NAME_LENGTH is rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_group_create(a2a.argparse.Namespace(
+                project=self.project, name="a" * (a2a.MAX_GROUP_NAME_LENGTH + 1)
+            ))
+
+    def test_cmd_group_create_special_chars_rejected(self):
+        """Create group with special characters in name is rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_group_create(a2a.argparse.Namespace(
+                project=self.project, name="my team!"
+            ))
+
+    def test_cmd_group_create_at_prefix_ok(self):
+        """Create group with @ prefix strips the @ and creates the group."""
+        args = a2a.argparse.Namespace(
+            project=self.project, name="@my-team"
+        )
+        a2a.cmd_group_create(args)
+        conn = a2a.connect(self.project)
+        rows = conn.execute(
+            "SELECT name FROM agent_groups WHERE name=?", ("my-team",)
+        ).fetchall()
+        conn.close()
+        self.assertEqual(len(rows), 1)
+
+    # --- cmd_group_add ---
+
+    def test_cmd_group_add_ok(self):
+        """Add members to a group."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="my-team"
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_add(a2a.argparse.Namespace(
+                project=self.project, name="my-team", members=["alice", "bob"]
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("added 2 member(s)", output)
+        conn = a2a.connect(self.project)
+        rows = conn.execute(
+            "SELECT member_id FROM agent_groups WHERE name=? AND member_id != ? ORDER BY member_id",
+            ("my-team", "__group__")
+        ).fetchall()
+        conn.close()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual([r["member_id"] for r in rows], ["alice", "bob"])
+
+    def test_cmd_group_add_unregistered_skipped(self):
+        """Add unregistered agent produces a warning and skips."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="my-team"
+        ))
+        import io
+        old_stderr = sys.stderr
+        sys.stderr = io.StringIO()
+        try:
+            a2a.cmd_group_add(a2a.argparse.Namespace(
+                project=self.project, name="my-team", members=["unknown"]
+            ))
+            warning = sys.stderr.getvalue()
+        finally:
+            sys.stderr = old_stderr
+        self.assertIn("not registered", warning)
+        conn = a2a.connect(self.project)
+        rows = conn.execute(
+            "SELECT member_id FROM agent_groups WHERE name=? AND member_id != ?",
+            ("my-team", "__group__")
+        ).fetchall()
+        conn.close()
+        self.assertEqual(len(rows), 0)
+
+    def test_cmd_group_add_duplicate_skipped(self):
+        """Adding the same member twice does not create a duplicate."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="my-team"
+        ))
+        a2a.cmd_group_add(a2a.argparse.Namespace(
+            project=self.project, name="my-team", members=["alice"]
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_add(a2a.argparse.Namespace(
+                project=self.project, name="my-team", members=["alice"]
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("added 0 member(s)", output)
+        conn = a2a.connect(self.project)
+        rows = conn.execute(
+            "SELECT COUNT(*) AS cnt FROM agent_groups WHERE name=? AND member_id=?",
+            ("my-team", "alice")
+        ).fetchall()
+        conn.close()
+        self.assertEqual(rows[0]["cnt"], 1)
+
+    def test_cmd_group_add_to_nonexistent_group_ok(self):
+        """Adding to a group that was not explicitly created still works."""
+        a2a.cmd_group_add(a2a.argparse.Namespace(
+            project=self.project, name="implicit-group", members=["alice"]
+        ))
+        conn = a2a.connect(self.project)
+        rows = conn.execute(
+            "SELECT member_id FROM agent_groups WHERE name=? AND member_id != ?",
+            ("implicit-group", "__group__")
+        ).fetchall()
+        conn.close()
+        self.assertEqual(len(rows), 1)
+
+    # --- cmd_group_remove ---
+
+    def test_cmd_group_remove_ok(self):
+        """Remove a member from a group."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="my-team"
+        ))
+        a2a.cmd_group_add(a2a.argparse.Namespace(
+            project=self.project, name="my-team", members=["alice", "bob"]
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_remove(a2a.argparse.Namespace(
+                project=self.project, name="my-team", member="alice"
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("removed 'alice'", output)
+        self.assertIn("1 row(s)", output)
+        conn = a2a.connect(self.project)
+        remaining = conn.execute(
+            "SELECT member_id FROM agent_groups WHERE name=? AND member_id != ?",
+            ("my-team", "__group__")
+        ).fetchall()
+        conn.close()
+        self.assertEqual(len(remaining), 1)
+        self.assertEqual(remaining[0]["member_id"], "bob")
+
+    def test_cmd_group_remove_non_member(self):
+        """Removing a non-member returns 0 rows affected."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="my-team"
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_remove(a2a.argparse.Namespace(
+                project=self.project, name="my-team", member="unknown"
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("0 row(s)", output)
+
+    def test_cmd_group_remove_from_nonexistent_group(self):
+        """Removing from a non-existent group returns 0 rows affected."""
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_remove(a2a.argparse.Namespace(
+                project=self.project, name="no-such-group", member="alice"
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("0 row(s)", output)
+
+    # --- cmd_group_delete ---
+
+    def test_cmd_group_delete_ok(self):
+        """Delete a group removes all its rows."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="my-team"
+        ))
+        a2a.cmd_group_add(a2a.argparse.Namespace(
+            project=self.project, name="my-team", members=["alice", "bob"]
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_delete(a2a.argparse.Namespace(
+                project=self.project, name="my-team"
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("deleted", output)
+        self.assertIn("3 row(s)", output)  # sentinel + 2 members
+        conn = a2a.connect(self.project)
+        rows = conn.execute(
+            "SELECT COUNT(*) AS cnt FROM agent_groups WHERE name=?", ("my-team",)
+        ).fetchall()
+        conn.close()
+        self.assertEqual(rows[0]["cnt"], 0)
+
+    def test_cmd_group_delete_nonexistent(self):
+        """Delete a non-existent group returns 0 rows."""
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_delete(a2a.argparse.Namespace(
+                project=self.project, name="no-such-group"
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("deleted group '@no-such-group' (0 row(s))", output)
+
+    # --- cmd_group_list ---
+
+    def test_cmd_group_list_ok(self):
+        """List groups shows names and member counts (excluding sentinel)."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="team-a"
+        ))
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="team-b"
+        ))
+        a2a.cmd_group_add(a2a.argparse.Namespace(
+            project=self.project, name="team-a", members=["alice", "bob"]
+        ))
+        a2a.cmd_group_add(a2a.argparse.Namespace(
+            project=self.project, name="team-b", members=["carol"]
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_list(a2a.argparse.Namespace(
+                project=self.project, json=False
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        # Both groups should appear; sentinel rows are excluded from counts
+        self.assertIn("team-a", output)
+        self.assertIn("2", output)
+        self.assertIn("team-b", output)
+        self.assertIn("1", output)
+
+    def test_cmd_group_list_empty(self):
+        """List groups when none exist shows '(no groups)'."""
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_list(a2a.argparse.Namespace(
+                project=self.project, json=False
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("(no groups)", output)
+
+    def test_cmd_group_list_json(self):
+        """List groups with --json outputs valid JSON (excluding sentinel counts)."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="team-a"
+        ))
+        a2a.cmd_group_add(a2a.argparse.Namespace(
+            project=self.project, name="team-a", members=["alice"]
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_list(a2a.argparse.Namespace(
+                project=self.project, json=True
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        import json
+        data = json.loads(output.strip())
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["name"], "team-a")
+
+    # --- cmd_group_show ---
+
+    def test_cmd_group_show_ok(self):
+        """Show group lists its members."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="my-team"
+        ))
+        a2a.cmd_group_add(a2a.argparse.Namespace(
+            project=self.project, name="my-team", members=["alice", "bob"]
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_show(a2a.argparse.Namespace(
+                project=self.project, name="my-team"
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("alice", output)
+        self.assertIn("bob", output)
+        self.assertNotIn("__group__", output)
+
+    def test_cmd_group_show_empty(self):
+        """Show an empty (just-created) group shows an empty message."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="empty-group"
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_group_show(a2a.argparse.Namespace(
+                project=self.project, name="empty-group"
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("empty or does not exist", output)
+
+    # --- send to @groupname ---
+
+    def test_send_to_group_fan_out(self):
+        """Send to @groupname fans out to all group members."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="my-team"
+        ))
+        a2a.cmd_group_add(a2a.argparse.Namespace(
+            project=self.project, name="my-team", members=["alice", "bob"]
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_send(a2a.argparse.Namespace(
+                project=self.project, to="@my-team", body="group message",
+                **{"from_": "alice", "thread": None}
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        self.assertIn("2 members", output)
+        conn = a2a.connect(self.project)
+        msgs = conn.execute(
+            "SELECT recipient FROM messages WHERE body=?", ("group message",)
+        ).fetchall()
+        conn.close()
+        recipients = sorted([r["recipient"] for r in msgs])
+        self.assertEqual(recipients, ["alice", "bob"])
+
+    def test_send_to_empty_group_rejected(self):
+        """Send to an empty group (only sentinel, no members) is rejected."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="empty-group"
+        ))
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(a2a.argparse.Namespace(
+                project=self.project, to="@empty-group", body="hello",
+                **{"from_": "alice", "thread": None}
+            ))
+
+    def test_send_to_nonexistent_group_rejected(self):
+        """Send to a non-existent @groupname is rejected."""
+        with self.assertRaises(SystemExit):
+            a2a.cmd_send(a2a.argparse.Namespace(
+                project=self.project, to="@no-such-group", body="hello",
+                **{"from_": "alice", "thread": None}
+            ))
+
+    def test_send_to_group_json_output(self):
+        """Send to @groupname with --json outputs valid JSON."""
+        a2a.cmd_group_create(a2a.argparse.Namespace(
+            project=self.project, name="my-team"
+        ))
+        a2a.cmd_group_add(a2a.argparse.Namespace(
+            project=self.project, name="my-team", members=["bob"]
+        ))
+        import io
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            a2a.cmd_send(a2a.argparse.Namespace(
+                project=self.project, to="@my-team", body="json group",
+                **{"from_": "alice", "thread": None, "json": True}
+            ))
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+        import json
+        data = json.loads(output.strip())
+        self.assertEqual(data["sender"], "alice")
+        self.assertIn("my-team", data["recipient"])
+        self.assertIn("1 members", data["recipient"])
+
+
 if __name__ == "__main__":
     unittest.main()

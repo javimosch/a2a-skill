@@ -11,8 +11,8 @@ import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from a2a_common import MAX_ID_LENGTH, MAX_ROLE_LENGTH, MAX_THREAD_ID_LENGTH, MAX_BODY_LENGTH
-from a2a_common import _validate_project_name, _validate_agent_id
+from a2a_common import MAX_ID_LENGTH, MAX_ROLE_LENGTH, MAX_THREAD_ID_LENGTH, MAX_BODY_LENGTH, MAX_GROUP_NAME_LENGTH
+from a2a_common import _validate_project_name, _validate_agent_id, _validate_group_name
 
 
 class A2AClient:
@@ -100,6 +100,25 @@ class A2AClient:
             if len(message) > MAX_BODY_LENGTH:
                 raise ValueError(f"message body too long ({len(message)} chars, max {MAX_BODY_LENGTH})")
             recipient = None if to.lower() in ("all", "*", "broadcast") else to
+            if recipient is not None and recipient.startswith('@'):
+                group_name = _validate_group_name(recipient.lstrip('@').strip())
+                members = conn.execute(
+                    "SELECT member_id FROM agent_groups WHERE name=? AND member_id != ?", (group_name, '__group__')
+                ).fetchall()
+                if not members:
+                    raise ValueError(f"group '@{group_name}' not found or has no members")
+                ts_now = time.time()
+                first_id = None
+                for m in members:
+                    cur = conn.execute(
+                        "INSERT INTO messages(sender,recipient,body,thread_id,ttl_seconds,created_at)"
+                        " VALUES (?,?,?,?,?,?)",
+                        (self.agent_id, m["member_id"], message, thread_id, ttl_seconds, ts_now),
+                    )
+                    if first_id is None:
+                        first_id = cur.lastrowid
+                conn.commit()
+                return first_id
             if recipient is not None:
                 cur = conn.execute("SELECT COUNT(1) FROM agents WHERE id=?", (recipient,))
                 if cur.fetchone()[0] == 0:
@@ -594,6 +613,145 @@ class A2AClient:
             p = _Path(str(self.db_path) + suffix)
             if p.exists():
                 p.unlink()
+
+    def create_group(self, name: str) -> None:
+        """Create a named group with a sentinel row.
+
+        Args:
+            name: Group name (validated and stripped)
+
+        Raises:
+            ValueError: If name is empty, too long, or contains invalid characters
+        """
+        name = _validate_group_name(name)
+        conn = self._connect()
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO agent_groups(name, member_id, created_at) VALUES (?,?,?)",
+                (name, '__group__', time.time()),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def add_to_group(self, name: str, *member_ids: str) -> int:
+        """Add one or more members to a group.
+
+        Args:
+            name: Group name
+            *member_ids: One or more agent IDs to add
+
+        Returns:
+            Number of rows inserted
+
+        Raises:
+            ValueError: If group name is invalid
+        """
+        name = _validate_group_name(name)
+        conn = self._connect()
+        try:
+            ts = time.time()
+            added = 0
+            for member_id in member_ids:
+                member_id = member_id.strip()
+                if not member_id:
+                    continue
+                cur = conn.execute("SELECT COUNT(1) FROM agents WHERE id=?", (member_id,))
+                if cur.fetchone()[0] == 0:
+                    import sys as _sys
+                    print(f"a2a: warning: agent '{member_id}' not registered — skipping", file=_sys.stderr)
+                    continue
+                conn.execute(
+                    "INSERT OR IGNORE INTO agent_groups(name, member_id, created_at) VALUES (?,?,?)",
+                    (name, member_id, ts),
+                )
+                added += conn.execute("SELECT changes()").fetchone()[0]
+            conn.commit()
+            return added
+        finally:
+            conn.close()
+
+    def remove_from_group(self, name: str, member_id: str) -> bool:
+        """Remove a member from a group.
+
+        Args:
+            name: Group name
+            member_id: Agent ID to remove
+
+        Returns:
+            True if a row was deleted
+
+        Raises:
+            ValueError: If group name is invalid
+        """
+        name = _validate_group_name(name)
+        conn = self._connect()
+        try:
+            cur = conn.execute(
+                "DELETE FROM agent_groups WHERE name=? AND member_id=?", (name, member_id)
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+    def delete_group(self, name: str) -> int:
+        """Delete an entire group, removing all memberships.
+
+        Args:
+            name: Group name
+
+        Returns:
+            Number of rows deleted (all memberships including sentinel)
+
+        Raises:
+            ValueError: If group name is invalid
+        """
+        name = _validate_group_name(name)
+        conn = self._connect()
+        try:
+            cur = conn.execute("DELETE FROM agent_groups WHERE name=?", (name,))
+            conn.commit()
+            return cur.rowcount
+        finally:
+            conn.close()
+
+    def list_groups(self) -> List[Dict[str, Any]]:
+        """List all groups with their member counts.
+
+        Returns:
+            List of dicts with keys: name, member_count
+        """
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT name, COUNT(*) as member_count FROM agent_groups WHERE member_id != '__group__' GROUP BY name ORDER BY name"
+            ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def group_members(self, name: str) -> List[str]:
+        """Return list of member IDs in a group.
+
+        Args:
+            name: Group name
+
+        Returns:
+            List of agent IDs in the group
+
+        Raises:
+            ValueError: If group name is invalid
+        """
+        name = _validate_group_name(name)
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT member_id FROM agent_groups WHERE name=? AND member_id != '__group__' ORDER BY member_id", (name,)
+            ).fetchall()
+            return [r["member_id"] for r in rows]
+        finally:
+            conn.close()
 
 # Example usage
 if __name__ == "__main__":

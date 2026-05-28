@@ -1,0 +1,421 @@
+test_init_creates_schema (__main__.TestA2ADB.test_init_creates_schema)
+conn = connect(..., create=True) initializes schema. ... ok
+test_init_idempotent (__main__.TestA2ADB.test_init_idempotent)
+Calling init on an already-initialized project does not drop tables or error. ... ok
+test_wal_mode (__main__.TestA2ADB.test_wal_mode)
+WAL mode enabled for concurrent access. ... ok
+test_register_agent (__main__.TestAgentRegistry.test_register_agent)
+Register an agent with role, prompt, cli. ... ok
+test_register_duplicate_fails_without_upsert (__main__.TestAgentRegistry.test_register_duplicate_fails_without_upsert)
+Registering same agent twice without --upsert raises SystemExit. ... a2a: agent 'dup' already registered (use --upsert to update)
+ok
+test_register_upsert (__main__.TestAgentRegistry.test_register_upsert)
+Upsert updates existing agent without error. ... ok
+test_register_upsert_updates_pid (__main__.TestAgentRegistry.test_register_upsert_updates_pid)
+Upsert with explicit pid updates the stored pid. ... ok
+test_register_with_pid (__main__.TestAgentRegistry.test_register_with_pid)
+Register with --pid stores the pid in the database. ... ok
+test_cmd_clear_empty_bus (__main__.TestEdgeCases.test_cmd_clear_empty_bus)
+Clear on a bus with no database prints notice and does not crash. ... ok
+test_cmd_list_empty_bus (__main__.TestEdgeCases.test_cmd_list_empty_bus)
+List on a bus with no registered agents shows a notice. ... ok
+test_cmd_list_json_empty (__main__.TestEdgeCases.test_cmd_list_json_empty)
+list --json on a bus with no agents returns valid JSON empty array. ... ok
+test_cmd_peek_json_empty_bus (__main__.TestEdgeCases.test_cmd_peek_json_empty_bus)
+cmd_peek --json on empty bus returns empty JSON array. ... ok
+test_cmd_peek_json_output (__main__.TestEdgeCases.test_cmd_peek_json_output)
+cmd_peek --json outputs valid JSON array. ... ok
+test_cmd_peek_negative_limit_rejected (__main__.TestEdgeCases.test_cmd_peek_negative_limit_rejected)
+Negative --limit is rejected. ... a2a: --limit must be a positive integer
+ok
+test_cmd_project_json_output (__main__.TestEdgeCases.test_cmd_project_json_output)
+cmd_project outputs valid JSON with expected structure. ... ok
+test_cmd_recv_include_self (__main__.TestEdgeCases.test_cmd_recv_include_self)
+recv --include-self returns own messages. ... ok
+test_cmd_recv_since_and_limit (__main__.TestEdgeCases.test_cmd_recv_since_and_limit)
+recv with both --since and --limit filters by time then caps results. ... ok
+test_cmd_recv_since_filters_old_messages (__main__.TestEdgeCases.test_cmd_recv_since_filters_old_messages)
+recv --since filters out messages older than the timestamp. ... ok
+test_cmd_register_cli_too_long_raises_error (__main__.TestEdgeCases.test_cmd_register_cli_too_long_raises_error)
+Register with --cli > 128 chars raises SystemExit. ... a2a: --pid must be a positive integer
+ok
+test_cmd_register_empty_id_raises_error (__main__.TestEdgeCases.test_cmd_register_empty_id_raises_error)
+Register with empty agent ID prints error and exits. ... a2a: agent id must not be empty
+ok
+test_cmd_register_id_too_long_raises_error (__main__.TestEdgeCases.test_cmd_register_id_too_long_raises_error)
+Register with agent ID > 256 chars raises SystemExit. ... a2a: agent id too long (300 chars, max 256)
+ok
+test_cmd_register_prompt_too_long_raises_error (__main__.TestEdgeCases.test_cmd_register_prompt_too_long_raises_error)
+Register with --prompt > 100K chars raises SystemExit. ... a2a: --pid must be a positive integer
+ok
+test_cmd_register_role_too_long_raises_error (__main__.TestEdgeCases.test_cmd_register_role_too_long_raises_error)
+Register with --role > 512 chars raises SystemExit. ... a2a: --pid must be a positive integer
+ok
+test_cmd_register_whitespace_id_raises_error (__main__.TestEdgeCases.test_cmd_register_whitespace_id_raises_error)
+Register with whitespace-only agent ID prints error and exits. ... a2a: agent id must not be empty
+ok
+test_cmd_search_fts_force (__main__.TestEdgeCases.test_cmd_search_fts_force)
+cmd_search --fts --json produces valid JSON results. ... ok
+test_cmd_search_limit (__main__.TestEdgeCases.test_cmd_search_limit)
+Search with --limit caps results to at most N messages. ... ok
+test_cmd_search_special_like_chars (__main__.TestEdgeCases.test_cmd_search_special_like_chars)
+Search handles special LIKE characters like % and _ in message bodies. ... ok
+test_cmd_send_body_too_long_raises_error (__main__.TestEdgeCases.test_cmd_send_body_too_long_raises_error)
+Send with body > 100000 chars raises SystemExit. ... a2a: message body too long (100001 chars, max 100000)
+ok
+test_cmd_send_empty_body (__main__.TestEdgeCases.test_cmd_send_empty_body)
+Send with empty body works at CLI level (creates message with empty content). ... a2a: warning: sending empty message body
+ok
+test_cmd_send_inf_ttl_raises_error (__main__.TestEdgeCases.test_cmd_send_inf_ttl_raises_error)
+Send with --ttl inf raises SystemExit. ... a2a: unknown sender 'alice' — register first
+ok
+test_cmd_send_json_output (__main__.TestEdgeCases.test_cmd_send_json_output)
+cmd_send --json produces valid JSON with expected fields. ... ok
+test_cmd_send_json_output_broadcast (__main__.TestEdgeCases.test_cmd_send_json_output_broadcast)
+cmd_send --json to 'all' shows recipient as 'ALL'. ... ok
+test_cmd_send_nan_ttl_raises_error (__main__.TestEdgeCases.test_cmd_send_nan_ttl_raises_error)
+Send with --ttl NaN raises SystemExit. ... a2a: unknown sender 'alice' — register first
+ok
+test_cmd_send_stdin_body (__main__.TestEdgeCases.test_cmd_send_stdin_body)
+cmd_send with '-' body reads from stdin. ... ok
+test_cmd_send_thread_id_too_long_raises_error (__main__.TestEdgeCases.test_cmd_send_thread_id_too_long_raises_error)
+Send with --thread > 256 chars raises SystemExit. ... a2a: --thread too long (300 chars, max 256)
+ok
+test_cmd_send_ttl_non_positive_rejected (__main__.TestEdgeCases.test_cmd_send_ttl_non_positive_rejected)
+cmd_send with --ttl 0 or negative is rejected. ... a2a: --ttl must be a positive number of seconds
+a2a: --ttl must be a positive number of seconds
+a2a: --ttl must be a positive number of seconds
+ok
+test_cmd_stats_empty_bus (__main__.TestEdgeCases.test_cmd_stats_empty_bus)
+Stats on a bus with no messages returns zero counts. ... ok
+test_cmd_stats_json_empty (__main__.TestEdgeCases.test_cmd_stats_json_empty)
+cmd_stats --json on empty bus returns valid JSON with zero counts. ... ok
+test_cmd_thread_empty (__main__.TestEdgeCases.test_cmd_thread_empty)
+cmd_thread with unknown thread ID prints a notice. ... ok
+test_cmd_thread_id_too_long_raises_error (__main__.TestEdgeCases.test_cmd_thread_id_too_long_raises_error)
+cmd_thread with thread ID > 256 chars raises SystemExit. ... a2a: --thread too long (300 chars, max 256)
+ok
+test_cmd_thread_whitespace_id_raises_error (__main__.TestEdgeCases.test_cmd_thread_whitespace_id_raises_error)
+cmd_thread with whitespace-only thread ID raises SystemExit. ... a2a: thread id must not be empty
+ok
+test_cmd_thread_with_messages (__main__.TestEdgeCases.test_cmd_thread_with_messages)
+cmd_thread retrieves all messages in a thread in chronological order. ... ok
+test_cmd_unregister_empty_id_raises_error (__main__.TestEdgeCases.test_cmd_unregister_empty_id_raises_error)
+Unregister with empty agent ID prints error and exits. ... a2a: agent id must not be empty — pass a valid registered agent id
+ok
+test_cmd_unregister_id_too_long_raises_error (__main__.TestEdgeCases.test_cmd_unregister_id_too_long_raises_error)
+Unregister with agent ID > 256 chars raises SystemExit. ... a2a: agent id too long (300 chars, max 256)
+ok
+test_cmd_unregister_nonexistent_agent (__main__.TestEdgeCases.test_cmd_unregister_nonexistent_agent)
+Unregistering a non-existent agent prints removed 0 and does not crash. ... ok
+test_cmd_unregister_whitespace_id_raises_error (__main__.TestEdgeCases.test_cmd_unregister_whitespace_id_raises_error)
+Unregister with whitespace-only agent ID prints error and exits. ... a2a: agent id must not be empty — pass a valid registered agent id
+ok
+test_cmd_wait_ignores_expired_messages (__main__.TestEdgeCases.test_cmd_wait_ignores_expired_messages)
+cmd_wait does not count TTL-expired messages as unread. ... a2a: timeout: only 0 unread (wanted 1)
+ok
+test_cmd_wait_immediate_success (__main__.TestEdgeCases.test_cmd_wait_immediate_success)
+cmd_wait returns immediately if count is already met. ... ok
+test_cmd_wait_negative_count (__main__.TestEdgeCases.test_cmd_wait_negative_count)
+cmd_wait with negative --count is rejected. ... a2a: --count must be a positive integer
+ok
+test_cmd_wait_negative_timeout (__main__.TestEdgeCases.test_cmd_wait_negative_timeout)
+cmd_wait with negative --timeout is rejected. ... a2a: --timeout must be a non-negative number of seconds
+ok
+test_cmd_wait_timeout_no_messages (__main__.TestEdgeCases.test_cmd_wait_timeout_no_messages)
+cmd_wait with no unread messages and zero timeout exits with error. ... a2a: timeout: only 0 unread (wanted 1)
+ok
+test_cmd_wait_unknown_agent (__main__.TestEdgeCases.test_cmd_wait_unknown_agent)
+cmd_wait with unknown agent exits with error. ... a2a: unknown agent 'phantom' — register first
+ok
+test_cmd_wait_zero_count (__main__.TestEdgeCases.test_cmd_wait_zero_count)
+cmd_wait with --count 0 is rejected. ... a2a: --count must be a positive integer
+ok
+test_concurrent_writes (__main__.TestEdgeCases.test_concurrent_writes)
+Multiple agents can write concurrently (WAL handles it). ... ok
+test_cross_project_isolation (__main__.TestEdgeCases.test_cross_project_isolation)
+Messages from one project should not appear in another project. ... ok
+test_cross_project_recv_isolation (__main__.TestEdgeCases.test_cross_project_recv_isolation)
+Recv in project A should not see messages from project B, even if both have same agent name. ... ok
+test_fts_boolean_and (__main__.TestEdgeCases.test_fts_boolean_and)
+FTS5 AND operator requires both terms to be present. ... ok
+test_fts_boolean_or (__main__.TestEdgeCases.test_fts_boolean_or)
+FTS5 OR operator returns messages with either term. ... ok
+test_fts_forced_flag (__main__.TestEdgeCases.test_fts_forced_flag)
+--fts flag forces FTS5 path even without prior init. ... ok
+test_fts_init_rebuild_only_on_first_call (__main__.TestEdgeCases.test_fts_init_rebuild_only_on_first_call)
+_init_fts() only triggers FTS5 rebuild when table is newly created. ... ok
+test_fts_prefix_query (__main__.TestEdgeCases.test_fts_prefix_query)
+FTS5 prefix* matches terms starting with the prefix. ... ok
+test_fts_single_term (__main__.TestEdgeCases.test_fts_single_term)
+FTS5 search finds messages containing a single term. ... ok
+test_message_ordering_identical_timestamps (__main__.TestEdgeCases.test_message_ordering_identical_timestamps)
+Messages with the same created_at are ordered by ID (insertion order). ... ok
+test_peek_empty_bus_human_readable (__main__.TestEdgeCases.test_peek_empty_bus_human_readable)
+Peek on empty bus with human-readable output does not crash. ... ok
+test_peek_limit_capped_at_1000 (__main__.TestEdgeCases.test_peek_limit_capped_at_1000)
+peek with --limit > 1000 is capped to 1000, not rejected. ... ok
+test_peek_limit_caps_output (__main__.TestEdgeCases.test_peek_limit_caps_output)
+Peek with --limit N caps the number of messages shown. ... ok
+test_peek_limit_non_positive_rejected (__main__.TestEdgeCases.test_peek_limit_non_positive_rejected)
+peek with --limit 0 or negative is rejected. ... a2a: --limit must be a positive integer
+a2a: --limit must be a positive integer
+ok
+test_peek_returns_newest_first (__main__.TestEdgeCases.test_peek_returns_newest_first)
+peek returns messages in reverse chronological order (newest first) in non-JSON, chronological in JSON. ... ok
+test_recv_all_requires_as (__main__.TestEdgeCases.test_recv_all_requires_as)
+recv --all without --as raises SystemExit. ... a2a: --as <agent-id> is required
+ok
+test_recv_all_shows_all_messages (__main__.TestEdgeCases.test_recv_all_shows_all_messages)
+recv --all shows messages to agent even after they've been read. ... ok
+test_recv_future_since_returns_empty (__main__.TestEdgeCases.test_recv_future_since_returns_empty)
+recv with --since in the future returns no messages. ... ok
+test_recv_inf_wait_rejected (__main__.TestEdgeCases.test_recv_inf_wait_rejected)
+recv with --wait inf is rejected. ... a2a: --wait must be a finite number
+ok
+test_recv_limit_negative_rejected (__main__.TestEdgeCases.test_recv_limit_negative_rejected)
+recv with negative --limit is rejected. ... a2a: --limit must be a non-negative integer
+ok
+test_recv_nan_since_rejected (__main__.TestEdgeCases.test_recv_nan_since_rejected)
+recv with --since NaN is rejected. ... a2a: --since must be a finite number
+ok
+test_recv_nan_wait_rejected (__main__.TestEdgeCases.test_recv_nan_wait_rejected)
+recv with --wait NaN is rejected. ... a2a: --wait must be a finite number
+ok
+test_recv_negative_since_rejected (__main__.TestEdgeCases.test_recv_negative_since_rejected)
+recv with --since -1 is rejected. ... a2a: --since must be a non-negative timestamp
+ok
+test_recv_negative_wait_returns_immediately (__main__.TestEdgeCases.test_recv_negative_wait_returns_immediately)
+recv with negative --wait returns immediately (no block). ... ok
+test_recv_reads_table_updated (__main__.TestEdgeCases.test_recv_reads_table_updated)
+recv creates read-tracking entries for delivered messages. ... ok
+test_recv_unknown_agent (__main__.TestEdgeCases.test_recv_unknown_agent)
+Receiving as unknown agent fails gracefully. ... a2a: unknown agent 'unknown' — register first
+ok
+test_recv_wait_zero_empty_bus (__main__.TestEdgeCases.test_recv_wait_zero_empty_bus)
+recv with --wait=0 on empty bus returns immediately with no messages. ... ok
+test_register_negative_pid_rejected (__main__.TestEdgeCases.test_register_negative_pid_rejected)
+register with --pid -1 is rejected. ... a2a: --pid must be a positive integer
+ok
+test_register_then_upsert_changes_role (__main__.TestEdgeCases.test_register_then_upsert_changes_role)
+Register agent then upsert with different role updates stored fields. ... ok
+test_search (__main__.TestEdgeCases.test_search)
+Search finds messages by substring. ... ok
+test_search_empty_query (__main__.TestEdgeCases.test_search_empty_query)
+Search with empty query is rejected. ... a2a: search query is empty — provide a keyword to search for
+ok
+test_search_fts_special_chars_does_not_crash (__main__.TestEdgeCases.test_search_fts_special_chars_does_not_crash)
+Search with special FTS5 characters falls back gracefully to LIKE. ... ok
+test_search_invalid_fts_falls_back (__main__.TestEdgeCases.test_search_invalid_fts_falls_back)
+Search with invalid FTS syntax falls back gracefully to LIKE. ... ok
+test_search_json_no_matches (__main__.TestEdgeCases.test_search_json_no_matches)
+search --json with no matches returns empty JSON array. ... ok
+test_search_like_fallback (__main__.TestEdgeCases.test_search_like_fallback)
+Search without FTS still finds matches via LIKE fallback. ... ok
+test_search_limit_capped_at_200 (__main__.TestEdgeCases.test_search_limit_capped_at_200)
+search with --limit > 200 is capped to 200. ... ok
+test_search_limit_non_positive_rejected (__main__.TestEdgeCases.test_search_limit_non_positive_rejected)
+search with --limit 0 or negative is rejected. ... a2a: --limit must be a positive integer
+a2a: --limit must be a positive integer
+ok
+test_search_no_matches (__main__.TestEdgeCases.test_search_no_matches)
+Search with query that matches nothing returns empty cleanly. ... ok
+test_search_whitespace_query_rejected (__main__.TestEdgeCases.test_search_whitespace_query_rejected)
+Search with whitespace-only query is rejected. ... a2a: search query is empty — provide a keyword to search for
+ok
+test_send_empty_recipient_rejected (__main__.TestEdgeCases.test_send_empty_recipient_rejected)
+send with empty recipient is rejected. ... a2a: recipient must not be empty — use 'all' for broadcast
+ok
+test_send_empty_thread_rejected (__main__.TestEdgeCases.test_send_empty_thread_rejected)
+send with --thread '' is rejected. ... a2a: --thread must not be empty
+ok
+test_send_to_self (__main__.TestEdgeCases.test_send_to_self)
+Sending a message to yourself works. ... ok
+test_send_unicode_body (__main__.TestEdgeCases.test_send_unicode_body)
+Send with Unicode characters in body stores correctly. ... ok
+test_send_unknown_recipient (__main__.TestEdgeCases.test_send_unknown_recipient)
+Sending to unknown agent fails gracefully. ... a2a: unknown sender 'alice' — register first
+ok
+test_send_unknown_sender (__main__.TestEdgeCases.test_send_unknown_sender)
+Sending from an unregistered agent fails gracefully. ... a2a: unknown sender 'unregistered-sender' — register first
+ok
+test_send_whitespace_recipient_rejected (__main__.TestEdgeCases.test_send_whitespace_recipient_rejected)
+send with whitespace-only recipient is rejected. ... a2a: recipient must not be empty — use 'all' for broadcast
+ok
+test_send_with_thread (__main__.TestEdgeCases.test_send_with_thread)
+Send with --thread stores thread_id on the message. ... ok
+test_send_with_thread_and_ttl (__main__.TestEdgeCases.test_send_with_thread_and_ttl)
+Send with both --thread and --ttl works together. ... ok
+test_send_without_from_raises_error (__main__.TestEdgeCases.test_send_without_from_raises_error)
+send without --from raises SystemExit. ... a2a: --from <agent-id> is required — provide a registered agent id
+ok
+test_stats (__main__.TestEdgeCases.test_stats)
+Stats command reports correct counts. ... ok
+test_stats_human_readable_output (__main__.TestEdgeCases.test_stats_human_readable_output)
+cmd_stats without --json produces expected text format. ... ok
+test_stats_top_senders_multiple (__main__.TestEdgeCases.test_stats_top_senders_multiple)
+stats --json reports top senders with correct ordering. ... ok
+test_ttl_cleanup_expired (__main__.TestEdgeCases.test_ttl_cleanup_expired)
+cleanup_expired() removes messages past their TTL. ... ok
+test_ttl_cleanup_on_peek (__main__.TestEdgeCases.test_ttl_cleanup_on_peek)
+peek triggers cleanup_expired so expired msgs don't appear. ... ok
+test_ttl_expired (__main__.TestEdgeCases.test_ttl_expired)
+Message past its TTL is deleted by cleanup_expired. ... ok
+test_ttl_negative_expires_immediately (__main__.TestEdgeCases.test_ttl_negative_expires_immediately)
+Negative TTL value should be treated as immediate expiry. ... ok
+test_ttl_no_expiry (__main__.TestEdgeCases.test_ttl_no_expiry)
+Message with 0 TTL (no expiry) persists after cleanup. ... ok
+test_ttl_no_expiry_default (__main__.TestEdgeCases.test_ttl_no_expiry_default)
+Send without --ttl leaves ttl_seconds as NULL (never expire). ... ok
+test_ttl_recv_hides_expired (__main__.TestEdgeCases.test_ttl_recv_hides_expired)
+recv should not return messages that have already expired. ... ok
+test_ttl_send (__main__.TestEdgeCases.test_ttl_send)
+Send with --ttl stores ttl_seconds correctly. ... ok
+test_ttl_zero_immediate_expiry (__main__.TestEdgeCases.test_ttl_zero_immediate_expiry)
+TTL=0 means the message expires immediately. ... ok
+test_upsert_preserves_unset_fields (__main__.TestEdgeCases.test_upsert_preserves_unset_fields)
+upsert updates only specified fields, leaves others intact. ... ok
+test_validate_finite_float_inf (__main__.TestEdgeCases.test_validate_finite_float_inf)
+_validate_finite_float rejects infinity. ... a2a: --test_param must be a finite number
+a2a: --test_param must be a finite number
+ok
+test_validate_finite_float_nan (__main__.TestEdgeCases.test_validate_finite_float_nan)
+_validate_finite_float rejects NaN. ... a2a: --test_param must be a finite number
+ok
+test_validate_finite_float_none (__main__.TestEdgeCases.test_validate_finite_float_none)
+_validate_finite_float allows None (optional param not provided). ... ok
+test_validate_finite_float_valid (__main__.TestEdgeCases.test_validate_finite_float_valid)
+_validate_finite_float allows valid finite floats. ... ok
+test_wait_inf_timeout_rejected (__main__.TestEdgeCases.test_wait_inf_timeout_rejected)
+cmd_wait with --timeout inf is rejected. ... a2a: --timeout must be a finite number
+ok
+test_wait_nan_timeout_rejected (__main__.TestEdgeCases.test_wait_nan_timeout_rejected)
+cmd_wait with --timeout NaN is rejected. ... a2a: --timeout must be a finite number
+ok
+test_cmd_clear_no_database (__main__.TestLifecycle.test_cmd_clear_no_database)
+Clear on a project with no database prints notice and does not crash. ... ok
+test_cmd_clear_refuses_without_yes (__main__.TestLifecycle.test_cmd_clear_refuses_without_yes)
+Clear without --yes exits with error. ... a2a: refusing without --yes: this deletes the entire project database and all messages. pass --yes to confirm
+ok
+test_cmd_clear_with_yes_removes_database (__main__.TestLifecycle.test_cmd_clear_with_yes_removes_database)
+Clear --yes removes the database file. ... ok
+test_cmd_list_no_database (__main__.TestLifecycle.test_cmd_list_no_database)
+List on non-initialized project raises SystemExit (connect fails). ... a2a: no a2a project at '/root/.a2a/list-nonex-1093788/database.db'. run: a2a init --project 'list-nonex-1093788'
+ok
+test_list_agents_empty (__main__.TestLifecycle.test_list_agents_empty)
+List on empty bus prints '(no agents registered)'. ... ok
+test_list_agents_json (__main__.TestLifecycle.test_list_agents_json)
+List agents outputs valid JSON with correct agent data. ... ok
+test_list_agents_json_empty (__main__.TestLifecycle.test_list_agents_json_empty)
+List --json on empty bus returns valid JSON empty array. ... ok
+test_project_info (__main__.TestLifecycle.test_project_info)
+Project command prints resolved project info. ... ok
+test_status_invalid_value (__main__.TestLifecycle.test_status_invalid_value)
+Status with invalid value is rejected. ... a2a: invalid status 'invalid' — must be one of: active, blocked, done, idle
+a2a: invalid status 'abc' — must be one of: active, blocked, done, idle
+a2a: invalid status 'unknown' — must be one of: active, blocked, done, idle
+a2a: invalid status 'running' — must be one of: active, blocked, done, idle
+a2a: invalid status '' — must be one of: active, blocked, done, idle
+ok
+test_status_json_output (__main__.TestLifecycle.test_status_json_output)
+cmd_status --json returns valid JSON with expected fields. ... ok
+test_status_transition (__main__.TestLifecycle.test_status_transition)
+Status command transitions agent through states. ... ok
+test_status_unknown_agent (__main__.TestLifecycle.test_status_unknown_agent)
+Status on unknown agent fails gracefully. ... a2a: unknown agent 'nobody' — register first
+ok
+test_unregister_agent (__main__.TestLifecycle.test_unregister_agent)
+Unregister removes an agent from the bus. ... ok
+test_unregister_nonexistent (__main__.TestLifecycle.test_unregister_nonexistent)
+Unregister a non-existent agent prints 0 (no error). ... ok
+test_recv_all (__main__.TestMessaging.test_recv_all)
+Receive with --all includes already-read messages. ... ok
+test_recv_filters_self (__main__.TestMessaging.test_recv_filters_self)
+Recv filters out messages from the agent itself. ... ok
+test_recv_include_self (__main__.TestMessaging.test_recv_include_self)
+--include-self makes self-sent messages visible. ... ok
+test_recv_unread (__main__.TestMessaging.test_recv_unread)
+Receive only unread messages. ... ok
+test_send_broadcast (__main__.TestMessaging.test_send_broadcast)
+Send a broadcast (recipient=NULL) via 'all'. ... ok
+test_send_direct (__main__.TestMessaging.test_send_direct)
+Send a direct message from alice to bob. ... ok
+test_backslash_rejected (__main__.TestProjectNameValidation.test_backslash_rejected)
+Project name containing '\' should be rejected. ... a2a: invalid project name 'evil\\..' — must not contain path separators or start with '.'
+ok
+test_dot_prefix_rejected (__main__.TestProjectNameValidation.test_dot_prefix_rejected)
+Project name starting with '.' should be rejected. ... a2a: invalid project name '.hidden' — must not contain path separators or start with '.'
+ok
+test_emoji_project_name_accepted (__main__.TestProjectNameValidation.test_emoji_project_name_accepted)
+Project names with emoji should be allowed (no path chars). ... ok
+test_empty_project_name_rejected (__main__.TestProjectNameValidation.test_empty_project_name_rejected)
+Empty project name should be rejected. ... a2a: project name must not be empty
+ok
+test_env_path_separator_rejected (__main__.TestProjectNameValidation.test_env_path_separator_rejected)
+Project name from env var containing '/' should be rejected. ... a2a: invalid project name 'a/b' — must not contain path separators or start with '.'
+ok
+test_path_separator_rejected (__main__.TestProjectNameValidation.test_path_separator_rejected)
+Project name containing '/' should be rejected. ... a2a: invalid project name '../../evil' — must not contain path separators or start with '.'
+ok
+test_simple_name_from_env (__main__.TestProjectNameValidation.test_simple_name_from_env)
+Project name from env var should work. ... ok
+test_unicode_project_name_accepted (__main__.TestProjectNameValidation.test_unicode_project_name_accepted)
+Valid unicode project names should work normally. ... ok
+test_valid_project_name (__main__.TestProjectNameValidation.test_valid_project_name)
+Valid project names should work normally. ... ok
+test_whitespace_project_name_rejected (__main__.TestProjectNameValidation.test_whitespace_project_name_rejected)
+Whitespace-only project name should be rejected. ... a2a: project name must not be empty
+ok
+test_a2a_client_mkdir_guard (__main__.TestWALInvariant.test_a2a_client_mkdir_guard)
+A2AClient creates parent directory before connecting. ... ok
+test_a2a_client_sets_wal (__main__.TestWALInvariant.test_a2a_client_sets_wal)
+A2AClient (sync) enables WAL on connection. ... ok
+test_a2a_connect_sets_busy_timeout (__main__.TestWALInvariant.test_a2a_connect_sets_busy_timeout)
+a2a.connect() sets busy_timeout to 5000 ms. ... ok
+test_a2a_connect_sets_wal (__main__.TestWALInvariant.test_a2a_connect_sets_wal)
+a2a.connect() enables WAL journal mode. ... ok
+test_mkdir_guard_creates_parent (__main__.TestWALInvariant.test_mkdir_guard_creates_parent)
+a2a.connect() creates parent directory automatically. ... ok
+test_wal_survives_reconnect (__main__.TestWALInvariant.test_wal_survives_reconnect)
+WAL mode persists across multiple connections to the same db. ... ok
+
+----------------------------------------------------------------------
+Ran 157 tests in 1.573s
+
+OK
+registered agent 'alice' in project 'test-1093788'
+registered agent 'dup' in project 'test-1093788'
+registered agent 'bob' in project 'test-1093788'
+registered agent 'bob' in project 'test-1093788'
+registered agent 'pid-update' in project 'test-1093788'
+registered agent 'pid-update' in project 'test-1093788'
+registered agent 'pid-agent' in project 'test-1093788'
+#1 alice -> bob
+#1 alice -> alice
+[00:16:41] #2 bob -> alice
+    second
+#1 alice -> bob
+#1 alice -> bob
+#1 alice -> bob
+#1 alice -> alice
+#1 bob -> alice
+#1 alice -> alice
+#1 alice -> ALL
+registered agent 'morph' in project 'test-1093788'
+#1 alice -> alice
+#1 alice -> bob
+#1 alice -> bob
+#1 alice -> bob
+#1 alice -> bob
+#1 alice -> bob
+registered agent 'multi' in project 'test-1093788'
+registered agent 'multi' in project 'test-1093788'
+cleared clear-test-1093788 project database
+agent 'tester' status -> idle
+agent 'tester' status -> active
+agent 'tester' status -> blocked
+agent 'tester' status -> done
+removed 1 agent(s)
+removed 0 agent(s)
+#1 alice -> ALL
+#1 alice -> bob

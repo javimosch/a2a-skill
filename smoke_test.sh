@@ -3,6 +3,11 @@
 # Success = each agent sends >=1 message to the other on the bus.
 set -u
 
+if ! command -v claude &>/dev/null; then
+    echo "SMOKE TEST: SKIPPED (claude not available)"
+    exit 0
+fi
+
 A2A="${A2A_BIN:-$(dirname "$(readlink -f "$0")")/a2a}"
 PROJECT="${1:-a2a-smoke-$$}"
 MODEL="${MODEL:-haiku}"
