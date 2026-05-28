@@ -446,4 +446,4 @@ print(f"Routing took {elapsed:.3f}s")
 - [CLIENT_API.md](CLIENT_API.md) — Base client reference
 - [PRIORITY.md](PRIORITY.md) — Message prioritization
 - [AUDIT.md](AUDIT.md) — Audit logging
-- [CHANGELOG.md](CHANGELOG.md) — Release history and roadmap
+- [CHANGELOG.md](../CHANGELOG.md) — Release history and roadmap

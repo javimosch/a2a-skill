@@ -97,7 +97,7 @@ All build scripts use shared utility code from `examples/artifacts/_util.py`:
 4. Add a `output/` gitignore entry if not already present
 5. Test: `python3 examples/artifacts/<name>/build.py`
 
-See the [examples/AGENTS.md](/examples/AGENTS.md) for agent collaboration patterns.
+See the [examples/AGENTS.md](../AGENTS.md) for agent collaboration patterns.
 
 ## Lessons from the field
 
