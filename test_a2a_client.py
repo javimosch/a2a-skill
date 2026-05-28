@@ -427,6 +427,24 @@ class TestA2AClient(unittest.TestCase):
         status = alice.get_status("nonexistent-agent")
         self.assertIsNone(status)
 
+    def test_touch_updates_last_seen(self):
+        """touch() updates last_seen timestamp for the agent."""
+        alice = A2AClient(self.project, "alice")
+        conn = make_connection(alice.db_path)
+        before = conn.execute("SELECT last_seen FROM agents WHERE id='alice'").fetchone()[0]
+        conn.close()
+        time.sleep(0.01)
+        alice.touch()
+        conn = make_connection(alice.db_path)
+        after = conn.execute("SELECT last_seen FROM agents WHERE id='alice'").fetchone()[0]
+        conn.close()
+        self.assertGreater(after, before)
+
+    def test_touch_nonexistent_agent_is_noop(self):
+        """touch() on unknown agent silently does nothing (no error)."""
+        ghost = A2AClient(self.project, "ghost-agent")
+        ghost.touch()
+
     def test_set_status_nonexistent_agent_is_noop(self):
         """set_status on unknown agent silently does nothing."""
         ghost = A2AClient(self.project, "ghost-agent")

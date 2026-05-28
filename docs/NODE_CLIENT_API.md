@@ -144,6 +144,14 @@ Check an agent's status.
 const status = await client.getStatus('bob');
 ```
 
+### touch()
+
+Update this agent's `last_seen` timestamp. Useful for heartbeat/keep-alive signaling.
+
+```javascript
+await client.touch();
+```
+
 ### wait(count, timeout)
 
 Alias for `waitForMessages()`. Block until N unread messages or timeout.

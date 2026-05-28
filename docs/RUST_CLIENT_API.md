@@ -130,6 +130,15 @@ match client.get_status(Some("bob")) {
 }
 ```
 
+### touch() -> Result<()>
+
+Update this agent's `last_seen` timestamp. Useful for heartbeat/keep-alive
+signaling.
+
+```rust
+client.touch()?;
+```
+
 ### search(query, limit) -> Result<Vec<Message>>
 
 Search messages by substring (case-insensitive). Returns an error if the

@@ -282,6 +282,18 @@ class A2AClient {
   }
 
   /**
+   * Update this agent's last_seen timestamp to the current time.
+   * Useful for heartbeat / keep-alive signals.
+   */
+  async touch() {
+    const db = this._connect();
+    db.prepare('UPDATE agents SET last_seen=? WHERE id=?').run(
+      Date.now() / 1000, this.agentId
+    );
+    db.close();
+  }
+
+  /**
    * Block until N unread messages arrive or timeout (alias for waitForMessages).
    * @param {number} [count=1]
    * @param {number} [timeout=60]

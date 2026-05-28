@@ -185,6 +185,29 @@ class TestA2AClientAsync(unittest.TestCase):
         self.assertIn("alice", ids)
         self.assertIn("bob", ids)
 
+    def test_touch_updates_last_seen(self):
+        """touch() updates last_seen timestamp for the agent (async)."""
+        async def _check():
+            conn = await self.alice._connect()
+            cursor = await conn.execute(
+                "SELECT last_seen FROM agents WHERE id='alice'"
+            )
+            row = await cursor.fetchone()
+            return row[0]
+
+        before = run_async(_check())
+        time.sleep(0.01)
+        run_async(self.alice.touch())
+        after = run_async(_check())
+        self.assertGreater(after, before)
+
+    def test_touch_nonexistent_agent_is_noop(self):
+        """touch() on unknown agent does not raise (async)."""
+        from a2a_client_async import A2AClientAsync
+        ghost = A2AClientAsync(self.project, "ghost-agent")
+        run_async(ghost.touch())
+        run_async(ghost.close())
+
     def test_set_get_status(self):
         """set_status/get_status roundtrip."""
         run_async(self.alice.set_status("idle"))
