@@ -114,12 +114,15 @@ func (c *Client) connect() (*sql.DB, error) {
 		db.Close()
 		return nil, err
 	}
-	db.SetConnMaxLifetime(time.Second * 5)
+	db.SetConnMaxLifetime(0)
 	return db, nil
 }
 
 // Send sends a message to a peer (or broadcast if recipient is "all"/"*"/"broadcast").
 // threadID may be empty string for no thread. ttlSeconds may be nil for no expiry.
+// NOTE: parameter order differs from Python send(): threadID comes before ttlSeconds here.
+// Python: send(to, message, ttl_seconds=None, thread_id=None)
+// Go:     Send(to, message, threadID, ttlSeconds)
 func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, error) {
 	if len(c.AgentID) > MaxAgentIDLength {
 		return 0, fmt.Errorf("sender agent id too long (%d chars, max %d)", len(c.AgentID), MaxAgentIDLength)
@@ -152,7 +155,7 @@ func (c *Client) Send(to, message, threadID string, ttlSeconds *int) (int64, err
 		}
 		// Validate recipient exists
 		if err := db.QueryRow("SELECT COUNT(1) FROM agents WHERE id=?", to).Scan(&count); err != nil || count == 0 {
-			return 0, fmt.Errorf("unknown recipient '%s'", to)
+			return 0, fmt.Errorf("unknown recipient '%s' — register them first", to)
 		}
 		r := to
 		recip = &r
@@ -612,7 +615,9 @@ func (c *Client) Stats() (*Stats, error) {
 	}
 
 	// Message counts
-	db.QueryRow("SELECT COUNT(*) FROM messages").Scan(&stats.Messages)
+	if err := db.QueryRow("SELECT COUNT(*) FROM messages").Scan(&stats.Messages); err != nil {
+		return nil, fmt.Errorf("stats query failed (is project initialized?): %w", err)
+	}
 	db.QueryRow("SELECT COUNT(*) FROM messages WHERE recipient IS NULL").Scan(&stats.Broadcasts)
 	db.QueryRow("SELECT COUNT(DISTINCT thread_id) FROM messages WHERE thread_id IS NOT NULL").Scan(&stats.Threads)
 
