@@ -49,7 +49,7 @@ def find_spawn(script_dir: str) -> str | None:
     if a2a:
         candidate = str(Path(a2a).parent / "a2a-spawn")
         if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
-            return os.path.realpath(candidate)
+            return candidate
 
     # 2. Repo root
     candidates = [
