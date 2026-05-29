@@ -103,7 +103,7 @@ _spawn_bg() {
 
 case "$CLI" in
     claude)
-        FLAGS=(--max-turns 50)
+        FLAGS=(-p --max-turns 800)
         [ -n "$MODEL" ] && FLAGS+=(--model "$MODEL")
         # root cannot use --allow-dangerously-skip-permissions (claude blocks it).
         # Instead, use --permission-mode auto + --allowedTools for root.
