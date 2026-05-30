@@ -847,14 +847,12 @@ class A2AClient:
         """
         if task_id <= 0:
             raise ValueError("task_id must be a positive integer")
+        self.update_task_status(task_id, "done")
         conn = self._connect()
         try:
-            row = conn.execute("SELECT id, status FROM tasks WHERE id=?", (task_id,)).fetchone()
-            if not row:
-                raise ValueError(f"task #{task_id} not found")
             ts = time.time()
             conn.execute(
-                "UPDATE tasks SET status='done', result=?, completed_at=?, updated_at=? WHERE id=?",
+                "UPDATE tasks SET result=?, completed_at=?, updated_at=? WHERE id=?",
                 (result, ts, ts, task_id),
             )
             conn.commit()

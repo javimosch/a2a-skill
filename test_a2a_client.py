@@ -1205,6 +1205,26 @@ class TestA2AClient(unittest.TestCase):
         with self.assertRaises(ValueError):
             alice.complete_task(9999)
 
+    def test_complete_task_from_planned_raises_error(self):
+        """complete_task on a planned task raises ValueError (must be in_progress first)."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task("Plan Only")
+        with self.assertRaises(ValueError):
+            alice.complete_task(tid)
+        task = alice.list_tasks()[0]
+        self.assertEqual(task["status"], "planned")
+
+    def test_complete_task_from_blocked_raises_error(self):
+        """complete_task on a blocked task raises ValueError (must unblock first)."""
+        alice = A2AClient(self.project, "alice")
+        tid = alice.create_task("Blocked Task")
+        alice.update_task_status(tid, "in_progress")
+        alice.update_task_status(tid, "blocked")
+        with self.assertRaises(ValueError):
+            alice.complete_task(tid)
+        task = alice.list_tasks()[0]
+        self.assertEqual(task["status"], "blocked")
+
 
 if __name__ == "__main__":
     unittest.main()

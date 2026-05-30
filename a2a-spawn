@@ -103,20 +103,25 @@ _spawn_bg() {
 
 case "$CLI" in
     claude)
-        FLAGS=(-p --max-turns 800)
+        FLAGS=(--max-turns 200)
         [ -n "$MODEL" ] && FLAGS+=(--model "$MODEL")
-        # root cannot use --allow-dangerously-skip-permissions (claude blocks it).
-        # Instead, use --permission-mode auto + --allowedTools for root.
+        # root cannot use --dangerously-skip-permissions directly (claude blocks it).
+        # Run as agent user instead, which has the right setup for full automation.
         if [ "$(id -u)" -eq 0 ]; then
-            FLAGS+=(--permission-mode auto --allowedTools "Bash,Read,Edit,Write,Ls,Glob")
+            FLAGS+=(--dangerously-skip-permissions)
+            CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
+            _spawn_bg sudo -u agent HOME=/home/agent "$HOME/.local/bin/claude" \
+                -p "Begin." \
+                "${FLAGS[@]}" \
+                --append-system-prompt-file "$KIT_FILE"
         else
-            FLAGS+=(--allow-dangerously-skip-permissions)
+            FLAGS+=(--dangerously-skip-permissions)
+            CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
+            _spawn_bg "$HOME/.local/bin/claude" \
+                -p "Begin." \
+                "${FLAGS[@]}" \
+                --append-system-prompt-file "$KIT_FILE"
         fi
-        CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
-        _spawn_bg "$HOME/.local/bin/claude" \
-            -p "Begin." \
-            "${FLAGS[@]}" \
-            --append-system-prompt-file "$KIT_FILE"
         ;;
     opencode)
         OPENCODE="$(resolve_opencode)"
