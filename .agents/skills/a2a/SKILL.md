@@ -163,6 +163,19 @@ BOB_PID=$(  a2a-spawn --cli opencode --id bob   --model anthropic/claude-haiku-4
                       --kit-file /tmp/a2a-$PROJECT-bob.kit)
 ```
 
+**⚠️ CRITICAL: Do NOT foreground-wait for agents after spawning.**
+`a2a-spawn` already nohup+disowns the process — the PIDs are captured
+above for lifecycle tracking, NOT for `wait` loops. If the caller adds
+a `while` loop polling `a2a list` or sleeps between checks, it blocks
+the entire spawning context for the agent's full runtime. This prevents
+parallel spawns, defeats Hermes background-task tracking, and causes
+timeouts on long agent sessions.
+
+**Correct patterns:**
+- **Hermes**: `terminal(command="a2a-spawn ...", background=True, notify_on_complete=True)` — let Hermes track lifecycle
+- **Shell script**: capture PIDs, move on. Poll A2A bus as a SEPARATE process or cron, not inline after the spawn
+- **AM daemon**: use scheduler run-lifecycle tracking (DB run records), not a synchronous `waitForAgents()` loop
+
 Save each PID so you can stop them later, and write it back to the registry so
 peers can see who is online:
 
@@ -403,6 +416,21 @@ root/sudo:
 - Run claude as a non-root user (via `sudo -u user claude ...`)
 - Use the env var `CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1` combined with
   `--permission-mode acceptEdits` instead of the flag
+
+### 15. Foreground-waiting after spawn blocks the caller indefinitely
+
+`a2a-spawn` already backgrounds agents with nohup+disown. If the
+calling script/daemon adds a `while` loop or `sleep`-based polling after
+spawning, it blocks until every agent exits — preventing parallel spawns,
+defeating Hermes background-task tracking, and causing spurious timeouts.
+
+**Common symptom:** "spawning team for X..." prints, agents log activity,
+then the spawning terminal hangs for 30+ minutes until timeout kills it.
+
+**Correct patterns instead of a foreground wait loop:**
+- **Hermes**: `terminal(command="a2a-spawn ...", background=True, notify_on_complete=True)` — Hermes tracks lifecycle asynchronously
+- **Shell script**: capture PIDs, move on immediately. Poll A2A bus as a separate cron or monitoring process, not inline after spawn
+- **AM daemon**: rely on the DB-based run-lifecycle tracking (run records created at spawn, updated when agents complete). Do NOT use `waitForAgents()` blocking loops
 
 ## Related Documentation
 
