@@ -432,6 +432,41 @@ then the spawning terminal hangs for 30+ minutes until timeout kills it.
 - **Shell script**: capture PIDs, move on immediately. Poll A2A bus as a separate cron or monitoring process, not inline after spawn
 - **AM daemon**: rely on the DB-based run-lifecycle tracking (run records created at spawn, updated when agents complete). Do NOT use `waitForAgents()` blocking loops
 
+### 16. Root ↔ Agent user A2A bus split (multi-user spawns)
+
+When a2a is initialized by one user (e.g. `root`) but agents spawn as a different user
+(e.g. via `sudo -u agent`), they see **completely different A2A buses** because
+each user's `HOME` is different and a2a resolves project directories relative to
+`~/.a2a/`.
+
+Root runs `a2a init` → project created at `/root/.a2a/{project}/database.db`.
+Agent runs `a2a list` → looks at `/home/agent/.a2a/{project}/database.db` → not found.
+
+**Symptom:** AM spawner logs show agents registered, but agent bus commands
+(`a2a list`, `a2a send`, `a2a recv`) all fail with "no such table" or "not found".
+Agents appear as "active" via `ps` but never communicate.
+
+**Fix:** After initializing the bus with `a2a init` + `a2a register`, sync the
+project to the target user's a2a directory:
+
+```bash
+# Copy contents (NOT the dir itself — note trailing slashes!)
+cp -rf /root/.a2a/{project}/. /home/agent/.a2a/{project}/
+chown -R agent:agent /home/agent/.a2a/{project}/
+chmod 644 /home/agent/.a2a/{project}/database.db
+```
+
+**The `cp -r` nesting pitfall:** `cp -r /root/.a2a/{project} /home/agent/.a2a/{project}`
+when the target directory doesn't exist creates `/home/agent/.a2a/{project}/{project}/`
+(nested duplicate). Always use trailing slash on source: `cp -rf /root/.a2a/{project}/. /home/agent/.a2a/{project}/`
+
+**The `chmod 644` requirement:** SQLite needs the database file to be writable
+by the target user. Default `cp` permissions (644, owned by root) are not enough
+— the agent user also needs write access to the SQLite WAL and SHM files, so
+use `chown -R` AND ensure `database.db` is group-writable or world-readable.
+Without this, agents get "attempt to write a readonly database" when calling
+a2a commands.
+
 ## Related Documentation
 
 - [docs/GO_CLI_REFERENCE.md](../../../docs/GO_CLI_REFERENCE.md) — Full Go binary CLI command reference
