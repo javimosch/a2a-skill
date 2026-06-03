@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 # a2a-spawn — CLI-agnostic launcher for an a2a peer agent.
 #
-# Knows how to invoke claude, opencode, or pi non-interactively with a kit
+# Knows how to invoke claude, opencode, pi, or tau non-interactively with a kit
 # prompt. Hides the per-CLI flag differences:
 #
 #   - claude   : --append-system-prompt "$KIT"     -p "Begin."
 #   - opencode : (kit embedded in message body)    run "$KIT\n\nBegin."
 #   - pi       : --append-system-prompt "$KIT"     -p "Begin."
+#   - tau      : --append-system-prompt "$KIT"     -p "Begin."
 #
 # Usage:
 #   a2a-spawn --cli claude   --id alice  [--model haiku]   [--log FILE]   --kit-file FILE
 #   a2a-spawn --cli opencode --id bob    [--model anthropic/claude-haiku-4-5] --kit-file FILE
 #   a2a-spawn --cli pi       --id carol  [--provider google] [--model …]   --kit-file FILE
+#   a2a-spawn --cli tau      --id dave  [--provider xiaomi] [--model …]   --kit-file FILE
 #
 # Writes the spawned PID to stdout. Send SIGTERM to that PID to stop the agent.
 # Reads the kit prompt from --kit-file (recommended; avoids shell-escape bugs).
@@ -29,16 +31,16 @@ usage() {
 a2a-spawn — CLI-agnostic launcher for an a2a peer agent.
 
 Usage:
-  a2a-spawn --cli claude|opencode|pi --id NAME [options]
+  a2a-spawn --cli claude|opencode|pi|tau --id NAME [options]
 
 Required:
-  --cli TYPE     Agentic CLI to launch (claude, opencode, pi)
+  --cli TYPE     Agentic CLI to launch (claude, opencode, pi, tau)
   --id NAME      Agent identifier on the a2a bus
   --kit-file FILE  Path to the kit prompt file
 
 Options:
   --model NAME   Model to use (e.g. haiku, anthropic/claude-haiku-4-5)
-  --provider     Provider for pi CLI (e.g. google, openai)
+  --provider     Provider for pi/tau CLI (e.g. google, openai, xiaomi)
   --project NAME Set A2A_PROJECT for the spawned agent (default: basename($PWD))
   --log FILE     Log file (default: /tmp/a2a-<id>.log)
 
@@ -143,8 +145,25 @@ Begin."
             --append-system-prompt "$KIT" \
             "Begin."
         ;;
+    tau)
+        # Resolve tau binary (check local build first, then PATH)
+        if [ -x "./zig-out/bin/tau" ]; then
+            TAU_BIN="./zig-out/bin/tau"
+        elif command -v tau >/dev/null 2>&1; then
+            TAU_BIN="tau"
+        else
+            echo "a2a-spawn: tau binary not found (expected ./zig-out/bin/tau or tau in PATH)" >&2
+            exit 2
+        fi
+        FLAGS=(-p)
+        [ -n "$MODEL" ]    && FLAGS+=(--model "$MODEL")
+        [ -n "$PROVIDER" ] && FLAGS+=(--provider "$PROVIDER")
+        _spawn_bg "$TAU_BIN" "${FLAGS[@]}" \
+            --append-system-prompt "$KIT" \
+            "Begin."
+        ;;
     *)
-        echo "a2a-spawn: unknown CLI '$CLI' (expected claude|opencode|pi)" >&2
+        echo "a2a-spawn: unknown CLI '$CLI' (expected claude|opencode|pi|tau)" >&2
         exit 2
         ;;
 esac
