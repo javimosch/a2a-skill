@@ -1,3 +1,9 @@
+---
+name: a2a-tau-runbook
+description: Guide for using tau (Zig AI CLI) with a2a agent-to-agent messaging. Covers critical configuration flags, kit prompt best practices, common pitfalls, provider-specific notes, and debugging tips for successful tau + a2a integration.
+trigger: a2a tau
+---
+
 # a2a with tau — Runbook & Caveats
 
 ## Overview

@@ -41,6 +41,7 @@ package-lock.json
 # Dev-process skills live at ~/ai/a2a-dev/ — not in this repo
 .agents/skills/*/
 !.agents/skills/a2a/
+!.agents/skills/a2a-tau-runbook/
 
 # Claude Code session state
 .claude/
