@@ -155,7 +155,7 @@ Begin."
             echo "a2a-spawn: tau binary not found (expected ./zig-out/bin/tau or tau in PATH)" >&2
             exit 2
         fi
-        FLAGS=(-p)
+        FLAGS=(-p --no-stream --tools bash)
         [ -n "$MODEL" ]    && FLAGS+=(--model "$MODEL")
         [ -n "$PROVIDER" ] && FLAGS+=(--provider "$PROVIDER")
         _spawn_bg "$TAU_BIN" "${FLAGS[@]}" \
