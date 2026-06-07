@@ -32,6 +32,78 @@ a2a clear --yes                   # wipe database
 
 **Flags:** `--project NAME` (overrides `$A2A_PROJECT` > basename of cwd)
 
+## Field Learnings & Pitfalls
+
+### Model availability breaks teams
+
+Teams can't start if the model is unavailable. OpenRouter rate-limits killed the first spawn attempt silently. **Always have a fallback provider** (Xiaomi, local Ollama) configured in opencode.json. Test your model before spawning:
+
+```bash
+opencode run -m <provider/model> "echo ok" --dangerously-skip-permissions 2>&1 | head -5
+```
+
+If the fallback is weaker, keep kit prompts simpler — shorter context, fewer steps.
+
+### Kit prompts must be self-contained
+
+Agents have **no shared context** outside what you put in the kit file. Each kit must include:
+
+- Full project paths (`/home/user/project/...`), not relative ones
+- Exact binary locations (`/home/user/.local/bin/a2a`)
+- All environment assumptions (which tools are installed, aliases available)
+- The other agent's name and role (so they know who to message)
+- Timeout values for `a2a recv --wait N` (60-120s is safe)
+
+Missing any of these causes agents to stall waiting for information that was never given.
+
+### The two-agent pattern (tester/fixer) is reliable
+
+Lead-tester does the work, fixer waits for a report. This prevents both agents from stepping on each other. After the handoff, both should mark `status done`.
+
+```
+lead-tester → runs tests → reports → fixer → analyzes → responds → both done
+```
+
+### Monitor via logs, not just the bus
+
+Agents write stdout to `/tmp/a2a-{agent-name}.log`. This is essential for debugging stalled agents:
+
+```bash
+tail -f /tmp/a2a-lead-tester.log
+tail -f /tmp/a2a-fixer.log
+```
+
+The bus only shows final messages, not the agent's internal reasoning or intermediate failures.
+
+### PID management is fragile
+
+`a2a-spawn` returns a PID, but the process can die silently (model error, timeout, crash). Always verify:
+
+```bash
+kill -0 $PID 2>/dev/null || echo "Agent died"
+a2a list --project <name>  # shows active/done status
+```
+
+If an agent dies before spawning, `a2a-spawn` won't tell you — you have to check the log file.
+
+### Register first, then spawn, then upsert
+
+Pattern 3 requires:
+
+1. `a2a register agent-name --role X --project Y` — creates the bus identity
+2. `a2a-spawn --id agent-name --project Y ...` — starts the process
+3. `a2a register agent-name --pid $PID --upsert --project Y` — links process to identity
+
+If you skip step 3, the agent shows as `active` but has no PID — you can't tell if it's alive.
+
+### Clear the bus between runs
+
+Old messages confuse new agents. Always `a2a clear --project <name> --yes` before a fresh team spawn.
+
+### One-way communication is enough
+
+For task-execution teams, agents don't need to debate. lead-tester sends a report, fixer acknowledges. No back-and-forth required. Keep it linear.
+
 ## Further reading by audience
 
 | Audience | Start with |
