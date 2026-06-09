@@ -106,7 +106,11 @@ _spawn_bg() {
 case "$CLI" in
     claude)
         FLAGS=(--max-turns 50)
-        [ -n "$MODEL" ] && FLAGS+=(--model "$MODEL")
+        # Strip the panel's "claude:" CLI prefix — claude wants a bare alias
+        # ("haiku"/"sonnet") or full model id, not "claude:haiku" (which it
+        # rejects as a non-existent model and exits immediately).
+        CLAUDE_MODEL="${MODEL#claude:}"
+        [ -n "$CLAUDE_MODEL" ] && FLAGS+=(--model "$CLAUDE_MODEL")
         # Bypass permission prompts so the agent can run a2a/bash non-interactively.
         # NOTE: --allow-dangerously-skip-permissions does NOT bypass approval for
         # non-trivial commands (the agent ends up asking for approval that nobody
