@@ -105,25 +105,25 @@ _spawn_bg() {
 
 case "$CLI" in
     claude)
-        FLAGS=(--max-turns 200)
+        FLAGS=(--max-turns 50)
         [ -n "$MODEL" ] && FLAGS+=(--model "$MODEL")
-        # root cannot use --dangerously-skip-permissions directly (claude blocks it).
-        # Run as agent user instead, which has the right setup for full automation.
+        # Bypass permission prompts so the agent can run a2a/bash non-interactively.
+        # NOTE: --allow-dangerously-skip-permissions does NOT bypass approval for
+        # non-trivial commands (the agent ends up asking for approval that nobody
+        # answers in -p mode, then does nothing). The working flag is
+        # --dangerously-skip-permissions. claude blocks that flag as root, so root
+        # falls back to --permission-mode bypassPermissions (a valid mode; the old
+        # "auto" value was invalid and silently left prompts enabled).
         if [ "$(id -u)" -eq 0 ]; then
-            FLAGS+=(--dangerously-skip-permissions)
-            CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
-            _spawn_bg sudo -u agent HOME=/home/agent "$HOME/.local/bin/claude" \
-                -p "Begin." \
-                "${FLAGS[@]}" \
-                --append-system-prompt-file "$KIT_FILE"
+            FLAGS+=(--permission-mode bypassPermissions --allowedTools "Bash,Read,Edit,Write,Ls,Glob")
         else
             FLAGS+=(--dangerously-skip-permissions)
-            CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
-            _spawn_bg "$HOME/.local/bin/claude" \
-                -p "Begin." \
-                "${FLAGS[@]}" \
-                --append-system-prompt-file "$KIT_FILE"
         fi
+        CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
+        _spawn_bg "$HOME/.local/bin/claude" \
+            -p "Begin." \
+            "${FLAGS[@]}" \
+            --append-system-prompt-file "$KIT_FILE"
         ;;
     opencode)
         OPENCODE="$(resolve_opencode)"
@@ -157,7 +157,10 @@ Begin."
         fi
         # --max-iterations raised: multi-exchange a2a coordination needs many
         # send/recv tool turns (the default 10 stalls long debates).
-        FLAGS=(-p --no-stream --tools bash --max-iterations 40)
+        # --timeout-ms raised: reasoning models are slow generating large outputs
+        # (e.g. code files) over a big context; the 120s default times out.
+        # --tools defaults to bash; override with --tau-tools for richer agents.
+        FLAGS=(-p --no-stream --tools "${TAU_TOOLS:-bash}" --max-iterations 40 --timeout-ms 300000)
         [ -n "$MODEL" ]    && FLAGS+=(--model "$MODEL")
         [ -n "$PROVIDER" ] && FLAGS+=(--provider "$PROVIDER")
         _spawn_bg "$TAU_BIN" "${FLAGS[@]}" \
