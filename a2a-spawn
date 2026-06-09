@@ -120,10 +120,20 @@ case "$CLI" in
         # --dangerously-skip-permissions. claude blocks that flag as root, so root
         # falls back to --permission-mode bypassPermissions (a valid mode; the old
         # "auto" value was invalid and silently left prompts enabled).
-        if [ "$(id -u)" -eq 0 ]; then
-            FLAGS+=(--permission-mode bypassPermissions --allowedTools "Bash,Read,Edit,Write,Ls,Glob")
+        # --dangerously-skip-permissions is the only flag that actually bypasses
+        # approval in -p mode. claude REFUSES it (and --permission-mode
+        # bypassPermissions too) when running as root/sudo — unless it believes it
+        # is sandboxed. IS_SANDBOX=1 unlocks the flag for root/sudo. For non-root,
+        # the flag works as-is.
+        FLAGS+=(--dangerously-skip-permissions)
+        # Export (not an inline VAR=val prefix): the prefix form only works with a
+        # literal token, while an expanded "${arr[@]}" is parsed as a command name
+        # ("IS_SANDBOX=1: command not found"). a2a-spawn exits right after
+        # backgrounding claude, so exporting here just seeds the child's env.
+        if [ "$(id -u)" -eq 0 ] || [ -n "$SUDO_UID" ]; then
+            export IS_SANDBOX=1
         else
-            FLAGS+=(--dangerously-skip-permissions)
+            export CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1
         fi
         # Pass the kit CONTENT (not the file path): claude is launched in the
         # background, and the caller often deletes the kit file immediately after
@@ -132,7 +142,6 @@ case "$CLI" in
         # --output-format stream-json --verbose: emit structured events (every
         # tool call + result) so the worker can summarize what the agent actually
         # did into the run log (visibility for debugging stalls/no-op runs).
-        CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
         _spawn_bg "$HOME/.local/bin/claude" \
             -p "Begin." \
             "${FLAGS[@]}" \
