@@ -123,11 +123,15 @@ case "$CLI" in
         else
             FLAGS+=(--dangerously-skip-permissions)
         fi
+        # Pass the kit CONTENT (not the file path): claude is launched in the
+        # background, and the caller often deletes the kit file immediately after
+        # spawn — --append-system-prompt-file then fails with "file not found" and
+        # claude exits in ~1s doing nothing. $KIT already holds the file content.
         CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
         _spawn_bg "$HOME/.local/bin/claude" \
             -p "Begin." \
             "${FLAGS[@]}" \
-            --append-system-prompt-file "$KIT_FILE"
+            --append-system-prompt "$KIT"
         ;;
     opencode)
         OPENCODE="$(resolve_opencode)"
