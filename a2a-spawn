@@ -91,12 +91,14 @@ resolve_opencode() {
 
 # Use nohup + disown so the spawned process survives the parent shell exit.
 _spawn_bg() {
-    # "$@" is the command to run; stdout/stderr already redirected.
+    # "$@" is the command to run; stdout/stderr already redirected. stdin is
+    # /dev/null so non-interactive CLIs (e.g. claude --output-format stream-json)
+    # don't wait on stdin.
     # Use inline env var so the export is scoped only to the spawned process.
     if [ -n "$PROJECT" ]; then
-        A2A_PROJECT="$PROJECT" nohup "$@" > "$LOG" 2>&1 &
+        A2A_PROJECT="$PROJECT" nohup "$@" > "$LOG" 2>&1 < /dev/null &
     else
-        nohup "$@" > "$LOG" 2>&1 &
+        nohup "$@" > "$LOG" 2>&1 < /dev/null &
     fi
     local PID=$!
     disown "$PID" 2>/dev/null || true
@@ -127,10 +129,14 @@ case "$CLI" in
         # background, and the caller often deletes the kit file immediately after
         # spawn — --append-system-prompt-file then fails with "file not found" and
         # claude exits in ~1s doing nothing. $KIT already holds the file content.
+        # --output-format stream-json --verbose: emit structured events (every
+        # tool call + result) so the worker can summarize what the agent actually
+        # did into the run log (visibility for debugging stalls/no-op runs).
         CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1 \
         _spawn_bg "$HOME/.local/bin/claude" \
             -p "Begin." \
             "${FLAGS[@]}" \
+            --output-format stream-json --verbose \
             --append-system-prompt "$KIT"
         ;;
     opencode)
