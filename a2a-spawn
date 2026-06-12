@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 # a2a-spawn — CLI-agnostic launcher for an a2a peer agent.
 #
-# Knows how to invoke claude, opencode, pi, or tau non-interactively with a kit
+# Knows how to invoke claude, opencode, pi, tau, or debri non-interactively with a kit
 # prompt. Hides the per-CLI flag differences:
 #
 #   - claude   : --append-system-prompt "$KIT"     -p "Begin."
 #   - opencode : (kit embedded in message body)    run "$KIT\n\nBegin."
 #   - pi       : --append-system-prompt "$KIT"     -p "Begin."
 #   - tau      : --append-system-prompt "$KIT"     -p "Begin."
+#   - debri    : (kit embedded in message body)    "$KIT"
 #
 # Usage:
 #   a2a-spawn --cli claude   --id alice  [--model haiku]   [--log FILE]   --kit-file FILE
 #   a2a-spawn --cli opencode --id bob    [--model anthropic/claude-haiku-4-5] --kit-file FILE
 #   a2a-spawn --cli pi       --id carol  [--provider google] [--model …]   --kit-file FILE
 #   a2a-spawn --cli tau      --id dave  [--provider xiaomi] [--model …]   --kit-file FILE
+#   a2a-spawn --cli debri    --id eve   [--model SWE-1.6]   [--log FILE]   --kit-file FILE
 #
 # Writes the spawned PID to stdout. Send SIGTERM to that PID to stop the agent.
 # Reads the kit prompt from --kit-file (recommended; avoids shell-escape bugs).
@@ -31,17 +33,17 @@ usage() {
 a2a-spawn — CLI-agnostic launcher for an a2a peer agent.
 
 Usage:
-  a2a-spawn --cli claude|opencode|pi|tau --id NAME [options]
+  a2a-spawn --cli claude|opencode|pi|tau|debri --id NAME [options]
 
 Required:
-  --cli TYPE     Agentic CLI to launch (claude, opencode, pi, tau)
+  --cli TYPE     Agentic CLI to launch (claude, opencode, pi, tau, debri)
   --id NAME      Agent identifier on the a2a bus
   --kit-file FILE  Path to the kit prompt file
 
 Options:
-  --model NAME   Model to use (e.g. haiku, anthropic/claude-haiku-4-5)
+  --model NAME   Model to use (e.g. haiku, anthropic/claude-haiku-4-5, SWE-1.6)
   --provider     Provider for pi/tau CLI (e.g. google, openai, xiaomi)
-  --project NAME Set A2A_PROJECT for the spawned agent (default: basename($PWD))
+  --project NAME Set working directory for debri (default: basename($PWD))
   --log FILE     Log file (default: /tmp/a2a-<id>.log)
 
 Outputs the spawned PID to stdout.
@@ -66,7 +68,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-[ -z "$CLI" ]      && { echo "a2a-spawn: --cli required (claude|opencode|pi)" >&2; exit 2; }
+[ -z "$CLI" ]      && { echo "a2a-spawn: --cli required (claude|opencode|pi|tau|debri)" >&2; exit 2; }
 [ -z "$ID" ]       && { echo "a2a-spawn: --id required" >&2; exit 2; }
 [ -z "$KIT_FILE" ] && { echo "a2a-spawn: --kit-file required" >&2; exit 2; }
 [ -r "$KIT_FILE" ] || { echo "a2a-spawn: cannot read kit file $KIT_FILE" >&2; exit 2; }
@@ -190,8 +192,26 @@ Begin."
             --append-system-prompt "$KIT" \
             "Begin."
         ;;
+    debri)
+        # Resolve debri (check ~/ai/debri build, then PATH)
+        if [ -x "$HOME/ai/debri/debri" ]; then
+            DEBRI_BIN="$HOME/ai/debri/debri"
+        elif command -v debri >/dev/null 2>&1; then
+            DEBRI_BIN="debri"
+        else
+            echo "a2a-spawn: debri not found (expected ~/ai/debri/debri or debri in PATH)" >&2
+            exit 2
+        fi
+        # Go debri CLI flags: --model, --permission-mode, --working-dir, --stream, --json, --file, --stable-timeout
+        FLAGS=(--permission-mode dangerous --stable-timeout 8000)
+        [ -n "$MODEL" ]    && FLAGS+=(--model "$MODEL")
+        [ -n "$PROJECT" ] && FLAGS+=(--working-dir "$PROJECT")
+        # Embed kit in the prompt (debri doesn't have --append-system-prompt)
+        MSG="$KIT"
+        _spawn_bg "$DEBRI_BIN" "${FLAGS[@]}" "$MSG"
+        ;;
     *)
-        echo "a2a-spawn: unknown CLI '$CLI' (expected claude|opencode|pi|tau)" >&2
+        echo "a2a-spawn: unknown CLI '$CLI' (expected claude|opencode|pi|tau|debri)" >&2
         exit 2
         ;;
 esac
