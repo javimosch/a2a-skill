@@ -306,6 +306,14 @@ Edit `a2a-spawn`:
    `opencode` itself is aliased to `opencode-tmux` which requires a real
    terminal — we resolve to `~/.opencode/bin/opencode` instead.
 
+**For debri (Go CLI wrapper around devin):**
+- debri is a coding harness like opencode/pi, not a persistent agent
+- Use debri-a2a wrapper agent for persistent a2a bus coordination
+- debri-a2a agent: `bun ~/ai/devin-bridge/src/debri-a2a.ts` (persistent, listens on bus)
+- Flags: `--agent-id`, `--project`, `--role`, `--model`, `--permission-mode`, `--stable-timeout`, `--kit-file`
+- debri-a2a wraps Go debri CLI for each message: `debri --model SWE-1.6 --permission-mode dangerous --stable-timeout 8000 "prompt"`
+- Use inline env var for A2A_PROJECT to ensure correct project context
+
 ### Changing the kit prompt
 
 The kit prompt (in `.agents/skills/a2a/SKILL.md` Step 4 and inlined into both smoke tests)
