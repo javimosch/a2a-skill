@@ -201,22 +201,27 @@ Begin."
             "Begin."
         ;;
     debri)
-        # Resolve debri (check ~/ai/debri build, then PATH)
-        if [ -x "$HOME/ai/debri/debri" ]; then
-            DEBRI_BIN="$HOME/ai/debri/debri"
-        elif command -v debri >/dev/null 2>&1; then
-            DEBRI_BIN="debri"
+        # Resolve debri-a2a (check devin-bridge project, then PATH)
+        if [ -f "$HOME/ai/devin-bridge/src/debri-a2a.ts" ]; then
+            DEBRI_BIN="bun $HOME/ai/devin-bridge/src/debri-a2a.ts"
+        elif command -v debri-a2a >/dev/null 2>&1; then
+            DEBRI_BIN="debri-a2a"
         else
-            echo "a2a-spawn: debri not found (expected ~/ai/debri/debri or debri in PATH)" >&2
+            echo "a2a-spawn: debri-a2a not found (expected ~/ai/devin-bridge/src/debri-a2a.ts or debri-a2a in PATH)" >&2
             exit 2
         fi
-        # Go debri CLI flags: --model, --permission-mode, --working-dir, --stream, --json, --file, --stable-timeout
-        FLAGS=(--permission-mode dangerous --stable-timeout 8000)
-        [ -n "$MODEL" ]    && FLAGS+=(--model "$MODEL")
-        [ -n "$PROJECT" ] && FLAGS+=(--working-dir "$PROJECT")
-        # Embed kit in the prompt (debri doesn't have --append-system-prompt)
-        MSG="$KIT"
-        _spawn_bg "$DEBRI_BIN" "${FLAGS[@]}" "$MSG"
+        # debri-a2a agent flags: --agent-id, --project, --role, --model, --permission-mode, --stable-timeout, --kit-file
+        FLAGS=(--agent-id="$ID" --project="${PROJECT:-$(basename $PWD)}" --role="Executor")
+        [ -n "$MODEL" ]    && FLAGS+=(--model="$MODEL")
+        FLAGS+=(--permission-mode="dangerous" --stable-timeout="8000")
+        FLAGS+=(--kit-file="$KIT_FILE")
+        # debri-a2a is a persistent agent that listens on the bus
+        # Use inline env var for A2A_PROJECT to ensure it's set for the spawned process
+        if [ -n "$PROJECT" ]; then
+            A2A_PROJECT="$PROJECT" _spawn_bg $DEBRI_BIN "${FLAGS[@]}"
+        else
+            _spawn_bg $DEBRI_BIN "${FLAGS[@]}"
+        fi
         ;;
     *)
         echo "a2a-spawn: unknown CLI '$CLI' (expected claude|opencode|pi|tau|debri)" >&2

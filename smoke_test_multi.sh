@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cross-CLI smoke test: claude + opencode + pi agents collaborate on the a2a bus.
+# Cross-CLI smoke test: claude + opencode + pi + tau agents collaborate on the a2a bus.
 # Success = at least one message from each agent appears on the bus and each
 # agent ends with status='done' (or at minimum exits cleanly).
 set -u
@@ -27,6 +27,8 @@ echo
   --prompt "Critique alice's plan in ONE short sentence. Then mark done."
 "$A2A" register carol --role synthesizer --cli pi \
   --prompt "After reading alice's plan and bob's critique, write ONE-sentence synthesis. Then mark done."
+"$A2A" register dave  --role builder --cli tau \
+  --prompt "Review the conversation and add one concrete improvement idea. Then mark done."
 
 build_kit() {
     local id="$1" role="$2" prompt="$3"
@@ -36,7 +38,7 @@ Role: $role
 Your instruction from the user:
 $prompt
 
-You are one of three peers. No boss. Coordinate amongst yourselves.
+You are one of four peers. No boss. Coordinate amongst yourselves.
 
 == Locate the a2a binary ==
 Run this bash snippet first:
@@ -77,10 +79,12 @@ EOF
 KIT_ALICE="$LOG_DIR/alice.kit"
 KIT_BOB="$LOG_DIR/bob.kit"
 KIT_CAROL="$LOG_DIR/carol.kit"
+KIT_DAVE="$LOG_DIR/dave.kit"
 build_kit alice planner     "$($A2A list --json | head -1; echo)
-Open with ONE short greeting + one concrete subtask for bob and carol. After 2 turns mark done." > "$KIT_ALICE"
+Open with ONE short greeting + one concrete subtask for bob, carol, and dave. After 2 turns mark done." > "$KIT_ALICE"
 build_kit bob   critic       "Critique alice's plan in ONE short sentence. Then mark done." > "$KIT_BOB"
 build_kit carol synthesizer  "After alice's plan and bob's critique, write ONE-sentence synthesis. Then mark done." > "$KIT_CAROL"
+build_kit dave  builder       "Review the conversation and add one concrete improvement idea. Then mark done." > "$KIT_DAVE"
 
 # Pick available CLIs, abort gracefully if a CLI is missing
 have() { command -v "$1" >/dev/null 2>&1; }
@@ -90,6 +94,8 @@ CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
 OPENCODE_MODEL="${OPENCODE_MODEL:-opencode-go/deepseek-v4-flash}"
 PI_PROVIDER="${PI_PROVIDER:-opencode-go}"
 PI_MODEL="${PI_MODEL:-deepseek-v4-flash}"
+TAU_PROVIDER="${TAU_PROVIDER:-opencode-go}"
+TAU_MODEL="${TAU_MODEL:-deepseek-v4-flash}"
 
 echo "spawning alice via claude ($CLAUDE_MODEL)..."
 ALICE_PID=$("$SPAWN" --cli claude --id alice --model "$CLAUDE_MODEL" \
@@ -109,6 +115,12 @@ CAROL_PID=$("$SPAWN" --cli pi --id carol --provider "$PI_PROVIDER" --model "$PI_
 "$A2A" register carol --pid "$CAROL_PID" --upsert >/dev/null
 echo "  carol pid=$CAROL_PID"
 
+echo "spawning dave via tau ($TAU_PROVIDER/$TAU_MODEL)..."
+DAVE_PID=$("$SPAWN" --cli tau --id dave --provider "$TAU_PROVIDER" --model "$TAU_MODEL" \
+            --log "$LOG_DIR/dave.log" --kit-file "$KIT_DAVE")
+"$A2A" register dave --pid "$DAVE_PID" --upsert >/dev/null
+echo "  dave  pid=$DAVE_PID"
+
 # Watch the bus while they run
 DEADLINE=$(( $(date +%s) + 240 ))
 while :; do
@@ -117,14 +129,15 @@ while :; do
     AL=$(kill -0 "$ALICE_PID" 2>/dev/null && echo y || echo n)
     BO=$(kill -0 "$BOB_PID"   2>/dev/null && echo y || echo n)
     CA=$(kill -0 "$CAROL_PID" 2>/dev/null && echo y || echo n)
-    if [ "$AL$BO$CA" = "nnn" ]; then echo "(all agents exited)"; break; fi
+    DA=$(kill -0 "$DAVE_PID"  2>/dev/null && echo y || echo n)
+    if [ "$AL$BO$CA$DA" = "nnnn" ]; then echo "(all agents exited)"; break; fi
     sleep 10
-    echo "--- bus snapshot  alice:$AL bob:$BO carol:$CA ---"
+    echo "--- bus snapshot  alice:$AL bob:$BO carol:$CA dave:$DA ---"
     "$A2A" peek --limit 30 || true
 done
 
 # Cleanup any survivors
-for pid in "$ALICE_PID" "$BOB_PID" "$CAROL_PID"; do
+for pid in "$ALICE_PID" "$BOB_PID" "$CAROL_PID" "$DAVE_PID"; do
     kill -0 "$pid" 2>/dev/null && kill "$pid" 2>/dev/null || true
 done
 wait 2>/dev/null
@@ -145,6 +158,7 @@ print(json.dumps({
     'alice_sent': 'alice' in senders,
     'bob_sent':   'bob'   in senders,
     'carol_sent': 'carol' in senders,
+    'dave_sent':  'dave'  in senders,
     'total_messages': len(msgs),
     'senders': sorted(senders),
 }))
@@ -155,13 +169,14 @@ echo "result: $RESULT"
 ALICE_SENT=$(echo "$RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin)['alice_sent'])")
 BOB_SENT=$(echo "$RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin)['bob_sent'])")
 CAROL_SENT=$(echo "$RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin)['carol_sent'])")
+DAVE_SENT=$(echo "$RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin)['dave_sent'])")
 
-if [ "$ALICE_SENT" = "True" ] && [ "$BOB_SENT" = "True" ] && [ "$CAROL_SENT" = "True" ]; then
+if [ "$ALICE_SENT" = "True" ] && [ "$BOB_SENT" = "True" ] && [ "$CAROL_SENT" = "True" ] && [ "$DAVE_SENT" = "True" ]; then
     echo "CROSS-CLI SMOKE TEST: PASS"
     exit 0
 else
     echo "CROSS-CLI SMOKE TEST: FAIL"
-    for who in alice bob carol; do
+    for who in alice bob carol dave; do
         echo "--- $who.log (tail 30) ---"
         tail -30 "$LOG_DIR/$who.log" 2>/dev/null || echo "(no log)"
     done

@@ -27,17 +27,26 @@ tau is a non-interactive Zig AI CLI designed for agents. When using tau with a2a
 ```bash
 # Minimum required flags for tau with a2a:
 --no-stream            # MUST disable streaming for tool-calling
---tools bash           # Enable bash tool for a2a coordination
+--tools bash           # Enable bash tool for a2a coordination (override with TAU_TOOLS)
 --max-iterations 40    # MUST increase from default 10 for multi-exchange debates
+--timeout-ms 300000    # 5-minute HTTP timeout (slow models need it)
 --append-system-prompt $KIT  # Pass kit prompt as system prompt
 -p "Begin."            # Single-shot mode
+
+# Optional debugging flags (set via env vars):
+TAU_THINKING=1         # Enable --thinking (show reasoning chunks in logs)
+TAU_DEBUG=1            # Enable --debug (perf stats + tool I/O to stderr)
 ```
 
 ### Why These Flags Matter
 
 **`--no-stream`**: Streaming mode (default) outputs token-by-token, which breaks tool-calling. Tool-calling requires the full response to parse `tool_calls` before executing them.
 
-**`--tools bash`**: tau has 7 built-in tools (bash, read, write, edit, ls, grep, find). For a2a coordination, only `bash` is needed. Limiting to `bash` reduces token usage and prevents the model from calling file operations that could interfere with a2a coordination.
+**`--tools bash`**: tau has 7 built-in tools (bash, read, write, edit, ls, grep, find). For a2a coordination, only `bash` is needed. Limiting to `bash` reduces token usage and prevents the model from calling file operations that could interfere with a2a coordination. Override with `TAU_TOOLS` env var (e.g., `TAU_TOOLS="bash,read"` to let the agent read files).
+
+**`--thinking` (via `TAU_THINKING=1`)** : Enables reasoning/thinking chunk visibility in logs. Useful for debugging agent behavior. Off by default to save tokens.
+
+**`--debug` (via `TAU_DEBUG=1`)** : Logs performance stats and tool I/O to stderr (visible in agent log). Invaluable for troubleshooting stalled or misbehaving tau agents.
 
 **`--max-iterations 40`**: The default agentic loop limit is 10 iterations. A multi-exchange a2a debate requires ~2 tool calls per round (send + recv). For a 3-round debate, you need at least 6 iterations. 40 provides headroom for longer debates and error recovery.
 
@@ -208,7 +217,8 @@ See the tau repository `smoke.md` for a complete working example:
 
 Before deploying tau with a2a:
 
-- [ ] a2a-spawn updated with `--no-stream --tools bash --max-iterations 40`
+- [ ] a2a-spawn updated with `--no-stream --tools bash --max-iterations 40 --timeout-ms 300000`
+- [ ] TAU_TOOLS, TAU_THINKING, TAU_DEBUG env vars configured if needed
 - [ ] Kit prompts use plain ASCII (no quotes/apostrophes)
 - [ ] Kit prompts have explicit tool instructions
 - [ ] Kit prompts specify fixed round limits
