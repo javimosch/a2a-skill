@@ -8,7 +8,7 @@
 #   - opencode : (kit embedded in message body)    run "$KIT\n\nBegin."
 #   - pi       : --append-system-prompt "$KIT"     -p "Begin."
 #   - tau      : --append-system-prompt "$KIT"     -p "Begin."
-#   - debri    : (kit embedded in message body)    "$KIT"
+#   - debri    : debri-a2a agent (wraps Go debri CLI)
 #
 # Usage:
 #   a2a-spawn --cli claude   --id alice  [--model haiku]   [--log FILE]   --kit-file FILE
@@ -43,7 +43,7 @@ Required:
 Options:
   --model NAME   Model to use (e.g. haiku, anthropic/claude-haiku-4-5, SWE-1.6)
   --provider     Provider for pi/tau CLI (e.g. google, openai, xiaomi)
-  --project NAME Set working directory for debri (default: basename($PWD))
+  --project NAME Set A2A_PROJECT for the spawned agent (default: basename($PWD))
   --log FILE     Log file (default: /tmp/a2a-<id>.log)
 
 Outputs the spawned PID to stdout.
@@ -171,13 +171,17 @@ Begin."
             "Begin."
         ;;
     tau)
-        # Resolve tau binary (check local build first, then PATH)
-        if [ -x "./zig-out/bin/tau" ]; then
+        # Resolve tau binary: TAU_BIN env var > local build > project build > PATH
+        if [ -n "${TAU_BIN:-}" ] && [ -x "$TAU_BIN" ]; then
+            :  # use TAU_BIN as-is
+        elif [ -x "./zig-out/bin/tau" ]; then
             TAU_BIN="./zig-out/bin/tau"
+        elif [ -x "$HOME/ai/tau/zig-out/bin/tau" ]; then
+            TAU_BIN="$HOME/ai/tau/zig-out/bin/tau"
         elif command -v tau >/dev/null 2>&1; then
             TAU_BIN="tau"
         else
-            echo "a2a-spawn: tau binary not found (expected ./zig-out/bin/tau or tau in PATH)" >&2
+            echo "a2a-spawn: tau binary not found (set TAU_BIN, or ./zig-out/bin/tau, ~/ai/tau/zig-out/bin/tau, or tau in PATH)" >&2
             exit 2
         fi
         # --max-iterations raised: multi-exchange a2a coordination needs many
