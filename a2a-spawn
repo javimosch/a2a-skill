@@ -132,7 +132,7 @@ case "$CLI" in
         # literal token, while an expanded "${arr[@]}" is parsed as a command name
         # ("IS_SANDBOX=1: command not found"). a2a-spawn exits right after
         # backgrounding claude, so exporting here just seeds the child's env.
-        if [ "$(id -u)" -eq 0 ] || [ -n "$SUDO_UID" ]; then
+        if [ "$(id -u)" -eq 0 ] || [ -n "${SUDO_UID:-}" ]; then
             export IS_SANDBOX=1
         else
             export CLAUDE_CODE_DANGEROUSLY_SKIP_PERMISSIONS=1
@@ -184,8 +184,12 @@ Begin."
         # send/recv tool turns (the default 10 stalls long debates).
         # --timeout-ms raised: reasoning models are slow generating large outputs
         # (e.g. code files) over a big context; the 120s default times out.
-        # --tools defaults to bash; override with --tau-tools for richer agents.
+        # --tools defaults to bash; override with TAU_TOOLS for richer agents.
+        # TAU_THINKING=1 enables --thinking (show reasoning chunks) for debugging.
+        # TAU_DEBUG=1 enables --debug (perf stats + tool I/O to stderr) for troubleshooting.
         FLAGS=(-p --no-stream --tools "${TAU_TOOLS:-bash}" --max-iterations 40 --timeout-ms 300000)
+        [ "${TAU_THINKING:-0}" = "1" ] && FLAGS+=(--thinking)
+        [ "${TAU_DEBUG:-0}" = "1" ]    && FLAGS+=(--debug)
         [ -n "$MODEL" ]    && FLAGS+=(--model "$MODEL")
         [ -n "$PROVIDER" ] && FLAGS+=(--provider "$PROVIDER")
         _spawn_bg "$TAU_BIN" "${FLAGS[@]}" \
