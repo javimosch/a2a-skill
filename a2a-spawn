@@ -8,7 +8,7 @@
 #   - opencode : (kit embedded in message body)    run "$KIT\n\nBegin."
 #   - pi       : --append-system-prompt "$KIT"     -p "Begin."
 #   - tau      : --append-system-prompt "$KIT"     -p "Begin."
-#   - debri    : debri-a2a agent (wraps Go debri CLI)
+#   - debri    : Go debri binary (wraps local devin CLI via tmux)
 #
 # Usage:
 #   a2a-spawn --cli claude   --id alice  [--model haiku]   [--log FILE]   --kit-file FILE
@@ -201,26 +201,36 @@ Begin."
             "Begin."
         ;;
     debri)
-        # Resolve debri-a2a (check devin-bridge project, then PATH)
-        if [ -f "$HOME/ai/devin-bridge/src/debri-a2a.ts" ]; then
-            DEBRI_BIN="bun $HOME/ai/devin-bridge/src/debri-a2a.ts"
-        elif command -v debri-a2a >/dev/null 2>&1; then
-            DEBRI_BIN="debri-a2a"
+        # Resolve debri binary (pure Go wrapper for the local devin CLI)
+        if [ -x "$HOME/ai/debri/debri" ]; then
+            DEBRI_BIN="$HOME/ai/debri/debri"
+        elif command -v debri >/dev/null 2>&1; then
+            DEBRI_BIN="debri"
         else
-            echo "a2a-spawn: debri-a2a not found (expected ~/ai/devin-bridge/src/debri-a2a.ts or debri-a2a in PATH)" >&2
+            echo "a2a-spawn: debri not found (expected ~/ai/debri/debri or debri in PATH)" >&2
             exit 2
         fi
-        # debri-a2a agent flags: --agent-id, --project, --role, --model, --permission-mode, --stable-timeout, --kit-file
-        FLAGS=(--agent-id="$ID" --project="${PROJECT:-$(basename $PWD)}" --role="Executor")
-        [ -n "$MODEL" ]    && FLAGS+=(--model="$MODEL")
-        FLAGS+=(--permission-mode="dangerous" --stable-timeout="8000")
-        FLAGS+=(--kit-file="$KIT_FILE")
-        # debri-a2a is a persistent agent that listens on the bus
-        # Use inline env var for A2A_PROJECT to ensure it's set for the spawned process
+        # Pass the kit content as a positional argument (NOT --file) so the kit is
+        # already in memory when debri starts. Using --file would reference the temp
+        # path that team_spawning.go deletes via defer before debri reads it.
+        #
+        # Devin executes each bash tool call in a fresh shell, so shell variables
+        # like $A2A don't persist across calls. Replace $A2A with the real resolved
+        # path so every a2a command in the kit is self-contained.
+        A2A_REAL=$(command -v a2a 2>/dev/null || echo "$HOME/.local/bin/a2a")
+        # Devin runs each bash tool call in a fresh shell — env vars don't persist.
+        # Inline A2A_PROJECT with every a2a invocation so commands are self-contained.
+        A2A_WITH_PROJECT="A2A_PROJECT=${PROJECT:-$(basename "$PWD")} $A2A_REAL"
+        DEBRI_KIT="${KIT//\$A2A/$A2A_WITH_PROJECT}"
+        # 600 000 ms (10 min) — devin is silent during `a2a recv --wait 30`
+        # and during planning/thinking. 30s was too short and caused debri to
+        # exit mid-task the moment the first recv block completed.
+        FLAGS=(--permission-mode=dangerous --stable-timeout=600000 --stream)
+        [ -n "$MODEL" ] && FLAGS+=(--model="$MODEL")
         if [ -n "$PROJECT" ]; then
-            A2A_PROJECT="$PROJECT" _spawn_bg $DEBRI_BIN "${FLAGS[@]}"
+            A2A_PROJECT="$PROJECT" _spawn_bg "$DEBRI_BIN" "${FLAGS[@]}" "$DEBRI_KIT"
         else
-            _spawn_bg $DEBRI_BIN "${FLAGS[@]}"
+            _spawn_bg "$DEBRI_BIN" "${FLAGS[@]}" "$DEBRI_KIT"
         fi
         ;;
     *)
