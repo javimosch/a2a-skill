@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# a2a-lease — promise your next check-in; a2a-watchdog chases you if you miss it.
+#
+#   a2a-lease alice 1800              # "I'll check back within 30 min"
+#   a2a-lease alice 1800 off          # going off duty (watchdog leaves you alone)
+#   a2a-lease alice 1800 on --project myproj
+#
+# A lease is a small JSON file under ~/.a2a/<project>/seats/<id>.json that an
+# agent rewrites each work cycle. No lease = the watchdog never nudges the seat
+# for being idle (it still reports the seat if its PID dies). Write one when you
+# are actively working a queue and want a safety net under your own wake loop.
+#
+# Idea ported from github.com/chrisreedbates/a2a-dms (bin/lease), adapted to the
+# a2a SQLite-bus world: here the watchdog "wakes" an overdue seat by sending it a
+# bus message (agents block on `a2a recv`), rather than typing into a tmux TUI.
+set -euo pipefail
+
+ID="${1:-}"; SECS="${2:-}"; DUTY="on"
+PROJECT="${A2A_PROJECT:-}"
+
+# Parse optional [on|off] and --project after the two positionals.
+shift $(( $# >= 2 ? 2 : $# )) || true
+while [ $# -gt 0 ]; do
+  case "$1" in
+    on|off)      DUTY="$1";        shift;;
+    --project)   PROJECT="$2";     shift 2;;
+    *) echo "a2a-lease: unknown arg $1" >&2; exit 2;;
+  esac
+done
+
+if [[ -z "$ID" || -z "$SECS" ]]; then
+  echo "usage: a2a-lease <agent-id> <next-due-seconds> [on|off] [--project NAME]" >&2
+  exit 2
+fi
+[[ "$SECS" =~ ^[0-9]+$ ]] || { echo "a2a-lease: <next-due-seconds> must be an integer" >&2; exit 2; }
+PROJECT="${PROJECT:-$(basename "$PWD")}"
+
+# Sanitize id -> safe filename.
+SAFE_ID="${ID//[^A-Za-z0-9._-]/}"
+[[ -n "$SAFE_ID" ]] || { echo "a2a-lease: empty id after sanitizing" >&2; exit 2; }
+
+BASE="${A2A_HOME:-$HOME/.a2a}/$PROJECT"
+mkdir -p "$BASE/seats"
+
+python3 - "$SAFE_ID" "$SECS" "$DUTY" "$BASE/seats/$SAFE_ID.json" <<'PY'
+import json, sys, time
+sid, secs, duty, path = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+now = time.time()
+def iso(t):
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t))
+lease = {
+    "id": sid,
+    "duty": duty,
+    "cadence_s": secs,
+    "next_due": iso(now + secs),
+    "wrote_at": iso(now),
+}
+with open(path, "w") as f:
+    json.dump(lease, f, indent=2)
+    f.write("\n")
+print(f"lease written: {sid} next due {lease['next_due']} (duty {duty})")
+PY

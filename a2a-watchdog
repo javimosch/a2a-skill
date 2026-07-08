@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+"""a2a-watchdog — the night watchman for an a2a peer team.
+
+Deterministic, no LLM, no network. Run one pass every 60s from cron / systemd /
+launchd, or use --loop N for a foreground dev loop. One pass:
+
+  1. Pause file present ($BASE/paused) -> do nothing at all.
+  2. Read the roster from `a2a list --json` (source of truth for who exists).
+  3. For each agent whose status is not 'done':
+       - PID present but the process is gone -> the seat CRASHED/EXITED:
+         mark it 'done' on the bus, broadcast a [A2A watchdog] DOWN notice,
+         desktop-notify once. (One-shot `-p` agents can't be re-woken, so the
+         job here is detect + record + notify, not re-spawn.)
+       - PID alive + a lease exists + lease overdue past grace -> the seat is
+         alive but not checking in: send it a [A2A watchdog] wake message on the
+         bus (agents block on `a2a recv`, so a bus message IS the poke), once
+         per cooldown.
+  4. State ($BASE/watchdog-state.json) remembers what we already alerted so we
+     never spam the same event twice.
+
+Ported from github.com/chrisreedbates/a2a-dms (bin/watchdog.mjs), adapted from
+its tmux-poke transport to the a2a SQLite bus. The watchdog holds no authority:
+it only reports, marks, and nudges — it never spawns, kills, or supersedes.
+
+Env knobs:
+  A2A_BIN                path to the a2a binary (else PATH / skill dirs)
+  A2A_HOME               base dir for project data (default ~/.a2a)
+  A2A_WD_MIN_GRACE_S     min lease grace before a nudge (default 600)
+  A2A_WD_COOLDOWN_S      min seconds between nudges to one seat (default 600)
+  A2A_WD_NOTIFY          1=desktop-notify on seat-down (default 1)
+"""
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+
+MIN_GRACE_S = int(os.environ.get("A2A_WD_MIN_GRACE_S", "600"))
+COOLDOWN_S = int(os.environ.get("A2A_WD_COOLDOWN_S", "600"))
+NOTIFY = os.environ.get("A2A_WD_NOTIFY", "1") == "1"
+
+
+def resolve_a2a():
+    cand = os.environ.get("A2A_BIN")
+    if cand and os.access(cand, os.X_OK):
+        return cand
+    found = shutil.which("a2a")
+    if found:
+        return found
+    home = os.path.expanduser("~")
+    for c in (
+        os.path.join(home, ".agents/skills/a2a/a2a"),
+        os.path.join(home, ".claude/skills/a2a/a2a"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "a2a"),
+    ):
+        if os.access(c, os.X_OK):
+            return c
+    sys.exit("a2a-watchdog: a2a binary not found (set A2A_BIN)")
+
+
+A2A = resolve_a2a()
+PROJECT = os.environ.get("A2A_PROJECT") or os.path.basename(os.getcwd())
+BASE = os.path.join(os.environ.get("A2A_HOME", os.path.expanduser("~/.a2a")), PROJECT)
+SEATS_DIR = os.path.join(BASE, "seats")
+PAUSE_FILE = os.path.join(BASE, "paused")
+LOG_FILE = os.path.join(BASE, "watchdog.log")
+STATE_FILE = os.path.join(BASE, "watchdog-state.json")
+
+# The watchdog needs a bus identity to send messages. Registered lazily.
+WD_ID = "watchdog"
+_wd_registered = False
+
+
+def log(line):
+    entry = f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} {line}\n"
+    try:
+        os.makedirs(BASE, exist_ok=True)
+        with open(LOG_FILE, "a") as f:
+            f.write(entry)
+    except OSError:
+        pass  # logging must never kill the pass
+    if sys.stdout.isatty():
+        sys.stdout.write(entry)
+
+
+def a2a(*args, check=False):
+    """Run the a2a CLI scoped to PROJECT. Returns CompletedProcess."""
+    env = dict(os.environ, A2A_PROJECT=PROJECT)
+    return subprocess.run(
+        [A2A, *args], env=env, capture_output=True, text=True, check=check
+    )
+
+
+def roster():
+    r = a2a("list", "--json")
+    if r.returncode != 0:
+        log(f"list failed: {r.stderr.strip()}")
+        return []
+    try:
+        return json.loads(r.stdout or "[]")
+    except json.JSONDecodeError:
+        log("list returned non-JSON")
+        return []
+
+
+def pid_alive(pid):
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def load_state():
+    try:
+        with open(STATE_FILE) as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def save_state(state):
+    try:
+        os.makedirs(BASE, exist_ok=True)
+        with open(STATE_FILE, "w") as f:
+            json.dump(state, f, indent=2)
+            f.write("\n")
+    except OSError as e:
+        log(f"state write failed: {e}")
+
+
+def notify(title, body):
+    if not NOTIFY:
+        return
+    try:
+        if sys.platform == "darwin":
+            subprocess.run(
+                ["osascript", "-e",
+                 f'display notification {json.dumps(body)} with title {json.dumps(title)}'],
+                check=False, capture_output=True,
+            )
+        elif shutil.which("notify-send"):
+            subprocess.run(["notify-send", title, body], check=False, capture_output=True)
+    except OSError:
+        pass  # best-effort
+
+
+def register_wd_once():
+    global _wd_registered
+    if _wd_registered:
+        return
+    a2a("register", WD_ID, "--role", "watchdog", "--upsert")
+    _wd_registered = True
+
+
+def lease_overdue(agent_id, now):
+    path = os.path.join(SEATS_DIR, f"{agent_id}.json")
+    if not os.path.exists(path):
+        return False
+    try:
+        with open(path) as f:
+            lease = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return False
+    if lease.get("duty") == "off":
+        return False
+    next_due = lease.get("next_due", "")
+    try:
+        due_ts = time.mktime(time.strptime(next_due, "%Y-%m-%dT%H:%M:%SZ")) - time.timezone
+    except (ValueError, TypeError):
+        return False
+    grace = max(MIN_GRACE_S, 2 * int(lease.get("cadence_s", 0)))
+    return now > due_ts + grace
+
+
+def a_pass():
+    if os.path.exists(PAUSE_FILE):
+        return  # vacation mode: fully quiet
+
+    now = time.time()
+    agents = roster()
+    state = load_state()
+    dirty = False
+
+    for a in agents:
+        aid = a.get("id")
+        if not aid or aid == WD_ID:
+            continue
+        if a.get("status") == "done":
+            # Clear any stale alert bookkeeping for a seat that's cleanly done.
+            if aid in state:
+                del state[aid]
+                dirty = True
+            continue
+
+        seat = state.get(aid, {})
+        pid = a.get("pid")
+
+        # --- Dead PID: the seat crashed or exited without marking done. ---
+        if pid is not None and not pid_alive(pid):
+            if not seat.get("down_alerted"):
+                register_wd_once()
+                # One-shot `-p` agents leave no session behind, so a gone PID is
+                # ambiguous: the seat either finished normally but forgot to mark
+                # done, or it crashed. We can't tell — say so, and mark it done so
+                # `agents_active` stops counting it. (An agent that ends cleanly
+                # with `a2a status done` is skipped above and never reaches here —
+                # that discipline is what removes the ambiguity.)
+                msg = (f"[A2A watchdog] {aid} EXITED without marking done "
+                       f"(pid {pid} gone, was status={a.get('status')}). "
+                       f"Finished-and-forgot or crashed — check its log; respawn if unfinished.")
+                a2a("send", "all", msg, "--from", WD_ID)
+                a2a("status", "done", "--as", aid)
+                notify("a2a: seat exited", f"{aid} (pid {pid}) exited unmarked in project {PROJECT}")
+                log(f"seat-exit {aid}: pid {pid} gone; marked done + broadcast")
+                state[aid] = {"down_alerted": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now))}
+                dirty = True
+            continue
+
+        # --- Alive but lease overdue: nudge via the bus (agents block on recv). ---
+        if pid is not None and lease_overdue(aid, now):
+            last = seat.get("last_nudge_ts", 0)
+            if now - last >= COOLDOWN_S:
+                register_wd_once()
+                msg = ("[A2A watchdog] wake (automated, NOT a human): your lease is "
+                       "overdue. Do the next unit of work then refresh your lease "
+                       "(a2a-lease), or go off duty (a2a status done).")
+                a2a("send", aid, msg, "--from", WD_ID)
+                log(f"nudged {aid}: lease overdue")
+                seat["last_nudge_ts"] = now
+                state[aid] = seat
+                dirty = True
+            continue
+
+        # Healthy: drop stale bookkeeping so future events alert again.
+        if seat:
+            state.pop(aid, None)
+            dirty = True
+
+    if dirty:
+        save_state(state)
+
+
+def main():
+    loop_s = 0
+    args = sys.argv[1:]
+    if args and args[0] == "--loop":
+        loop_s = int(args[1]) if len(args) > 1 else 60
+    if loop_s <= 0:
+        try:
+            a_pass()
+        except Exception as e:  # a bad pass must not crash a cron wrapper hard
+            log(f"pass failed: {e}")
+            sys.exit(1)
+        return
+    log(f"watchdog loop start: project={PROJECT} every {loop_s}s")
+    while True:
+        try:
+            a_pass()
+        except Exception as e:
+            log(f"pass failed: {e}")
+        time.sleep(loop_s)
+
+
+if __name__ == "__main__":
+    main()

@@ -292,6 +292,61 @@ register a synthetic `user` (or `host`) agent once and send from it:
 "$A2A" send all "stop debating, summarize." --from user
 ```
 
+### Step 5.5 — (Optional) Run the watchdog for automatic liveness
+
+Manual `peek`/`list` polling is fine for a short attended run. For longer or
+unattended teams, `a2a-watchdog` automates the liveness checks that this skill
+otherwise leaves to you (see the "PID management is fragile" pitfall). It is
+deterministic — **no LLM, no network** — so it costs nothing to run on a timer.
+
+One pass over the roster:
+
+- **PID gone, status not `done`** → the seat exited without marking done
+  (finished-and-forgot *or* crashed — one-shot `-p` agents leave no session, so
+  the two are indistinguishable). The watchdog marks it `done`, broadcasts an
+  `[A2A watchdog] … EXITED` notice on the bus, and desktop-notifies **once**.
+- **PID alive but a lease is overdue** → the seat is up but not checking in. The
+  watchdog sends it a wake message on the bus (an agent blocked on `a2a recv`
+  receives it immediately — the bus *is* the "poke"), rate-limited to once per
+  cooldown.
+- A `paused` file (`~/.a2a/<project>/paused`) makes the watchdog fully quiet.
+
+The ambiguity above is removed entirely by kit discipline: an agent that ends
+with `a2a status done --as <id>` is skipped by the watchdog and never triggers a
+false "EXITED" notice. Keep that as the final step of every kit (Step 4 loop
+already does).
+
+```bash
+# one pass (run from cron / systemd / launchd every 60s):
+A2A_PROJECT={PROJECT} a2a-watchdog
+
+# or a foreground dev loop every 60s:
+A2A_PROJECT={PROJECT} a2a-watchdog --loop 60
+```
+
+Knobs (env): `A2A_WD_MIN_GRACE_S` (lease grace, default 600),
+`A2A_WD_COOLDOWN_S` (min seconds between nudges, default 600),
+`A2A_WD_NOTIFY` (0 to silence desktop notifications).
+
+**Leases** (opt-in, per agent) let a seat promise its next check-in so the
+watchdog can tell "alive but stalled" from "alive and working":
+
+```bash
+a2a-lease {AGENT_ID} 1800        # "chase me if I go quiet > ~30 min"
+a2a-lease {AGENT_ID} 1800 off    # going quiet on purpose; leave me alone
+```
+
+No lease = the watchdog never nudges the seat for idleness (it still reports a
+dead PID). Add `a2a-lease <id> <cadence_s>` to a kit's loop when the agent works
+a long queue and wants a safety net under its own wake loop.
+
+> Adapted from the `doorbell`/`watchdog`/`lease` trio in
+> [chrisreedbates/a2a-dms](https://github.com/chrisreedbates/a2a-dms), whose
+> tmux terminal-injection wake is a good fit for **persistent** agents (a future
+> direction for the tmux-based `debri` CLI). This bus port swaps the tmux poke
+> for a bus message, which is the equivalent wake for one-shot `recv`-blocking
+> agents.
+
 ### Step 6 — Tear down
 
 When the user signals stop, or when every agent's status is `done`:
