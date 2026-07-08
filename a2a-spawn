@@ -222,10 +222,26 @@ Begin."
         # Inline A2A_PROJECT with every a2a invocation so commands are self-contained.
         A2A_WITH_PROJECT="A2A_PROJECT=${PROJECT:-$(basename "$PWD")} $A2A_REAL"
         DEBRI_KIT="${KIT//\$A2A/$A2A_WITH_PROJECT}"
-        # 600 000 ms (10 min) — devin is silent during `a2a recv --wait 30`
-        # and during planning/thinking. 30s was too short and caused debri to
-        # exit mid-task the moment the first recv block completed.
-        FLAGS=(--permission-mode=dangerous --stable-timeout=600000 --stream)
+        # Completion signal. Newer debri detects devin's process exit directly
+        # (devin runs one prompt then hands the pane back to the shell), so it no
+        # longer relies on the silence timer to tell "blocked on `a2a recv
+        # --wait`" from "finished" — that is the primary, model-independent exit.
+        # We ALSO pass a --done-marker as a belt-and-suspenders fast path (and for
+        # older debri / any interactive mode where devin doesn't exit): the agent
+        # prints a sentinel as its final act and debri stops the instant it
+        # appears. Append the instruction to the kit and pass the matching flag.
+        DEBRI_DONE_MARKER='<<DEBRI_DONE>>'
+        DEBRI_KIT="$DEBRI_KIT
+
+== Debri completion signal (REQUIRED, do this last) ==
+When you are completely finished AND have run \`a2a status done\`, your very last
+action must be to run this exact bash command so the harness knows to stop:
+  echo '$DEBRI_DONE_MARKER'
+Print it on its own line, only once, and only when truly done — not before."
+        # stable-timeout stays only as a final SAFETY CAP (10 min) for the rare
+        # case where neither process-exit nor the marker fires. It is no longer
+        # the normal exit path.
+        FLAGS=(--permission-mode=dangerous --stable-timeout=600000 --done-marker="$DEBRI_DONE_MARKER" --stream)
         [ -n "$MODEL" ] && FLAGS+=(--model="$MODEL")
         if [ -n "$PROJECT" ]; then
             A2A_PROJECT="$PROJECT" _spawn_bg "$DEBRI_BIN" "${FLAGS[@]}" "$DEBRI_KIT"
