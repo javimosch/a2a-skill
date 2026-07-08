@@ -201,13 +201,17 @@ Begin."
             "Begin."
         ;;
     debri)
-        # Resolve debri binary (pure Go wrapper for the local devin CLI)
-        if [ -x "$HOME/ai/debri/debri" ]; then
+        # Resolve debri binary: DEBRI_BIN env var (for envs like a dedicated test
+        # host where debri isn't cloned to ~/ai/debri, e.g. CI or rbm21) > local
+        # checkout > PATH. Mirrors the TAU_BIN override pattern below.
+        if [ -n "${DEBRI_BIN:-}" ] && [ -x "$DEBRI_BIN" ]; then
+            :  # use DEBRI_BIN as-is
+        elif [ -x "$HOME/ai/debri/debri" ]; then
             DEBRI_BIN="$HOME/ai/debri/debri"
         elif command -v debri >/dev/null 2>&1; then
             DEBRI_BIN="debri"
         else
-            echo "a2a-spawn: debri not found (expected ~/ai/debri/debri or debri in PATH)" >&2
+            echo "a2a-spawn: debri not found (set DEBRI_BIN, or ~/ai/debri/debri, or debri in PATH)" >&2
             exit 2
         fi
         # Pass the kit content as a positional argument (NOT --file) so the kit is
