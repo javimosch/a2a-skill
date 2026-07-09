@@ -42,6 +42,7 @@ package-lock.json
 .agents/skills/*/
 !.agents/skills/a2a/
 !.agents/skills/a2a-tau-runbook/
+!.agents/skills/a2a-debri-runbook/
 
 # Claude Code session state
 .claude/

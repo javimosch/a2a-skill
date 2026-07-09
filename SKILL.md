@@ -114,3 +114,4 @@ For task-execution teams, agents don't need to debate. lead-tester sends a repor
 | **Shell completion** | [`completion/AGENTS.md`](completion/AGENTS.md) — Bash/Zsh setup and maintenance |
 | **Rust developers** | [`src/AGENTS.md`](src/AGENTS.md) — library API, build instructions |
 | **Human users** | [`README.md`](README.md) — install, CLI cheatsheet, test info |
+| **New VM/operator adding debri** | [`.agents/skills/a2a-debri-runbook/SKILL.md`](.agents/skills/a2a-debri-runbook/SKILL.md) — install+auth devin, get debri, wire into a2a-spawn, smoke test |

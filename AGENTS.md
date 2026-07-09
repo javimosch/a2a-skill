@@ -319,8 +319,13 @@ Edit `a2a-spawn`:
   the agent blocks on `a2a recv --wait`. `a2a-spawn` also passes
   `--done-marker='<<DEBRI_DONE>>'` + a kit coda as a secondary fast path.
   `--stable-timeout=600000` is only a final safety cap now, not the exit path.
-- Resolution order: `~/ai/debri/debri` > `debri` in PATH. Binary releases:
-  `https://github.com/javimosch/debri/releases`.
+- Resolution order: `$DEBRI_BIN` env var > `~/ai/debri/debri` > `debri` in PATH.
+  Binary releases: `https://github.com/javimosch/debri/releases` — use v1.1.0+
+  only (v1.0.0 predates the process-exit/collision/crash-reporting fixes above).
+- Bootstrapping debri on a box that has nothing but this repo (fresh VM, new
+  operator): see [`.agents/skills/a2a-debri-runbook/SKILL.md`](.agents/skills/a2a-debri-runbook/SKILL.md)
+  — installing/authenticating devin, getting debri, wiring `DEBRI_BIN`, and a
+  copy-pasteable smoke test.
 
 ### Changing the kit prompt
 
