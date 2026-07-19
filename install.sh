@@ -30,6 +30,13 @@ _link_skill_dir() {
     if [ -L "$dest" ] && [ ! -e "$dest" ]; then
         rm -f "$dest"
     fi
+    # If dest is a real directory, ln -sfn would create a link *inside* it
+    # instead of replacing it (left a stale partial tree on rbm21). Back it up.
+    if [ -d "$dest" ] && [ ! -L "$dest" ]; then
+        local bak="${dest}.bak.$(date +%Y%m%d%H%M%S)"
+        echo "backing up existing skill dir $dest -> $bak"
+        mv "$dest" "$bak"
+    fi
     ln -sfn "$DIR" "$dest"
 }
 _link_skill_dir "$CLAUDE_SKILL_DIR/a2a"
