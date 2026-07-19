@@ -11,10 +11,15 @@ All notable changes to a2a-skill are documented here.
   `cursor-agent`. Resolution via `$CURSOR_AGENT_BIN` or standard install paths.
 - **`.agents/skills/a2a-cursor-runbook/SKILL.md`** — bootstrap + solo smoke test.
   Documents why a debri-style wrapper is unnecessary for Cursor.
+- **Cursor auth env**: cursor branch sources `$CURSOR_ENV_FILE` (default
+  `~/.config/cursor/env`) and propagates `CURSOR_API_KEY` into the spawned
+  process. Prefer dashboard API keys over copying browser `auth.json`.
 
 ### Fixed
 - **`install.sh`**: refuse to `ln -sfn "$DIR" "$DIR"` when the repo already lives
   at `~/.agents/skills/a2a` (that replaced the checkout with a self-symlink).
+- **`install.sh`**: when a real skill directory already exists, back it up
+  before linking (avoids nested `a2a-skill` symlinks inside a stale tree).
 
 ## [1.3.18] — 2026-05-28 (Cross-Client `touch()` — Python sync/async, JS)
 

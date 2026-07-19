@@ -274,6 +274,17 @@ Print it on its own line, only once, and only when truly done — not before."
             echo "a2a-spawn: cursor agent not found (set CURSOR_AGENT_BIN, or install agent/cursor-agent on PATH)" >&2
             exit 2
         fi
+        # Load server/automation credentials if present. Prefer CURSOR_API_KEY
+        # from ~/.config/cursor/env (mode 600); browser login tokens live in
+        # ~/.config/cursor/auth.json and are picked up by the agent binary.
+        # Override path with CURSOR_ENV_FILE. See skill rbm21-cursor.
+        CURSOR_ENV_FILE="${CURSOR_ENV_FILE:-$HOME/.config/cursor/env}"
+        if [ -f "$CURSOR_ENV_FILE" ]; then
+            set -a
+            # shellcheck disable=SC1090
+            . "$CURSOR_ENV_FILE"
+            set +a
+        fi
         # Kits often use $A2A; inline A2A_PROJECT + resolved path so bash tool
         # calls are self-contained even if the child shell drops env.
         A2A_REAL=$(command -v a2a 2>/dev/null || echo "$HOME/.local/bin/a2a")
@@ -294,7 +305,13 @@ Begin."
         if [ -n "${CURSOR_WORKSPACE:-}" ]; then
             FLAGS+=(--workspace "$CURSOR_WORKSPACE")
         fi
-        _spawn_bg "$CURSOR_AGENT_BIN" "${FLAGS[@]}" "$MSG"
+        # Propagate API key into the nohup child when set (auth.json still works
+        # without this — key is preferred for headless/server hosts).
+        if [ -n "${CURSOR_API_KEY:-}" ]; then
+            CURSOR_API_KEY="$CURSOR_API_KEY" _spawn_bg "$CURSOR_AGENT_BIN" "${FLAGS[@]}" "$MSG"
+        else
+            _spawn_bg "$CURSOR_AGENT_BIN" "${FLAGS[@]}" "$MSG"
+        fi
         ;;
     *)
         echo "a2a-spawn: unknown CLI '$CLI' (expected claude|opencode|pi|tau|debri|cursor)" >&2
