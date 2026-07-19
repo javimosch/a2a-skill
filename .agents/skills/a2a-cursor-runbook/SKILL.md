@@ -126,8 +126,15 @@ structured JSONL. Cursor Agent CLI already provides `-p`, `--output-format
 stream-json|json`, `--trust`, `--force`, and `--workspace`. Wire it in
 `a2a-spawn` directly.
 
+## rbm21
+
+For Cursor Agent CLI on the rbm21 LXC (install, auth sync, a2a smoke), use the
+global skill **`rbm21-cursor`** at `~/.agents/skills/rbm21-cursor/` on the
+workstation (scripts: `sync-auth.sh`, `install-agent.sh`, `smoke-a2a.sh`).
+
 ## References
 
 - Cursor Agent CLI: `agent --help` / `agent about`
+- Auth docs: https://cursor.com/docs/cli/reference/authentication
 - a2a main skill: [`.agents/skills/a2a/SKILL.md`](../a2a/SKILL.md)
 - debri runbook (contrast): [`.agents/skills/a2a-debri-runbook/SKILL.md`](../a2a-debri-runbook/SKILL.md)
