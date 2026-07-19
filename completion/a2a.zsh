@@ -118,7 +118,7 @@ _a2a() {
             _describe 'recipient' alist
             ;;
         cli_types)
-            _values 'cli' 'claude' 'opencode' 'pi' 'gemini'
+            _values 'cli' 'claude' 'opencode' 'pi' 'tau' 'debri' 'cursor' 'gemini'
             ;;
     esac
 }

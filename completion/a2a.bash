@@ -22,7 +22,7 @@ _a2a_completion() {
             return 0
             ;;
         --cli)
-            COMPREPLY=($(compgen -W "claude opencode pi gemini" -- "${cur}"))
+            COMPREPLY=($(compgen -W "claude opencode pi tau debri cursor gemini" -- "${cur}"))
             return 0
             ;;
         --project)

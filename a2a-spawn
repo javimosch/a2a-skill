@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # a2a-spawn — CLI-agnostic launcher for an a2a peer agent.
 #
-# Knows how to invoke claude, opencode, pi, tau, or debri non-interactively with a kit
-# prompt. Hides the per-CLI flag differences:
+# Knows how to invoke claude, opencode, pi, tau, debri, or cursor non-interactively
+# with a kit prompt. Hides the per-CLI flag differences:
 #
 #   - claude   : --append-system-prompt "$KIT"     -p "Begin."
 #   - opencode : (kit embedded in message body)    run "$KIT\n\nBegin."
 #   - pi       : --append-system-prompt "$KIT"     -p "Begin."
 #   - tau      : --append-system-prompt "$KIT"     -p "Begin."
 #   - debri    : Go debri binary (wraps local devin CLI via tmux)
+#   - cursor   : official Cursor Agent CLI (agent / cursor-agent), headless -p
 #
 # Usage:
 #   a2a-spawn --cli claude   --id alice  [--model haiku]   [--log FILE]   --kit-file FILE
@@ -16,6 +17,7 @@
 #   a2a-spawn --cli pi       --id carol  [--provider google] [--model …]   --kit-file FILE
 #   a2a-spawn --cli tau      --id dave  [--provider xiaomi] [--model …]   --kit-file FILE
 #   a2a-spawn --cli debri    --id eve   [--model SWE-1.6]   [--log FILE]   --kit-file FILE
+#   a2a-spawn --cli cursor   --id frank [--model sonnet-4]  [--log FILE]   --kit-file FILE
 #
 # Writes the spawned PID to stdout. Send SIGTERM to that PID to stop the agent.
 # Reads the kit prompt from --kit-file (recommended; avoids shell-escape bugs).
@@ -33,10 +35,11 @@ usage() {
 a2a-spawn — CLI-agnostic launcher for an a2a peer agent.
 
 Usage:
-  a2a-spawn --cli claude|opencode|pi|tau|debri --id NAME [options]
+  a2a-spawn --cli claude|opencode|pi|tau|debri|cursor --id NAME [options]
 
 Required:
-  --cli TYPE     Agentic CLI to launch (claude, opencode, pi, tau, debri)
+  --cli TYPE     Agentic CLI (claude, opencode, pi, tau, debri, cursor)
+                 Aliases for cursor: agent, cursor-agent
   --id NAME      Agent identifier on the a2a bus
   --kit-file FILE  Path to the kit prompt file
 
@@ -68,7 +71,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-[ -z "$CLI" ]      && { echo "a2a-spawn: --cli required (claude|opencode|pi|tau|debri)" >&2; exit 2; }
+[ -z "$CLI" ]      && { echo "a2a-spawn: --cli required (claude|opencode|pi|tau|debri|cursor)" >&2; exit 2; }
 [ -z "$ID" ]       && { echo "a2a-spawn: --id required" >&2; exit 2; }
 [ -z "$KIT_FILE" ] && { echo "a2a-spawn: --kit-file required" >&2; exit 2; }
 [ -r "$KIT_FILE" ] || { echo "a2a-spawn: cannot read kit file $KIT_FILE" >&2; exit 2; }
@@ -253,8 +256,48 @@ Print it on its own line, only once, and only when truly done — not before."
             _spawn_bg "$DEBRI_BIN" "${FLAGS[@]}" "$DEBRI_KIT"
         fi
         ;;
+    cursor|agent|cursor-agent)
+        # Official Cursor Agent CLI — already headless-friendly (no tmux wrapper
+        # like debri→devin). Resolve: CURSOR_AGENT_BIN > ~/.local/bin/agent >
+        # ~/.local/bin/cursor-agent > agent/cursor-agent on PATH.
+        if [ -n "${CURSOR_AGENT_BIN:-}" ] && [ -x "$CURSOR_AGENT_BIN" ]; then
+            :  # use CURSOR_AGENT_BIN as-is
+        elif [ -x "$HOME/.local/bin/agent" ]; then
+            CURSOR_AGENT_BIN="$HOME/.local/bin/agent"
+        elif [ -x "$HOME/.local/bin/cursor-agent" ]; then
+            CURSOR_AGENT_BIN="$HOME/.local/bin/cursor-agent"
+        elif command -v agent >/dev/null 2>&1; then
+            CURSOR_AGENT_BIN="agent"
+        elif command -v cursor-agent >/dev/null 2>&1; then
+            CURSOR_AGENT_BIN="cursor-agent"
+        else
+            echo "a2a-spawn: cursor agent not found (set CURSOR_AGENT_BIN, or install agent/cursor-agent on PATH)" >&2
+            exit 2
+        fi
+        # Kits often use $A2A; inline A2A_PROJECT + resolved path so bash tool
+        # calls are self-contained even if the child shell drops env.
+        A2A_REAL=$(command -v a2a 2>/dev/null || echo "$HOME/.local/bin/a2a")
+        A2A_WITH_PROJECT="A2A_PROJECT=${PROJECT:-$(basename "$PWD")} $A2A_REAL"
+        CURSOR_KIT="${KIT//\$A2A/$A2A_WITH_PROJECT}"
+        MSG="$CURSOR_KIT
+
+---
+Begin."
+        # -p/--print: non-interactive (script/automation)
+        # --trust: skip workspace trust prompt in headless mode
+        # --force: auto-approve shell/tools so a2a bus ops are not blocked
+        # --approve-mcps: avoid MCP approval stalls in background
+        # --sandbox disabled: a2a needs real filesystem + network for the bus
+        # --output-format stream-json: structured log for debugging stalls
+        FLAGS=(-p --trust --force --approve-mcps --sandbox disabled --output-format stream-json)
+        [ -n "$MODEL" ] && FLAGS+=(--model "$MODEL")
+        if [ -n "${CURSOR_WORKSPACE:-}" ]; then
+            FLAGS+=(--workspace "$CURSOR_WORKSPACE")
+        fi
+        _spawn_bg "$CURSOR_AGENT_BIN" "${FLAGS[@]}" "$MSG"
+        ;;
     *)
-        echo "a2a-spawn: unknown CLI '$CLI' (expected claude|opencode|pi|tau|debri)" >&2
+        echo "a2a-spawn: unknown CLI '$CLI' (expected claude|opencode|pi|tau|debri|cursor)" >&2
         exit 2
         ;;
 esac

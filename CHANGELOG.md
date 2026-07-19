@@ -2,6 +2,20 @@
 
 All notable changes to a2a-skill are documented here.
 
+## [Unreleased] — 2026-07-19 (Cursor Agent CLI peer)
+
+### Added
+- **`a2a-spawn --cli cursor`** — launches the official Cursor Agent CLI
+  (`agent` / `cursor-agent`) headless with `-p --trust --force --approve-mcps
+  --sandbox disabled --output-format stream-json`. Aliases: `agent`,
+  `cursor-agent`. Resolution via `$CURSOR_AGENT_BIN` or standard install paths.
+- **`.agents/skills/a2a-cursor-runbook/SKILL.md`** — bootstrap + solo smoke test.
+  Documents why a debri-style wrapper is unnecessary for Cursor.
+
+### Fixed
+- **`install.sh`**: refuse to `ln -sfn "$DIR" "$DIR"` when the repo already lives
+  at `~/.agents/skills/a2a` (that replaced the checkout with a self-symlink).
+
 ## [1.3.18] — 2026-05-28 (Cross-Client `touch()` — Python sync/async, JS)
 
 ### Added

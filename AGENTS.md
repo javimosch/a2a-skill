@@ -327,6 +327,19 @@ Edit `a2a-spawn`:
   — installing/authenticating devin, getting debri, wiring `DEBRI_BIN`, and a
   copy-pasteable smoke test.
 
+**For cursor (official Cursor Agent CLI — `agent` / `cursor-agent`):**
+- No debri-style wrapper. Cursor already supports headless automation (`-p`,
+  `--trust`, `--force`, `--output-format stream-json`, `--workspace`).
+- `a2a-spawn --cli cursor` (aliases: `agent`, `cursor-agent`) embeds the kit in
+  the user message and launches `agent -p --trust --force --approve-mcps
+  --sandbox disabled --output-format stream-json`.
+- `$A2A` in kits is inlined to `A2A_PROJECT=<proj> <resolved-a2a>` (same as debri).
+- Resolution: `$CURSOR_AGENT_BIN` > `~/.local/bin/agent` >
+  `~/.local/bin/cursor-agent` > `agent`/`cursor-agent` on PATH.
+  Optional: `$CURSOR_WORKSPACE` pins `--workspace`.
+- Bootstrap runbook:
+  [`.agents/skills/a2a-cursor-runbook/SKILL.md`](.agents/skills/a2a-cursor-runbook/SKILL.md)
+
 ### Changing the kit prompt
 
 The kit prompt (in `.agents/skills/a2a/SKILL.md` Step 4 and inlined into both smoke tests)
