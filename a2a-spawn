@@ -49,6 +49,13 @@ Options:
   --project NAME Set A2A_PROJECT for the spawned agent (default: basename($PWD))
   --log FILE     Log file (default: /tmp/a2a-<id>.log)
 
+Environment:
+  A2A_SPAWN_WRAPPER  Command prefix every agent is launched through, split on
+                     spaces (e.g. "/usr/local/bin/supervisor run --"). The
+                     printed PID is then the wrapper's. Paths in it must not
+                     contain spaces. A wrapper that cannot run fails the agent;
+                     it is never skipped.
+
 Outputs the spawned PID to stdout.
 EOF
     exit 0
@@ -99,6 +106,13 @@ _spawn_bg() {
     # "$@" is the command to run; stdout/stderr already redirected. stdin is
     # /dev/null so non-interactive CLIs (e.g. claude --output-format stream-json)
     # don't wait on stdin.
+    # Every agent goes through this function, which makes it the one place to
+    # apply A2A_SPAWN_WRAPPER.
+    if [ -n "${A2A_SPAWN_WRAPPER:-}" ]; then
+        local WRAP
+        read -r -a WRAP <<< "$A2A_SPAWN_WRAPPER"
+        set -- "${WRAP[@]}" "$@"
+    fi
     # Use inline env var so the export is scoped only to the spawned process.
     if [ -n "$PROJECT" ]; then
         A2A_PROJECT="$PROJECT" nohup "$@" > "$LOG" 2>&1 < /dev/null &
